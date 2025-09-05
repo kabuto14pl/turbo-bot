@@ -1,0 +1,464 @@
+/**
+ * 🚀 COMPREHENSIVE OPTIMIZATION SCHEDULER
+ * Centralizes Ray Tune and Optuna optimization management
+ * Implements adaptive optimization cycles with performance-based triggers
+ */
+
+import { EventEmitter } from 'events';
+import { spawn, ChildProcess } from 'child_process';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { performance } from 'perf_hooks';
+
+// Core imports
+import { RiskManager } from '../risk/risk_manager';
+import { Logger } from '../utils/logger';
+import { PerformanceTracker } from '../analysis/performance_tracker';
+import { 
+    OptimizationToolsAdapter, 
+    OptimizationTask as AdapterTask,
+    OptimizationResult as AdapterResult 
+} from './optimization_tools_adapter';
+import { DEFAULT_OPTIMIZATION_CONFIG, SCHEDULER_CONFIG } from './optimization_config';
+
+// Strategy and configuration imports
+import { StrategyConfig } from '../types/strategy';
+import { MarketData } from '../types/market_data';
+import { BotState } from '../types/bot_state';
+
+// Optimization scheduler task interface
+interface OptimizationTask {
+    id: string;
+    type: 'ray' | 'optuna' | 'hybrid';
+    strategy: string;
+    parameters: Record<string, any>;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    priority: number;
+    createdAt: Date;
+    startedAt?: Date;
+    completedAt?: Date;
+    result?: AdapterResult;
+    progress?: number;
+}
+
+interface OptimizationMetrics {
+    totalOptimizations: number;
+    successfulOptimizations: number;
+    averageImprovement: number;
+    totalExecutionTime: number;
+    resourceUtilization: {
+        cpu: number;
+        memory: number;
+        gpu?: number;
+    };
+}
+
+interface AdaptiveConfig {
+    performanceThreshold: number;
+    optimizationInterval: number;
+    maxConcurrentTasks: number;
+    emergencyOptimization: boolean;
+    adaptivePriority: boolean;
+    resourceLimits: {
+        maxMemory: number;
+        maxCpu: number;
+        timeoutMinutes: number;
+    };
+}
+
+export class OptimizationScheduler extends EventEmitter {
+    private taskQueue: OptimizationTask[] = [];
+    private runningTasks: Map<string, ChildProcess> = new Map();
+    private completedTasks: OptimizationTask[] = [];
+    private metrics: OptimizationMetrics;
+    private adaptiveConfig: AdaptiveConfig;
+    private isRunning: boolean = false;
+    private schedulerInterval?: NodeJS.Timeout;
+    private performanceMonitor?: NodeJS.Timeout;
+    
+    private readonly logger: Logger;
+    private readonly performanceTracker: PerformanceTracker;
+    private readonly toolsAdapter: OptimizationToolsAdapter;
+    private readonly toolsPath: string;
+    
+    constructor(
+        adaptiveConfig: Partial<AdaptiveConfig> = {},
+        performanceTracker?: PerformanceTracker
+    ) {
+        super();
+        
+        this.logger = new Logger();
+        this.performanceTracker = performanceTracker || new PerformanceTracker();
+        this.toolsPath = path.join(process.cwd(), 'tools');
+        this.toolsAdapter = new OptimizationToolsAdapter(this.toolsPath);
+        
+        // Initialize adaptive configuration with defaults from config
+        this.adaptiveConfig = {
+            ...SCHEDULER_CONFIG,
+            ...adaptiveConfig
+        };
+        
+        // Initialize metrics
+        this.metrics = {
+            totalOptimizations: 0,
+            successfulOptimizations: 0,
+            averageImprovement: 0,
+            totalExecutionTime: 0,
+            resourceUtilization: {
+                cpu: 0,
+                memory: 0
+            }
+        };
+        
+        this.setupEventHandlers();
+    }
+    
+    /**
+     * Start the optimization scheduler
+     */
+    async start(): Promise<void> {
+        if (this.isRunning) {
+            this.logger.warn('Optimization scheduler is already running');
+            return;
+        }
+        
+        this.logger.info('Starting optimization scheduler...');
+        this.isRunning = true;
+        
+        // Start main scheduler loop
+        this.schedulerInterval = setInterval(() => {
+            this.processTaskQueue().catch(error => {
+                this.logger.error('Error in scheduler loop:', error);
+            });
+        }, 5000); // Check every 5 seconds
+        
+        // Start performance monitoring
+        this.performanceMonitor = setInterval(() => {
+            this.monitorPerformance().catch(error => {
+                this.logger.error('Error in performance monitoring:', error);
+            });
+        }, this.adaptiveConfig.optimizationInterval);
+        
+        this.emit('started');
+        this.logger.info('Optimization scheduler started successfully');
+    }
+    
+    /**
+     * Stop the optimization scheduler
+     */
+    async stop(): Promise<void> {
+        if (!this.isRunning) {
+            this.logger.warn('Optimization scheduler is not running');
+            return;
+        }
+        
+        this.logger.info('Stopping optimization scheduler...');
+        this.isRunning = false;
+        
+        // Clear intervals
+        if (this.schedulerInterval) {
+            clearInterval(this.schedulerInterval);
+            this.schedulerInterval = undefined;
+        }
+        
+        if (this.performanceMonitor) {
+            clearInterval(this.performanceMonitor);
+            this.performanceMonitor = undefined;
+        }
+        
+        // Stop running tasks gracefully
+        await this.stopAllTasks();
+        
+        this.emit('stopped');
+        this.logger.info('Optimization scheduler stopped');
+    }
+    
+    /**
+     * Schedule optimization task
+     */
+    async scheduleOptimization(
+        strategy: string,
+        type: 'ray' | 'optuna' | 'hybrid' = 'hybrid',
+        parameters: Record<string, any> = {},
+        priority: number = 5
+    ): Promise<string> {
+        const task: OptimizationTask = {
+            id: this.generateTaskId(),
+            type,
+            strategy,
+            parameters: { ...DEFAULT_OPTIMIZATION_CONFIG, ...parameters },
+            status: 'pending',
+            priority,
+            createdAt: new Date()
+        };
+        
+        // Insert task in priority order
+        const insertIndex = this.taskQueue.findIndex(t => t.priority < priority);
+        if (insertIndex === -1) {
+            this.taskQueue.push(task);
+        } else {
+            this.taskQueue.splice(insertIndex, 0, task);
+        }
+        
+        this.logger.info(`Scheduled ${type} optimization for ${strategy} (Priority: ${priority})`);
+        this.emit('taskScheduled', task);
+        
+        return task.id;
+    }
+    
+    /**
+     * Process task queue
+     */
+    private async processTaskQueue(): Promise<void> {
+        if (!this.isRunning || this.taskQueue.length === 0) return;
+        
+        // Check concurrent task limit
+        if (this.runningTasks.size >= this.adaptiveConfig.maxConcurrentTasks) {
+            return;
+        }
+        
+        // Get next high-priority pending task
+        const taskIndex = this.taskQueue.findIndex(t => t.status === 'pending');
+        if (taskIndex === -1) return;
+        
+        const task = this.taskQueue[taskIndex];
+        this.taskQueue.splice(taskIndex, 1);
+        
+        try {
+            await this.executeTask(task);
+        } catch (error) {
+            this.logger.error(`Failed to execute task ${task.id}:`, error);
+            task.status = 'failed';
+            this.emit('taskFailed', { task, error });
+        }
+    }
+    
+    /**
+     * Execute optimization task
+     */
+    private async executeTask(task: OptimizationTask): Promise<void> {
+        task.status = 'running';
+        task.startedAt = new Date();
+        
+        this.logger.info(`Executing ${task.type} optimization for ${task.strategy}`);
+        this.emit('taskStarted', task);
+        
+        const startTime = performance.now();
+        
+        try {
+            // Execute through tools adapter
+            const adapterTask: AdapterTask = {
+                id: task.id,
+                type: task.type,
+                strategy: task.strategy,
+                parameters: task.parameters,
+                config: { 
+                    ...DEFAULT_OPTIMIZATION_CONFIG, 
+                    ...task.parameters,
+                    backend: task.type
+                },
+                priority: task.priority,
+                createdAt: task.createdAt
+            };
+            
+            const result = await this.toolsAdapter.executeRayOptimization(adapterTask);
+            
+            // Update task with results (using result directly from adapter)
+            task.result = {
+                ...result,
+                executionTime: performance.now() - startTime
+            };
+            
+            task.status = 'completed';
+            task.completedAt = new Date();
+            
+            // Update metrics
+            this.updateMetrics(task);
+            
+            this.completedTasks.push(task);
+            this.emit('taskCompleted', task);
+            
+            this.logger.info(
+                `Optimization completed for ${task.strategy}: ` +
+                `Score=${task.result.bestScore}, Time=${Math.round(task.result.executionTime)}ms`
+            );
+            
+        } catch (error) {
+            task.status = 'failed';
+            task.completedAt = new Date();
+            
+            this.logger.error(`Optimization failed for ${task.strategy}:`, error);
+            this.emit('taskFailed', { task, error });
+            throw error;
+        }
+    }
+    
+    /**
+     * Monitor performance and trigger adaptive optimizations
+     */
+    private async monitorPerformance(): Promise<void> {
+        try {
+            const currentPerformance = await this.performanceTracker.calculateMetrics();
+            
+            if (!currentPerformance) return;
+            
+            // Check if performance dropped below threshold
+            const sharpeRatio = currentPerformance.sharpeRatio || 0;
+            if (sharpeRatio < this.adaptiveConfig.performanceThreshold) {
+                this.logger.warn(
+                    `Performance below threshold: ${sharpeRatio} < ${this.adaptiveConfig.performanceThreshold}`
+                );
+                
+                if (this.adaptiveConfig.emergencyOptimization) {
+                    await this.triggerEmergencyOptimization(currentPerformance);
+                }
+            }
+            
+            // Adaptive priority adjustment
+            if (this.adaptiveConfig.adaptivePriority) {
+                this.adjustTaskPriorities(currentPerformance);
+            }
+            
+        } catch (error) {
+            this.logger.error('Error in performance monitoring:', error);
+        }
+    }
+    
+    /**
+     * Trigger emergency optimization
+     */
+    private async triggerEmergencyOptimization(performanceMetrics: any): Promise<void> {
+        this.logger.warn('Triggering emergency optimization...');
+        
+        // Schedule high-priority optimization for underperforming strategies
+        const strategies = ['macd', 'rsi', 'bollinger_bands', 'stochastic'];
+        
+        for (const strategy of strategies) {
+            await this.scheduleOptimization(strategy, 'hybrid', {}, 10); // Max priority
+        }
+        
+        this.emit('emergencyOptimization', { strategies, performance: performanceMetrics });
+    }
+    
+    /**
+     * Adjust task priorities based on performance
+     */
+    private adjustTaskPriorities(performanceMetrics: any): void {
+        this.taskQueue.forEach(task => {
+            // Increase priority for strategies that might improve current weaknesses
+            if (performanceMetrics.sharpeRatio < 1.0 && task.strategy === 'macd') {
+                task.priority = Math.min(10, task.priority + 2);
+            }
+            if (performanceMetrics.maxDrawdown > 0.2 && task.strategy === 'rsi') {
+                task.priority = Math.min(10, task.priority + 1);
+            }
+        });
+        
+        // Re-sort queue by priority
+        this.taskQueue.sort((a, b) => b.priority - a.priority);
+    }
+    
+    /**
+     * Stop all running tasks
+     */
+    private async stopAllTasks(): Promise<void> {
+        const stopPromises = Array.from(this.runningTasks.entries()).map(([taskId, process]) => {
+            return new Promise<void>((resolve) => {
+                process.on('exit', () => resolve());
+                process.kill('SIGTERM');
+                
+                // Force kill after timeout
+                setTimeout(() => {
+                    if (!process.killed) {
+                        process.kill('SIGKILL');
+                    }
+                    resolve();
+                }, 5000);
+            });
+        });
+        
+        await Promise.all(stopPromises);
+        this.runningTasks.clear();
+    }
+    
+    /**
+     * Update metrics after task completion
+     */
+    private updateMetrics(task: OptimizationTask): void {
+        this.metrics.totalOptimizations++;
+        
+        if (task.status === 'completed' && task.result) {
+            this.metrics.successfulOptimizations++;
+            this.metrics.totalExecutionTime += task.result.executionTime;
+            
+            // Update average improvement
+            const currentAvg = this.metrics.averageImprovement;
+            const newImprovement = task.result.convergenceMetrics.improvement;
+            this.metrics.averageImprovement = 
+                (currentAvg * (this.metrics.successfulOptimizations - 1) + newImprovement) / 
+                this.metrics.successfulOptimizations;
+        }
+        
+        // Update resource utilization (simplified)
+        this.metrics.resourceUtilization.cpu = this.runningTasks.size * 20; // Estimate
+        this.metrics.resourceUtilization.memory = this.runningTasks.size * 512; // MB estimate
+    }
+    
+    /**
+     * Get optimization metrics
+     */
+    getMetrics(): OptimizationMetrics {
+        return { ...this.metrics };
+    }
+    
+    /**
+     * Get current task status
+     */
+    getTaskStatus(): {
+        pending: number;
+        running: number;
+        completed: number;
+        failed: number;
+    } {
+        const pending = this.taskQueue.filter(t => t.status === 'pending').length;
+        const running = this.taskQueue.filter(t => t.status === 'running').length;
+        const completed = this.completedTasks.filter(t => t.status === 'completed').length;
+        const failed = this.completedTasks.filter(t => t.status === 'failed').length;
+        
+        return { pending, running, completed, failed };
+    }
+    
+    /**
+     * Clear completed tasks (for memory management)
+     */
+    clearCompletedTasks(): void {
+        this.completedTasks = [];
+        this.logger.info('Cleared completed tasks from memory');
+    }
+    
+    /**
+     * Generate unique task ID
+     */
+    private generateTaskId(): string {
+        return `opt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+    
+    /**
+     * Setup event handlers
+     */
+    private setupEventHandlers(): void {
+        this.on('taskCompleted', (task: OptimizationTask) => {
+            this.logger.info(`Optimization completed for ${task.strategy} with score: ${task.result?.bestScore}`);
+        });
+        
+        this.on('taskFailed', ({ task, error }) => {
+            this.logger.error(`Optimization failed for ${task.strategy}:`, error.message);
+        });
+        
+        this.on('emergencyOptimization', ({ strategies, performance }) => {
+            this.logger.warn(`Emergency optimization initiated for strategies: ${strategies.join(', ')}`);
+        });
+    }
+}
+
+export default OptimizationScheduler;

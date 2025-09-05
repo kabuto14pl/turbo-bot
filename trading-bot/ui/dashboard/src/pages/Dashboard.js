@@ -1,0 +1,59 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const jsx_runtime_1 = require("react/jsx-runtime");
+const material_1 = require("@mui/material");
+const icons_material_1 = require("@mui/icons-material");
+// Import components and hooks
+const ProfitChart_1 = __importDefault(require("../components/charts/ProfitChart"));
+const VolumeChart_1 = __importDefault(require("../components/charts/VolumeChart"));
+const CandlestickChart_1 = __importDefault(require("../components/charts/CandlestickChart"));
+// import RealTimeWidget from '../components/widgets/RealTimeWidget';
+const SimpleRealTimeWidget_1 = __importDefault(require("../components/widgets/SimpleRealTimeWidget"));
+// import ProfessionalRealTimeWidget from '../components/widgets/ProfessionalRealTimeWidget';
+const ActivityFeed_1 = __importDefault(require("../components/widgets/ActivityFeed"));
+const BotControlPanel_1 = __importDefault(require("../components/BotControlPanel"));
+const StrategyControlPanel_1 = __importDefault(require("../components/StrategyControlPanel"));
+const tradingStore_1 = require("../store/tradingStore");
+// import { useWebSocket } from '../hooks/useWebSocket';
+const Dashboard = () => {
+    // WebSocket connection - DISABLED TEMPORARILY
+    // const { connectionStatus, isConnecting } = useWebSocket({
+    //   url: 'ws://localhost:9091'
+    // });
+    const connectionStatus = 'connected';
+    const isConnecting = false;
+    // Store selectors
+    const { portfolio, strategies, systemStatus } = (0, tradingStore_1.useTradingSelectors)();
+    // Calculated values from store data
+    const portfolioValue = portfolio?.totalValue || 0;
+    const dailyPnL = portfolio?.dailyPnL || 0;
+    const dailyPnLPercent = portfolio?.dailyPnLPercent || 0;
+    const totalPositions = portfolio?.positions?.length || 0;
+    // System metrics from store
+    const systemMetrics = [
+        { label: 'System Uptime', value: systemStatus?.uptime || '0%', color: 'success' },
+        { label: 'API Latency', value: `${systemStatus?.latency || 0}ms`, color: 'success' },
+        { label: 'Orders/Hour', value: systemStatus?.ordersPerHour?.toString() || '0', color: 'primary' },
+        { label: 'Active Strategies', value: strategies.filter((s) => s.status === 'active').length.toString(), color: 'primary' },
+    ];
+    // Loading state
+    if (isConnecting) {
+        return ((0, jsx_runtime_1.jsxs)(material_1.Box, { display: "flex", justifyContent: "center", alignItems: "center", minHeight: "400px", children: [(0, jsx_runtime_1.jsx)(material_1.CircularProgress, { size: 60 }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", sx: { ml: 2 }, children: "\u0141\u0105czenie z systemem tradingowym..." })] }));
+    }
+    return ((0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { flexGrow: 1, p: 3 }, children: [(0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { mb: 3 }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h4", gutterBottom: true, children: "Trading Dashboard" }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body1", color: "text.secondary", children: "Real-time monitoring and analytics for your trading bot" })] }), connectionStatus !== 'connected' && ((0, jsx_runtime_1.jsxs)(material_1.Alert, { severity: connectionStatus === 'error' ? 'error' : 'warning', sx: { mb: 3 }, children: [connectionStatus === 'connecting' && 'Łączenie z systemem tradingowym...', connectionStatus === 'disconnected' && 'Połączenie z systemem tradingowym zostało przerwane. Dane mogą być nieaktualne.', connectionStatus === 'error' && 'Błąd połączenia z systemem tradingowym. Sprawdź status serwera.'] })), (0, jsx_runtime_1.jsxs)(material_1.Grid, { container: true, spacing: 3, children: [(0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 4, children: (0, jsx_runtime_1.jsx)(material_1.Card, { children: (0, jsx_runtime_1.jsxs)(material_1.CardContent, { children: [(0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { display: 'flex', alignItems: 'center', mb: 2 }, children: [(0, jsx_runtime_1.jsx)(icons_material_1.AccountBalance, { sx: { mr: 1, color: 'primary.main' } }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", children: "Portfolio Value" })] }), (0, jsx_runtime_1.jsxs)(material_1.Typography, { variant: "h3", color: "primary.main", gutterBottom: true, children: ["$", portfolioValue.toLocaleString()] }), (0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { display: 'flex', alignItems: 'center' }, children: [dailyPnL >= 0 ? ((0, jsx_runtime_1.jsx)(icons_material_1.TrendingUp, { sx: { color: 'success.main', mr: 0.5 } })) : ((0, jsx_runtime_1.jsx)(icons_material_1.TrendingDown, { sx: { color: 'error.main', mr: 0.5 } })), (0, jsx_runtime_1.jsxs)(material_1.Typography, { variant: "body1", color: dailyPnL >= 0 ? 'success.main' : 'error.main', children: [dailyPnL >= 0 ? '+' : '', "$", dailyPnL.toFixed(2), " (", dailyPnL >= 0 ? '+' : '', dailyPnLPercent, "%)"] })] }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body2", color: "text.secondary", sx: { mt: 1 }, children: "Today's P&L" })] }) }) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 4, children: (0, jsx_runtime_1.jsx)(material_1.Card, { children: (0, jsx_runtime_1.jsxs)(material_1.CardContent, { children: [(0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { display: 'flex', alignItems: 'center', mb: 2 }, children: [(0, jsx_runtime_1.jsx)(icons_material_1.Assessment, { sx: { mr: 1, color: 'warning.main' } }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", children: "Active Positions" })] }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h3", color: "warning.main", gutterBottom: true, children: totalPositions }), (0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { display: 'flex', justifyContent: 'space-between', mt: 2 }, children: [(0, jsx_runtime_1.jsxs)(material_1.Box, { children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", color: "success.main", children: "8" }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body2", color: "text.secondary", children: "Profitable" })] }), (0, jsx_runtime_1.jsxs)(material_1.Box, { children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", color: "error.main", children: "3" }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body2", color: "text.secondary", children: "Losing" })] }), (0, jsx_runtime_1.jsxs)(material_1.Box, { children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", color: "info.main", children: "1" }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body2", color: "text.secondary", children: "Breakeven" })] })] })] }) }) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 4, children: (0, jsx_runtime_1.jsx)(material_1.Card, { children: (0, jsx_runtime_1.jsxs)(material_1.CardContent, { children: [(0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { display: 'flex', alignItems: 'center', mb: 2 }, children: [(0, jsx_runtime_1.jsx)(icons_material_1.Speed, { sx: { mr: 1, color: 'info.main' } }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", children: "System Status" }), (0, jsx_runtime_1.jsx)(material_1.Chip, { size: "small", label: "ONLINE", color: "success", sx: { ml: 'auto' } })] }), (0, jsx_runtime_1.jsx)(material_1.Box, { sx: { display: 'flex', flexDirection: 'column', gap: 2 }, children: systemMetrics.map((metric, index) => ((0, jsx_runtime_1.jsxs)(material_1.Box, { children: [(0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { display: 'flex', justifyContent: 'space-between', mb: 0.5 }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body2", color: "text.secondary", children: metric.label }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body2", color: `${metric.color}.main`, children: metric.value })] }), (0, jsx_runtime_1.jsx)(material_1.LinearProgress, { variant: "determinate", value: 85, color: metric.color, sx: { height: 4, borderRadius: 2 } })] }, index))) })] }) }) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 6, children: (0, jsx_runtime_1.jsx)(SimpleRealTimeWidget_1.default, {}) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 6, children: (0, jsx_runtime_1.jsx)(BotControlPanel_1.default, {}) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, children: (0, jsx_runtime_1.jsx)(StrategyControlPanel_1.default, {}) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 8, children: (0, jsx_runtime_1.jsx)(ProfitChart_1.default, { height: 350 }) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, children: (0, jsx_runtime_1.jsx)(CandlestickChart_1.default, { symbol: "BTC/USDT", height: 450 }) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 6, children: (0, jsx_runtime_1.jsx)(VolumeChart_1.default, { height: 350 }) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 6, children: (0, jsx_runtime_1.jsx)(ActivityFeed_1.default, {}) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, children: (0, jsx_runtime_1.jsx)(material_1.Card, { children: (0, jsx_runtime_1.jsxs)(material_1.CardContent, { children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", gutterBottom: true, children: "Strategy Performance" }), (0, jsx_runtime_1.jsx)(material_1.List, { children: strategies.length > 0 ? strategies.map((strategy) => ((0, jsx_runtime_1.jsxs)(material_1.ListItem, { sx: {
+                                                border: 1,
+                                                borderColor: 'divider',
+                                                borderRadius: 1,
+                                                mb: 1,
+                                                backgroundColor: 'rgba(255,255,255,0.02)',
+                                            }, children: [(0, jsx_runtime_1.jsx)(material_1.ListItemIcon, { children: (0, jsx_runtime_1.jsx)(material_1.Avatar, { sx: {
+                                                            backgroundColor: strategy.status === 'active' ? 'success.main' :
+                                                                strategy.status === 'paused' ? 'warning.main' : 'error.main',
+                                                            width: 40,
+                                                            height: 40
+                                                        }, children: (0, jsx_runtime_1.jsx)(icons_material_1.Timeline, {}) }) }), (0, jsx_runtime_1.jsx)(material_1.ListItemText, { primary: (0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body1", fontWeight: "bold", children: strategy.name }), (0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { display: 'flex', alignItems: 'center', gap: 2 }, children: [(0, jsx_runtime_1.jsx)(material_1.Chip, { size: "small", label: strategy.status.toUpperCase(), color: strategy.status === 'active' ? 'success' : 'warning', variant: "outlined" }), (0, jsx_runtime_1.jsxs)(material_1.Typography, { variant: "h6", color: strategy.performance >= 0 ? 'success.main' : 'error.main', children: [strategy.performance > 0 ? '+' : '', strategy.performance?.toFixed(1) || '0.0', "%"] })] })] }), secondary: `${strategy.totalTrades || 0} trades executed • ${strategy.status}` })] }, strategy.id))) : ((0, jsx_runtime_1.jsx)(material_1.ListItem, { children: (0, jsx_runtime_1.jsx)(material_1.ListItemText, { primary: "No strategies loaded", secondary: "Connect to trading bot to see active strategies" }) })) })] }) }) })] })] }));
+};
+exports.default = Dashboard;

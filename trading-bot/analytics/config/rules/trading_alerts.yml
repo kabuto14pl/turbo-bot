@@ -1,0 +1,123 @@
+groups:
+  - name: trading_bot_alerts
+    rules:
+      # Critical Drawdown Alert (5% threshold as requested)
+      - alert: CriticalDrawdown
+        expr: strategy_max_drawdown > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          category: risk
+          component: portfolio
+        annotations:
+          summary: "Critical Portfolio Drawdown Detected"
+          description: "Portfolio drawdown has exceeded 5%: {{ $value | humanizePercentage }}"
+          runbook_url: "https://trading-bot-docs/alerts/drawdown"
+
+      # High Drawdown Warning (3% threshold)
+      - alert: HighDrawdown
+        expr: strategy_max_drawdown > 0.03
+        for: 2m
+        labels:
+          severity: warning
+          category: risk
+          component: portfolio
+        annotations:
+          summary: "High Portfolio Drawdown Warning"
+          description: "Portfolio drawdown approaching critical level: {{ $value | humanizePercentage }}"
+
+      # Trading Bot System Down
+      - alert: TradingBotDown
+        expr: up{job="trading-bot"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          category: system
+          component: trading-bot
+        annotations:
+          summary: "Trading Bot System is Down"
+          description: "Trading bot has been down for more than 30 seconds"
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(system_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          category: system
+          component: trading-bot
+        annotations:
+          summary: "High Error Rate Detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      # Low Win Rate
+      - alert: LowWinRate
+        expr: strategy_win_rate < 0.3
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+          component: strategy
+        annotations:
+          summary: "Low Strategy Win Rate"
+          description: "Strategy win rate dropped below 30%: {{ $value | humanizePercentage }}"
+
+      # High Portfolio Risk
+      - alert: HighPortfolioRisk
+        expr: portfolio_risk_score > 0.8
+        for: 3m
+        labels:
+          severity: warning
+          category: risk
+          component: portfolio
+        annotations:
+          summary: "High Portfolio Risk Score"
+          description: "Portfolio risk score is elevated: {{ $value }}"
+
+      # Market Data Latency
+      - alert: HighMarketDataLatency
+        expr: market_data_latency_seconds > 5
+        for: 1m
+        labels:
+          severity: warning
+          category: performance
+          component: market-data
+        annotations:
+          summary: "High Market Data Latency"
+          description: "Market data latency is {{ $value }}s"
+
+      # Memory Usage Alert
+      - alert: HighMemoryUsage
+        expr: system_memory_usage_bytes / (1024*1024*1024) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+          component: system
+        annotations:
+          summary: "High Memory Usage"
+          description: "Memory usage is {{ $value | humanize }}GB"
+
+      # Strategy Performance Degradation
+      - alert: StrategyPerformanceDegradation
+        expr: strategy_sharpe_ratio < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+          component: strategy
+        annotations:
+          summary: "Strategy Performance Degradation"
+          description: "Sharpe ratio dropped below 0.5: {{ $value }}"
+
+      # Emergency Stop Required
+      - alert: EmergencyStopRequired
+        expr: strategy_max_drawdown > 0.1 or portfolio_risk_score > 0.95
+        for: 30s
+        labels:
+          severity: emergency
+          category: risk
+          component: emergency
+        annotations:
+          summary: "EMERGENCY: Immediate Action Required"
+          description: "Critical risk levels detected - emergency stop may be required"

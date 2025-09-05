@@ -1,0 +1,8 @@
+# Ultra minimal Docker ignore - keep only essential files
+*
+!package.json
+!tsconfig.json
+!config.yaml
+!autonomous_trading_bot.ts
+!main.ts
+!backtest_data.ts

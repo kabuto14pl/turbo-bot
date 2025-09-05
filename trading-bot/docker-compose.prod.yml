@@ -1,0 +1,476 @@
+version: '3.8'
+
+# 🚀 ENTERPRISE PRODUCTION TRADING BOT - COMPLETE STACK
+# Production-ready deployment with auto-scaling, monitoring, and high availability
+
+networks:
+  trading-network:
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+  duckdb_data:
+    driver: local
+  redis_data:
+    driver: local
+  kafka_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+
+services:
+  # ============================================================================
+  # CORE TRADING BOT SERVICES (Load Balanced)
+  # ============================================================================
+  
+  # Primary Trading Bot Instance
+  trading-bot-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.production.fixed
+    container_name: trading-bot-primary
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - BOT_MODE=${BOT_MODE:-demo}
+      - INSTANCE_ID=primary
+      - INITIAL_CAPITAL=10000
+      - TRADING_INTERVAL=30000
+      - KAFKA_ENABLED=true
+      - KAFKA_BROKERS=kafka:9092
+      - MAX_DRAWDOWN=0.15
+      - MAX_DAILY_DRAWDOWN=0.05
+      - AUTO_HEDGING=true
+      - EXECUTION_ENGINE=${EXECUTION_ENGINE:-simulated}
+      - PROMETHEUS_PORT=9091
+      - HEALTH_CHECK_PORT=3001
+      - REDIS_URL=redis://redis:6379
+      - DUCKDB_PATH=/app/data/trading_data_primary.duckdb
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - duckdb_data:/app/data
+    depends_on:
+      - kafka
+      - redis
+      - prometheus
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    ports:
+      - "3001:3001"
+      - "9091:9091"
+
+  # Secondary Trading Bot Instance (Backup/Load Distribution)
+  trading-bot-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.production.fixed
+    container_name: trading-bot-secondary
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - BOT_MODE=${BOT_MODE:-demo}
+      - INSTANCE_ID=secondary
+      - INITIAL_CAPITAL=10000
+      - TRADING_INTERVAL=30000
+      - KAFKA_ENABLED=true
+      - KAFKA_BROKERS=kafka:9092
+      - MAX_DRAWDOWN=0.15
+      - MAX_DAILY_DRAWDOWN=0.05
+      - AUTO_HEDGING=true
+      - EXECUTION_ENGINE=${EXECUTION_ENGINE:-simulated}
+      - PROMETHEUS_PORT=9092
+      - HEALTH_CHECK_PORT=3002
+      - REDIS_URL=redis://redis:6379
+      - DUCKDB_PATH=/app/data/trading_data_secondary.duckdb
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - duckdb_data:/app/data
+    depends_on:
+      - kafka
+      - redis
+      - prometheus
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    ports:
+      - "3002:3002"
+      - "9092:9092"
+
+  # Tertiary Trading Bot Instance (High Availability)
+  trading-bot-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.production.fixed
+    container_name: trading-bot-tertiary
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - BOT_MODE=${BOT_MODE:-demo}
+      - INSTANCE_ID=tertiary
+      - INITIAL_CAPITAL=10000
+      - TRADING_INTERVAL=30000
+      - KAFKA_ENABLED=true
+      - KAFKA_BROKERS=kafka:9092
+      - MAX_DRAWDOWN=0.15
+      - MAX_DAILY_DRAWDOWN=0.05
+      - AUTO_HEDGING=true
+      - EXECUTION_ENGINE=${EXECUTION_ENGINE:-simulated}
+      - PROMETHEUS_PORT=9094
+      - HEALTH_CHECK_PORT=3003
+      - REDIS_URL=redis://redis:6379
+      - DUCKDB_PATH=/app/data/trading_data_tertiary.duckdb
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - duckdb_data:/app/data
+    depends_on:
+      - kafka
+      - redis
+      - prometheus
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    ports:
+      - "3003:3003"
+      - "9094:9093"
+
+  # ============================================================================
+  # LOAD BALANCER (NGINX)
+  # ============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: trading-bot-loadbalancer
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - trading-bot-1
+      - trading-bot-2
+      - trading-bot-3
+    networks:
+      - trading-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # DATA STREAMING INFRASTRUCTURE
+  # ============================================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_LOG4J_ROOT_LOGLEVEL: WARN
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - trading-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  # ============================================================================
+  # CACHING AND SESSION STORAGE
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - trading-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # ============================================================================
+  # MONITORING STACK
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/config.yml:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+
+  # ============================================================================
+  # LOG AGGREGATION
+  # ============================================================================
+  elasticsearch:
+    image: elasticsearch:8.14.0
+    container_name: elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+    volumes:
+      - ./logs/elasticsearch:/usr/share/elasticsearch/data
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  # ELK Stack - Kibana (Visualization)
+  kibana:
+    image: kibana:8.14.0
+    container_name: trading-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # ============================================================================
+  # BACKUP AND RECOVERY
+  # ============================================================================
+  backup-service:
+    image: alpine:latest
+    container_name: backup-service
+    restart: unless-stopped
+    command: >
+      sh -c "
+        while true; do
+          echo 'Starting backup...'
+          tar -czf /backup/trading-data-$(date +%Y%m%d-%H%M%S).tar.gz /app/data /app/logs /app/models
+          find /backup -name '*.tar.gz' -mtime +7 -delete
+          echo 'Backup completed'
+          sleep 21600
+        done
+      "
+    volumes:
+      - ./data:/app/data:ro
+      - ./logs:/app/logs:ro
+      - ./models:/app/models:ro
+      - ./backups:/backup
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
+
+  # ============================================================================
+  # HEALTH MONITORING AND AUTO-SCALING CONTROLLER
+  # ============================================================================
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_INCLUDE_STOPPED=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
+
+# ============================================================================
+# DEPLOYMENT CONFIGURATION
+# ============================================================================
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+# Apply logging to all services
+x-common-config: &common-config
+  logging: *default-logging
+  security_opt:
+    - no-new-privileges:true
+  read_only: false
+  tmpfs:
+    - /tmp:noexec,nosuid,size=100m

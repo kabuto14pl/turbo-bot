@@ -1,0 +1,355 @@
+#!/usr/bin/env ts-node
+"use strict";
+/**
+ * 🔒 SECURE CONFIGURATION MANAGER
+ * Production-ready secrets management and environment configuration
+ * Replaces hardcoded values with secure, encrypted configuration
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.secureConfig = exports.ComplianceError = exports.SecurityError = exports.ConfigurationError = exports.SecureConfigManager = void 0;
+const crypto = __importStar(require("crypto"));
+// ============================================================================
+// SECURE CONFIGURATION MANAGER
+// ============================================================================
+class SecureConfigManager {
+    constructor() {
+        this.config = null;
+        this.encryptionKey = null;
+    }
+    static getInstance() {
+        if (!SecureConfigManager.instance) {
+            SecureConfigManager.instance = new SecureConfigManager();
+        }
+        return SecureConfigManager.instance;
+    }
+    /**
+     * Initialize secure configuration with environment validation
+     */
+    async initialize() {
+        try {
+            this.validateEnvironmentVariables();
+            await this.initializeEncryption();
+            this.config = await this.loadConfiguration();
+            console.log(`🔒 Secure configuration loaded for environment: ${this.config.environment}`);
+            if (this.config.environment === 'production') {
+                await this.validateProductionRequirements();
+            }
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new SecurityError(`Failed to initialize secure configuration: ${errorMessage}`);
+        }
+    }
+    /**
+     * Validate all required environment variables
+     */
+    validateEnvironmentVariables() {
+        const required = {
+            // Core environment
+            NODE_ENV: 'Environment mode (development/staging/production)',
+            // Database
+            DATABASE_URL: 'Database connection string',
+            // Security
+            ENCRYPTION_KEY: 'Encryption key for sensitive data',
+            GDPR_COMPLIANCE_MODE: 'GDPR compliance level',
+            DATA_RETENTION_DAYS: 'Data retention period in days',
+            // Trading (only for production/staging)
+            ...(process.env.NODE_ENV !== 'development' && {
+                BINANCE_API_KEY: 'Binance API key',
+                BINANCE_SECRET: 'Binance API secret'
+            }),
+            // Production-only requirements
+            ...(process.env.NODE_ENV === 'production' && {
+                VAULT_ENDPOINT: 'HashiCorp Vault endpoint',
+                PROMETHEUS_ENDPOINT: 'Prometheus monitoring endpoint',
+                LOG_ENCRYPTION_ENABLED: 'Log encryption flag'
+            })
+        };
+        const missing = [];
+        const invalid = [];
+        Object.entries(required).forEach(([envVar, description]) => {
+            const value = process.env[envVar];
+            if (!value) {
+                missing.push(`${envVar} (${description})`);
+                return;
+            }
+            // Validate specific formats
+            switch (envVar) {
+                case 'NODE_ENV':
+                    if (!['development', 'staging', 'production'].includes(value)) {
+                        invalid.push(`${envVar}: must be development, staging, or production`);
+                    }
+                    break;
+                case 'GDPR_COMPLIANCE_MODE':
+                    if (!['strict', 'standard', 'development'].includes(value)) {
+                        invalid.push(`${envVar}: must be strict, standard, or development`);
+                    }
+                    break;
+                case 'DATA_RETENTION_DAYS':
+                    const days = parseInt(value);
+                    if (isNaN(days) || days < 1 || days > 2555) { // 7 years max
+                        invalid.push(`${envVar}: must be a number between 1 and 2555`);
+                    }
+                    break;
+                case 'DATABASE_URL':
+                    if (!value.match(/^(postgres|mysql|sqlite):\/\/.+/)) {
+                        invalid.push(`${envVar}: invalid database URL format`);
+                    }
+                    break;
+            }
+        });
+        if (missing.length > 0) {
+            throw new ConfigurationError(`Missing required environment variables:\n${missing.map(v => `  - ${v}`).join('\n')}`);
+        }
+        if (invalid.length > 0) {
+            throw new ConfigurationError(`Invalid environment variable values:\n${invalid.map(v => `  - ${v}`).join('\n')}`);
+        }
+    }
+    /**
+     * Initialize encryption for sensitive data
+     */
+    async initializeEncryption() {
+        const encryptionKey = process.env.ENCRYPTION_KEY;
+        if (encryptionKey.length < 32) {
+            throw new SecurityError('ENCRYPTION_KEY must be at least 32 characters long');
+        }
+        this.encryptionKey = crypto.scryptSync(encryptionKey, 'salt', 32);
+    }
+    /**
+     * Load and validate configuration
+     */
+    async loadConfiguration() {
+        const environment = process.env.NODE_ENV;
+        return {
+            environment,
+            trading: await this.loadTradingCredentials(),
+            database: {
+                url: process.env.DATABASE_URL,
+                ssl: environment === 'production',
+                poolSize: parseInt(process.env.DB_POOL_SIZE) || 10,
+                timeout: parseInt(process.env.DB_TIMEOUT) || 30000
+            },
+            security: {
+                encryptionKey: process.env.ENCRYPTION_KEY,
+                vaultEndpoint: process.env.VAULT_ENDPOINT,
+                gdprComplianceMode: process.env.GDPR_COMPLIANCE_MODE,
+                dataRetentionDays: parseInt(process.env.DATA_RETENTION_DAYS),
+                logEncryption: environment === 'production' || process.env.LOG_ENCRYPTION_ENABLED === 'true'
+            },
+            monitoring: {
+                prometheusEndpoint: process.env.PROMETHEUS_ENDPOINT,
+                grafanaEndpoint: process.env.GRAFANA_ENDPOINT,
+                alertmanagerEndpoint: process.env.ALERTMANAGER_ENDPOINT
+            },
+            limits: {
+                maxCapital: parseInt(process.env.MAX_CAPITAL) || 100000,
+                maxDrawdown: parseFloat(process.env.MAX_DRAWDOWN) || 0.15,
+                maxConcurrentOrders: parseInt(process.env.MAX_CONCURRENT_ORDERS) || 10,
+                apiRateLimit: parseInt(process.env.API_RATE_LIMIT) || 1000
+            }
+        };
+    }
+    /**
+     * Load trading credentials securely
+     */
+    async loadTradingCredentials() {
+        const environment = process.env.NODE_ENV;
+        // Development mode - use mock credentials
+        if (environment === 'development') {
+            return {
+                binanceApiKey: 'dev_mock_api_key',
+                binanceSecret: 'dev_mock_secret'
+            };
+        }
+        // Production/Staging - load from vault or environment
+        if (process.env.VAULT_ENDPOINT) {
+            return await this.loadCredentialsFromVault();
+        }
+        // Fallback to environment variables (less secure)
+        return {
+            binanceApiKey: process.env.BINANCE_API_KEY,
+            binanceSecret: process.env.BINANCE_SECRET,
+            coinbaseApiKey: process.env.COINBASE_API_KEY,
+            coinbaseSecret: process.env.COINBASE_SECRET,
+            coinbasePassphrase: process.env.COINBASE_PASSPHRASE
+        };
+    }
+    /**
+     * Load credentials from HashiCorp Vault (production)
+     */
+    async loadCredentialsFromVault() {
+        // TODO: Implement actual Vault integration
+        // For now, fallback to environment variables
+        console.warn('🚧 Vault integration not yet implemented, using environment variables');
+        return {
+            binanceApiKey: process.env.BINANCE_API_KEY,
+            binanceSecret: process.env.BINANCE_SECRET,
+            coinbaseApiKey: process.env.COINBASE_API_KEY,
+            coinbaseSecret: process.env.COINBASE_SECRET,
+            coinbasePassphrase: process.env.COINBASE_PASSPHRASE
+        };
+    }
+    /**
+     * Validate production-specific requirements
+     */
+    async validateProductionRequirements() {
+        const config = this.config;
+        // Security validations
+        if (config.security.gdprComplianceMode !== 'strict') {
+            throw new ComplianceError('Production environment requires GDPR compliance mode: strict');
+        }
+        if (!config.security.logEncryption) {
+            throw new SecurityError('Production environment requires log encryption');
+        }
+        if (config.limits.maxCapital > 1000000) {
+            console.warn('⚠️  High capital limit in production - ensure proper risk management');
+        }
+        // Monitoring validations
+        if (!config.monitoring.prometheusEndpoint) {
+            console.warn('⚠️  No Prometheus endpoint configured for production monitoring');
+        }
+    }
+    /**
+     * Get current configuration
+     */
+    getConfig() {
+        if (!this.config) {
+            throw new ConfigurationError('Configuration not initialized. Call initialize() first.');
+        }
+        return this.config;
+    }
+    /**
+     * Encrypt sensitive data
+     */
+    encryptSensitiveData(data) {
+        if (!this.encryptionKey) {
+            throw new SecurityError('Encryption not initialized');
+        }
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv('aes-256-gcm', this.encryptionKey, iv);
+        let encrypted = cipher.update(data, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        const authTag = cipher.getAuthTag();
+        return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+    }
+    /**
+     * Decrypt sensitive data
+     */
+    decryptSensitiveData(encryptedData) {
+        if (!this.encryptionKey) {
+            throw new SecurityError('Encryption not initialized');
+        }
+        const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
+        const iv = Buffer.from(ivHex, 'hex');
+        const authTag = Buffer.from(authTagHex, 'hex');
+        const decipher = crypto.createDecipheriv('aes-256-gcm', this.encryptionKey, iv);
+        decipher.setAuthTag(authTag);
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        return decrypted;
+    }
+    /**
+     * Check if running in production
+     */
+    isProduction() {
+        return this.getConfig().environment === 'production';
+    }
+    /**
+     * Check if running in development
+     */
+    isDevelopment() {
+        return this.getConfig().environment === 'development';
+    }
+    /**
+     * Get safe configuration for logging (without secrets)
+     */
+    getSafeConfigForLogging() {
+        const config = this.getConfig();
+        return {
+            environment: config.environment,
+            database: {
+                ...config.database,
+                url: this.maskConnectionString(config.database.url)
+            },
+            security: {
+                ...config.security,
+                encryptionKey: '[REDACTED]',
+                vaultEndpoint: config.security.vaultEndpoint ? '[CONFIGURED]' : '[NOT_CONFIGURED]'
+            },
+            trading: {
+                binanceApiKey: config.trading.binanceApiKey ? '[CONFIGURED]' : '[NOT_CONFIGURED]',
+                binanceSecret: '[REDACTED]',
+                coinbaseApiKey: config.trading.coinbaseApiKey ? '[CONFIGURED]' : '[NOT_CONFIGURED]'
+            },
+            limits: config.limits
+        };
+    }
+    /**
+     * Mask connection strings for logging
+     */
+    maskConnectionString(url) {
+        return url.replace(/:\/\/([^:]+):([^@]+)@/, '://***:***@');
+    }
+}
+exports.SecureConfigManager = SecureConfigManager;
+// ============================================================================
+// CUSTOM ERROR CLASSES
+// ============================================================================
+class ConfigurationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'ConfigurationError';
+    }
+}
+exports.ConfigurationError = ConfigurationError;
+class SecurityError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'SecurityError';
+    }
+}
+exports.SecurityError = SecurityError;
+class ComplianceError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'ComplianceError';
+    }
+}
+exports.ComplianceError = ComplianceError;
+// ============================================================================
+// SINGLETON EXPORT
+// ============================================================================
+exports.secureConfig = SecureConfigManager.getInstance();

@@ -1,0 +1,81 @@
+[2025-08-13T19:07:12.611Z] 🚀 Starting Migration Manager V2...
+[2025-08-13T19:07:12.621Z] ================================================================================
+[2025-08-13T19:07:12.640Z] 🔄 Starting: Verify Backup Exists
+[2025-08-13T19:07:12.657Z] ✅ Backup found: /mnt/c/Users/katbo/Desktop/Turbo Bot Deva/trading-bot-backup-20250813-2001
+[2025-08-13T19:07:12.675Z] ✅ Backup found: /mnt/c/Users/katbo/Desktop/Turbo Bot Deva/trading-bot-backup-20250813-2001
+[2025-08-13T19:07:12.693Z] ✅ Completed: Verify Backup Exists
+[2025-08-13T19:07:12.710Z] 🔄 Starting: Verify Core TypeScript Components
+[2025-08-13T19:07:22.903Z] ✅ Core components compile successfully
+[2025-08-13T19:07:32.697Z] ✅ Core components compile successfully
+[2025-08-13T19:07:32.699Z] ✅ Completed: Verify Core TypeScript Components
+[2025-08-13T19:07:32.717Z] 🔄 Starting: Replace test_optuna_optimizer.ts
+[2025-08-13T19:07:32.745Z] ✅ Renamed test_optuna_optimizer.ts to legacy version
+[2025-08-13T19:07:32.763Z] ✅ Created backward compatibility bridge for test_optuna_optimizer.ts
+[2025-08-13T19:07:32.802Z] ✅ Completed: Replace test_optuna_optimizer.ts
+[2025-08-13T19:07:32.805Z] 🔄 Starting: Remove Python Dependencies from package.json
+[2025-08-13T19:07:32.831Z] ✅ Removed 1 Python dependencies from package.json
+[2025-08-13T19:07:32.860Z] ✅ Completed: Remove Python Dependencies from package.json
+[2025-08-13T19:07:32.867Z] 🔄 Starting: Archive Python Tools
+[2025-08-13T19:07:32.896Z] ✅ Moved tools/python/ to tools/python_archive/
+[2025-08-13T19:07:32.911Z] ✅ Completed: Archive Python Tools
+[2025-08-13T19:07:32.925Z] 🔄 Starting: Update TypeScript Scripts
+[2025-08-13T19:07:32.956Z] ✅ Updated references in tools/optimize_all_strategies.ts
+[2025-08-13T19:07:32.978Z] ✅ Updated references in tools/optimize_all_strategies_with_ray.ts
+[2025-08-13T19:07:33.009Z] ✅ Updated references in tools/optimize_all_strategies_new.ts
+[2025-08-13T19:07:33.016Z] ✅ Updated 3 script files
+[2025-08-13T19:07:33.042Z] ✅ Completed: Update TypeScript Scripts
+[2025-08-13T19:07:33.061Z] 🔄 Starting: Clean and Reinstall Dependencies
+[2025-08-13T19:08:05.792Z] ✅ Removed node_modules
+[2025-08-13T19:08:05.796Z] ✅ Removed package-lock.json
+[2025-08-13T19:08:05.833Z] 🔄 Reinstalling dependencies...
+[2025-08-13T19:08:12.140Z] ❌ Clean and reinstall failed: Error: Command failed: npm install
+npm error code ERESOLVE
+npm error ERESOLVE unable to resolve dependency tree
+npm error
+npm error While resolving: trading-bot@1.0.0
+npm error Found: typescript@5.9.2
+npm error node_modules/typescript
+npm error   dev typescript@"^5.8.3" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer typescript@">=3.8 <5.0" from ts-jest@27.1.5
+npm error node_modules/ts-jest
+npm error   dev ts-jest@"^27.1.5" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/katbo/.npm/_logs/2025-08-13T19_08_06_063Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/katbo/.npm/_logs/2025-08-13T19_08_06_063Z-debug-0.log
+
+[2025-08-13T19:08:12.143Z] ❌ Action failed: Clean and Reinstall Dependencies
+[2025-08-13T19:08:12.168Z] 🔄 Starting: Run Final Migration Tests
+[2025-08-13T19:08:12.190Z] 🧪 Running final migration tests...
+[2025-08-13T19:08:24.653Z] ❌ TypeScript compilation failed: Error: Command failed: npx tsc --noEmit
+[2025-08-13T19:08:24.655Z] ❌ Action failed: Run Final Migration Tests
+[2025-08-13T19:08:24.674Z] ❌ Critical step failed: Run Final Migration Tests
+[2025-08-13T19:08:24.693Z] 🛑 Migration stopped due to critical failure
+[2025-08-13T19:08:35.920Z] ✅ Core components compile successfully
+[2025-08-13T19:08:35.939Z] 📄 Detailed report saved: /mnt/c/Users/katbo/Desktop/Turbo Bot Deva/trading-bot/migration_report.json
+[2025-08-13T19:08:35.947Z] ================================================================================
+[2025-08-13T19:08:35.968Z] 📊 MIGRATION SUMMARY:
+[2025-08-13T19:08:35.994Z] ✅ Completed: 6/8
+[2025-08-13T19:08:36.018Z] ❌ Failed: 2
+[2025-08-13T19:08:36.040Z] ⏭️  Skipped: 0
+[2025-08-13T19:08:36.064Z] 🐍 Python Dependencies Removed: Yes
+[2025-08-13T19:08:36.087Z] 🔧 Core Components Working: Yes
+[2025-08-13T19:08:36.109Z] 🎯 Migration Complete: No
+[2025-08-13T19:08:36.135Z] 
+💡 RECOMMENDATIONS:
+[2025-08-13T19:08:36.156Z]    ⚠️  Some migration steps failed. Review the log for details.
+[2025-08-13T19:08:36.177Z]       - Retry: Clean and Reinstall Dependencies
+[2025-08-13T19:08:36.203Z]       - Retry: Run Final Migration Tests
+[2025-08-13T19:08:36.225Z]    ✅ Core optimization components are working correctly.
+[2025-08-13T19:08:36.246Z] 
+🚀 NEXT STEPS:
+[2025-08-13T19:08:36.269Z]    🔧 Fix failed migration steps
+[2025-08-13T19:08:36.296Z]    📋 Review migration log for specific issues
+[2025-08-13T19:08:36.320Z]    🔄 Re-run migration with --force flag if needed

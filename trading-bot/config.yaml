@@ -1,0 +1,18 @@
+capital:
+  initial: 10000
+  maxRiskPerTrade: 0.02
+
+strategy:
+  RSITurbo:
+    rsiPeriod: 14
+    rsiThresholds:
+      low: 30
+      high: 70
+  SuperTrend:
+    atrPeriod: 10
+    multiplier: 3
+
+riskManagement:
+  maxDrawdown: 0.15
+  cooldownBars: 5
+  pyramidingLimit: 2

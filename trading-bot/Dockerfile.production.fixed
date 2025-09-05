@@ -1,0 +1,55 @@
+# PRODUCTION DOCKERFILE - Node.js standard image for TensorFlow.js compatibility
+FROM node:18
+
+# Install production dependencies and create user
+RUN apt-get update && apt-get install -y \
+    dumb-init \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -g 1001 tradingbot \
+    && useradd -r -u 1001 -g tradingbot tradingbot
+
+# Set working directory
+WORKDIR /app
+RUN chown -R tradingbot:tradingbot /app
+
+# Copy package files
+COPY package*.json tsconfig.json ./
+
+# Configure npm for stability and speed
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set registry https://registry.npmjs.org/
+
+# Install all dependencies with optimized flags for FINALNA WERSJA PRODUKCYJNA
+RUN npm install --legacy-peer-deps --no-audit --no-fund --maxsockets 1 || \
+    npm install --legacy-peer-deps --no-audit --no-fund --maxsockets 1 && \
+    npm cache clean --force
+
+# Copy application files
+COPY . .
+
+# Create required directories and compile TypeScript BEFORE switching user
+RUN mkdir -p logs models backups data && \
+    npm run build || echo "Build failed, continuing with ts-node" && \
+    chown -R tradingbot:tradingbot /app
+
+# Switch to non-root user
+USER tradingbot
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Expose ports
+EXPOSE 3001 9091
+
+# Set environment
+ENV NODE_ENV=production
+ENV BOT_MODE=demo
+ENV HEALTH_CHECK_PORT=3001
+ENV PROMETHEUS_PORT=9091
+
+# Start FINALNA WERSJA autonomous trading bot
+CMD ["dumb-init", "npx", "ts-node", "--transpile-only", "autonomous_trading_bot.ts"]

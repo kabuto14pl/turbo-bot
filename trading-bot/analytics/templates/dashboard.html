@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trading Bot Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .chart { margin-bottom: 40px; }
+  </style>
+</head>
+<body>
+  <h1>Trading Bot Analytics Dashboard</h1>
+  <div class="chart">
+    <h2>Equity Curve</h2>
+    <iframe src="../outputs/equity_curve.html" width="800" height="400"></iframe>
+  </div>
+  <!-- Dodaj kolejne sekcje: histogram, statystyki, itp. -->
+  <div class="chart">
+    <h2>Statystyki</h2>
+    <pre id="stats"></pre>
+  </div>
+  <script>
+    fetch('../outputs/stats.json')
+      .then(r => r.json())
+      .then(stats => {
+        document.getElementById('stats').textContent = JSON.stringify(stats, null, 2);
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+import React from 'react';
+
+interface ResponsiveGridProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({ children, className = '' }) => {
+  return (
+    <div className={`
+      grid gap-4
+      grid-cols-1 
+      sm:grid-cols-2 
+      lg:grid-cols-3 
+      xl:grid-cols-4
+      2xl:grid-cols-5
+      ${className}
+    `}>
+      {children}
+    </div>
+  );
+};
+
+interface ResponsiveWidgetProps {
+  children: React.ReactNode;
+  colSpan?: 1 | 2 | 3 | 4;
+  className?: string;
+}
+
+export const ResponsiveWidget: React.FC<ResponsiveWidgetProps> = ({ 
+  children, 
+  colSpan = 1,
+  className = ''
+}) => {
+  const colSpanClasses = {
+    1: 'col-span-1',
+    2: 'col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-2',
+    3: 'col-span-1 sm:col-span-2 lg:col-span-3',
+    4: 'col-span-full lg:col-span-3 xl:col-span-4'
+  };
+
+  return (
+    <div className={`
+      bg-white dark:bg-trading-surface 
+      rounded-xl shadow-md hover:shadow-lg
+      p-4 sm:p-6
+      border border-gray-200 dark:border-gray-700
+      transition-all duration-200
+      ${colSpanClasses[colSpan]}
+      ${className}
+    `}>
+      {children}
+    </div>
+  );
+};
+
+export default { ResponsiveGrid, ResponsiveWidget };

@@ -1,0 +1,24 @@
+# FINALNA WERSJA PRODUKCYJNA - Docker ignore
+# Ignore build artifacts and temp files but KEEP all source code
+node_modules
+dist
+build
+*.log
+.git
+.env.local
+.env.development
+.env.test
+README.md
+.github
+docs
+__tests__
+*.test.ts
+*.test.js
+.vscode
+.DS_Store
+Thumbs.db
+backtests/
+trading_data.duckdb*
+production_analytics.duckdb*
+.coverage
+coverage/

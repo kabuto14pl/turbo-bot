@@ -1,0 +1,167 @@
+@startuml DataFlowDiagram
+
+!define PRIMARY_COLOR #2E86AB
+!define SECONDARY_COLOR #A23B72
+!define SUCCESS_COLOR #F18F01
+!define WARNING_COLOR #C73E1D
+
+skinparam activity {
+    BackgroundColor PRIMARY_COLOR
+    FontColor white
+    BorderColor black
+}
+
+skinparam note {
+    BackgroundColor #FFFACD
+    BorderColor #D4AC0D
+}
+
+title **Real-time Trading Data Flow - Sub-10ms Latency**
+
+|#LightBlue|Market Data Sources|
+start
+:📡 **Binance WebSocket**
+Otrzymuje tick-by-tick data;
+note right
+• BTC/USDT, ETH/USDT streams
+• Kline data (1m, 5m, 15m)
+• Order book depth
+• Trade executions
+end note
+
+:🔄 **Data Normalization**
+Standaryzuje formaty;
+
+|#LightGreen|Kafka Streaming|
+:📨 **Kafka Producer**
+Publikuje na topics;
+note right
+• market-data-raw
+• market-data-processed  
+• trade-signals
+• risk-alerts
+end note
+
+fork
+  :📊 **Analytics Topic**
+  Dla długoterminowych analiz;
+fork again
+  :⚡ **Real-time Topic** 
+  Dla natychmiastowych sygnałów;
+end fork
+
+|#LightYellow|Strategy Processing|
+:🧠 **Strategy Engine**
+Parallel processing;
+
+fork
+  :📈 **Pairs Trading**
+  Correlation analysis;
+  note right
+  • Cointegration test
+  • Z-score calculation  
+  • Hedge ratio optimization
+  end note
+fork again
+  :🎯 **RSI Turbo**
+  Momentum signals;
+  note right
+  • Ultra-optimized RSI (66/29)
+  • Volume confirmation
+  • Trend filtering
+  end note
+fork again
+  :📐 **Grid Trading**
+  Grid level management;
+  note right
+  • Dynamic grid sizing
+  • Support/resistance zones
+  • Auto-rebalancing
+  end note
+end fork
+
+:🛡️ **Risk Validation**
+Real-time risk checks;
+
+if (Risk Check Passed?) then (✅ YES)
+  :📊 **Position Calculation**
+  Kelly optimal sizing;
+else (❌ NO)
+  :🚫 **Signal Rejection**
+  Log risk violation;
+  stop
+endif
+
+|#LightCoral|ML Enhancement|
+:🤖 **TensorFlow Engine**
+ML predictions;
+
+fork
+  :📈 **Price Prediction**
+  LSTM neural network;
+fork again
+  :🎯 **Signal Classification**
+  CNN pattern recognition;
+fork again
+  :⚠️ **Risk Assessment**
+  Transformer risk model;
+end fork
+
+:📊 **Ensemble Decision**
+Combine ML + traditional;
+
+|#LightPink|Data Persistence|
+fork
+  :💾 **DuckDB Storage**
+  High-performance analytics;
+  note right
+  • Compressed columnar storage
+  • Real-time aggregations
+  • Sub-second queries
+  end note
+fork again
+  :📝 **GDPR Logging**
+  Compliance audit trail;
+  note right
+  • Encrypted personal data
+  • Automated retention cleanup
+  • Anonymization for analytics
+  end note
+end fork
+
+|#Orange|Trade Execution|
+:⚡ **Order Management**
+Sub-10ms execution;
+
+if (Order Type?) then (Market)
+  :🚀 **Immediate Execution**
+  Market order;
+else (Limit)
+  :⏰ **Limit Order Queue**
+  Price monitoring;
+endif
+
+:📊 **Execution Confirmation**
+Update portfolio state;
+
+:📈 **Performance Tracking**
+Real-time P&L;
+
+stop
+
+note bottom
+**Key Performance Metrics:**
+• Market data latency: under 5ms
+• Strategy processing: under 3ms  
+• Risk validation: under 1ms
+• Order execution: under 2ms
+• **Total system latency: under 10ms**
+
+**Compliance Features:**
+• GDPR data protection
+• MiFID II trade reporting
+• Real-time audit logging
+• Encrypted data transmission
+end note
+
+@enduml

@@ -1,0 +1,114 @@
+# Logs
+logs/
+*.log
+*.log.*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# dotenv environment variables file
+.env
+.env.test
+.env.production
+.env.local
+
+# Build output
+dist/
+build/
+
+# Temporary folders
+tmp/
+temp/
+
+# Trading specific
+trading_data.duckdb*
+*.duckdb*
+backtests/
+results/
+data/*.csv
+data/*.json
+backups/
+
+# Machine Learning
+ml_models/
+*.pkl
+*.joblib
+*.h5
+*.pb
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Monitoring
+grafana/data/
+prometheus/data/
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+
+# Secrets
+secrets/
+config/production/
+
+# Large binary files and executables
+*.bin
+*.so.*
+minikube-*
+*.exe
+*.dll
+
+# Backups with large files
+SAFETY_BACKUP_*/
+CRITICAL_BACKUP_*/
+
+# TensorFlow large files - exclude large binaries
+*tensorflow*.so.*
+*.so.2.*
+
+# Ray tune results
+ray_results/

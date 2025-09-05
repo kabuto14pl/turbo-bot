@@ -1,0 +1,145 @@
+# Trading Bot Alert Rules
+groups:
+  - name: trading-bot-alerts
+    rules:
+      # Bot Process Health
+      - alert: TradingBotDown
+        expr: up{job="trading-bot"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading Bot is down"
+          description: "Trading Bot has been down for more than 1 minute"
+          
+      # High CPU Usage
+      - alert: TradingBotHighCPU
+        expr: bot_cpu_usage > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trading Bot high CPU usage"
+          description: "Trading Bot CPU usage is above 80% for 5 minutes"
+          
+      # High Memory Usage
+      - alert: TradingBotHighMemory
+        expr: bot_memory_usage > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trading Bot high memory usage"
+          description: "Trading Bot memory usage is above 85% for 5 minutes"
+          
+      # Drawdown Alert (5% threshold as specified)
+      - alert: TradingBotHighDrawdown
+        expr: bot_drawdown > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading Bot high drawdown detected"
+          description: "Trading Bot drawdown is above 5% threshold: {{ $value | humanizePercentage }}"
+          
+      # Daily Drawdown Alert
+      - alert: TradingBotHighDailyDrawdown
+        expr: bot_daily_drawdown > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading Bot high daily drawdown"
+          description: "Trading Bot daily drawdown exceeded 5%: {{ $value | humanizePercentage }}"
+          
+      # Portfolio Value Drop
+      - alert: TradingBotPortfolioValueDrop
+        expr: rate(bot_portfolio_value[5m]) < -0.02
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trading Bot portfolio value dropping rapidly"
+          description: "Portfolio value dropping at rate of {{ $value | humanizePercentage }}/5min"
+          
+      # Error Rate
+      - alert: TradingBotHighErrorRate
+        expr: rate(bot_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trading Bot high error rate"
+          description: "Error rate is {{ $value }} errors per second"
+          
+      # No Trading Activity
+      - alert: TradingBotNoActivity
+        expr: increase(bot_trades_total[30m]) == 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trading Bot no trading activity"
+          description: "No trades executed in the last 30 minutes"
+          
+      # Kafka Connection Issues
+      - alert: TradingBotKafkaDown
+        expr: bot_kafka_connected == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading Bot Kafka connection lost"
+          description: "Kafka connection has been down for 2 minutes"
+          
+      # Strategy Performance
+      - alert: TradingBotLowSharpeRatio
+        expr: bot_sharpe_ratio < 0.5
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trading Bot low Sharpe ratio"
+          description: "Sharpe ratio has been below 0.5 for 1 hour: {{ $value }}"
+          
+      # Continuous Improvement Health
+      - alert: TradingBotContinuousImprovementDown
+        expr: bot_continuous_improvement_health == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trading Bot continuous improvement system down"
+          description: "Continuous improvement system has been unhealthy for 5 minutes"
+          
+      # Model Retrain Overdue
+      - alert: TradingBotModelRetrainOverdue
+        expr: (time() - bot_last_retrain_timestamp) > 8*24*3600
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trading Bot model retrain overdue"
+          description: "Model hasn't been retrained for more than 8 days"
+          
+  - name: system-alerts
+    rules:
+      # Disk Space
+      - alert: TradingBotLowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading Bot low disk space"
+          description: "Disk space is below 10%: {{ $value | humanizePercentage }}"
+          
+      # System Load
+      - alert: TradingBotHighSystemLoad
+        expr: node_load1 > 4
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trading Bot high system load"
+          description: "System load is high: {{ $value }}"

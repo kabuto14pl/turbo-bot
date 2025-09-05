@@ -1,0 +1,150 @@
+@startuml SequenceDiagram-TradeExecution
+
+!define PRIMARY_COLOR #2E86AB
+!define SECONDARY_COLOR #A23B72
+!define SUCCESS_COLOR #F18F01
+!define WARNING_COLOR #C73E1D
+
+skinparam participant {
+    BackgroundColor PRIMARY_COLOR
+    FontColor white
+}
+
+skinparam note {
+    BackgroundColor #FFFACD
+    BorderColor #D4AC0D
+}
+
+title **Trade Execution Sequence - Sub-10ms Flow**
+
+actor "Market" as Market
+participant "WebSocket\nClient" as WS
+participant "Kafka\nProducer" as KP
+participant "Strategy\nEngine" as SE
+participant "Pairs Trading\nStrategy" as PTS
+participant "Risk\nManager" as RM
+participant "Order\nManager" as OM
+participant "Portfolio\nTracker" as PT
+
+note over Market, PT
+**Target: Market Data → Trade Decision < 10ms**
+end note
+
+== Real-time Market Data Flow ==
+
+Market -> WS: **Tick Data**\n(BTC/USDT: $45,230.15)
+activate WS
+note right: under 2ms WebSocket latency
+
+WS -> KP: **Publish to Kafka**\nTopic: market-data-raw
+activate KP
+note right: under 1ms Kafka produce
+
+KP -> SE: **Stream Processing**\nParallel strategy execution
+activate SE
+
+SE -> PTS: **execute(marketData)**
+activate PTS
+
+== Pairs Trading Analysis ==
+
+PTS -> PTS: **updatePairData()**\nBTC/ETH correlation check
+note right
+• Rolling correlation (20 periods)
+• Current correlation: 0.82
+• Cointegration p-value: 0.023
+end note
+
+PTS -> PTS: **testCointegration()**\nJohansen test execution
+note right
+• Hedge ratio: 0.045
+• Spread Z-score: 2.15
+• Entry threshold: 2.0 ✅
+end note
+
+PTS -> PTS: **generatePairsSignals()**\nMean reversion signal
+note right
+**Signal Generated:**
+• Type: SELL (spread too high)
+• Symbol: ETHUSDT
+• Strength: 0.85
+• Confidence: 0.91
+end note
+
+PTS -> SE: **StrategyResult**\n{signals: [PairsSignal]}
+deactivate PTS
+
+== Risk Validation ==
+
+SE -> RM: **validateTrade(signal)**
+activate RM
+
+RM -> RM: **calculateVaR()**\nPortfolio risk check
+note right
+• Current VaR (95%): 2.1%
+• Max allowed: 5.0% ✅
+• Position sizing via Kelly
+end note
+
+RM -> RM: **validatePortfolio()**\nExposure limits
+note right
+• Total exposure: 15%
+• Max allowed: 30% ✅
+• Correlation risk: 0.6 ✅
+end note
+
+RM -> SE: **TradeValidation**\n{approved: true, size: 0.5 BTC}
+deactivate RM
+
+== Order Execution ==
+
+SE -> OM: **executeOrder()**\nOptimal position size
+activate OM
+
+OM -> OM: **calculateOptimalSize()**\nKelly criterion
+note right
+• Win probability: 68%
+• Avg win/loss ratio: 1.4
+• Kelly fraction: 0.12
+• Conservative sizing: 0.5 BTC
+end note
+
+OM -> Market: **Place Market Order**\nSELL 0.5 ETH @ $3,150
+note right: under 2ms execution latency
+
+Market -> OM: **Order Filled**\nExecution: $3,149.85
+OM -> PT: **Update Portfolio**\nNew position recorded
+activate PT
+
+PT -> PT: **Real-time P&L**\nPosition tracking
+deactivate PT
+deactivate OM
+
+== Performance Monitoring ==
+
+SE -> KP: **Publish Result**\nTopic: trade-executions
+KP -> PT: **Performance Update**\nReal-time metrics
+
+note over SE, PT
+**Total Execution Time: 8.7ms**
+• Market data: 2ms
+• Strategy analysis: 3.2ms  
+• Risk validation: 1.5ms
+• Order execution: 2ms
+end note
+
+deactivate SE
+deactivate KP
+deactivate WS
+
+== Error Handling ==
+
+note over PTS, RM
+**Failure Scenarios:**
+• Cointegration test fails → Skip pair
+• Risk limits exceeded → Reject trade
+• Market volatility spike → Reduce size
+• Kafka unavailable → Fallback to direct processing
+end note
+
+@enduml

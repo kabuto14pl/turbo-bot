@@ -1,0 +1,14 @@
+ray==2.48.0
+ray[tune]==2.48.0
+optuna==4.4.0
+pandas>=2.0.0
+numpy>=2.0.0
+matplotlib>=3.5.0
+scikit-learn>=1.2.0
+hyperopt>=0.2.7
+tensorboardx>=2.6.0
+bayesian-optimization>=1.4.0
+pymoo>=0.6.0
+tqdm>=4.66.0
+psutil>=5.9.0
+jsonschema>=4.17.0

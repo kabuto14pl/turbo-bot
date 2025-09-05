@@ -1,0 +1,35 @@
+FROM node:18-alpine
+
+# Create a non-root user
+RUN addgroup -g 1001 -S tradingbot && \
+    adduser -S tradingbot -u 1001
+
+# Install curl for health checks
+RUN apk add --no-cache curl dumb-init
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production --silent
+
+# Copy source code
+COPY . .
+
+# Create required directories
+RUN mkdir -p logs models backups data && \
+    chown -R tradingbot:tradingbot /app
+
+USER tradingbot
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+
+# Default command - simple node instead of ts-node
+CMD ["node", "--loader", "ts-node/esm", "production_main.ts"]

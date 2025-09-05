@@ -1,0 +1,10 @@
+digraph dependencies {
+  rankdir=LR;
+  node [shape=box];
+
+  "kafka-streaming-setup" [label="Kafka Streaming Setup\n100%" fillcolor=green style=filled];
+  "database-optimization" [label="Database Optimization\n40%" fillcolor=yellow style=filled];
+  "deep-learning-pipeline" [label="Deep Learning Pipeline\n0%" fillcolor=lightblue style=filled];
+  "kafka-streaming-setup" -> "deep-learning-pipeline";
+  "database-optimization" -> "deep-learning-pipeline";
+}

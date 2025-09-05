@@ -1,0 +1,15 @@
+Python executable: /usr/bin/python3.10
+Python version: 3.10.18 (main, Oct  3 2024, 14:32:05) [GCC 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04)]
+Platform: Linux (WSL/Virtual Environment)
+
+Ray version: 2.48.0
+Ray Tune: Available
+Optuna version: 4.4.0
+NumPy version: 2.2.6
+Pandas version: 2.3.1
+Matplotlib version: 3.10.3
+Scikit-learn version: 1.7.1
+
+Environment: WSL/Linux Virtual Machine
+Status: ✅ All packages installed and working
+Date: 2025-07-28

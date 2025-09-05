@@ -1,0 +1,35 @@
+# Data files
+*.csv
+*.json
+*.log
+*.pid
+
+# Environment files
+.env*
+!.env.example
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# VS Code
+.vscode/
+
+# Results and analytics
+results/
+backtests/
+analytics_dashboard_results/
+strategy_optimization_results/
+multi_strategy_optimization_results/
+ultra_fine_optimization_results/
+debug/
+data/
+tools/python_archive/ray_results/
+tools/python_archive/ray_tune_test_results/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/

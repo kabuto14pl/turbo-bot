@@ -1,0 +1,53 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Trading Bot Metrics (direct from bot)
+  - job_name: 'trading-bot-direct'
+    static_configs:
+      - targets: ['host.docker.internal:9090']
+    scrape_interval: 5s
+    scrape_timeout: 5s
+    metrics_path: /metrics
+
+  # Trading Bot Metrics (via proxy)
+  - job_name: 'trading-bot'
+    static_configs:
+      - targets: ['host.docker.internal:9095']
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
+  # Trading Bot Health Check (direct from bot)
+  - job_name: 'trading-bot-health-direct'
+    static_configs:
+      - targets: ['host.docker.internal:9090']
+    scrape_interval: 10s
+    metrics_path: /health
+
+  # Trading Bot Health Check (via proxy)
+  - job_name: 'trading-bot-health'
+    static_configs:
+      - targets: ['host.docker.internal:9095']
+    scrape_interval: 10s
+    metrics_path: /health
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter (system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['host.docker.internal:9100']  # If you want system metrics
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093

@@ -1,0 +1,5 @@
+Python version: 3.12.3
+Python executable: /mnt/c/Users/katbo/Desktop/Turbo Bot Deva/trading-bot/.venv/bin/python
+
+Testing Ray import...
+ERROR: Failed to import Ray - No module named 'ray'

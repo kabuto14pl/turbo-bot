@@ -1,0 +1,6 @@
+[INFO] 2025-08-20T16:27:38.100Z: 🕐 Cron Job Manager initialized
+[INFO] 2025-08-20T16:27:38.101Z: 📋 Added job: Basic Test Job (test-basic)
+[INFO] 2025-08-20T16:27:38.101Z: 📅 Next run: 2025-08-20T17:00:00.000Z
+[INFO] 2025-08-20T16:27:38.102Z: 🚀 Starting Cron Job Manager...
+[INFO] 2025-08-20T16:27:38.105Z: ✅ Cron Job Manager started successfully
+[INFO] 2025-08-20T16:27:38.208Z: 🛑 Cron Job Manager stopped

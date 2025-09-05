@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Bot Dashboard - Button Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading {
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            outline: none;
+            background: linear-gradient(to right, #ef4444 0%, #ef4444 50%, #e5e7eb 50%, #e5e7eb 100%);
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ef4444;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ef4444;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="min-h-screen p-6">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-3xl font-bold mb-8 text-center">🤖 Trading Bot Dashboard - Button Test</h1>
+            
+            <!-- API Status -->
+            <div class="mb-6 p-4 bg-gray-800 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold">API Status</h2>
+                    <div id="api-status" class="flex items-center">
+                        <div class="w-3 h-3 bg-red-500 rounded-full mr-2" id="status-indicator"></div>
+                        <span id="status-text">Disconnected</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bot Control Panel -->
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- Bot Controls -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-xl font-bold mb-4">🤖 Bot Control</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span>Bot Status:</span>
+                            <span id="bot-status" class="px-3 py-1 rounded-full text-sm bg-red-600">STOPPED</span>
+                        </div>
+                        
+                        <div class="flex space-x-3">
+                            <button id="start-bot-btn" 
+                                    class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span id="start-btn-text">▶️ START Bot</span>
+                            </button>
+                            
+                            <button id="stop-bot-btn" 
+                                    class="flex-1 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span id="stop-btn-text">⏹️ STOP Bot</span>
+                            </button>
+                        </div>
+                        
+                        <div id="bot-messages" class="space-y-2 max-h-32 overflow-y-auto"></div>
+                    </div>
+                </div>
+                
+                <!-- Strategy Control -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-xl font-bold mb-4">🔄 Strategy Control</h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Current Strategy:</label>
+                            <div id="current-strategy" class="text-lg font-bold text-blue-400">RSITurbo</div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <button class="strategy-btn w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors" 
+                                    data-strategy="rsi-turbo">
+                                🎯 RSITurbo Strategy
+                            </button>
+                            <button class="strategy-btn w-full bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium transition-colors" 
+                                    data-strategy="momentum-scalping">
+                                ⚡ Momentum Scalping
+                            </button>
+                            <button class="strategy-btn w-full bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg font-medium transition-colors" 
+                                    data-strategy="supertrend">
+                                📈 SuperTrend Strategy
+                            </button>
+                        </div>
+                        
+                        <div id="strategy-messages" class="space-y-2 max-h-32 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alert Configuration -->
+            <div class="bg-gray-800 rounded-lg p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">⚠️ Alert Configuration</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Drawdown Slider -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-medium">Drawdown Threshold</label>
+                            <span id="drawdown-value" class="text-lg font-bold text-red-400">5%</span>
+                        </div>
+                        <input type="range" id="drawdown-slider" min="3" max="10" step="0.5" value="5" 
+                               class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>3% (Conservative)</span>
+                            <span>10% (Aggressive)</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Profit Target Slider -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-medium">Profit Target</label>
+                            <span id="profit-value" class="text-lg font-bold text-green-400">15%</span>
+                        </div>
+                        <input type="range" id="profit-slider" min="10" max="30" step="1" value="15" 
+                               class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                               style="background: linear-gradient(to right, #10b981 0%, #10b981 25%, #e5e7eb 25%, #e5e7eb 100%);">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>10% (Conservative)</span>
+                            <span>30% (Aggressive)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Risk Level Buttons -->
+                <div class="mt-6">
+                    <label class="block text-sm font-medium mb-3">Risk Level</label>
+                    <div class="flex space-x-3">
+                        <button class="risk-btn flex-1 px-4 py-3 rounded-lg font-medium transition-all bg-green-600 text-white" 
+                                data-risk="LOW">
+                            LOW<br><span class="text-xs opacity-90">Conservative</span>
+                        </button>
+                        <button class="risk-btn flex-1 px-4 py-3 rounded-lg font-medium transition-all bg-gray-600 hover:bg-yellow-600" 
+                                data-risk="MEDIUM">
+                            MEDIUM<br><span class="text-xs opacity-90">Moderate</span>
+                        </button>
+                        <button class="risk-btn flex-1 px-4 py-3 rounded-lg font-medium transition-all bg-gray-600 hover:bg-red-600" 
+                                data-risk="HIGH">
+                            HIGH<br><span class="text-xs opacity-90">Aggressive</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="alert-messages" class="mt-4 space-y-2 max-h-32 overflow-y-auto"></div>
+            </div>
+            
+            <!-- Export Functions -->
+            <div class="bg-gray-800 rounded-lg p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">📊 Export Functions</h2>
+                
+                <div class="flex space-x-4">
+                    <button id="export-csv-btn" 
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                        📄 Export CSV
+                    </button>
+                    <button id="export-json-btn" 
+                            class="flex-1 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                        📄 Export JSON
+                    </button>
+                </div>
+                
+                <div id="export-messages" class="mt-4 space-y-2 max-h-32 overflow-y-auto"></div>
+            </div>
+            
+            <!-- Test Results -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-bold mb-4">🧪 Test Results</h2>
+                <div id="test-results" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:9093/api';
+        let botRunning = false;
+        let currentStrategy = 'RSITurbo';
+        let currentRisk = 'MEDIUM';
+        
+        // Debug logging
+        console.log('🔧 Dashboard Script Loading...');
+        console.log('🌐 API Base:', API_BASE);
+        
+        // Utility functions
+        function addMessage(containerId, message, type = 'info') {
+            console.log(`📝 Message [${type}]: ${message}`);
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error('❌ Container not found:', containerId);
+                return;
+            }
+            const messageEl = document.createElement('div');
+            messageEl.className = `p-2 rounded text-sm ${
+                type === 'success' ? 'bg-green-600' : 
+                type === 'error' ? 'bg-red-600' : 
+                type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
+            }`;
+            messageEl.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            container.insertBefore(messageEl, container.firstChild);
+            
+            // Keep only last 5 messages
+            while (container.children.length > 5) {
+                container.removeChild(container.lastChild);
+            }
+        }
+        
+        function addTestResult(test, result) {
+            console.log(`🧪 Test Result: ${test} = ${result}`);
+            const container = document.getElementById('test-results');
+            if (!container) {
+                console.error('❌ Test results container not found');
+                return;
+            }
+            const resultEl = document.createElement('div');
+            resultEl.className = `p-2 rounded text-sm ${result.includes('✅') ? 'bg-green-600' : 'bg-red-600'}`;
+            resultEl.textContent = `${test}: ${result}`;
+            container.insertBefore(resultEl, container.firstChild);
+        }
+        
+        async function makeAPICall(endpoint, options = {}) {
+            console.log(`🔗 Making API call to: ${API_BASE}${endpoint}`);
+            console.log('📦 Options:', options);
+            
+            try {
+                const fullUrl = `${API_BASE}${endpoint}`;
+                console.log('🌐 Full URL:', fullUrl);
+                
+                const response = await fetch(fullUrl, {
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    ...options
+                });
+                
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response ok:', response.ok);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Response error:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ Response data:', data);
+                return data;
+            } catch (error) {
+                console.error('❌ API Error:', error);
+                addTestResult('API Error', `❌ ${error.message}`);
+                throw error;
+            }
+        }
+        
+        // API Status Check
+        async function checkAPIStatus() {
+            console.log('🔍 Checking API status...');
+            try {
+                const result = await makeAPICall('/health');
+                console.log('✅ API Health check successful');
+                document.getElementById('status-indicator').className = 'w-3 h-3 bg-green-500 rounded-full mr-2';
+                document.getElementById('status-text').textContent = 'Connected';
+                addTestResult('API Connection', '✅ Connected to localhost:9093');
+                return true;
+            } catch (error) {
+                console.error('❌ API Health check failed:', error);
+                document.getElementById('status-indicator').className = 'w-3 h-3 bg-red-500 rounded-full mr-2';
+                document.getElementById('status-text').textContent = 'Disconnected';
+                addTestResult('API Connection', `❌ Failed to connect: ${error.message}`);
+                return false;
+            }
+        }
+        
+        // Bot Control Functions
+        async function startBot() {
+            console.log('🤖 START BOT clicked!');
+            const btn = document.getElementById('start-bot-btn');
+            const btnText = document.getElementById('start-btn-text');
+            
+            if (!btn || !btnText) {
+                console.error('❌ Button elements not found');
+                return;
+            }
+            
+            btn.disabled = true;
+            btnText.innerHTML = '⏳ Starting...';
+            addTestResult('START Button Click', '🔄 Processing...');
+            
+            try {
+                console.log('📡 Sending start bot request...');
+                const result = await makeAPICall('/bot/start', { method: 'POST' });
+                console.log('✅ Start bot response:', result);
+                
+                if (result && result.success) {
+                    botRunning = true;
+                    document.getElementById('bot-status').textContent = 'RUNNING';
+                    document.getElementById('bot-status').className = 'px-3 py-1 rounded-full text-sm bg-green-600';
+                    addMessage('bot-messages', 'Bot started successfully!', 'success');
+                    addTestResult('START Bot Button', '✅ Bot started successfully');
+                } else {
+                    addMessage('bot-messages', 'Failed to start bot: ' + (result?.message || 'Unknown error'), 'error');
+                    addTestResult('START Bot Button', '❌ Failed to start bot');
+                }
+            } catch (error) {
+                console.error('❌ Start bot error:', error);
+                addMessage('bot-messages', `Error: ${error.message}`, 'error');
+                addTestResult('START Bot Button', `❌ Error: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btnText.innerHTML = '▶️ START Bot';
+            }
+        }
+        
+        async function stopBot() {
+            console.log('🛑 STOP BOT clicked!');
+            const btn = document.getElementById('stop-bot-btn');
+            const btnText = document.getElementById('stop-btn-text');
+            
+            if (!btn || !btnText) {
+                console.error('❌ Button elements not found');
+                return;
+            }
+            
+            btn.disabled = true;
+            btnText.innerHTML = '⏳ Stopping...';
+            addTestResult('STOP Button Click', '🔄 Processing...');
+            
+            try {
+                console.log('📡 Sending stop bot request...');
+                const result = await makeAPICall('/bot/stop', { method: 'POST' });
+                console.log('✅ Stop bot response:', result);
+                
+                if (result && result.success) {
+                    botRunning = false;
+                    document.getElementById('bot-status').textContent = 'STOPPED';
+                    document.getElementById('bot-status').className = 'px-3 py-1 rounded-full text-sm bg-red-600';
+                    addMessage('bot-messages', 'Bot stopped successfully!', 'success');
+                    addTestResult('STOP Bot Button', '✅ Bot stopped successfully');
+                } else {
+                    addMessage('bot-messages', 'Failed to stop bot: ' + (result?.message || 'Unknown error'), 'error');
+                    addTestResult('STOP Bot Button', '❌ Failed to stop bot');
+                }
+            } catch (error) {
+                console.error('❌ Stop bot error:', error);
+                addMessage('bot-messages', `Error: ${error.message}`, 'error');
+                addTestResult('STOP Bot Button', `❌ Error: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btnText.innerHTML = '⏹️ STOP Bot';
+            }
+        }
+        
+        // Strategy Control Functions
+        async function switchStrategy(strategyId, strategyName) {
+            console.log(`🎯 SWITCH STRATEGY clicked: ${strategyName} (${strategyId})`);
+            
+            try {
+                console.log('📡 Sending strategy switch request...');
+                const result = await makeAPICall('/strategies/switch', {
+                    method: 'POST',
+                    body: JSON.stringify({ strategyId, strategyName })
+                });
+                console.log('✅ Strategy switch response:', result);
+                
+                if (result && result.success) {
+                    currentStrategy = strategyName;
+                    document.getElementById('current-strategy').textContent = strategyName;
+                    addMessage('strategy-messages', `Switched to ${strategyName}`, 'success');
+                    addTestResult(`${strategyName} Selection`, `✅ Successfully switched to ${strategyName}`);
+                } else {
+                    addMessage('strategy-messages', `Failed to switch to ${strategyName}: ` + (result?.message || 'Unknown error'), 'error');
+                    addTestResult(`${strategyName} Selection`, `❌ Failed to switch to ${strategyName}`);
+                }
+            } catch (error) {
+                console.error('❌ Strategy switch error:', error);
+                addMessage('strategy-messages', `Error: ${error.message}`, 'error');
+                addTestResult(`${strategyName} Selection`, `❌ Error: ${error.message}`);
+            }
+        }
+        
+        // Alert Functions
+        async function updateDrawdown(value) {
+            console.log(`📉 DRAWDOWN SLIDER moved to: ${value}%`);
+            document.getElementById('drawdown-value').textContent = `${value}%`;
+            
+            try {
+                console.log('📡 Sending drawdown update request...');
+                const result = await makeAPICall('/alerts/update', {
+                    method: 'POST',
+                    body: JSON.stringify({ drawdownThreshold: parseFloat(value) })
+                });
+                console.log('✅ Drawdown update response:', result);
+                
+                if (result && result.success) {
+                    addMessage('alert-messages', `Drawdown threshold set to ${value}%`, 'success');
+                    addTestResult('Drawdown Slider', `✅ Set to ${value}%`);
+                } else {
+                    addMessage('alert-messages', 'Failed to update drawdown: ' + (result?.message || 'Unknown error'), 'error');
+                    addTestResult('Drawdown Slider', '❌ Failed to update');
+                }
+            } catch (error) {
+                console.error('❌ Drawdown update error:', error);
+                addMessage('alert-messages', `Error: ${error.message}`, 'error');
+                addTestResult('Drawdown Slider', `❌ Error: ${error.message}`);
+            }
+        }
+        
+        async function updateProfitTarget(value) {
+            console.log(`📈 PROFIT TARGET SLIDER moved to: ${value}%`);
+            document.getElementById('profit-value').textContent = `${value}%`;
+            
+            try {
+                console.log('📡 Sending profit target update request...');
+                const result = await makeAPICall('/alerts/update', {
+                    method: 'POST',
+                    body: JSON.stringify({ profitTarget: parseFloat(value) })
+                });
+                console.log('✅ Profit target update response:', result);
+                
+                if (result && result.success) {
+                    addMessage('alert-messages', `Profit target set to ${value}%`, 'success');
+                    addTestResult('Profit Target Slider', `✅ Set to ${value}%`);
+                } else {
+                    addMessage('alert-messages', 'Failed to update profit target: ' + (result?.message || 'Unknown error'), 'error');
+                    addTestResult('Profit Target Slider', '❌ Failed to update');
+                }
+            } catch (error) {
+                console.error('❌ Profit target update error:', error);
+                addMessage('alert-messages', `Error: ${error.message}`, 'error');
+                addTestResult('Profit Target Slider', `❌ Error: ${error.message}`);
+            }
+        }
+        
+        async function updateRiskLevel(level) {
+            console.log(`⚠️ RISK LEVEL BUTTON clicked: ${level}`);
+            currentRisk = level;
+            
+            // Update UI
+            document.querySelectorAll('.risk-btn').forEach(btn => {
+                btn.className = 'risk-btn flex-1 px-4 py-3 rounded-lg font-medium transition-all bg-gray-600 hover:bg-gray-700';
+            });
+            
+            const selectedBtn = document.querySelector(`[data-risk="${level}"]`);
+            if (selectedBtn) {
+                selectedBtn.className = `risk-btn flex-1 px-4 py-3 rounded-lg font-medium transition-all ${
+                    level === 'LOW' ? 'bg-green-600' : 
+                    level === 'MEDIUM' ? 'bg-yellow-600' : 'bg-red-600'
+                } text-white`;
+            }
+            
+            try {
+                console.log('📡 Sending risk level update request...');
+                const result = await makeAPICall('/alerts/update', {
+                    method: 'POST',
+                    body: JSON.stringify({ riskLevel: level })
+                });
+                console.log('✅ Risk level update response:', result);
+                
+                if (result && result.success) {
+                    addMessage('alert-messages', `Risk level set to ${level}`, 'success');
+                    addTestResult('Risk Level Buttons', `✅ Set to ${level}`);
+                } else {
+                    addMessage('alert-messages', 'Failed to update risk level: ' + (result?.message || 'Unknown error'), 'error');
+                    addTestResult('Risk Level Buttons', '❌ Failed to update');
+                }
+            } catch (error) {
+                console.error('❌ Risk level update error:', error);
+                addMessage('alert-messages', `Error: ${error.message}`, 'error');
+                addTestResult('Risk Level Buttons', `❌ Error: ${error.message}`);
+            }
+        }
+        
+        // Export Functions
+        async function exportData(format) {
+            console.log(`📊 EXPORT ${format.toUpperCase()} clicked!`);
+            
+            try {
+                console.log(`📡 Sending ${format} export request...`);
+                const response = await fetch(`${API_BASE}/export/${format}?from=2024-01-01&to=2024-01-31`, {
+                    headers: { 'Accept': 'application/octet-stream' },
+                    mode: 'cors'
+                });
+                
+                console.log(`📡 Export ${format} response status:`, response.status);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `trading_data.${format}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    addMessage('export-messages', `${format.toUpperCase()} export completed`, 'success');
+                    addTestResult(`${format.toUpperCase()} Export`, '✅ File downloaded successfully');
+                } else {
+                    const errorText = await response.text();
+                    console.error(`❌ Export ${format} error:`, errorText);
+                    addMessage('export-messages', `Failed to export ${format.toUpperCase()}: ${errorText}`, 'error');
+                    addTestResult(`${format.toUpperCase()} Export`, '❌ Failed to download');
+                }
+            } catch (error) {
+                console.error(`❌ Export ${format} error:`, error);
+                addMessage('export-messages', `Error: ${error.message}`, 'error');
+                addTestResult(`${format.toUpperCase()} Export`, `❌ Error: ${error.message}`);
+            }
+        }
+        
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM Content Loaded - Setting up event listeners...');
+            
+            // Bot Control Buttons
+            const startBtn = document.getElementById('start-bot-btn');
+            const stopBtn = document.getElementById('stop-bot-btn');
+            
+            if (startBtn) {
+                console.log('✅ Found START button, adding event listener');
+                startBtn.addEventListener('click', function(e) {
+                    console.log('🔥 START BUTTON CLICKED!');
+                    e.preventDefault();
+                    startBot();
+                });
+            } else {
+                console.error('❌ START button not found!');
+            }
+            
+            if (stopBtn) {
+                console.log('✅ Found STOP button, adding event listener');
+                stopBtn.addEventListener('click', function(e) {
+                    console.log('🔥 STOP BUTTON CLICKED!');
+                    e.preventDefault();
+                    stopBot();
+                });
+            } else {
+                console.error('❌ STOP button not found!');
+            }
+            
+            // Strategy Buttons
+            const strategyBtns = document.querySelectorAll('.strategy-btn');
+            console.log(`🎯 Found ${strategyBtns.length} strategy buttons`);
+            
+            strategyBtns.forEach((btn, index) => {
+                console.log(`📋 Setting up strategy button ${index + 1}:`, btn.textContent);
+                btn.addEventListener('click', function(e) {
+                    console.log('🔥 STRATEGY BUTTON CLICKED:', this.textContent);
+                    e.preventDefault();
+                    const strategyId = this.dataset.strategy;
+                    const strategyName = this.textContent.split(' ').slice(1).join(' ');
+                    console.log('📊 Strategy ID:', strategyId, 'Name:', strategyName);
+                    switchStrategy(strategyId, strategyName);
+                });
+            });
+            
+            // Sliders
+            const drawdownSlider = document.getElementById('drawdown-slider');
+            const profitSlider = document.getElementById('profit-slider');
+            
+            if (drawdownSlider) {
+                console.log('✅ Found drawdown slider, adding event listener');
+                drawdownSlider.addEventListener('input', function(e) {
+                    console.log('🔥 DRAWDOWN SLIDER MOVED:', e.target.value);
+                    updateDrawdown(e.target.value);
+                });
+            } else {
+                console.error('❌ Drawdown slider not found!');
+            }
+            
+            if (profitSlider) {
+                console.log('✅ Found profit slider, adding event listener');
+                profitSlider.addEventListener('input', function(e) {
+                    console.log('🔥 PROFIT SLIDER MOVED:', e.target.value);
+                    updateProfitTarget(e.target.value);
+                });
+            } else {
+                console.error('❌ Profit slider not found!');
+            }
+            
+            // Risk Buttons
+            const riskBtns = document.querySelectorAll('.risk-btn');
+            console.log(`🎛️ Found ${riskBtns.length} risk buttons`);
+            
+            riskBtns.forEach((btn, index) => {
+                console.log(`⚠️ Setting up risk button ${index + 1}:`, btn.dataset.risk);
+                btn.addEventListener('click', function(e) {
+                    console.log('🔥 RISK BUTTON CLICKED:', this.dataset.risk);
+                    e.preventDefault();
+                    updateRiskLevel(this.dataset.risk);
+                });
+            });
+            
+            // Export Buttons
+            const exportCsvBtn = document.getElementById('export-csv-btn');
+            const exportJsonBtn = document.getElementById('export-json-btn');
+            
+            if (exportCsvBtn) {
+                console.log('✅ Found CSV export button');
+                exportCsvBtn.addEventListener('click', function(e) {
+                    console.log('🔥 CSV EXPORT CLICKED!');
+                    e.preventDefault();
+                    exportData('csv');
+                });
+            }
+            
+            if (exportJsonBtn) {
+                console.log('✅ Found JSON export button');
+                exportJsonBtn.addEventListener('click', function(e) {
+                    console.log('🔥 JSON EXPORT CLICKED!');
+                    e.preventDefault();
+                    exportData('json');
+                });
+            }
+            
+            console.log('🎉 All event listeners set up successfully!');
+            
+            // Initialize
+            console.log('🔄 Starting initialization...');
+            checkAPIStatus();
+            setInterval(checkAPIStatus, 10000); // Check every 10 seconds
+            
+            addTestResult('Dashboard Load', '✅ Dashboard loaded successfully');
+            console.log('✅ Dashboard initialization complete!');
+        });
+    </script>
+</body>
+</html>
