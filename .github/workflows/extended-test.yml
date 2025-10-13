@@ -295,6 +295,7 @@ jobs:
             data/
             test_report.md
           retention-days: 30
+          if-no-files-found: warn
       
       - name: 📤 Upload Bot Logs
         if: always()
@@ -303,6 +304,7 @@ jobs:
           name: bot-logs-${{ github.run_number }}
           path: logs/bot.log
           retention-days: 30
+          if-no-files-found: warn
       
       - name: 📤 Upload Dashboard Logs
         if: always()
@@ -311,6 +313,7 @@ jobs:
           name: dashboard-logs-${{ github.run_number }}
           path: logs/dashboard.log
           retention-days: 30
+          if-no-files-found: warn
       
       # ============================================================================
       # NOTIFICATIONS (Optional)
