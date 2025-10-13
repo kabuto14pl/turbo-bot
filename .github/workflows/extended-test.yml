@@ -1,4 +1,4 @@
-name: 🚀 Extended Trading Bot Test (2h) with Live Dashboard
+name: 🚀 Extended Trading Bot Test (2h) - Bot Only
 
 on:
   # Ręczne uruchomienie z GitHub UI
@@ -125,29 +125,6 @@ jobs:
           fi
       
       # ============================================================================
-      # START UNIFIED DASHBOARD SERVER
-      # ============================================================================
-      
-      - name: 📊 Start Unified Dashboard Server (Background)
-        run: |
-          nohup node unified_dashboard_server.js > logs/dashboard.log 2>&1 &
-          DASHBOARD_PID=$!
-          echo $DASHBOARD_PID > dashboard.pid
-          echo "✅ Dashboard server started with PID: $DASHBOARD_PID"
-          
-          # Czekaj na inicjalizację
-          sleep 5
-          
-          # Sprawdź czy dashboard działa
-          if curl -s -f http://localhost:8080/health > /dev/null; then
-            echo "✅ Dashboard server is running"
-          else
-            echo "❌ Dashboard server failed to start"
-            cat logs/dashboard.log
-            exit 1
-          fi
-      
-      # ============================================================================
       # MONITORING LOOP (2 HOURS)
       # ============================================================================
       
@@ -222,7 +199,7 @@ jobs:
       - name: 🛑 Stop Services
         if: always()
         run: |
-          echo "🛑 Stopping services..."
+          echo "🛑 Stopping bot..."
           
           # Stop bot
           if [ -f bot.pid ]; then
@@ -230,15 +207,6 @@ jobs:
             if kill -0 $BOT_PID 2>/dev/null; then
               kill $BOT_PID
               echo "✅ Bot stopped (PID: $BOT_PID)"
-            fi
-          fi
-          
-          # Stop dashboard
-          if [ -f dashboard.pid ]; then
-            DASHBOARD_PID=$(cat dashboard.pid)
-            if kill -0 $DASHBOARD_PID 2>/dev/null; then
-              kill $DASHBOARD_PID
-              echo "✅ Dashboard stopped (PID: $DASHBOARD_PID)"
             fi
           fi
           
@@ -306,15 +274,6 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
       
-      - name: 📤 Upload Dashboard Logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dashboard-logs-${{ github.run_number }}
-          path: logs/dashboard.log
-          retention-days: 30
-          if-no-files-found: warn
-      
       # ============================================================================
       # NOTIFICATIONS (Optional)
       # ============================================================================
@@ -333,7 +292,6 @@ jobs:
           echo "### 📊 Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- Test results: \`test-results-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Bot logs: \`bot-logs-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- Dashboard logs: \`dashboard-logs-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
       
       - name: ✅ Test Passed
         if: success()
