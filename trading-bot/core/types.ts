@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * Core type definitions for the trading bot
  */
 
@@ -128,4 +136,20 @@ export interface Logger {
     warn(message: string, meta?: any): void;
     error(message: string, meta?: any): void;
     debug(message: string, meta?: any): void;
+}
+
+// Trade type for analytics compatibility
+export interface Trade {
+    id: string;
+    symbol: string;
+    side: 'BUY' | 'SELL';
+    price: number;
+    quantity: number;
+    timestamp: number;
+    pnl?: number;
+    fee?: number;
+    strategyId?: string;
+    // Optional times to support analytics (entry/exit timestamps)
+    entryTime?: number;
+    exitTime?: number;
 }
