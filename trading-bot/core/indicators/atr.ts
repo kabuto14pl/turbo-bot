@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 export function calculateATR(highs: number[], lows: number[], closes: number[], period = 14): number[] {
   const atr: number[] = [];
   const trs: number[] = [];

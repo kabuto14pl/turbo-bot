@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 ```mermaid
 graph TD
     subgraph "🔒 Security & Compliance Layer"

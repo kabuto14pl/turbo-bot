@@ -1,13 +1,23 @@
-#!/usr/bin/env ts-node
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.runEnterpriseMLTest = runEnterpriseMLTest;
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ **
+ * 🧪 [TESTING-FRAMEWORK]
  * 🚀 FAZA 1-5 ENTERPRISE ML SYSTEM - STANDALONE TEST
  *
  * Kompleksowy test nowego zaawansowanego systemu ML
  * Kompatybilny z SimpleRL API ale z zaawansowanymi funkcjami Enterprise
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.runEnterpriseMLTest = runEnterpriseMLTest;
 const simple_rl_adapter_1 = require("./src/core/ml/simple_rl_adapter");
 async function runEnterpriseMLTest() {
     console.log('🚀 ENTERPRISE ML SYSTEM - PRODUCTION TEST');

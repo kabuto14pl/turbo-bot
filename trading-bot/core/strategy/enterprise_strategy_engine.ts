@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎯 POINT 3: ENTERPRISE STRATEGY ENGINE
  * Advanced strategy management, orchestration, and signal generation system
  */

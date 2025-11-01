@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 echo "🚀 Starting Enterprise Trading Bot with Advanced ML System..."
 

@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # 🚀 AUTONOMOUS TRADING BOT - STARTUP SCRIPT
 # Uruchamia pełnie zautomatyzowany system tradingowy zgodnie ze specyfikacją

@@ -1,5 +1,17 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
+/**
+ * 🚀 [PRODUCTION-READY]
+ * This component is designed for live trading environments.
+ * Includes safety mechanisms and real API integrations.
+ *
  * 🚀 OKX EXECUTOR ADAPTER
  *
  * Adapter zapewniający kompatybilność między OKXExecutionEngine

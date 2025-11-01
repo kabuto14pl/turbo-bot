@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * Demonstration System for Continuous Monitoring and Adaptation - Phase 4.1
  *
  * Kompleksowy demo system pokazujący:

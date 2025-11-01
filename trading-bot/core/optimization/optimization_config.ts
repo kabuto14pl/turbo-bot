@@ -1,4 +1,12 @@
 /**
+ * 🔧 [PRODUCTION-CONFIG]
+ * Production configuration component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚀 OPTIMIZATION CONFIGURATION SYSTEM
  * Centralized configuration for Ray Tune and Optuna optimization
  */

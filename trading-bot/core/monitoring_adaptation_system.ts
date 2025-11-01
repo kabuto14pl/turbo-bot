@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * Continuous Monitoring and Adaptation System - Phase 4.1
  * 
  * Implementuje zaawansowany system ciągłego ulepszania strategii:

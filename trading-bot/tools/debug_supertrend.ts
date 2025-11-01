@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // Skrypt debugujący dla SuperTrend
 import { calculateSuperTrend } from '../core/indicators/supertrend';
 import { loadCandles } from '../infrastructure/data/csv_loader';

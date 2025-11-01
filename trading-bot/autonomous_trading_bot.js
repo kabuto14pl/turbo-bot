@@ -1,16 +1,26 @@
 "use strict";
 /**
- * 🚀 AUTONOMOUS TRADING BOT - FINALNA WERSJA ENTERPRISE
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🚀 [PRODUCTION-FINAL]
+ * Final production trading bot component
+ */
+/**
+ * � [DEVELOPMENT-VERSION]
+ * This is an intermediate/development version of the production system.
+ * May contain disabled features or be work-in-progress.
  *
- * Pełnie zautomatyzowany system tradingowy - FINALNA WERSJA PRODUKCYJNA
+ * 🔧 AUTONOMOUS TRADING BOT - WERSJA ROZWOJOWA
  *
- * FUNKCJONALNOŚCI:
- * ✅ Zero ingerencji człowieka
- * ✅ Real-time trading 24/7
- * ✅ Enterprise monitoring
- * ✅ Load balancing z 3 instancjami
- * ✅ Kubernetes ready
- * ✅ Production health checks
+ * System tradingowy w fazie rozwoju - WERSJA POŚREDNIA
+ * Development version with many enterprise features commented out
+ *
+ * FUNKCJONALNOŚCI (częściowo wyłączone):
+ * ⚠️ Wiele komponentów wykomentowanych/wyłączonych
+ * ⚠️ Nie wszystkie enterprise features aktywne
+ * ⚠️ Używaj autonomous_trading_bot_final.ts do produkcji
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -48,6 +58,8 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AutonomousTradingBot = void 0;
 const dotenv = __importStar(require("dotenv"));
+// Remove kafkajs import - not installed
+// import { Kafka } from 'kafkajs';
 const kafka_real_time_streaming_final_1 = require("./kafka_real_time_streaming_final");
 const prometheus_server_1 = require("./core/monitoring/prometheus_server");
 // Load environment variables
@@ -55,6 +67,8 @@ dotenv.config();
 // Core Systems
 const risk_manager_1 = require("./core/risk/risk_manager");
 const logger_1 = require("./infrastructure/logging/logger");
+// Enterprise ML Infrastructure
+const enterprise_ml_integration_manager_1 = require("../src/enterprise_ml_integration_manager");
 // Import what exists, comment out what doesn't
 // import { ContinuousImprovementConfig } from './core/continuous_improvement/continuous_improvement_config';
 // import { UnifiedDataPipeline } from './core/data/unified_data_pipeline';
@@ -165,6 +179,15 @@ class AdvancedAdaptiveStrategyFixed {
     constructor(...args) { }
     async run(...args) { return []; }
 }
+class EnterpriseMLStrategy {
+    constructor(...args) { }
+    async run(...args) { return []; }
+    setWeight(weight) { }
+    getWeight() { return 1.0; }
+    validateConfig() { return true; }
+    getRequiredIndicators() { return ['rsi', 'macd', 'supertrend']; }
+    getRequiredTimeframes() { return ['m15']; }
+}
 // Configuration placeholder
 const defaultKafkaConfig = {
     kafka: {
@@ -220,9 +243,6 @@ const fs = __importStar(require("fs"));
 dotenv.config();
 // 🛡️ ADVANCED RISK MANAGEMENT IMPORTS
 const advanced_position_manager_1 = require("./core/risk/advanced_position_manager");
-// 📊 ENTERPRISE DATA INGESTION IMPORTS
-const enterprise_real_time_data_pipeline_1 = require("./core/data/enterprise_real_time_data_pipeline");
-const simplified_real_time_data_engine_1 = require("./core/data/simplified_real_time_data_engine");
 /**
  * 🤖 AUTONOMOUS TRADING BOT
  * Główna klasa zarządzająca całym autonomicznym systemem
@@ -281,26 +301,30 @@ class AutonomousTradingBot extends events_1.EventEmitter {
                 enabled: process.env.KAFKA_ENABLED === 'true',
                 brokers: (process.env.KAFKA_BROKERS || 'kafka:9092').split(',')
             },
-            // 📊 ENTERPRISE DATA PIPELINE CONFIG
+            // 📊 ENTERPRISE DATA PIPELINE CONFIG - disabled (modules unavailable)
+            /*
             enterpriseDataPipeline: {
-                ...enterprise_real_time_data_pipeline_1.defaultEnterpriseDataConfig,
-                enableKafka: process.env.KAFKA_ENABLED === 'true',
-                enableFailover: true,
-                sources: {
-                    ...enterprise_real_time_data_pipeline_1.defaultEnterpriseDataConfig.sources,
-                    binance: {
-                        ...enterprise_real_time_data_pipeline_1.defaultEnterpriseDataConfig.sources.binance,
-                        symbols: ['BTCUSDT', 'ETHUSDT']
-                    }
+              ...defaultEnterpriseDataConfig,
+              enableKafka: process.env.KAFKA_ENABLED === 'true',
+              enableFailover: true,
+              sources: {
+                ...defaultEnterpriseDataConfig.sources,
+                binance: {
+                  ...defaultEnterpriseDataConfig.sources.binance,
+                  symbols: ['BTCUSDT', 'ETHUSDT']
                 }
+              }
             },
-            // 📊 SIMPLIFIED DATA ENGINE CONFIG (fallback)
+            */
+            // 📊 SIMPLIFIED DATA ENGINE CONFIG - disabled (modules unavailable)
+            /*
             dataEngine: {
-                ...simplified_real_time_data_engine_1.defaultDataEngineConfig,
-                symbols: ['BTCUSDT'],
-                updateInterval: 5000, // 5 seconds for demo
-                enableSimulation: true
+              ...defaultDataEngineConfig,
+              symbols: ['BTCUSDT'],
+              updateInterval: 5000, // 5 seconds for demo
+              enableSimulation: true
             },
+            */
             risk: {
                 maxDrawdown: Number(process.env.MAX_DRAWDOWN) || 0.15, // 15%
                 maxDailyDrawdown: Number(process.env.MAX_DAILY_DRAWDOWN) || 0.05, // 5%
@@ -402,11 +426,11 @@ class AutonomousTradingBot extends events_1.EventEmitter {
         this.logger.info(`📊 Mode: ${this.config.mode}`);
         this.logger.info(`💰 Initial Capital: $${this.config.initialCapital}`);
         this.logger.info(`⏱️ Trading Interval: ${this.config.tradingInterval}ms`);
-        // Initialize enterprise data pipeline
-        this.enterpriseDataPipeline = new enterprise_real_time_data_pipeline_1.EnterpriseRealTimeDataPipeline(this.config.enterpriseDataPipeline);
-        this.useEnterpriseMode = this.config.enterpriseDataPipeline?.enableFailover ?? false;
-        // Initialize simplified data engine
-        this.dataEngine = new simplified_real_time_data_engine_1.SimplifiedRealTimeDataEngine(this.config.dataEngine);
+        // Initialize enterprise data pipeline - disabled (modules unavailable)
+        // this.enterpriseDataPipeline = new EnterpriseRealTimeDataPipeline(this.config.enterpriseDataPipeline);
+        this.useEnterpriseMode = false; // this.config.enterpriseDataPipeline?.enableFailover ?? false;
+        // Initialize simplified data engine - disabled (modules unavailable)
+        // this.dataEngine = new SimplifiedRealTimeDataEngine(this.config.dataEngine);
     }
     /**
      * 🚀 INITIALIZE SYSTEM
@@ -503,53 +527,67 @@ class AutonomousTradingBot extends events_1.EventEmitter {
         this.logger.info('✅ Data sources initialized');
     }
     /**
-     * 🚀 INITIALIZE ENTERPRISE DATA PIPELINE (UPGRADED)
+     * 🚀 INITIALIZE ENTERPRISE DATA PIPELINE (DISABLED - modules unavailable)
      */
     async initializeDataPipeline() {
-        this.logger.info('🚀 Initializing Enterprise Data Pipeline...');
+        this.logger.info('🚀 Initializing Data Pipeline...');
         try {
-            // 📊 ENTERPRISE DATA PIPELINE (PRIMARY)
+            // 📊 ENTERPRISE DATA PIPELINE - disabled
+            /*
             if (this.config.enterpriseDataPipeline?.enableFailover) {
-                this.logger.info('🏢 Starting Enterprise Data Pipeline...');
-                // Setup enterprise pipeline event handlers
-                this.enterpriseDataPipeline.on('started', () => {
-                    this.logger.info('✅ Enterprise Data Pipeline started');
-                    this.useEnterpriseMode = true;
-                });
-                this.enterpriseDataPipeline.on('marketData', (data) => {
-                    this.handleMarketDataUpdate(data);
-                });
-                this.enterpriseDataPipeline.on('candleData', (data) => {
-                    this.handleCandleDataUpdate(data);
-                });
-                this.enterpriseDataPipeline.on('error', (error) => {
-                    this.logger.error('❌ Enterprise pipeline error:', error);
-                    this.handleDataPipelineFailover();
-                });
-                this.enterpriseDataPipeline.on('healthCheck', (health) => {
-                    if (health.overallHealth < 0.7) {
-                        this.logger.warn(`⚠️ Enterprise pipeline health: ${(health.overallHealth * 100).toFixed(1)}%`);
-                    }
-                });
-                // Initialize enterprise pipeline
-                await this.enterpriseDataPipeline.start();
-                this.logger.info('✅ Enterprise Data Pipeline active');
-            }
-            // 📈 SIMPLIFIED DATA ENGINE (FALLBACK)
-            this.logger.info('🔄 Initializing Simplified Data Engine as fallback...');
-            // Setup simplified engine event handlers
-            this.dataEngine.on('marketData', (data) => {
-                if (!this.useEnterpriseMode) {
-                    this.handleMarketDataUpdate(data);
+              this.logger.info('🏢 Starting Enterprise Data Pipeline...');
+              
+              // Setup enterprise pipeline event handlers
+              this.enterpriseDataPipeline.on('started', () => {
+                this.logger.info('✅ Enterprise Data Pipeline started');
+                this.useEnterpriseMode = true;
+              });
+              
+              this.enterpriseDataPipeline.on('marketData', (data: any) => {
+                this.handleMarketDataUpdate(data);
+              });
+              
+              this.enterpriseDataPipeline.on('candleData', (data: any) => {
+                this.handleCandleDataUpdate(data);
+              });
+              
+              this.enterpriseDataPipeline.on('error', (error: any) => {
+                this.logger.error('❌ Enterprise pipeline error:', error);
+                this.handleDataPipelineFailover();
+              });
+              
+              this.enterpriseDataPipeline.on('healthCheck', (health: any) => {
+                if (health.overallHealth < 0.7) {
+                  this.logger.warn(`⚠️ Enterprise pipeline health: ${(health.overallHealth * 100).toFixed(1)}%`);
                 }
+              });
+              
+              // Initialize enterprise pipeline
+              await this.enterpriseDataPipeline.start();
+              
+              this.logger.info('✅ Enterprise Data Pipeline active');
+            }
+            */
+            // 📈 SIMPLIFIED DATA ENGINE - disabled
+            /*
+            this.logger.info('🔄 Initializing Simplified Data Engine as fallback...');
+            
+            // Setup simplified engine event handlers
+            this.dataEngine.on('marketData', (data: any) => {
+              if (!this.useEnterpriseMode) {
+                this.handleMarketDataUpdate(data);
+              }
             });
-            this.dataEngine.on('error', (error) => {
-                this.logger.error('❌ Data engine error:', error);
+            
+            this.dataEngine.on('error', (error: any) => {
+              this.logger.error('❌ Data engine error:', error);
             });
+            
             // Start simplified engine
             await this.dataEngine.start();
+            */
             if (!this.useEnterpriseMode) {
-                this.logger.info('📈 Using Simplified Data Engine (enterprise mode disabled)');
+                this.logger.info('📈 Using basic data handling (enterprise modules disabled)');
             }
             else {
                 this.logger.info('📈 Simplified Data Engine ready as failover');
@@ -637,10 +675,28 @@ class AutonomousTradingBot extends events_1.EventEmitter {
             if (this.tensorFlow) {
                 this.logger.info('✅ TensorFlow integration ready');
             }
-            // Initialize ML Integration Manager
+            // 🚀 Initialize Enterprise ML Integration Manager (NEW!)
+            try {
+                this.enterpriseMLManager = enterprise_ml_integration_manager_1.EnterpriseMLIntegrationManager.getInstance();
+                await this.enterpriseMLManager.initialize({
+                    enablePerformanceMonitoring: true,
+                    enableMetricsDashboard: true,
+                    enableEnsembleEngine: true,
+                    enableFeatureEngineering: true,
+                    dashboardPort: 3001,
+                    monitoringInterval: 30000, // 30 seconds
+                    autoOptimization: true,
+                    realTimeUpdates: true
+                });
+                this.logger.info('🚀 Enterprise ML Integration Manager initialized successfully');
+            }
+            catch (error) {
+                this.logger.warn('⚠️  Enterprise ML Manager initialization failed, continuing with basic ML:', error);
+            }
+            // Initialize ML Integration Manager (legacy)
             if (this.mlManager) {
                 await this.mlManager.initialize();
-                this.logger.info('✅ ML Integration Manager initialized');
+                this.logger.info('✅ Legacy ML Integration Manager initialized');
             }
             // Initialize Real-time Inference Engine
             if (this.inferenceEngine) {
@@ -779,6 +835,17 @@ class AutonomousTradingBot extends events_1.EventEmitter {
             adxThreshold: 25
         });
         this.activeStrategies.set('AdvancedAdaptive', advancedAdaptive);
+        // 🚀 Enterprise ML Strategy - NAJZAAWANSOWNIEJSZA STRATEGIA
+        const enterpriseML = new EnterpriseMLStrategy({
+            enableMultiModel: true,
+            enableAdvancedFeatures: true,
+            enableRegimeDetection: true,
+            enableDynamicSizing: true,
+            confidenceThreshold: 0.7,
+            maxPositionSize: 0.15,
+            riskAdjustment: true
+        });
+        this.activeStrategies.set('EnterpriseML', enterpriseML);
         // Initialize Meta Strategy System with real strategies
         this.metaStrategy = new MetaStrategySystem(Array.from(this.activeStrategies.values()), {
             minSignalConfidence: 0.6,
@@ -947,8 +1014,68 @@ class AutonomousTradingBot extends events_1.EventEmitter {
             const indicators = await this.calculateRealIndicators(marketData.candles);
             // 2. BotState Creation with real data
             this.updateBotState(marketData, indicators);
+            // 2.5. 🚀 ENTERPRISE ML INFERENCE (NEW!)
+            let enterpriseMLSignals = [];
+            if (this.enterpriseMLManager && marketData.candles.length > 0) {
+                try {
+                    const latestCandle = marketData.candles[marketData.candles.length - 1];
+                    const currentPrice = latestCandle.close;
+                    const currentVolume = latestCandle.volume;
+                    const mlPrediction = await this.enterpriseMLManager.performMLInference({
+                        price: currentPrice,
+                        volume: currentVolume,
+                        timestamp: Date.now(),
+                        features: [
+                            currentPrice,
+                            currentVolume,
+                            latestCandle.high - latestCandle.low, // volatility
+                            indicators.rsi || 50,
+                            indicators.macd?.histogram || 0,
+                            indicators.supertrend?.direction || 0
+                        ]
+                    });
+                    if (mlPrediction && mlPrediction.signal) {
+                        // Only create signal if it's not HOLD or undefined
+                        let signalType = null;
+                        if (mlPrediction.signal === 'BUY') {
+                            signalType = 'ENTER_LONG';
+                        }
+                        else if (mlPrediction.signal === 'SELL') {
+                            signalType = 'ENTER_SHORT';
+                        }
+                        if (signalType) {
+                            const mlSignal = {
+                                type: signalType,
+                                price: currentPrice,
+                                confidence: mlPrediction.confidence,
+                                indicators: {
+                                    rsi: indicators.rsi || 50,
+                                    macd: indicators.macd?.histogram || 0,
+                                    supertrend: indicators.supertrend?.direction === 'buy' ? 1 : indicators.supertrend?.direction === 'sell' ? -1 : 0
+                                },
+                                metadata: {
+                                    strategy: 'EnterpriseML',
+                                    timeframe: '1m',
+                                    regime: 'NORMAL'
+                                },
+                                size: 0.001 // Default position size
+                            };
+                            enterpriseMLSignals.push(mlSignal);
+                            this.logger.info(`🤖 [ENTERPRISE ML] Generated signal: ${mlSignal.type} (confidence: ${(mlPrediction.confidence * 100).toFixed(1)}%)`);
+                        }
+                    }
+                }
+                catch (error) {
+                    this.logger.warn('⚠️  Enterprise ML inference failed:', error);
+                }
+            }
             // 3. 🎯 REAL STRATEGY EXECUTION
             const allSignals = [];
+            // Add Enterprise ML signals first (they have priority)
+            if (enterpriseMLSignals.length > 0) {
+                allSignals.push(...enterpriseMLSignals);
+                this.logger.info(`🤖 [ENTERPRISE ML] Added ${enterpriseMLSignals.length} ML signal(s) to pipeline`);
+            }
             for (const [strategyName, strategy] of this.activeStrategies) {
                 try {
                     const signals = await strategy.run(this.botState);

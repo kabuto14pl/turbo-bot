@@ -1,4 +1,12 @@
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎯 DEMONSTRACJA ALGORYTMÓW OPTYMALIZACJI
  * 
  * Test wszystkich algorytmów optymalizacji z syntetycznymi funkcjami celu

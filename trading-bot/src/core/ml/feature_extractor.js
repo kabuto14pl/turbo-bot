@@ -1,8 +1,15 @@
 "use strict";
 /**
- * 🔄 ADVANCED FEATURE EXTRACTOR
- * Transforms market data into 500+ feature vector for Deep RL
- * Replaces simple 4-feature input from SimpleRLAgent
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * � [SHARED-INFRASTRUCTURE]
+ * ADVANCED FEATURE EXTRACTOR
+ * Transforms market data into comprehensive feature vectors for Deep RL
+ *
+ * Shared component providing advanced feature extraction across environments
+ * Replaces simple feature input with 500+ dimensional feature vectors
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdvancedFeatureExtractor = void 0;

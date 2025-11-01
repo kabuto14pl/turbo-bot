@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 # 🐳 Docker Installation Script for Ubuntu 24.04
 # Quick Docker setup for Autonomous Trading Bot
 

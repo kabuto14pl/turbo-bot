@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚀 FAZA 2.2: ALGORYTMY OPTYMALIZACJI
  *
  * Natywna implementacja algorytmów optymalizacji w TypeScript:

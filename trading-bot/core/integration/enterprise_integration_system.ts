@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🌐 ENTERPRISE INTEGRATION SYSTEM V2.0
  * 
  * Centralized integration hub for all enterprise trading bot components.

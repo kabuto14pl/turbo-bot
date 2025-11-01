@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # Quick deployment script for Codespace
 echo "🚀 Deploying Turbo Trading Bot..."

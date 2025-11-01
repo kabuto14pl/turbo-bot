@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { MACDOutput } from './macd';
 import { SuperTrendOutput } from './supertrend';
 import { SupportResistanceLevel } from './support_resistance_detector';

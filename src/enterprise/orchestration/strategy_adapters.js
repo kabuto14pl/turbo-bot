@@ -1,0 +1,299 @@
+"use strict";
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * Strategy Adapters for Advanced Strategy Orchestrator
+ * Enterprise Trading Bot - Strategy Integration Layer
+ *
+ * This module provides adapters to integrate existing trading strategies
+ * with the new Advanced Strategy Orchestrator system.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MockStrategy = exports.CommonStrategyConfigs = exports.StrategyFactory = exports.StrategyAdapter = void 0;
+class StrategyAdapter {
+    constructor(strategy, config) {
+        this.enabled = true;
+        this.strategy = strategy;
+        this.name = config.name;
+        this.timeframe = config.timeframe;
+        this.priority = config.priority;
+        this.riskLevel = config.riskLevel;
+        this.marketRegimes = config.marketRegimes;
+        this.parameters = config.parameters || {};
+        this.performanceMetrics = {
+            name: this.name,
+            totalSignals: 0,
+            successfulSignals: 0,
+            failedSignals: 0,
+            winRate: 0,
+            avgLatency: 0,
+            memoryUsage: 0,
+            errorRate: 0,
+            lastExecutionTime: 0,
+            profitLoss: 0
+        };
+    }
+    async generateSignal(data) {
+        const startTime = Date.now();
+        try {
+            // Try different method names that might exist on the strategy
+            let rawSignal = null;
+            if (typeof this.strategy.generateSignal === 'function') {
+                rawSignal = await this.strategy.generateSignal(data);
+            }
+            else if (typeof this.strategy.getSignal === 'function') {
+                rawSignal = await this.strategy.getSignal(data);
+            }
+            else if (typeof this.strategy.analyze === 'function') {
+                rawSignal = await this.strategy.analyze(data);
+            }
+            else {
+                throw new Error(`Strategy ${this.name} does not have a compatible signal method`);
+            }
+            // Normalize the signal to our standard format
+            const normalizedSignal = this.normalizeSignal(rawSignal, data);
+            // Update performance metrics
+            this.performanceMetrics.totalSignals++;
+            this.performanceMetrics.avgLatency =
+                (this.performanceMetrics.avgLatency + (Date.now() - startTime)) / 2;
+            this.performanceMetrics.lastExecutionTime = Date.now();
+            return normalizedSignal;
+        }
+        catch (error) {
+            this.performanceMetrics.failedSignals++;
+            this.performanceMetrics.errorRate =
+                this.performanceMetrics.failedSignals / this.performanceMetrics.totalSignals;
+            console.error(`[STRATEGY ADAPTER] Error in ${this.name}:`, error);
+            // Return neutral signal on error
+            return this.createNeutralSignal(data);
+        }
+    }
+    getPerformanceMetrics() {
+        this.performanceMetrics.winRate = this.performanceMetrics.totalSignals > 0
+            ? this.performanceMetrics.successfulSignals / this.performanceMetrics.totalSignals
+            : 0;
+        return { ...this.performanceMetrics };
+    }
+    updateParameters(params) {
+        this.parameters = { ...this.parameters, ...params };
+        // If the underlying strategy has an update method, call it
+        if (typeof this.strategy.updateParameters === 'function') {
+            this.strategy.updateParameters(this.parameters);
+        }
+    }
+    normalizeSignal(rawSignal, data) {
+        // Handle different signal formats from existing strategies
+        let action = 'hold';
+        let strength = 50;
+        let confidence = 50;
+        let reasoning = `Signal from ${this.name}`;
+        let metadata = {};
+        if (rawSignal) {
+            // Handle different signal formats
+            if (typeof rawSignal === 'string') {
+                action = this.parseStringSignal(rawSignal);
+            }
+            else if (typeof rawSignal === 'object') {
+                action = this.parseObjectSignal(rawSignal);
+                strength = rawSignal.strength || rawSignal.power || rawSignal.score || 50;
+                confidence = rawSignal.confidence || rawSignal.certainty || rawSignal.probability || 50;
+                reasoning = rawSignal.reasoning || rawSignal.explanation || reasoning;
+                metadata = rawSignal.metadata || rawSignal.extra || {};
+            }
+            else if (typeof rawSignal === 'number') {
+                action = this.parseNumericSignal(rawSignal);
+                strength = Math.abs(rawSignal);
+                confidence = Math.min(Math.abs(rawSignal), 100);
+            }
+        }
+        return {
+            strategy: this.name,
+            symbol: data.symbol,
+            action,
+            strength: Math.max(0, Math.min(100, strength)),
+            confidence: Math.max(0, Math.min(100, confidence)),
+            timeframe: this.timeframe,
+            timestamp: Date.now(),
+            reasoning,
+            metadata: {
+                entry_price: data.price,
+                risk_score: this.calculateRiskScore(action, strength),
+                position_size: this.calculatePositionSize(action, strength, confidence),
+                ...metadata
+            }
+        };
+    }
+    parseStringSignal(signal) {
+        const lowerSignal = signal.toLowerCase();
+        if (lowerSignal.includes('buy') || lowerSignal.includes('long'))
+            return 'buy';
+        if (lowerSignal.includes('sell') || lowerSignal.includes('short'))
+            return 'sell';
+        return 'hold';
+    }
+    parseObjectSignal(signal) {
+        // Handle common object signal formats
+        if (signal.action)
+            return signal.action;
+        if (signal.signal)
+            return this.parseStringSignal(signal.signal);
+        if (signal.direction) {
+            if (signal.direction > 0)
+                return 'buy';
+            if (signal.direction < 0)
+                return 'sell';
+        }
+        if (signal.recommendation)
+            return this.parseStringSignal(signal.recommendation);
+        return 'hold';
+    }
+    parseNumericSignal(signal) {
+        if (signal > 0.1)
+            return 'buy';
+        if (signal < -0.1)
+            return 'sell';
+        return 'hold';
+    }
+    calculateRiskScore(action, strength) {
+        const baseRisk = {
+            'low': 20,
+            'medium': 50,
+            'high': 80
+        }[this.riskLevel];
+        return Math.min(100, baseRisk + (strength * 0.3));
+    }
+    calculatePositionSize(action, strength, confidence) {
+        if (action === 'hold')
+            return 0;
+        const baseSize = 0.1; // 10%
+        const strengthFactor = strength / 100;
+        const confidenceFactor = confidence / 100;
+        const riskFactor = this.riskLevel === 'low' ? 0.5 : this.riskLevel === 'medium' ? 1.0 : 1.5;
+        return baseSize * strengthFactor * confidenceFactor * riskFactor;
+    }
+    createNeutralSignal(data) {
+        return {
+            strategy: this.name,
+            symbol: data.symbol,
+            action: 'hold',
+            strength: 0,
+            confidence: 0,
+            timeframe: this.timeframe,
+            timestamp: Date.now(),
+            reasoning: `Neutral signal due to error in ${this.name}`,
+            metadata: {
+                entry_price: data.price,
+                risk_score: 0,
+                position_size: 0,
+                ...{ error: true } // Spread error property separately
+            }
+        };
+    }
+}
+exports.StrategyAdapter = StrategyAdapter;
+// Strategy Factory for creating adapters from existing strategies
+class StrategyFactory {
+    static registerExistingStrategy(name, strategyClass) {
+        this.registeredStrategies.set(name, strategyClass);
+    }
+    static createAdapter(strategyName, config) {
+        const StrategyClass = this.registeredStrategies.get(strategyName);
+        if (!StrategyClass) {
+            throw new Error(`Strategy ${strategyName} not registered`);
+        }
+        const strategyInstance = new StrategyClass(config.parameters || {});
+        return new StrategyAdapter(strategyInstance, {
+            name: strategyName,
+            ...config
+        });
+    }
+    static createMockStrategy(name) {
+        const mockStrategy = new MockStrategy();
+        return new StrategyAdapter(mockStrategy, {
+            name: name,
+            timeframe: '1h',
+            priority: 1,
+            riskLevel: 'medium',
+            marketRegimes: ['trending', 'ranging', 'volatile']
+        });
+    }
+    static getRegisteredStrategies() {
+        return Array.from(this.registeredStrategies.keys());
+    }
+}
+exports.StrategyFactory = StrategyFactory;
+StrategyFactory.registeredStrategies = new Map();
+// Mock Strategy for testing purposes
+class MockStrategy {
+    constructor() {
+        this.signalCount = 0;
+    }
+    async generateSignal(data) {
+        this.signalCount++;
+        // Simulate different signal types for testing
+        const signals = [
+            { action: 'buy', strength: 75, confidence: 80, reasoning: 'Bullish momentum detected' },
+            { action: 'sell', strength: 60, confidence: 70, reasoning: 'Bearish reversal signal' },
+            { action: 'hold', strength: 30, confidence: 50, reasoning: 'Sideways market detected' },
+            'buy',
+            'sell',
+            1.5, // Numeric buy signal
+            -0.8, // Numeric sell signal
+            0.05 // Numeric hold signal
+        ];
+        const randomSignal = signals[this.signalCount % signals.length];
+        // Simulate processing delay
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 50));
+        return randomSignal;
+    }
+}
+exports.MockStrategy = MockStrategy;
+// Pre-configured strategy definitions for common trading strategies
+exports.CommonStrategyConfigs = {
+    'RSI_Strategy': {
+        timeframe: '1h',
+        priority: 3,
+        riskLevel: 'medium',
+        marketRegimes: ['trending', 'ranging']
+    },
+    'MACD_Strategy': {
+        timeframe: '4h',
+        priority: 4,
+        riskLevel: 'medium',
+        marketRegimes: ['trending']
+    },
+    'Bollinger_Strategy': {
+        timeframe: '1d',
+        priority: 2,
+        riskLevel: 'low',
+        marketRegimes: ['ranging', 'volatile']
+    },
+    'EMA_Crossover': {
+        timeframe: '15m',
+        priority: 5,
+        riskLevel: 'high',
+        marketRegimes: ['trending']
+    },
+    'Support_Resistance': {
+        timeframe: '1h',
+        priority: 3,
+        riskLevel: 'medium',
+        marketRegimes: ['ranging']
+    },
+    'Momentum_Strategy': {
+        timeframe: '30m',
+        priority: 4,
+        riskLevel: 'high',
+        marketRegimes: ['trending', 'volatile']
+    }
+};

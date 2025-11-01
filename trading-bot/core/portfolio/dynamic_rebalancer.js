@@ -1,4 +1,12 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 // ============================================================================
 //  dynamic_rebalancer.ts – ADVANCED PORTFOLIO REBALANCING ENGINE
 //  Rolling window (30 dni) z daily rebalance, anti-overfitting protection

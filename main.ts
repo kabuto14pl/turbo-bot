@@ -1,8 +1,15 @@
-#!/usr/bin/env node
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 
 /**
- * Turbo Trading Bot - Main Entry Point
- * Optimized for GitHub Codespaces
+ * 🚀 [PRODUCTION-API]
+ * This is the production API server for the trading bot.
+ * Provides health checks, metrics, and monitoring endpoints.
+ * 
+ * Turbo Trading Bot - Main API Server Entry Point (Express API - 193 lines)
+ * Optimized for GitHub Codespaces and production deployment
  */
 
 import dotenv from 'dotenv';

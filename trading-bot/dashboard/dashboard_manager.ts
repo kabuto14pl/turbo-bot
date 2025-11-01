@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // Minimal stub implementation so the dashboard API can be type-checked independently.
 export class AdvancedDashboardManager {
   async getLayouts() { return []; }

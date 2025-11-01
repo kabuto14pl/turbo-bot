@@ -1,3 +1,5 @@
+# 🔧 [DEVELOPMENT-TOOL]
+# Development configuration file
 groups:
   - name: trading_bot_alerts
     rules:

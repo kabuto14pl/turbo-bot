@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚨 CENTRAL ALERT COORDINATION SYSTEM
  *
  * Enterprise-grade alert coordination system that unifies all alerts

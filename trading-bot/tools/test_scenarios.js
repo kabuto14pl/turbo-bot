@@ -1,5 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 const logger_1 = require("../infrastructure/logging/logger");
 const meta_strategy_system_1 = require("../core/strategy/meta_strategy_system");
 const enhanced_rsi_turbo_1 = require("../core/strategy/enhanced_rsi_turbo");

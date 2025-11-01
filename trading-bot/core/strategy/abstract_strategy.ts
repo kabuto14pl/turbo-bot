@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { BotState, StrategySignal } from '../types/strategy';
 
 export interface AbstractStrategy {

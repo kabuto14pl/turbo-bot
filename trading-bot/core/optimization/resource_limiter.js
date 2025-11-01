@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🔧 RESOURCE LIMITER FOR i3 HARDWARE
  * Limits ML/Optimization resources for stable operation
  */

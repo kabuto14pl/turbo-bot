@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { calcEMA } from '../indicators/ema';
 import { calcRSI } from '../indicators/rsi';
 import { calculateMACD } from '../indicators/macd';

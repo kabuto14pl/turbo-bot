@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # 🚀 QUICK CLEANUP - BEZ DŁUGIEGO BACKUP
 # Szybkie czyszczenie z minimalnym backup tylko kluczowych plików

@@ -1,7 +1,11 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
-# 🧹 TURBO BOT PROJECT CLEANUP SCRIPT
-# Usuwa martwy kod i niepotrzebne pliki
+# 🛠️ [DEVELOPMENT-TOOL]
+# TURBO BOT PROJECT CLEANUP SCRIPT
+# Development utility for removing dead code and unnecessary files
+# Maintenance tool for development environment cleanup
 
 echo "🧹 Starting Turbo Bot Project Cleanup..."
 

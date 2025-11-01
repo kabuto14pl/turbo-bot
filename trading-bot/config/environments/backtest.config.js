@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [BACKTEST-ONLY]
+ * This component is designed exclusively for backtesting and simulation purposes.
+ * Should NEVER be used in production trading environments.
+ *
  * ============================================================================
  * BACKTEST ENVIRONMENT CONFIGURATION
  * ============================================================================

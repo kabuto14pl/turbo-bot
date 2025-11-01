@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎬 AUTO-HEDGING SYSTEM DEMO V1.0
  *
  * Comprehensive demonstration of the auto-hedging system with all features.
@@ -82,6 +90,7 @@ class MockPortfolio extends portfolio_1.Portfolio {
         this.addPosition({
             symbol: 'BTC/USDT',
             size: 1.5,
+            quantity: 1.5,
             direction: 'long',
             entryPrice: 45000,
             margin: 67500,
@@ -92,6 +101,7 @@ class MockPortfolio extends portfolio_1.Portfolio {
         this.addPosition({
             symbol: 'ETH/USDT',
             size: 10,
+            quantity: 10,
             direction: 'long',
             entryPrice: 3200,
             margin: 33500,

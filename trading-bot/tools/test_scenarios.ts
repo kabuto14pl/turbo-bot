@@ -1,3 +1,7 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 import { Logger } from '../infrastructure/logging/logger';
 import { MetaStrategySystem } from '../core/strategy/meta_strategy_system';
 import { EnhancedRSITurboStrategy } from '../core/strategy/enhanced_rsi_turbo';

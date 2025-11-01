@@ -1,0 +1,598 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * PHASE C.3 - Enterprise Monitoring & Alerting
+ * Prometheus Metrics Exporter for Trading Bot
+ * 
+ * Features:
+ * - Real-time metrics collection from all system components
+ * - Prometheus-compatible metric format
+ * - Integration with Phase A cache and Phase B memory monitoring
+ * - Trading-specific metrics (signals, strategies, performance)
+ * - System health and resource monitoring
+ * - Alert-ready metric thresholds
+ */
+
+import { EventEmitter } from 'events';
+import * as http from 'http';
+import * as url from 'url';
+
+// Metric types for Prometheus
+interface PrometheusMetric {
+    name: string;
+    help: string;
+    type: 'counter' | 'gauge' | 'histogram' | 'summary';
+    labels?: { [key: string]: string };
+    value: number;
+    timestamp?: number;
+}
+
+interface MetricDefinition {
+    name: string;
+    help: string;
+    type: 'counter' | 'gauge' | 'histogram' | 'summary';
+    labelNames?: string[];
+}
+
+interface SystemMetrics {
+    // System Health
+    system_uptime_seconds: number;
+    system_memory_usage_bytes: number;
+    system_memory_total_bytes: number;
+    system_cpu_usage_percent: number;
+    system_disk_usage_percent: number;
+    
+    // Trading Engine Metrics
+    trading_signals_total: number;
+    trading_signals_success_total: number;
+    trading_signals_error_total: number;
+    trading_strategies_active: number;
+    trading_strategy_switches_total: number;
+    trading_signal_latency_ms: number;
+    
+    // Market Data Metrics
+    market_data_messages_total: number;
+    market_data_uptime_percent: number;
+    market_data_latency_ms: number;
+    market_data_quality_score: number;
+    market_data_cache_hit_ratio: number;
+    
+    // Performance Metrics
+    orchestrator_memory_usage_bytes: number;
+    orchestrator_signals_per_second: number;
+    orchestrator_avg_latency_ms: number;
+    orchestrator_error_rate_percent: number;
+    
+    // Alert Metrics
+    alerts_fired_total: number;
+    alerts_resolved_total: number;
+    alerts_active: number;
+}
+
+interface AlertRule {
+    name: string;
+    condition: string;
+    threshold: number;
+    duration: number; // seconds
+    severity: 'critical' | 'warning' | 'info';
+    description: string;
+    enabled: boolean;
+}
+
+export class PrometheusMetricsExporter extends EventEmitter {
+    private metrics: Map<string, PrometheusMetric> = new Map();
+    private metricDefinitions: Map<string, MetricDefinition> = new Map();
+    private server: http.Server | null = null;
+    private port: number;
+    private isRunning: boolean = false;
+    private collectInterval: NodeJS.Timeout | null = null;
+    private startTime: number = Date.now();
+    
+    // Integrations
+    private realTimeEngine: any = null;
+    private strategyOrchestrator: any = null;
+    private cacheService: any = null;
+    private memoryOptimizer: any = null;
+    
+    // Alert system
+    private alertRules: AlertRule[] = [];
+    private activeAlerts: Map<string, any> = new Map();
+
+    constructor(port: number = 9090) {
+        super();
+        this.port = port;
+        this.initializeMetricDefinitions();
+        this.setupDefaultAlertRules();
+        
+        console.log('[PROMETHEUS EXPORTER] Metrics exporter initialized');
+        console.log(`[PROMETHEUS EXPORTER] Will serve metrics on port ${this.port}`);
+    }
+
+    // ==================== INITIALIZATION ====================
+
+    private initializeMetricDefinitions(): void {
+        const definitions: MetricDefinition[] = [
+            // System Metrics
+            { name: 'system_uptime_seconds', help: 'System uptime in seconds', type: 'counter' },
+            { name: 'system_memory_usage_bytes', help: 'System memory usage in bytes', type: 'gauge' },
+            { name: 'system_memory_total_bytes', help: 'Total system memory in bytes', type: 'gauge' },
+            { name: 'system_cpu_usage_percent', help: 'System CPU usage percentage', type: 'gauge' },
+            { name: 'system_disk_usage_percent', help: 'System disk usage percentage', type: 'gauge' },
+            
+            // Trading Engine Metrics
+            { name: 'trading_signals_total', help: 'Total trading signals generated', type: 'counter', labelNames: ['strategy', 'action'] },
+            { name: 'trading_signals_success_total', help: 'Total successful trading signals', type: 'counter', labelNames: ['strategy'] },
+            { name: 'trading_signals_error_total', help: 'Total failed trading signals', type: 'counter', labelNames: ['strategy', 'error_type'] },
+            { name: 'trading_strategies_active', help: 'Number of active trading strategies', type: 'gauge' },
+            { name: 'trading_strategy_switches_total', help: 'Total strategy switches performed', type: 'counter' },
+            { name: 'trading_signal_latency_ms', help: 'Trading signal processing latency in milliseconds', type: 'histogram' },
+            
+            // Market Data Metrics
+            { name: 'market_data_messages_total', help: 'Total market data messages received', type: 'counter', labelNames: ['exchange', 'symbol'] },
+            { name: 'market_data_uptime_percent', help: 'Market data uptime percentage', type: 'gauge', labelNames: ['exchange'] },
+            { name: 'market_data_latency_ms', help: 'Market data latency in milliseconds', type: 'gauge', labelNames: ['exchange'] },
+            { name: 'market_data_quality_score', help: 'Market data quality score (0-100)', type: 'gauge', labelNames: ['exchange'] },
+            { name: 'market_data_cache_hit_ratio', help: 'Cache hit ratio for market data', type: 'gauge' },
+            
+            // Performance Metrics
+            { name: 'orchestrator_memory_usage_bytes', help: 'Strategy orchestrator memory usage in bytes', type: 'gauge' },
+            { name: 'orchestrator_signals_per_second', help: 'Signals processed per second by orchestrator', type: 'gauge' },
+            { name: 'orchestrator_avg_latency_ms', help: 'Average orchestrator processing latency in milliseconds', type: 'gauge' },
+            { name: 'orchestrator_error_rate_percent', help: 'Orchestrator error rate percentage', type: 'gauge' },
+            
+            // Alert Metrics
+            { name: 'alerts_fired_total', help: 'Total alerts fired', type: 'counter', labelNames: ['severity', 'rule'] },
+            { name: 'alerts_resolved_total', help: 'Total alerts resolved', type: 'counter', labelNames: ['severity', 'rule'] },
+            { name: 'alerts_active', help: 'Number of active alerts', type: 'gauge', labelNames: ['severity'] }
+        ];
+
+        definitions.forEach(def => {
+            this.metricDefinitions.set(def.name, def);
+        });
+    }
+
+    private setupDefaultAlertRules(): void {
+        this.alertRules = [
+            // Critical Alerts
+            {
+                name: 'system_memory_high',
+                condition: 'system_memory_usage_bytes / system_memory_total_bytes > 0.9',
+                threshold: 0.9,
+                duration: 60,
+                severity: 'critical',
+                description: 'System memory usage is above 90%',
+                enabled: true
+            },
+            {
+                name: 'market_data_down',
+                condition: 'market_data_uptime_percent < 95',
+                threshold: 95,
+                duration: 30,
+                severity: 'critical',
+                description: 'Market data uptime is below 95%',
+                enabled: true
+            },
+            {
+                name: 'trading_error_rate_high',
+                condition: 'orchestrator_error_rate_percent > 10',
+                threshold: 10,
+                duration: 120,
+                severity: 'critical',
+                description: 'Trading error rate is above 10%',
+                enabled: true
+            },
+            
+            // Warning Alerts
+            {
+                name: 'signal_latency_high',
+                condition: 'trading_signal_latency_ms > 1000',
+                threshold: 1000,
+                duration: 300,
+                severity: 'warning',
+                description: 'Trading signal latency is above 1000ms',
+                enabled: true
+            },
+            {
+                name: 'cache_hit_ratio_low',
+                condition: 'market_data_cache_hit_ratio < 0.8',
+                threshold: 0.8,
+                duration: 300,
+                severity: 'warning',
+                description: 'Cache hit ratio is below 80%',
+                enabled: true
+            },
+            
+            // Info Alerts
+            {
+                name: 'strategy_switch_frequent',
+                condition: 'rate(trading_strategy_switches_total[5m]) > 0.1',
+                threshold: 0.1,
+                duration: 300,
+                severity: 'info',
+                description: 'Strategy switching is happening frequently',
+                enabled: true
+            }
+        ];
+    }
+
+    // ==================== INTEGRATION METHODS ====================
+
+    public integrateRealTimeEngine(engine: any): void {
+        this.realTimeEngine = engine;
+        
+        // Listen to engine events
+        engine.on('marketData', (data: any) => {
+            this.incrementMetric('market_data_messages_total', 1, {
+                exchange: data.exchange,
+                symbol: data.symbol
+            });
+            
+            this.setMetric('market_data_latency_ms', data.latency || 0, {
+                exchange: data.exchange
+            });
+            
+            this.setMetric('market_data_quality_score', data.quality?.score || 0, {
+                exchange: data.exchange
+            });
+        });
+
+        engine.on('engineStats', (stats: any) => {
+            this.setMetric('market_data_uptime_percent', stats.uptime || 0);
+            this.setMetric('market_data_cache_hit_ratio', stats.cacheHitRatio || 0);
+        });
+
+        console.log('[PROMETHEUS EXPORTER] Real-time engine integration established');
+    }
+
+    public integrateStrategyOrchestrator(orchestrator: any): void {
+        this.strategyOrchestrator = orchestrator;
+        
+        // Listen to orchestrator events
+        orchestrator.on('signalGenerated', (signal: any) => {
+            this.incrementMetric('trading_signals_total', 1, {
+                strategy: signal.contributingStrategies?.join(',') || 'unknown',
+                action: signal.finalAction
+            });
+        });
+
+        orchestrator.on('strategySwitched', () => {
+            this.incrementMetric('trading_strategy_switches_total', 1);
+        });
+
+        orchestrator.on('performanceUpdate', (performance: any) => {
+            const stats = performance.stats;
+            this.setMetric('orchestrator_memory_usage_bytes', stats.memoryUsage || 0);
+            this.setMetric('orchestrator_signals_per_second', stats.signalsPerSecond || 0);
+            this.setMetric('orchestrator_avg_latency_ms', stats.averageLatency || 0);
+            this.setMetric('trading_strategies_active', performance.strategies?.length || 0);
+            
+            // Calculate error rate
+            const totalSignals = stats.totalSignalsProcessed || 1;
+            const errorRate = (stats.errors || 0) / totalSignals * 100;
+            this.setMetric('orchestrator_error_rate_percent', errorRate);
+        });
+
+        orchestrator.on('error', () => {
+            this.incrementMetric('trading_signals_error_total', 1, {
+                strategy: 'unknown',
+                error_type: 'orchestrator_error'
+            });
+        });
+
+        console.log('[PROMETHEUS EXPORTER] Strategy orchestrator integration established');
+    }
+
+    public integrateCacheService(cache: any): void {
+        this.cacheService = cache;
+        console.log('[PROMETHEUS EXPORTER] Cache service integration established');
+    }
+
+    public integrateMemoryOptimizer(optimizer: any): void {
+        this.memoryOptimizer = optimizer;
+        console.log('[PROMETHEUS EXPORTER] Memory optimizer integration established');
+    }
+
+    // ==================== METRIC OPERATIONS ====================
+
+    public setMetric(name: string, value: number, labels?: { [key: string]: string }): void {
+        const key = this.getMetricKey(name, labels);
+        const definition = this.metricDefinitions.get(name);
+        
+        if (!definition) {
+            console.warn(`[PROMETHEUS EXPORTER] Unknown metric: ${name}`);
+            return;
+        }
+
+        this.metrics.set(key, {
+            name,
+            help: definition.help,
+            type: definition.type,
+            labels: labels || {},
+            value,
+            timestamp: Date.now()
+        });
+    }
+
+    public incrementMetric(name: string, increment: number = 1, labels?: { [key: string]: string }): void {
+        const key = this.getMetricKey(name, labels);
+        const existing = this.metrics.get(key);
+        
+        if (existing) {
+            existing.value += increment;
+            existing.timestamp = Date.now();
+        } else {
+            this.setMetric(name, increment, labels);
+        }
+    }
+
+    private getMetricKey(name: string, labels?: { [key: string]: string }): string {
+        if (!labels) return name;
+        
+        const labelStr = Object.entries(labels)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([k, v]) => `${k}="${v}"`)
+            .join(',');
+            
+        return `${name}{${labelStr}}`;
+    }
+
+    // ==================== SYSTEM METRICS COLLECTION ====================
+
+    private collectSystemMetrics(): void {
+        const memUsage = process.memoryUsage();
+        const uptime = (Date.now() - this.startTime) / 1000;
+        
+        // Basic system metrics
+        this.setMetric('system_uptime_seconds', uptime);
+        this.setMetric('system_memory_usage_bytes', memUsage.heapUsed);
+        this.setMetric('system_memory_total_bytes', memUsage.heapTotal);
+        
+        // CPU usage (simplified)
+        const cpuUsage = process.cpuUsage();
+        const cpuPercent = (cpuUsage.user + cpuUsage.system) / 1000000 / uptime * 100;
+        this.setMetric('system_cpu_usage_percent', Math.min(100, cpuPercent));
+        
+        // Disk usage (placeholder - would need additional library for real implementation)
+        this.setMetric('system_disk_usage_percent', 45); // Mock value
+    }
+
+    // ==================== ALERT PROCESSING ====================
+
+    private processAlerts(): void {
+        for (const rule of this.alertRules) {
+            if (!rule.enabled) continue;
+            
+            const isTriggered = this.evaluateAlertRule(rule);
+            const alertKey = rule.name;
+            const existingAlert = this.activeAlerts.get(alertKey);
+            
+            if (isTriggered && !existingAlert) {
+                // Fire new alert
+                const alert = {
+                    rule: rule.name,
+                    severity: rule.severity,
+                    description: rule.description,
+                    firedAt: Date.now(),
+                    value: this.getMetricValueForRule(rule)
+                };
+                
+                this.activeAlerts.set(alertKey, alert);
+                this.incrementMetric('alerts_fired_total', 1, {
+                    severity: rule.severity,
+                    rule: rule.name
+                });
+                
+                this.emit('alertFired', alert);
+                console.warn(`[PROMETHEUS EXPORTER] 🚨 Alert fired: ${rule.name} - ${rule.description}`);
+                
+            } else if (!isTriggered && existingAlert) {
+                // Resolve existing alert
+                this.activeAlerts.delete(alertKey);
+                this.incrementMetric('alerts_resolved_total', 1, {
+                    severity: rule.severity,
+                    rule: rule.name
+                });
+                
+                this.emit('alertResolved', { ...existingAlert, resolvedAt: Date.now() });
+                console.log(`[PROMETHEUS EXPORTER] ✅ Alert resolved: ${rule.name}`);
+            }
+        }
+        
+        // Update active alert counts
+        const alertCounts = { critical: 0, warning: 0, info: 0 };
+        for (const alert of Array.from(this.activeAlerts.values())) {
+            alertCounts[alert.severity as keyof typeof alertCounts]++;
+        }
+        
+        this.setMetric('alerts_active', alertCounts.critical, { severity: 'critical' });
+        this.setMetric('alerts_active', alertCounts.warning, { severity: 'warning' });
+        this.setMetric('alerts_active', alertCounts.info, { severity: 'info' });
+    }
+
+    private evaluateAlertRule(rule: AlertRule): boolean {
+        // Simplified rule evaluation - in production would use proper PromQL parser
+        const value = this.getMetricValueForRule(rule);
+        
+        if (rule.condition.includes('>')) {
+            return value > rule.threshold;
+        } else if (rule.condition.includes('<')) {
+            return value < rule.threshold;
+        }
+        
+        return false;
+    }
+
+    private getMetricValueForRule(rule: AlertRule): number {
+        // Extract metric name from condition and get its value
+        if (rule.condition.includes('system_memory_usage_bytes / system_memory_total_bytes')) {
+            const memUsage = this.getMetricValue('system_memory_usage_bytes');
+            const memTotal = this.getMetricValue('system_memory_total_bytes');
+            return memTotal > 0 ? memUsage / memTotal : 0;
+        }
+        
+        // Extract simple metric names
+        const metricMatch = rule.condition.match(/([a-z_]+)/);
+        if (metricMatch) {
+            return this.getMetricValue(metricMatch[1]);
+        }
+        
+        return 0;
+    }
+
+    private getMetricValue(name: string): number {
+        for (const [key, metric] of Array.from(this.metrics)) {
+            if (key.startsWith(name)) {
+                return metric.value;
+            }
+        }
+        return 0;
+    }
+
+    // ==================== HTTP SERVER ====================
+
+    public async start(): Promise<void> {
+        if (this.isRunning) {
+            throw new Error('Metrics exporter is already running');
+        }
+
+        this.server = http.createServer(this.handleRequest.bind(this));
+        
+        return new Promise((resolve, reject) => {
+            this.server!.listen(this.port, (error?: Error) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    this.isRunning = true;
+                    
+                    // Start metric collection
+                    this.collectInterval = setInterval(() => {
+                        this.collectSystemMetrics();
+                        this.processAlerts();
+                    }, 15000); // Every 15 seconds
+                    
+                    console.log(`[PROMETHEUS EXPORTER] Metrics server started on port ${this.port}`);
+                    console.log(`[PROMETHEUS EXPORTER] Metrics endpoint: http://localhost:${this.port}/metrics`);
+                    this.emit('started');
+                    resolve();
+                }
+            });
+        });
+    }
+
+    public async stop(): Promise<void> {
+        if (!this.isRunning) return;
+
+        if (this.collectInterval) {
+            clearInterval(this.collectInterval);
+            this.collectInterval = null;
+        }
+
+        if (this.server) {
+            return new Promise((resolve) => {
+                this.server!.close(() => {
+                    this.isRunning = false;
+                    console.log('[PROMETHEUS EXPORTER] Metrics server stopped');
+                    this.emit('stopped');
+                    resolve();
+                });
+            });
+        }
+    }
+
+    private handleRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
+        const parsedUrl = url.parse(req.url || '', true);
+        
+        if (parsedUrl.pathname === '/metrics') {
+            res.writeHead(200, { 
+                'Content-Type': 'text/plain; version=0.0.4; charset=utf-8'
+            });
+            res.end(this.formatPrometheusMetrics());
+            
+        } else if (parsedUrl.pathname === '/health') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                status: 'healthy',
+                uptime: (Date.now() - this.startTime) / 1000,
+                metrics_count: this.metrics.size,
+                active_alerts: this.activeAlerts.size
+            }));
+            
+        } else {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Not Found');
+        }
+    }
+
+    private formatPrometheusMetrics(): string {
+        const lines: string[] = [];
+        const processedMetrics = new Set<string>();
+        
+        for (const [_, metric] of Array.from(this.metrics)) {
+            if (!processedMetrics.has(metric.name)) {
+                // Add HELP and TYPE once per metric
+                lines.push(`# HELP ${metric.name} ${metric.help}`);
+                lines.push(`# TYPE ${metric.name} ${metric.type}`);
+                processedMetrics.add(metric.name);
+            }
+            
+            // Add metric line
+            const labelStr = Object.entries(metric.labels || {})
+                .map(([k, v]) => `${k}="${v}"`)
+                .join(',');
+                
+            const metricLine = labelStr 
+                ? `${metric.name}{${labelStr}} ${metric.value}`
+                : `${metric.name} ${metric.value}`;
+                
+            lines.push(metricLine);
+        }
+        
+        return lines.join('\n') + '\n';
+    }
+
+    // ==================== GETTERS ====================
+
+    public getMetrics(): Map<string, PrometheusMetric> {
+        return new Map(this.metrics);
+    }
+
+    public getActiveAlerts(): Map<string, any> {
+        return new Map(this.activeAlerts);
+    }
+
+    public getAlertRules(): AlertRule[] {
+        return [...this.alertRules];
+    }
+
+    public isHealthy(): boolean {
+        return this.isRunning && this.activeAlerts.size === 0;
+    }
+
+    public getSystemStats() {
+        return {
+            uptime: (Date.now() - this.startTime) / 1000,
+            metricsCount: this.metrics.size,
+            activeAlerts: this.activeAlerts.size,
+            alertRules: this.alertRules.length
+        };
+    }
+}
+
+// Default configuration
+export const DefaultPrometheusConfig = {
+    port: 9090,
+    collectInterval: 15000, // 15 seconds
+    alertEvaluationInterval: 30000 // 30 seconds
+};
+
+export type { PrometheusMetric, MetricDefinition, SystemMetrics, AlertRule };

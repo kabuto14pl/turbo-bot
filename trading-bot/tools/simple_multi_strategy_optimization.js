@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  simple_multi_strategy_optimization.ts - Prosta optymalizacja wielu strategii
 //  Ten skrypt przeprowadza optymalizację dla każdej strategii osobno

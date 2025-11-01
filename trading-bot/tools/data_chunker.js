@@ -34,6 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dataChunker = exports.DataChunker = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const fs_1 = require("fs");

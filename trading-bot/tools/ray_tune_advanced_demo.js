@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 // ============================================================================
 //  RAY TUNE ADVANCED DEMO - Zaawansowane demo integracji z Ray Tune
 //  🚀 Faza 1.2: Implementacja Mostka TypeScript-Python

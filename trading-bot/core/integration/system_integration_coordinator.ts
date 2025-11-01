@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🔗 SYSTEM INTEGRATION COORDINATOR
  * 
  * Integrates Alert Coordination System with Dashboard Interface System

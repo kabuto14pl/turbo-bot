@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🎯 DASHBOARD INTEGRATION
  * Integracja systemu dashboardu z głównym botem tradingowym
  */
@@ -25,8 +29,8 @@ export class DashboardIntegration extends EventEmitter {
     private config: DashboardIntegrationConfig;
     
     // Dashboard components
-    private dataProvider: RealTimeDataProvider;
-    private dashboardManager: AdvancedDashboardManager;
+    private dataProvider!: RealTimeDataProvider;
+    private dashboardManager!: AdvancedDashboardManager;
     private wsServer: DashboardWebSocketServer | null = null;
     private httpAPI: DashboardAPI | null = null;
     

@@ -1,3 +1,7 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 export class GUI {
     constructor() {
         // Initialize GUI components

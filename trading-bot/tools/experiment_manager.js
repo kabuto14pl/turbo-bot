@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  experiment_manager.ts - ZARZĄDZANIE EKSPERYMENTAMI OPTYMALIZACJI
 //  Ten moduł implementuje system zarządzania i porównywania eksperymentów

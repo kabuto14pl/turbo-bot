@@ -1,3 +1,11 @@
+/**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import express from 'express';
 import { EventEmitter } from 'events';
 

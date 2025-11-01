@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 📅 LEARNING RATE SCHEDULER SYSTEM
  * Advanced learning rate scheduling for optimal Deep RL training
  * Implements multiple scheduling strategies with adaptive mechanisms

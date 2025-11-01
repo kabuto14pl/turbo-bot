@@ -1,3 +1,7 @@
+/**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
 import { Registry, Gauge, Counter, Histogram } from 'prom-client';
 import { Logger } from '../../infrastructure/logging/logger';
 

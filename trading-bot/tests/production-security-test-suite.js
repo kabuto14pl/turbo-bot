@@ -1,5 +1,8 @@
-#!/usr/bin/env ts-node
 "use strict";
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 /**
  * 🧪 COMPREHENSIVE PRODUCTION SECURITY TEST SUITE
  * Complete testing framework for production readiness validation

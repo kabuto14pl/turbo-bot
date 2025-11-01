@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExchangeAPI = void 0;
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 class ExchangeAPI {
     constructor(apiKey, apiSecret) {
         this.apiKey = apiKey;

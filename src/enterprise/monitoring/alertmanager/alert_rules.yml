@@ -1,0 +1,359 @@
+# 🔧 [DEVELOPMENT-TOOL]
+# Development configuration file
+# Prometheus Alert Rules for Trading Bot Enterprise Monitoring
+# These rules define when alerts should be triggered based on metrics
+
+groups:
+  # System Health Alert Rules
+  - name: system_health
+    interval: 30s
+    rules:
+      # Critical system memory usage
+      - alert: SystemMemoryHigh
+        expr: (system_memory_usage_bytes / system_memory_total_bytes) * 100 > 90
+        for: 1m
+        labels:
+          severity: critical
+          service: system
+          category: resource
+        annotations:
+          summary: "System memory usage is critically high"
+          description: "System memory usage is {{ $value | humanizePercentage }} which is above the 90% threshold"
+          value: "{{ $value | humanizePercentage }}"
+          runbook_url: "https://wiki.company.com/runbooks/system-memory-high"
+          dashboard_url: "https://grafana.company.com/d/system-overview"
+
+      # System memory warning threshold
+      - alert: SystemMemoryWarning
+        expr: (system_memory_usage_bytes / system_memory_total_bytes) * 100 > 75
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+          category: resource
+        annotations:
+          summary: "System memory usage is high"
+          description: "System memory usage is {{ $value | humanizePercentage }} which is above the 75% threshold"
+          value: "{{ $value | humanizePercentage }}"
+
+      # High CPU usage
+      - alert: SystemCPUHigh
+        expr: system_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+          category: resource
+        annotations:
+          summary: "System CPU usage is high"
+          description: "System CPU usage is {{ $value }}% which is above the 80% threshold"
+          value: "{{ $value }}%"
+
+      # High disk usage
+      - alert: SystemDiskHigh
+        expr: system_disk_usage_percent > 85
+        for: 10m
+        labels:
+          severity: warning
+          service: system
+          category: resource
+        annotations:
+          summary: "System disk usage is high"
+          description: "System disk usage is {{ $value }}% which is above the 85% threshold"
+          value: "{{ $value }}%"
+
+      # System down
+      - alert: SystemDown
+        expr: up{job="trading-bot"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: system
+          category: availability
+        annotations:
+          summary: "Trading bot system is down"
+          description: "Trading bot system has been down for more than 30 seconds"
+          runbook_url: "https://wiki.company.com/runbooks/system-down"
+
+  # Market Data Alert Rules
+  - name: market_data
+    interval: 15s
+    rules:
+      # Market data uptime critical
+      - alert: MarketDataDown
+        expr: market_data_uptime_percent < 95
+        for: 30s
+        labels:
+          severity: critical
+          service: market-data
+          category: availability
+        annotations:
+          summary: "Market data uptime is critically low"
+          description: "Market data uptime for {{ $labels.exchange }} is {{ $value }}% which is below the 95% threshold"
+          value: "{{ $value }}%"
+          runbook_url: "https://wiki.company.com/runbooks/market-data-down"
+
+      # Market data uptime warning
+      - alert: MarketDataUptimeWarning
+        expr: market_data_uptime_percent < 98
+        for: 2m
+        labels:
+          severity: warning
+          service: market-data
+          category: availability
+        annotations:
+          summary: "Market data uptime is low"
+          description: "Market data uptime for {{ $labels.exchange }} is {{ $value }}% which is below the 98% threshold"
+          value: "{{ $value }}%"
+
+      # High market data latency
+      - alert: MarketDataLatencyHigh
+        expr: market_data_latency_ms > 500
+        for: 2m
+        labels:
+          severity: warning
+          service: market-data
+          category: performance
+        annotations:
+          summary: "Market data latency is high"
+          description: "Market data latency for {{ $labels.exchange }} is {{ $value }}ms which is above the 500ms threshold"
+          value: "{{ $value }}ms"
+
+      # Market data quality low
+      - alert: MarketDataQualityLow
+        expr: market_data_quality_score < 80
+        for: 5m
+        labels:
+          severity: warning
+          service: market-data
+          category: quality
+        annotations:
+          summary: "Market data quality is low"
+          description: "Market data quality for {{ $labels.exchange }} is {{ $value }} which is below the 80 threshold"
+          value: "{{ $value }}"
+
+      # Cache hit ratio low
+      - alert: CacheHitRatioLow
+        expr: market_data_cache_hit_ratio < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: market-data
+          category: performance
+        annotations:
+          summary: "Cache hit ratio is low"
+          description: "Cache hit ratio is {{ $value | humanizePercentage }} which is below the 80% threshold"
+          value: "{{ $value | humanizePercentage }}"
+
+  # Trading Engine Alert Rules
+  - name: trading_engine
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: TradingErrorRateHigh
+        expr: orchestrator_error_rate_percent > 10
+        for: 2m
+        labels:
+          severity: critical
+          service: trading-engine
+          category: reliability
+        annotations:
+          summary: "Trading engine error rate is critically high"
+          description: "Trading engine error rate is {{ $value }}% which is above the 10% threshold"
+          value: "{{ $value }}%"
+          runbook_url: "https://wiki.company.com/runbooks/trading-error-rate-high"
+
+      # Warning error rate
+      - alert: TradingErrorRateWarning
+        expr: orchestrator_error_rate_percent > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: trading-engine
+          category: reliability
+        annotations:
+          summary: "Trading engine error rate is elevated"
+          description: "Trading engine error rate is {{ $value }}% which is above the 5% threshold"
+          value: "{{ $value }}%"
+
+      # High signal latency
+      - alert: TradingSignalLatencyHigh
+        expr: trading_signal_latency_ms > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: trading-engine
+          category: performance
+        annotations:
+          summary: "Trading signal latency is high"
+          description: "Trading signal latency is {{ $value }}ms which is above the 1000ms threshold"
+          value: "{{ $value }}ms"
+
+      # No active strategies
+      - alert: TradingNoActiveStrategies
+        expr: trading_strategies_active == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: trading-engine
+          category: availability
+        annotations:
+          summary: "No active trading strategies"
+          description: "No trading strategies are currently active"
+          runbook_url: "https://wiki.company.com/runbooks/no-active-strategies"
+
+      # Frequent strategy switching
+      - alert: TradingStrategySwichingFrequent
+        expr: rate(trading_strategy_switches_total[5m]) * 60 > 6
+        for: 5m
+        labels:
+          severity: info
+          service: trading-engine
+          category: behavior
+        annotations:
+          summary: "Frequent strategy switching detected"
+          description: "Strategy switching rate is {{ $value }} switches per minute, which may indicate instability"
+          value: "{{ $value }}"
+
+      # Low signal generation rate
+      - alert: TradingSignalRateLow
+        expr: rate(trading_signals_total[5m]) * 60 < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: trading-engine
+          category: performance
+        annotations:
+          summary: "Trading signal generation rate is low"
+          description: "Signal generation rate is {{ $value }} signals per minute, which is unusually low"
+          value: "{{ $value }}"
+
+  # Strategy Performance Alert Rules
+  - name: strategy_performance
+    interval: 60s
+    rules:
+      # High orchestrator memory usage
+      - alert: OrchestratorMemoryHigh
+        expr: orchestrator_memory_usage_bytes / (1024 * 1024) > 500
+        for: 5m
+        labels:
+          severity: warning
+          service: trading-engine
+          category: resource
+        annotations:
+          summary: "Strategy orchestrator memory usage is high"
+          description: "Orchestrator memory usage is {{ $value }}MB which is above the 500MB threshold"
+          value: "{{ $value }}MB"
+
+      # Low signals per second
+      - alert: OrchestratorSignalsPerSecondLow
+        expr: orchestrator_signals_per_second < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: trading-engine
+          category: performance
+        annotations:
+          summary: "Strategy orchestrator signal processing rate is low"
+          description: "Orchestrator is processing {{ $value }} signals per second, which is below normal"
+          value: "{{ $value }}"
+
+      # High average latency
+      - alert: OrchestratorLatencyHigh
+        expr: orchestrator_avg_latency_ms > 500
+        for: 5m
+        labels:
+          severity: warning
+          service: trading-engine
+          category: performance
+        annotations:
+          summary: "Strategy orchestrator average latency is high"
+          description: "Orchestrator average latency is {{ $value }}ms which is above the 500ms threshold"
+          value: "{{ $value }}ms"
+
+  # Alert System Health Rules
+  - name: alert_system
+    interval: 60s
+    rules:
+      # Too many active alerts
+      - alert: TooManyActiveAlerts
+        expr: sum(alerts_active) > 20
+        for: 5m
+        labels:
+          severity: warning
+          service: monitoring
+          category: alert-management
+        annotations:
+          summary: "Too many active alerts"
+          description: "There are {{ $value }} active alerts, which may indicate a systemic issue"
+          value: "{{ $value }}"
+
+      # Alert storm detection
+      - alert: AlertStorm
+        expr: rate(alerts_fired_total[5m]) * 60 > 10
+        for: 2m
+        labels:
+          severity: critical
+          service: monitoring
+          category: alert-management
+        annotations:
+          summary: "Alert storm detected"
+          description: "Alerts are firing at a rate of {{ $value }} per minute, indicating a possible alert storm"
+          value: "{{ $value }}"
+          runbook_url: "https://wiki.company.com/runbooks/alert-storm"
+
+  # Business Logic Alert Rules
+  - name: business_logic
+    interval: 120s
+    rules:
+      # Extended system uptime milestone
+      - alert: SystemUptimeMilestone
+        expr: system_uptime_seconds / 3600 > 720  # 30 days
+        for: 0s
+        labels:
+          severity: info
+          service: system
+          category: milestone
+        annotations:
+          summary: "System uptime milestone reached"
+          description: "Trading bot has been running for {{ $value }} hours (30+ days)"
+          value: "{{ $value }}"
+
+      # High trading volume period
+      - alert: HighTradingVolume
+        expr: rate(trading_signals_total[10m]) * 60 > 10
+        for: 10m
+        labels:
+          severity: info
+          service: trading-engine
+          category: business
+        annotations:
+          summary: "High trading signal volume detected"
+          description: "Signal generation rate is {{ $value }} per minute, indicating high market activity"
+          value: "{{ $value }}"
+
+  # Deadman's Switch Rules
+  - name: deadmans_switch
+    interval: 60s
+    rules:
+      # Prometheus scraping working
+      - alert: DeadMansSwitch
+        expr: vector(1)
+        labels:
+          severity: info
+          service: monitoring
+          category: heartbeat
+        annotations:
+          summary: "Monitoring system heartbeat"
+          description: "This alert is always firing to ensure the monitoring system is working"
+
+      # Market data messages flowing
+      - alert: MarketDataHeartbeat
+        expr: increase(market_data_messages_total[2m]) > 0
+        labels:
+          severity: info
+          service: market-data
+          category: heartbeat
+        annotations:
+          summary: "Market data is flowing"
+          description: "Market data messages are being received normally"

@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # 🔍 BEZPIECZNA ANALIZA ZALEŻNOŚCI AUTONOMOUS_TRADING_BOT.TS
 # Sprawdza wszystkie pliki używane przez finalną wersję bota

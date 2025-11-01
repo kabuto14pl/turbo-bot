@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * MARKET DATA TYPES - Required types for market data and trading
  */
 

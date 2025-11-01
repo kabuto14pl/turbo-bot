@@ -1,3 +1,11 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import * as fs from 'fs';
 import { Position } from '../types/position';
 import { Order } from '../types/order';

@@ -1,5 +1,19 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * This component is designed for testing and validation purposes.
+ * Should NEVER be used for live trading.
+ */
+
 // ============================================================================
-//  main.ts – FINALNY TEST INTEGRACYJNY BOTA
+//  main.ts – FINALNY TEST INTEGRACYJNY BOTA (TESTING FRAMEWORK - 1942 lines)
 //  Ten plik uruchamia CAŁĄ logikę bota: ładowanie danych, strategie, portfel,
 //  egzekucję, zarządzanie ryzykiem, logowanie, raporty itd.
 //  Używaj tego pliku do testów końcowych, symulacji produkcji i walidacji
@@ -192,27 +206,43 @@ async function initializeSystem() {
     // Apply environment overrides
     const finalConfig = configManager.applyEnvironmentOverrides(config);
     
+    // Create shared components
+    const logger = new Logger();
+    const globalPortfolio = new Portfolio(finalConfig.tradingConfig.initialCapital);
+    const globalRiskManager = new RiskManager(logger);
+    
     // Select executor based on environment
     let executor;
-    if (mode === 'production') {
+    if (mode === 'production' && 'okxConfig' in finalConfig) {
       console.log('🚨 Production mode: OKX Executor Adapter initialized');
-      executor = new OKXExecutorAdapter({
-        apiKey: finalConfig.okxConfig?.apiKey || '',
-        secretKey: finalConfig.okxConfig?.secretKey || '',
-        passphrase: finalConfig.okxConfig?.passphrase || '',
-        sandbox: finalConfig.okxConfig?.sandbox || false,
-        enableRealTrading: finalConfig.okxConfig?.enableRealTrading || false
-      });
+      executor = new OKXExecutorAdapter(
+        logger,
+        globalPortfolio,
+        globalRiskManager,
+        {
+          apiKey: finalConfig.okxConfig.apiKey || '',
+          secretKey: finalConfig.okxConfig.secretKey || '',
+          passphrase: finalConfig.okxConfig.passphrase || '',
+          sandbox: finalConfig.okxConfig.sandbox || false,
+          tdMode: finalConfig.okxConfig.tdMode || 'cash'
+        }
+      );
     } else {
       console.log('🧪 Demo/Backtest mode: Simulated Executor initialized');
-      executor = new SimulatedExecutor();
+      const simulationConfig = {
+        commissionBps: 10, // 0.1% = 10 basis points
+        slippageBps: 1     // 0.01% = 1 basis point
+      };
+      executor = new SimulatedExecutor(
+        logger,
+        globalPortfolio,
+        globalRiskManager,
+        simulationConfig
+      );
     }
     
     // Initialize performance tracker with enterprise metrics
-    const performanceTracker = new PerformanceTracker({
-      executor,
-      metrics: ['VaR', 'CVaR', 'Sortino', 'Calmar', 'SharpeRatio', 'MaxDrawdown']
-    });
+    const performanceTracker = new PerformanceTracker(finalConfig.tradingConfig.initialCapital);
     
     // Log successful initialization
     console.log(`✅ System initialized successfully in ${mode} mode`);
@@ -230,7 +260,7 @@ async function initializeSystem() {
     };
     
   } catch (error) {
-    console.error('🚨 System initialization failed:', error.message);
+    console.error('🚨 System initialization failed:', error instanceof Error ? error.message : String(error));
     throw error;
   }
 }
@@ -1482,9 +1512,6 @@ export async function runTest(config: TestConfig, candles15m: any[], kafkaEngine
   
   // Return dashboard integration for cleanup in main function
   return { dashboardIntegration, stats };
-  console.log(`Logi scoringu zapisane w: ${path.join(testDirectory, 'signal_scoring.log')}`);
-
-  return stats;
 }
 
 // ============================================================================

@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🖥️ ENTERPRISE DASHBOARD INTERFACE SYSTEM V2.0
  * 
  * High-quality, production-ready web-based dashboard for advanced trading bot monitoring.

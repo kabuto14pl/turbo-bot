@@ -1,3 +1,11 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 export class RiskManagement {
     assessRisk(exposure: number, volatility: number): string {
         // Implement risk assessment logic here

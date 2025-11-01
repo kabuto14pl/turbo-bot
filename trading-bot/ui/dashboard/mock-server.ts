@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import cors from 'cors';
@@ -93,7 +97,14 @@ let mockSystemStatus = {
   lastUpdate: new Date()
 };
 
-let mockPrices = {
+interface PriceData {
+  price: number;
+  change24h: number;
+  volume24h: number;
+  timestamp: number;
+}
+
+let mockPrices: Record<string, PriceData> = {
   'BTC/USDT': { price: 45123.45, change24h: 1234.56, volume24h: 25000000, timestamp: Date.now() },
   'ETH/USDT': { price: 2834.67, change24h: -45.23, volume24h: 15000000, timestamp: Date.now() },
   'BNB/USDT': { price: 456.78, change24h: 12.34, volume24h: 8000000, timestamp: Date.now() }

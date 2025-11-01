@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 📊 REAL-TIME MONITORING & ALERTING SYSTEM
  * Enterprise-grade monitoring with predictive alerting and anomaly detection
  * Implements comprehensive metrics collection, analysis, and intelligent alerting

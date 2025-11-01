@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // rsi_diagnostic.ts
 // Script to examine RSI values in the Bitcoin data
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {

@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GUI = void 0;
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 class GUI {
     constructor() {
         // Initialize GUI components

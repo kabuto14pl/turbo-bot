@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 # 🔍 Enterprise ML System Monitor
 
 while true; do

@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  parameter_sensitivity.ts - ANALIZA WRAŻLIWOŚCI PARAMETRÓW
 //  Ten moduł analizuje wpływ zmian poszczególnych parametrów na wyniki strategii.

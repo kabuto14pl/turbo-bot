@@ -33,6 +33,10 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // Skrypt debugujący dla SuperTrend
 const supertrend_1 = require("../core/indicators/supertrend");
 const csv_loader_1 = require("../infrastructure/data/csv_loader");

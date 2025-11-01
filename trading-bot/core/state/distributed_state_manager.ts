@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 // ============================================================================
 //  distributed_state_manager.ts – DISTRIBUTED STATE MANAGEMENT
 //  Transakcje, locki, conflict resolution dla horizontal scaling

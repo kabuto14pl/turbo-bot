@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🔗 SIMPLE SYSTEM INTEGRATION COORDINATOR
  * 
  * Simplified integration coordinator for testing purposes.

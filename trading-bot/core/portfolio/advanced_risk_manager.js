@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * ⚠️ ADVANCED RISK MANAGEMENT SYSTEM
  * Zaawansowane zarządzanie ryzykiem portfela z multiple risk models
  */

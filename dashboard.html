@@ -1,0 +1,614 @@
+<!-- 🖥️ [PRODUCTION-API] -->
+<!-- Production web interface component -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-w        .metric-label {
+            color: #aaa;
+            font-weight: 400;
+        }
+        
+        .metric-value {
+            color: #00f5ff;
+            font-weight: 600;
+        }
+        
+        .metric-value.positive {
+            color: #4ade80;
+        }
+        
+        .metric-value.negative {
+            color: #f87171;
+        }tial-scale=1.0">
+    <title>🚀 Enterprise Trading Bot Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00f5ff 0%, #ff00ff 50%, #ffff00 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: #888;
+            font-weight: 300;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 245, 255, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 245, 255, 0.1);
+        }
+        
+        .card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #00f5ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-healthy { background-color: #00ff88; }
+        .status-degraded { background-color: #ffaa00; }
+        .status-unhealthy { background-color: #ff4444; }
+        .status-loading { background-color: #888; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .metric-label {
+            color: #aaa;
+            font-weight: 400;
+        }
+        
+        .metric-value {
+            color: #fff;
+            font-weight: 600;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #00f5ff 0%, #0080ff 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+            display: block;
+        }
+        
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 245, 255, 0.3);
+        }
+        
+        .logs-container {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logs-header {
+            color: #00f5ff;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .log-entry {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #ccc;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .performance-chart {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .auto-refresh {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 245, 255, 0.3);
+            color: #00f5ff;
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .error-message {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            color: #ff4444;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        
+        .success-message {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="auto-refresh">
+        🔄 Auto-refresh: <span id="countdown">10</span>s
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Enterprise Trading Bot</h1>
+            <p>FINALNA WERSJA ENTERPRISE - Real-time Autonomous Trading System</p>
+            <div id="connection-status"></div>
+        </div>
+        
+        <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
+        
+        <div class="status-grid">
+            <div class="card">
+                <h3>🏥 System Health</h3>
+                <div id="health-content">
+                    <div class="metric">
+                        <span class="metric-label">Status</span>
+                        <span class="metric-value">
+                            <span class="status-indicator status-loading"></span>
+                            Loading...
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>💰 Portfolio Status</h3>
+                <div id="portfolio-content">
+                    <div class="metric">
+                        <span class="metric-label">Balance</span>
+                        <span class="metric-value">Loading...</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Trades</span>
+                        <span class="metric-value">Loading...</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Uptime</span>
+                        <span class="metric-value">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🧠 ML System</h3>
+                <div id="ml-content">
+                    <div class="metric">
+                        <span class="metric-label">Deep RL</span>
+                        <span class="metric-value">Loading...</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Optimization</span>
+                        <span class="metric-value">Loading...</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Analytics</span>
+                        <span class="metric-value">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>⚙️ System Info</h3>
+                <div id="system-content">
+                    <div class="metric">
+                        <span class="metric-label">Version</span>
+                        <span class="metric-value">Loading...</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Instance</span>
+                        <span class="metric-value">Loading...</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Strategy</span>
+                        <span class="metric-value">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="logs-container">
+            <div class="logs-header">📊 Real-time System Logs</div>
+            <div id="logs-content">
+                <div class="log-entry">Initializing dashboard...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let refreshInterval;
+        let countdownInterval;
+        let countdown = 10;
+        
+        async function fetchBotData() {
+            try {
+                document.body.classList.add('loading');
+                
+                // Fetch all enterprise data simultaneously
+                const [healthResponse, statusResponse, portfolioResponse, signalsResponse] = await Promise.all([
+                    fetch('http://localhost:3001/health'),
+                    fetch('http://localhost:3001/api/status'),
+                    fetch('http://localhost:3001/api/portfolio'),
+                    fetch('http://localhost:3001/api/signals')
+                ]);
+                
+                if (!healthResponse.ok) {
+                    throw new Error(`Health endpoint failed: HTTP ${healthResponse.status}`);
+                }
+                
+                const healthData = await healthResponse.json();
+                const statusData = statusResponse.ok ? await statusResponse.json() : null;
+                const portfolioData = portfolioResponse.ok ? await portfolioResponse.json() : null;
+                const signalsData = signalsResponse.ok ? await signalsResponse.json() : null;
+                
+                const enterpriseData = {
+                    ...healthData,
+                    status: statusData,
+                    portfolio: portfolioData,
+                    signals: signalsData
+                };
+                
+                updateDashboard(enterpriseData);
+                showMessage('✅ Enterprise data refreshed successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error fetching enterprise data:', error);
+                showMessage(`❌ Enterprise Connection Error: ${error.message}`, 'error');
+                updateConnectionStatus('disconnected');
+            } finally {
+                document.body.classList.remove('loading');
+            }
+        }
+        
+        function updateDashboard(data) {
+            updateConnectionStatus('connected');
+            
+            // Health Status with enterprise data
+            const healthContent = document.getElementById('health-content');
+            const statusClass = `status-${data.status || 'loading'}`;
+            const statusText = (data.status || 'Unknown').charAt(0).toUpperCase() + (data.status || 'Unknown').slice(1);
+            
+            healthContent.innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Status</span>
+                    <span class="metric-value">
+                        <span class="status-indicator ${statusClass}"></span>
+                        ${statusText}
+                    </span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Service</span>
+                    <span class="metric-value">Trading Bot Enterprise v${data.status?.health?.version || '2.0.0-FINAL-ENTERPRISE'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Last Check</span>
+                    <span class="metric-value">${new Date().toLocaleTimeString()}</span>
+                </div>
+            `;
+            
+            // Portfolio Status with real enterprise data
+            const portfolioContent = document.getElementById('portfolio-content');
+            const portfolio = data.portfolio || data.status?.performance || {};
+            const totalValue = portfolio.totalValue || 10000;
+            const totalPnL = (portfolio.realizedPnL || 0) + (portfolio.unrealizedPnL || 0);
+            const totalTrades = portfolio.totalTrades || 0;
+            
+            portfolioContent.innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Portfolio Value</span>
+                    <span class="metric-value">$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total P&L</span>
+                    <span class="metric-value ${totalPnL >= 0 ? 'positive' : 'negative'}">
+                        $${totalPnL.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    </span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Trades</span>
+                    <span class="metric-value">${totalTrades}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Win Rate</span>
+                    <span class="metric-value">${((portfolio.winRate || 0) * 100).toFixed(1)}%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Drawdown</span>
+                    <span class="metric-value ${(portfolio.drawdown || 0) <= 0.05 ? 'positive' : 'negative'}">
+                        ${((portfolio.drawdown || 0) * 100).toFixed(2)}%
+                    </span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Uptime</span>
+                    <span class="metric-value">${formatUptime(data.uptime || data.status?.health?.uptime || 0)}</span>
+                </div>
+            `;
+            
+            // ML System with real enterprise strategy data
+            const mlContent = document.getElementById('ml-content');
+            const signals = data.signals?.signals || [];
+            const strategiesCount = data.status?.trading?.strategiesCount || 2;
+            const isTrading = data.status?.trading?.isRunning || false;
+            
+            mlContent.innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Active Strategies</span>
+                    <span class="metric-value">${strategiesCount} Running</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Trading Engine</span>
+                    <span class="metric-value ${isTrading ? 'positive' : 'negative'}">
+                        ${isTrading ? '✅ Active' : '🔴 Inactive'}
+                    </span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Live Signals</span>
+                    <span class="metric-value">${signals.length} Generated</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Risk Manager</span>
+                    <span class="metric-value ${data.status?.health?.components?.riskManager ? 'positive' : 'negative'}">
+                        ${data.status?.health?.components?.riskManager ? '✅ Active' : '🔴 Error'}
+                    </span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Portfolio Manager</span>
+                    <span class="metric-value ${data.status?.health?.components?.portfolio ? 'positive' : 'negative'}">
+                        ${data.status?.health?.components?.portfolio ? '✅ Active' : '🔴 Error'}
+                    </span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Analytics</span>
+                    <span class="metric-value ${data.status?.health?.components?.monitoring ? 'positive' : 'negative'}">
+                        ${data.status?.health?.components?.monitoring ? '✅ Monitoring' : '🔴 Error'}
+                    </span>
+                </div>
+            `;
+            
+            // System Info with full enterprise configuration
+            const systemContent = document.getElementById('system-content');
+            const config = data.status?.config || {};
+            
+            systemContent.innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Version</span>
+                    <span class="metric-value">${data.status?.health?.version || data.version || '2.0.0-FINAL-ENTERPRISE'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Instance</span>
+                    <span class="metric-value">${config.instanceId || data.instance || 'primary'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Strategy</span>
+                    <span class="metric-value">${config.strategy || 'AdvancedAdaptive'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Symbol</span>
+                    <span class="metric-value">${config.symbol || 'BTCUSDT'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Timeframe</span>
+                    <span class="metric-value">${config.timeframe || '1h'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Risk Per Trade</span>
+                    <span class="metric-value">${((config.riskPerTrade || 0.02) * 100).toFixed(1)}%</span>
+                </div>
+            `;
+            
+            // Add comprehensive enterprise log entry
+            const logMessage = `[${new Date().toLocaleTimeString()}] Enterprise Status: ${statusText} | Portfolio: $${totalValue.toLocaleString()} | P&L: $${totalPnL.toFixed(2)} | Trades: ${totalTrades} | Strategies: ${strategiesCount} | Signals: ${signals.length}`;
+            addLogEntry(logMessage);
+        }
+        
+        function updateConnectionStatus(status) {
+            const connectionStatus = document.getElementById('connection-status');
+            if (status === 'connected') {
+                connectionStatus.innerHTML = '<div class="success-message">🟢 Connected to Trading Bot</div>';
+            } else {
+                connectionStatus.innerHTML = '<div class="error-message">🔴 Connection Lost - Retrying...</div>';
+            }
+        }
+        
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+        
+        function addLogEntry(message) {
+            const logsContent = document.getElementById('logs-content');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = message;
+            
+            logsContent.insertBefore(logEntry, logsContent.firstChild);
+            
+            // Keep only last 10 entries
+            const entries = logsContent.children;
+            if (entries.length > 10) {
+                logsContent.removeChild(entries[entries.length - 1]);
+            }
+        }
+        
+        function showMessage(message, type) {
+            const existingMessage = document.querySelector('.error-message, .success-message');
+            if (existingMessage && !existingMessage.textContent.includes('Connected') && !existingMessage.textContent.includes('Connection Lost')) {
+                existingMessage.remove();
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+            messageDiv.textContent = message;
+            
+            document.querySelector('.container').insertBefore(messageDiv, document.querySelector('.status-grid'));
+            
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 3000);
+        }
+        
+        function refreshData() {
+            fetchBotData();
+            resetCountdown();
+        }
+        
+        function resetCountdown() {
+            countdown = 10;
+            document.getElementById('countdown').textContent = countdown;
+        }
+        
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                fetchBotData();
+                resetCountdown();
+            }, 10000);
+            
+            countdownInterval = setInterval(() => {
+                countdown--;
+                document.getElementById('countdown').textContent = countdown;
+                if (countdown <= 0) {
+                    countdown = 10;
+                }
+            }, 1000);
+        }
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            addLogEntry('[INIT] Enterprise Trading Bot Dashboard started');
+            addLogEntry('[INIT] Connecting to autonomous trading bot...');
+            
+            fetchBotData();
+            startAutoRefresh();
+        });
+        
+        // Handle page visibility
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearInterval(refreshInterval);
+                clearInterval(countdownInterval);
+            } else {
+                startAutoRefresh();
+                fetchBotData();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -34,6 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Logger = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 class Logger {
@@ -50,6 +54,11 @@ class Logger {
     info(message, data) {
         const msg = `[INFO] ${new Date().toISOString()}: ${message}${data ? ' ' + JSON.stringify(data) : ''}`;
         console.log(msg);
+        this.fileStream?.write(msg + '\n');
+    }
+    success(message, data) {
+        const msg = `[SUCCESS] ${new Date().toISOString()}: ${message}${data ? ' ' + JSON.stringify(data) : ''}`;
+        console.log(`\x1b[32m${msg}\x1b[0m`); // Green color
         this.fileStream?.write(msg + '\n');
     }
     warn(message, data) {

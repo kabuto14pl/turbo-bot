@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🤖 RL STRATEGY INTEGRATION
  * 
  * Integration layer łączący PPOTradingAgent z main trading system

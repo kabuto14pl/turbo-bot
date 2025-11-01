@@ -1,4 +1,12 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared module component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 // helpers.ts - Utility Functions and Helper Methods
 // Extracted from main.ts for better modularity and reusability

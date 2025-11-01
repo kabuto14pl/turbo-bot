@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { RollingMetric } from './portfolio_analytics';
 
 export type AllocatorMode = 'minimum_variance' | 'risk_parity';

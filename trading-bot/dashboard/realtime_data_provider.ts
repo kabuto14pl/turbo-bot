@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 📡 REAL-TIME DATA PROVIDER
  * Dostawca danych w czasie rzeczywistym dla dashboardu
  */

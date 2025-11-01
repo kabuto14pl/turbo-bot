@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import * as React from 'react';
 
 // Types

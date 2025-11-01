@@ -1,5 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 const metrics_server_1 = require("../metrics/metrics_server");
 const logger_1 = require("../../infrastructure/logging/logger");
 class TestDataGenerator {

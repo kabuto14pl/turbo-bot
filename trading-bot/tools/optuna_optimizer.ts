@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { createStudy, Trial } from 'optuna-ts';
 import { runTest, TestConfig } from '../main';
 import { loadCandles } from '../infrastructure/data/csv_loader';

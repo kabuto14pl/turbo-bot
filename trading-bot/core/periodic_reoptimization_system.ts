@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * Periodic Reoptimization System - Phase 4.2
  * 
  * Implementuje zaawansowany system periodycznej reoptymalizacji:

@@ -1,0 +1,440 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "🚀 Enterprise Trading Performance Dashboard",
+    "description": "Comprehensive trading bot performance monitoring with real-time metrics",
+    "tags": ["trading-bot", "enterprise", "performance", "monitoring", "ml"],
+    "timezone": "browser",
+    "refresh": "5s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "💰 Portfolio Performance Summary",
+        "type": "stat",
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "trading_portfolio_total_value",
+            "legendFormat": "Total Portfolio Value ($)",
+            "refId": "A"
+          },
+          {
+            "expr": "trading_portfolio_pnl_percent",
+            "legendFormat": "P&L (%)",
+            "refId": "B"
+          },
+          {
+            "expr": "trading_portfolio_drawdown_percent",
+            "legendFormat": "Current Drawdown (%)",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 5
+                },
+                {
+                  "color": "red",
+                  "value": 15
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "📊 Trading Signals Activity",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 6
+        },
+        "targets": [
+          {
+            "expr": "rate(trading_signals_total[5m])",
+            "legendFormat": "Signals Per Minute",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(trading_signals_success_total[5m])",
+            "legendFormat": "Successful Signals Per Minute",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(trading_signals_error_total[5m])",
+            "legendFormat": "Failed Signals Per Minute",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "🎯 Strategy Performance Table",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 6
+        },
+        "targets": [
+          {
+            "expr": "trading_strategy_performance_ratio by (strategy)",
+            "legendFormat": "{{strategy}} Performance Ratio",
+            "refId": "A",
+            "format": "table"
+          },
+          {
+            "expr": "trading_strategy_win_rate by (strategy)",
+            "legendFormat": "{{strategy}} Win Rate (%)",
+            "refId": "B",
+            "format": "table"
+          },
+          {
+            "expr": "trading_strategy_avg_return by (strategy)",
+            "legendFormat": "{{strategy}} Avg Return (%)",
+            "refId": "C",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "📡 Market Data Quality",
+        "type": "gauge",
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 14
+        },
+        "targets": [
+          {
+            "expr": "market_data_quality_score",
+            "legendFormat": "Data Quality Score",
+            "refId": "A"
+          },
+          {
+            "expr": "market_data_uptime_percent",
+            "legendFormat": "Data Uptime (%)",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 70
+                },
+                {
+                  "color": "green",
+                  "value": 90
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "⚡ System Performance Metrics",
+        "type": "graph",
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 14
+        },
+        "targets": [
+          {
+            "expr": "orchestrator_avg_latency_ms",
+            "legendFormat": "Orchestrator Latency (ms)",
+            "refId": "A"
+          },
+          {
+            "expr": "trading_signal_latency_ms",
+            "legendFormat": "Signal Processing Latency (ms)",
+            "refId": "B"
+          },
+          {
+            "expr": "market_data_latency_ms",
+            "legendFormat": "Market Data Latency (ms)",
+            "refId": "C"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "🚨 Active Alerts Status",
+        "type": "stat",
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 14
+        },
+        "targets": [
+          {
+            "expr": "alerts_active{severity=\"critical\"}",
+            "legendFormat": "Critical Alerts",
+            "refId": "A"
+          },
+          {
+            "expr": "alerts_active{severity=\"warning\"}",
+            "legendFormat": "Warning Alerts",
+            "refId": "B"
+          },
+          {
+            "expr": "alerts_active{severity=\"info\"}",
+            "legendFormat": "Info Alerts",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 3
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "🧠 ML Model Performance",
+        "type": "stat",
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        },
+        "targets": [
+          {
+            "expr": "ml_model_accuracy_percent",
+            "legendFormat": "Model Accuracy (%)",
+            "refId": "A"
+          },
+          {
+            "expr": "ml_model_confidence_avg",
+            "legendFormat": "Average Confidence",
+            "refId": "B"
+          },
+          {
+            "expr": "ml_prediction_success_rate",
+            "legendFormat": "Prediction Success Rate (%)",
+            "refId": "C"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "⚠️ Risk Management Overview",
+        "type": "stat",
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 12,
+          "y": 20
+        },
+        "targets": [
+          {
+            "expr": "risk_var_current",
+            "legendFormat": "Current VaR ($)",
+            "refId": "A"
+          },
+          {
+            "expr": "risk_exposure_percent",
+            "legendFormat": "Portfolio Exposure (%)",
+            "refId": "B"
+          },
+          {
+            "expr": "risk_score_current",
+            "legendFormat": "Current Risk Score",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 50
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "📈 Portfolio Value Evolution",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 24
+        },
+        "targets": [
+          {
+            "expr": "trading_portfolio_total_value",
+            "legendFormat": "Total Portfolio Value",
+            "refId": "A"
+          },
+          {
+            "expr": "trading_portfolio_pnl_percent * trading_portfolio_total_value / 100",
+            "legendFormat": "P&L Value",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "🔄 System Resource Usage",
+        "type": "graph",
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        },
+        "targets": [
+          {
+            "expr": "system_memory_usage_bytes / system_memory_total_bytes * 100",
+            "legendFormat": "Memory Usage (%)",
+            "refId": "A"
+          },
+          {
+            "expr": "system_cpu_usage_percent",
+            "legendFormat": "CPU Usage (%)",
+            "refId": "B"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "📊 Trading Volume Analysis",
+        "type": "graph",
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        },
+        "targets": [
+          {
+            "expr": "rate(trading_signals_total[1h])",
+            "legendFormat": "Signals per Hour",
+            "refId": "A"
+          },
+          {
+            "expr": "trading_strategies_active",
+            "legendFormat": "Active Strategies",
+            "refId": "B"
+          }
+        ]
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Trading Signals",
+          "enable": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "query": "ALERTS{alertname=\"trading_signals_failure_spike\"}"
+        },
+        {
+          "name": "Portfolio Alerts",
+          "enable": true,
+          "iconColor": "rgba(255, 96, 96, 1)",
+          "query": "ALERTS{alertname=\"trading_portfolio_major_loss\"}"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "strategy",
+          "type": "query",
+          "query": "label_values(trading_strategy_performance_ratio, strategy)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    }
+  },
+  "folderId": 0,
+  "overwrite": true
+}

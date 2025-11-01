@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
  * ============================================================================
  * ENTERPRISE INTEGRATION TEST FOR MAIN.TS
  * ============================================================================

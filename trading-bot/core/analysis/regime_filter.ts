@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 // ============================================================================
 //  regime_filter.ts – MARKET REGIME DETECTION & EVENT-BASED SIGNAL FILTERING
 //  Automatyczne wyciszanie sygnałów przed/po ważnych wydarzeniach makro

@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 📊 ENTERPRISE PERFORMANCE TRACKER V2.0
  * 
  * Advanced performance tracking system for continuous improvement.

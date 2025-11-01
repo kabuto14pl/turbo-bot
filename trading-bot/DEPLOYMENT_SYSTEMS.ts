@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
+/**
  * 🚀 ZERO-DOWNTIME DEPLOYMENT SYSTEMS
  * 
  * Implementacja systemów wdrażania bez przestojów:

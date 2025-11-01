@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  simple_optimizer.ts - Prosty skrypt optymalizacyjny
 //  Ten plik uruchamia optymalizację RSITurbo wykorzystując istniejące funkcje

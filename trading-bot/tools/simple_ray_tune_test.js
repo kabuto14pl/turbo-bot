@@ -33,9 +33,16 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 const child_process_1 = require("child_process");
 const path = __importStar(require("path"));
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ **
+ * 🧪 [TESTING-FRAMEWORK]
  * Prosty test Ray Tune z bardzo prostą funkcją celu
  */
 function logWithTime(message) {

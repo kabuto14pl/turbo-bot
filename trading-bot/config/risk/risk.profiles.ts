@@ -1,4 +1,8 @@
 /**
+ * 🔧 [PRODUCTION-CONFIG]
+ * Production configuration component
+ */
+/**
  * ============================================================================
  * RISK MANAGEMENT PROFILES CONFIGURATION
  * ============================================================================

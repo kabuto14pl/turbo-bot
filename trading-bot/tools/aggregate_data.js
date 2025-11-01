@@ -36,6 +36,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const csv_parser_1 = __importDefault(require("csv-parser"));

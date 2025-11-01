@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🔬 ADVANCED FEATURE ENGINEERING SYSTEM
  * Zaawansowany system inżynierii cech dla modeli ML
  */

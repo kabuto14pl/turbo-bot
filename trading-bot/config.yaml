@@ -1,3 +1,5 @@
+# 🔧 [DEVELOPMENT-TOOL]
+# Development configuration file
 capital:
   initial: 10000
   maxRiskPerTrade: 0.02

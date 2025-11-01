@@ -1,3 +1,7 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 export class ExchangeAPI {
     constructor(private apiKey: string, private apiSecret: string) {}
 

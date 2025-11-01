@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🤖 ML INTEGRATION MANAGER
  * Główny menedżer integracji wszystkich systemów uczenia maszynowego
  */

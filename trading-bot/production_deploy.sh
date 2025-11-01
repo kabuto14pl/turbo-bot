@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # 🚀 PRODUCTION QUICK START SCRIPT
 # One-command deployment of complete trading bot infrastructure

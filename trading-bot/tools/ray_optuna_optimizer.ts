@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import * as fs from 'fs';
 import * as path from 'path';
 import { PythonShell } from 'python-shell';

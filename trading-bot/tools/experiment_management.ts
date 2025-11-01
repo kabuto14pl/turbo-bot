@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  experiment_management.ts - KOMPONENT DO ZARZĄDZANIA EKSPERYMENTAMI
 //  Ten plik zawiera komponenty UI do zarządzania i przeglądania eksperymentów
@@ -6,7 +10,7 @@
 import { experimentTracker } from './experiment_tracker';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as open from 'open';
+import open from 'open';
 import { ExperimentMetadata, ExperimentFilter } from './experiment_tracker';
 
 /**

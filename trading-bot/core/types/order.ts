@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 export type OrderType = 'market' | 'limit' | 'stop' | 'take_profit';
 
 // to, co podajemy do placeOrder(...)

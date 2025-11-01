@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # 🧹 DALSZE CZYSZCZENIE - USUWANIE STARYCH NIEUŻYWANYCH PLIKÓW
 # Analiza i usunięcie pozostałych niepotrzebnych plików

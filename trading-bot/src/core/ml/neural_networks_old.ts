@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🧠 DEEP RL NEURAL NETWORKS
  * Real TensorFlow.js neural networks replacing SimpleRL's hardcoded if/else logic
  * Implements Policy Network (Actor) and Value Network (Critic) for PPO/SAC algorithms
@@ -25,15 +29,15 @@ interface NetworkTrainingMetrics {
 }
 
 export class PolicyNetwork {
-  private model: tf.LayersModel;
-  private optimizer: tf.Optimizer;
+  private model!: tf.LayersModel;
+  private optimizer!: tf.Optimizer;
   private logger: Logger;
-  private config: PolicyNetworkConfig;
+  private config!: PolicyNetworkConfig;
   private trainingMetrics: NetworkTrainingMetrics[] = [];
-  private policyNetwork?: MLModel;
-  private valueNetwork?: MLModel;
-  private targetPolicyNetwork?: MLModel;
-  private targetValueNetwork?: MLModel;
+  private policyNetwork?: any; // Changed from MLModel (undefined type)
+  private valueNetwork?: any; // Changed from MLModel (undefined type)
+  private targetPolicyNetwork?: any; // Changed from MLModel (undefined type)
+  private targetValueNetwork?: any; // Changed from MLModel (undefined type)
   
   // Training components
   private policyOptimizer?: tf.Optimizer;
@@ -272,8 +276,8 @@ export class PolicyNetwork {
     this.logger.info('Creating target networks...');
 
     // Clone main networks
-    this.targetPolicyNetwork = tf.models.modelFromJSON(this.policyNetwork.toJSON()) as MLModel;
-    this.targetValueNetwork = tf.models.modelFromJSON(this.valueNetwork.toJSON()) as MLModel;
+    this.targetPolicyNetwork = tf.models.modelFromJSON(this.policyNetwork.toJSON()) as any;
+    this.targetValueNetwork = tf.models.modelFromJSON(this.valueNetwork.toJSON()) as any;
 
     // Copy weights
     this.updateTargetNetworks(1.0); // Full copy initially
@@ -327,7 +331,7 @@ export class PolicyNetwork {
   /**
    * Generate action from policy network
    */
-  async generateAction(state: FeatureVector): Promise<ActionVector> {
+  async generateAction(state: FeatureVector): Promise<any> {
     if (!this.isInitialized || !this.policyNetwork) {
       throw new Error('Networks not initialized');
     }
@@ -387,11 +391,11 @@ export class PolicyNetwork {
   /**
    * Soft update helper
    */
-  private softUpdateNetwork(source: MLModel, target: MLModel, tau: number): void {
+  private softUpdateNetwork(source: any, target: any, tau: number): void {
     const sourceWeights = source.getWeights();
     const targetWeights = target.getWeights();
 
-    const updatedWeights = sourceWeights.map((sourceWeight, i) => {
+    const updatedWeights = sourceWeights.map((sourceWeight: any, i: number) => {
       const targetWeight = targetWeights[i];
       return sourceWeight.mul(tau).add(targetWeight.mul(1 - tau));
     });
@@ -399,9 +403,9 @@ export class PolicyNetwork {
     target.setWeights(updatedWeights);
 
     // Dispose temporary tensors
-    sourceWeights.forEach(w => w.dispose());
-    targetWeights.forEach(w => w.dispose());
-    updatedWeights.forEach(w => w.dispose());
+    sourceWeights.forEach((w: any) => w.dispose());
+    targetWeights.forEach((w: any) => w.dispose());
+    updatedWeights.forEach((w: any) => w.dispose());
   }
 
   /**
@@ -423,8 +427,8 @@ export class PolicyNetwork {
    */
   async loadNetworks(basePath: string): Promise<void> {
     try {
-      this.policyNetwork = await tf.loadLayersModel(`file://${basePath}/policy_network/model.json`) as MLModel;
-      this.valueNetwork = await tf.loadLayersModel(`file://${basePath}/value_network/model.json`) as MLModel;
+      this.policyNetwork = await tf.loadLayersModel(`file://${basePath}/policy_network/model.json`) as any;
+      this.valueNetwork = await tf.loadLayersModel(`file://${basePath}/value_network/model.json`) as any;
       
       // Reinitialize target networks
       await this.initializeTargetNetworks();
@@ -471,10 +475,10 @@ export class PolicyNetwork {
    * Get current networks (for training)
    */
   getNetworks(): { 
-    policy: MLModel; 
-    value: MLModel; 
-    targetPolicy: MLModel; 
-    targetValue: MLModel;
+    policy: any; 
+    value: any; 
+    targetPolicy: any; 
+    targetValue: any;
     policyOptimizer: tf.Optimizer;
     valueOptimizer: tf.Optimizer;
   } {

@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # 🚀 PRODUCTION DEPLOYMENT ORCHESTRATOR
 # Complete production deployment system with zero-downtime and auto-scaling

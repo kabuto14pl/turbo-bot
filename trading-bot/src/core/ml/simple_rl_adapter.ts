@@ -1,5 +1,13 @@
 /**
- * 🔌 SIMPLE RL ADAPTER FOR ENTERPRISE ML SYSTEM v2.0
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * � [SHARED-INFRASTRUCTURE]
+ * This component is used by BOTH backtest and production systems.
+ * Execution mode determined by configuration parameters.
+ * 
+ * �🔌 SIMPLE RL ADAPTER FOR ENTERPRISE ML SYSTEM v2.0
  * Clean, minimal adapter with full enterprise features
  */
 
@@ -182,7 +190,6 @@ export class SimpleRLAdapter {
     const performance = this.getPerformance();
     return {
       total_actions: performance.episodes || 0,
-      average_reward: performance.average_reward || 0,
       epsilon: performance.exploration_rate || 0.1,
       ...performance
     };

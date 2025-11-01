@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // simple_rsi_strategy.ts
 // A simple RSI-based trading strategy for BTC data
 

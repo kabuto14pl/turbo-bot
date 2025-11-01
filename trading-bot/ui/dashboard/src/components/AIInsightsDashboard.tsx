@@ -190,7 +190,7 @@ const AIInsightsDashboard: React.FC = () => {
   return (
     <Grid container spacing={2}>
       {/* Header */}
-      <Grid item xs={12}>
+      <Grid size={12}>
         <Card>
           <CardContent>
             <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -251,14 +251,14 @@ const AIInsightsDashboard: React.FC = () => {
       {/* Sentiment Predictions Tab */}
       {activeTab === 0 && (
         <>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   📊 Sentiment Predictions
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={4}>
+                  <Grid size={4}>
                     <Box textAlign="center">
                       <Typography variant="h4" color="primary.main">
                         {(insights.sentimentPredictions.nextHour * 100).toFixed(0)}%
@@ -266,7 +266,7 @@ const AIInsightsDashboard: React.FC = () => {
                       <Typography variant="caption">Next Hour</Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={4}>
+                  <Grid size={4}>
                     <Box textAlign="center">
                       <Typography variant="h4" color="secondary.main">
                         {(insights.sentimentPredictions.next4Hours * 100).toFixed(0)}%
@@ -274,7 +274,7 @@ const AIInsightsDashboard: React.FC = () => {
                       <Typography variant="caption">Next 4 Hours</Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={4}>
+                  <Grid size={4}>
                     <Box textAlign="center">
                       <Typography variant="h4" color="warning.main">
                         {(insights.sentimentPredictions.nextDay * 100).toFixed(0)}%
@@ -327,7 +327,7 @@ const AIInsightsDashboard: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -371,7 +371,7 @@ const AIInsightsDashboard: React.FC = () => {
       {/* Trading Recommendations Tab */}
       {activeTab === 1 && (
         <>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -429,7 +429,7 @@ const AIInsightsDashboard: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -465,7 +465,7 @@ const AIInsightsDashboard: React.FC = () => {
       {/* Market Regime Tab */}
       {activeTab === 2 && (
         <>
-          <Grid item xs={12} md={8}>
+          <Grid size={{ xs: 12, md: 8 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -473,7 +473,7 @@ const AIInsightsDashboard: React.FC = () => {
                 </Typography>
                 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Box textAlign="center" p={2} border={1} borderColor="divider" borderRadius={2}>
                       <Typography variant="h4" color="primary.main" gutterBottom>
                         {insights.marketRegime.current.toUpperCase()}
@@ -484,7 +484,7 @@ const AIInsightsDashboard: React.FC = () => {
                     </Box>
                   </Grid>
                   
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Box textAlign="center" p={2} border={1} borderColor="divider" borderRadius={2}>
                       <Typography variant="h4" color="success.main" gutterBottom>
                         {(insights.marketRegime.strength * 100).toFixed(0)}%
@@ -495,7 +495,7 @@ const AIInsightsDashboard: React.FC = () => {
                     </Box>
                   </Grid>
                   
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Box textAlign="center" p={2} border={1} borderColor="divider" borderRadius={2}>
                       <Typography variant="h4" color="warning.main" gutterBottom>
                         {(insights.marketRegime.stability * 100).toFixed(0)}%
@@ -525,7 +525,7 @@ const AIInsightsDashboard: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -577,7 +577,7 @@ const AIInsightsDashboard: React.FC = () => {
       {/* Performance Analytics Tab */}
       {activeTab === 3 && (
         <>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -597,7 +597,7 @@ const AIInsightsDashboard: React.FC = () => {
                 </Box>
 
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Box textAlign="center">
                       <Typography variant="h5" color={insights.performanceInsights.winRateTrend > 0 ? "success.main" : "error.main"}>
                         {insights.performanceInsights.winRateTrend > 0 ? "+" : ""}{insights.performanceInsights.winRateTrend.toFixed(1)}%
@@ -605,7 +605,7 @@ const AIInsightsDashboard: React.FC = () => {
                       <Typography variant="caption">Win Rate Trend</Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Box textAlign="center">
                       <Typography variant="h5" color="info.main">
                         {insights.performanceInsights.sentimentImpact.toFixed(1)}%
@@ -635,7 +635,7 @@ const AIInsightsDashboard: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -659,7 +659,7 @@ const AIInsightsDashboard: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card>
               <CardContent>
                 <Alert severity="info" icon={<SmartToy />}>

@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  optimize_all_strategies.ts - SKRYPT WYKONAWCZY OPTYMALIZACJI
 //  Skrypt uruchamia optymalizację wszystkich strategii handlowych

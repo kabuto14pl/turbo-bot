@@ -1,4 +1,7 @@
-#!/usr/bin/env ts-node
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 /**
  * 🧪 COMPREHENSIVE PRODUCTION SECURITY TEST SUITE
  * Complete testing framework for production readiness validation

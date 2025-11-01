@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🤖 AUTOML PIPELINE SYSTEM
  * Automatyczna optymalizacja i zarządzanie modelami ML
  */

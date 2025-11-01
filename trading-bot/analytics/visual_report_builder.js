@@ -34,6 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateNavChart = generateNavChart;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 // Główna funkcja do generowania raportu wizualnego z historii NAV

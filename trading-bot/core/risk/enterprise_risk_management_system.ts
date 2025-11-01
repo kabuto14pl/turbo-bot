@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🛡️ ENTERPRISE RISK MANAGEMENT SYSTEM V2.0
  * 
  * Advanced, comprehensive risk management system for enterprise trading operations.

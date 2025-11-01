@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  professional_optimizer.ts - PROFESJONALNY SYSTEM OPTYMALIZACJI
 //  Ten moduł implementuje zaawansowane techniki optymalizacji stosowane
@@ -275,32 +279,33 @@ export async function optimizeStrategy(
     }
     
     // Pomocnicza funkcja do modyfikacji parametrów wokół obecnych wartości
-    function generateParameterVariation(
+    const generateParameterVariation = (
         currentParams: Record<string, any>,
-        explorationFactor: number
-    ): Record<string, any> {
+        explorationFactor: number,
+        parameterSpaceLocal: Record<string, any>
+    ): Record<string, any> => {
         const newParams: Record<string, any> = {};
-        
-        for (const [key, range] of Object.entries(parameterSpace)) {
+
+        for (const [key, range] of Object.entries(parameterSpaceLocal)) {
             const currentValue = currentParams[key];
             const rangeSize = (range.max - range.min) * explorationFactor;
-            
+
             // Generujemy nową wartość w okolicy obecnej
             let newValue = currentValue + (Math.random() * 2 - 1) * rangeSize;
-            
+
             // Upewniamy się, że nowa wartość mieści się w zakresie
             newValue = Math.max(range.min, Math.min(range.max, newValue));
-            
+
             // Zaokrąglamy do kroków, jeśli krok jest większy niż 0
             if (range.step > 0) {
                 newValue = range.min + Math.round((newValue - range.min) / range.step) * range.step;
             }
-            
+
             newParams[key] = newValue;
         }
-        
+
         return newParams;
-    }
+    };
     
     // Główna pętla optymalizacji
     for (let i = 0; i < maxIterations; i++) {
@@ -319,7 +324,7 @@ export async function optimizeStrategy(
             : results[Math.floor(Math.random() * results.length)].params;
         
         // Generujemy nowy zestaw parametrów
-        const params = generateParameterVariation(baseParams, explorationFactor);
+    const params = generateParameterVariation(baseParams, explorationFactor, parameterSpace);
         
         console.log(`Iteracja ${i+1}/${maxIterations}: Testowanie parametrów`, params);
         

@@ -1,3 +1,4 @@
+# 🔧 [PRODUCTION-CONFIG] Docker configuration for trading bot system
 # ENTERPRISE TRADING BOT - DOCKER CONFIGURATION
 # Multi-stage build for optimized production deployment
 

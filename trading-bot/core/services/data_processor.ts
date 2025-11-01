@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { aggregateCandles } from '../../tools/aggregate_csv';
 import { joinCandlesByTimestamp } from '../utils/MultiTFJoiner';
 import { Candle } from '../indicators/multi_timeframe_synchronizer';

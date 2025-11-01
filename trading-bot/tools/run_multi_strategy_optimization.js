@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  run_multi_strategy_optimization.ts - Uruchomienie pełnej optymalizacji strategii
 //  Ten plik uruchamia skrypt simple_multi_strategy_optimization.ts, który wykonuje

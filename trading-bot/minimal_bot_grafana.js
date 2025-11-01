@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
+/**
  * 🚀 MINIMAL BOT FOR GRAFANA TESTING
  * Only starts Prometheus metrics server with sample data
  */

@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🚀 [PRODUCTION-CONFIG]
+ * This configuration is for LIVE TRADING with REAL MONEY.
+ * Maximum security and safety measures included.
+ *
  * ============================================================================
  * PRODUCTION ENVIRONMENT CONFIGURATION
  * ============================================================================

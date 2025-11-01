@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🚀 ENTERPRISE CONTINUOUS IMPROVEMENT MANAGER V2.0
  *
  * Advanced continuous improvement orchestrator for trading bot.

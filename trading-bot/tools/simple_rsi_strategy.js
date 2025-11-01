@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // simple_rsi_strategy.ts
 // A simple RSI-based trading strategy for BTC data
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {

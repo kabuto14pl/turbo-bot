@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  optimization_visualizer.ts - WIZUALIZACJA WYNIKÓW OPTYMALIZACJI
 //  Ten moduł generuje wykresy i wizualizacje dla lepszego zrozumienia 

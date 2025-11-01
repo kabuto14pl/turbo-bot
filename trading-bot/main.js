@@ -1,13 +1,17 @@
 "use strict";
-// ============================================================================
-//  main.ts – FINALNY TEST INTEGRACYJNY BOTA
-//  Ten plik uruchamia CAŁĄ logikę bota: ładowanie danych, strategie, portfel,
-//  egzekucję, zarządzanie ryzykiem, logowanie, raporty itd.
-//  Używaj tego pliku do testów końcowych, symulacji produkcji i walidacji
-//  działania wszystkich elementów systemu razem.
-//  NIE używaj do szybkiego testowania pojedynczych strategii/wskaźników!
-//  Do tego służy quick_test.ts
-// ============================================================================
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * This component is designed for testing and validation purposes.
+ * Should NEVER be used for live trading.
+ */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -43,6 +47,15 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runTest = runTest;
+// ============================================================================
+//  main.ts – FINALNY TEST INTEGRACYJNY BOTA (TESTING FRAMEWORK - 1942 lines)
+//  Ten plik uruchamia CAŁĄ logikę bota: ładowanie danych, strategie, portfel,
+//  egzekucję, zarządzanie ryzykiem, logowanie, raporty itd.
+//  Używaj tego pliku do testów końcowych, symulacji produkcji i walidacji
+//  działania wszystkich elementów systemu razem.
+//  NIE używaj do szybkiego testowania pojedynczych strategii/wskaźników!
+//  Do tego służy quick_test.ts
+// ============================================================================
 // ENTERPRISE CONFIGURATION IMPORTS
 const config_manager_1 = require("./config/environments/config.manager");
 const reportBuilder_1 = require("./analytics/reportBuilder");
@@ -133,27 +146,32 @@ async function initializeSystem() {
         const config = config_manager_1.configManager.loadConfiguration(configProfile);
         // Apply environment overrides
         const finalConfig = config_manager_1.configManager.applyEnvironmentOverrides(config);
+        // Create shared components
+        const logger = new logger_1.Logger();
+        const globalPortfolio = new index_1.Portfolio(finalConfig.tradingConfig.initialCapital);
+        const globalRiskManager = new risk_manager_1.RiskManager(logger);
         // Select executor based on environment
         let executor;
-        if (mode === 'production') {
+        if (mode === 'production' && 'okxConfig' in finalConfig) {
             console.log('🚨 Production mode: OKX Executor Adapter initialized');
-            executor = new okx_executor_adapter_1.OKXExecutorAdapter({
-                apiKey: finalConfig.okxConfig?.apiKey || '',
-                secretKey: finalConfig.okxConfig?.secretKey || '',
-                passphrase: finalConfig.okxConfig?.passphrase || '',
-                sandbox: finalConfig.okxConfig?.sandbox || false,
-                enableRealTrading: finalConfig.okxConfig?.enableRealTrading || false
+            executor = new okx_executor_adapter_1.OKXExecutorAdapter(logger, globalPortfolio, globalRiskManager, {
+                apiKey: finalConfig.okxConfig.apiKey || '',
+                secretKey: finalConfig.okxConfig.secretKey || '',
+                passphrase: finalConfig.okxConfig.passphrase || '',
+                sandbox: finalConfig.okxConfig.sandbox || false,
+                tdMode: finalConfig.okxConfig.tdMode || 'cash'
             });
         }
         else {
             console.log('🧪 Demo/Backtest mode: Simulated Executor initialized');
-            executor = new simulated_executor_1.SimulatedExecutor();
+            const simulationConfig = {
+                commissionBps: 10, // 0.1% = 10 basis points
+                slippageBps: 1 // 0.01% = 1 basis point
+            };
+            executor = new simulated_executor_1.SimulatedExecutor(logger, globalPortfolio, globalRiskManager, simulationConfig);
         }
         // Initialize performance tracker with enterprise metrics
-        const performanceTracker = new performance_tracker_1.PerformanceTracker({
-            executor,
-            metrics: ['VaR', 'CVaR', 'Sortino', 'Calmar', 'SharpeRatio', 'MaxDrawdown']
-        });
+        const performanceTracker = new performance_tracker_1.PerformanceTracker(finalConfig.tradingConfig.initialCapital);
         // Log successful initialization
         console.log(`✅ System initialized successfully in ${mode} mode`);
         console.log(`📊 Configuration: ${finalConfig.deploymentId}`);
@@ -169,7 +187,7 @@ async function initializeSystem() {
         };
     }
     catch (error) {
-        console.error('🚨 System initialization failed:', error.message);
+        console.error('🚨 System initialization failed:', error instanceof Error ? error.message : String(error));
         throw error;
     }
 }
@@ -1157,8 +1175,6 @@ async function runTest(config, candles15m, kafkaEngine) {
     console.log(`Wyniki zapisane w katalogu: ${testDirectory}`);
     // Return dashboard integration for cleanup in main function
     return { dashboardIntegration, stats };
-    console.log(`Logi scoringu zapisane w: ${path.join(testDirectory, 'signal_scoring.log')}`);
-    return stats;
 }
 // ============================================================================
 //  GŁÓWNA FUNKCJA (jeśli uruchamiamy plik bezpośrednio)

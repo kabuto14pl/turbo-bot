@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎯 MULTI-TIMEFRAME STRATEGY ANALYZER V2
  * Enterprise system for analyzing strategies across multiple timeframes
  */
@@ -455,6 +463,73 @@ class MultiTimeframeStrategyAnalyzer extends events_1.EventEmitter {
             totalSignals: Array.from(this.timeframeSignals.values()).reduce((sum, signals) => sum + signals.length, 0),
             recentRegime: this.regimeHistory.length > 0 ? this.regimeHistory[this.regimeHistory.length - 1] : null,
             trendCache
+        };
+    }
+    async start() {
+        this.logger.info('🚀 Multi-timeframe analyzer started');
+        this.emit('analyzer_started');
+    }
+    async stop() {
+        this.logger.info('🛑 Multi-timeframe analyzer stopped');
+        this.emit('analyzer_stopped');
+    }
+    generateConsolidatedSignals(timeframeSignals, state) {
+        const consolidated = [];
+        // Group by symbol
+        const signalsBySymbol = new Map();
+        for (const [timeframe, signals] of timeframeSignals) {
+            for (const signal of signals) {
+                const symbol = signal.symbol || 'default';
+                if (!signalsBySymbol.has(symbol)) {
+                    signalsBySymbol.set(symbol, []);
+                }
+                signalsBySymbol.get(symbol).push({ timeframe, signal });
+            }
+        }
+        // Consolidate each symbol's signals
+        for (const [symbol, tfSignals] of signalsBySymbol) {
+            if (tfSignals.length === 0)
+                continue;
+            // Calculate alignment score
+            const buySignals = tfSignals.filter(s => s.signal.action === 'ENTER_LONG');
+            const sellSignals = tfSignals.filter(s => s.signal.action === 'ENTER_SHORT');
+            const alignmentScore = Math.abs(buySignals.length - sellSignals.length) / tfSignals.length;
+            const conflictScore = 1 - alignmentScore;
+            // Determine dominant signal
+            let dominantSignal;
+            let dominantTimeframe;
+            if (buySignals.length > sellSignals.length) {
+                const weighted = buySignals.sort((a, b) => (b.signal.confidence || 0) - (a.signal.confidence || 0))[0];
+                dominantSignal = weighted.signal;
+                dominantTimeframe = weighted.timeframe;
+            }
+            else if (sellSignals.length > buySignals.length) {
+                const weighted = sellSignals.sort((a, b) => (b.signal.confidence || 0) - (a.signal.confidence || 0))[0];
+                dominantSignal = weighted.signal;
+                dominantTimeframe = weighted.timeframe;
+            }
+            else {
+                // Neutral or no clear direction
+                continue;
+            }
+            // Create consolidated signal
+            const multiSignal = {
+                ...dominantSignal,
+                sourceTimeframes: tfSignals.map(s => s.timeframe),
+                alignmentScore,
+                conflictScore,
+                dominantTimeframe,
+                symbol,
+            };
+            consolidated.push(multiSignal);
+        }
+        return consolidated;
+    }
+    getAnalyzerStatus() {
+        return {
+            isRunning: true,
+            enabledTimeframes: this.getEnabledTimeframes(),
+            totalSignals: Array.from(this.timeframeSignals.values()).reduce((sum, signals) => sum + signals.length, 0),
         };
     }
 }

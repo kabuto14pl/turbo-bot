@@ -1,8 +1,17 @@
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ **
+ * 🧪 [TESTING-FRAMEWORK]
+ * 🧪 [BACKTEST-ONLY]
  * ENTERPRISE PERFORMANCE VaR TEST
- * Turbo Bot Deva Trading Platform - Phase 1 Implementation
+ * Turbo Bot Deva Trading Platform - Backtesting VaR Calculations
  * 
- * Quick test script to verify VaR calculations and enterprise performance metrics
+ * Backtesting framework for VaR calculations and enterprise performance metrics validation
+ * Historical data analysis and risk assessment testing only
  */
 
 import { PerformanceTracker } from './trading-bot/core/analysis/performance_tracker';

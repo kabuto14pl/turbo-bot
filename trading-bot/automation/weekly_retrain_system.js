@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🔄 WEEKLY RETRAIN SYSTEM
  * Automatyczny system tygodniowego retreningu modeli RL
  * Uruchamia się każdą niedzielę o 2:00 AM

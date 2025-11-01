@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaultPerformanceLoggerConfig = exports.EnterprisePerformanceLogger = void 0;
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
 const events_1 = require("events");
 const path_1 = require("path");
 class EnterprisePerformanceLogger extends events_1.EventEmitter {

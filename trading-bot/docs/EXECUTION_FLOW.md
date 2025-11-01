@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 ```mermaid
 sequenceDiagram
     participant WS as WebSocket<br/>Binance API

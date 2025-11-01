@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { useState, useEffect, useRef } from 'react';
 
 interface TouchGestureHandlers {

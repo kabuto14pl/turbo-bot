@@ -33,6 +33,10 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const rsi_1 = require("../core/indicators/rsi");

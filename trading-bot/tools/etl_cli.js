@@ -1,5 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const etl_processor_1 = require("../infrastructure/data/etl/etl_processor");
 function printHelp() {
     console.log(`

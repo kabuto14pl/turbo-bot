@@ -35,6 +35,10 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Logger = void 0;
 exports.createFileLogger = createFileLogger;
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 const fs = __importStar(require("fs"));
 class Logger {
     constructor(logFilePath) {

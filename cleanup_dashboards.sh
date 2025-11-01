@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # Dashboard Cleanup Script - usunie WSZYSTKIE dashboardy trading bot z Grafany
 

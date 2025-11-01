@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🎯 DASHBOARD INTEGRATION
  * Integracja systemu dashboardu z głównym botem tradingowym
  */

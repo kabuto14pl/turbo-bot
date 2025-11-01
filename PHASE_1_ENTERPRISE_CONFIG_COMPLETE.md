@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🎉 FAZA 1 UKOŃCZONA: Architektura Środowisk Enterprise
 
 **Data utworzenia:** 2 września 2025  

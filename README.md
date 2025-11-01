@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # Turbo Trading Bot - GitHub Codespaces Ready
 
 Advanced autonomous trading bot with machine learning capabilities, optimized for GitHub Codespaces development.

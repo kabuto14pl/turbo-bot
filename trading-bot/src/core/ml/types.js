@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🧠 ADVANCED ML SYSTEM - TYPE DEFINITIONS
  * Replacing SimpleRL with enterprise-grade Deep RL system
  */

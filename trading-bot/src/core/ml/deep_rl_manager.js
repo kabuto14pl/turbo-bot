@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🔗 DEEP RL INTEGRATION MANAGER
  * Replaces SimpleRLManager with enterprise-grade Deep RL system
  * Manages transition from old SimpleRL to new DeepRL architecture

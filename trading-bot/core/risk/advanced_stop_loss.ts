@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🛡️ ADVANCED STOP LOSS MANAGER
  * Zaawansowany system zarządzania trailing stop i dynamicznym TP/SL
  */

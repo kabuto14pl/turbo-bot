@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
+/**
  * 🚀 SIMPLE BOT RUNNER WITH PROMETHEUS
  * Quick startup for Grafana dashboard testing
  */

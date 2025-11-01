@@ -1,3 +1,7 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 // Charts
 export { default as ProfitChart } from './charts/ProfitChart';
 export { default as VolumeChart } from './charts/VolumeChart';

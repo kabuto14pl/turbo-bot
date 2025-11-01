@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 
 # Health check script
 echo "🏥 Checking Turbo Trading Bot health..."

@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 // ============================================================================
 //  advanced_adaptive_strategy_fixed.ts – FIXED VERSION 
 //  Uproszczona wersja bez błędów kompilacji

@@ -1,3 +1,5 @@
+# 🔧 [DEVELOPMENT-TOOL]
+# Development configuration file
 # Prometheus configuration for Autonomous Trading Bot
 global:
   scrape_interval: 15s

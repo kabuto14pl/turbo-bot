@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚨 ALERTING SYSTEM
  * 
  * Production-grade alerting system for trading bot monitoring

@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdvancedDashboardManager = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // Minimal stub implementation so the dashboard API can be type-checked independently.
 class AdvancedDashboardManager {
     async getLayouts() { return []; }

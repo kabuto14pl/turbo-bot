@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * ⚡ REAL-TIME INFERENCE ENGINE
  * Zoptymalizowany system inferencji ML w czasie rzeczywistym
  */

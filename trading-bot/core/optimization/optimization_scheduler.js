@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚀 COMPREHENSIVE OPTIMIZATION SCHEDULER
  * Centralizes Ray Tune and Optuna optimization management
  * Implements adaptive optimization cycles with performance-based triggers

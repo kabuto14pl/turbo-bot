@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { MarketData, Signal, StrategyResult } from '../types';
 import { SimpleErrorManager } from '../error-handling/simple-error-manager';
 

@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import express from 'express';
 import cors from 'cors';
 import { Server } from 'http';

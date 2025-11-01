@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # ENTERPRISE PERFORMANCE INTEGRATION GUIDE
 **Turbo Bot Deva Trading Platform - Phase 1 Implementation**
 

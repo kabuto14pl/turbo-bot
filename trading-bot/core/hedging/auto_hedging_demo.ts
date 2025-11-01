@@ -1,4 +1,12 @@
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎬 AUTO-HEDGING SYSTEM DEMO V1.0
  * 
  * Comprehensive demonstration of the auto-hedging system with all features.
@@ -92,6 +100,7 @@ class MockPortfolio extends Portfolio {
         this.addPosition({
             symbol: 'BTC/USDT',
             size: 1.5,
+            quantity: 1.5,
             direction: 'long',
             entryPrice: 45000,
             margin: 67500,
@@ -103,6 +112,7 @@ class MockPortfolio extends Portfolio {
         this.addPosition({
             symbol: 'ETH/USDT',
             size: 10,
+            quantity: 10,
             direction: 'long',
             entryPrice: 3200,
             margin: 33500,
@@ -231,7 +241,7 @@ class AutoHedgingDemo {
         this.logger = new DemoLogger();
         this.portfolio = new MockPortfolio(this.logger);
         this.riskManagement = new MockRiskManagement(this.logger);
-        
+
         this.hedgingSystem = AutoHedgingSystemFactory.create(
             this.logger,
             (this.portfolio as any),
@@ -250,22 +260,22 @@ class AutoHedgingDemo {
         try {
             // Phase 1: System Startup
             await this.demonstrateSystemStartup();
-            
+
             // Phase 2: Basic Hedge Execution
             await this.demonstrateBasicHedging();
-            
+
             // Phase 3: Delta-Neutral Management
             await this.demonstrateDeltaNeutralManagement();
-            
+
             // Phase 4: Risk Integration
             await this.demonstrateRiskIntegration();
-            
+
             // Phase 5: Advanced Strategies
             await this.demonstrateAdvancedStrategies();
-            
+
             // Phase 6: Real-time Monitoring
             await this.demonstrateRealTimeMonitoring();
-            
+
             // Phase 7: System Optimization
             await this.demonstrateSystemOptimization();
 
@@ -282,14 +292,14 @@ class AutoHedgingDemo {
         console.log('---------------------------\n');
 
         this.logger.info('Starting Auto-Hedging System demonstration...');
-        
+
         await this.hedgingSystem.start();
-        
+
         await this.sleep(2000);
-        
+
         const status = this.hedgingSystem.getSystemStatus();
         console.log('\n📊 System Status:', JSON.stringify(status, null, 2));
-        
+
         console.log('\n✅ Phase 1 Complete: System is operational\n');
     }
 
@@ -305,17 +315,17 @@ class AutoHedgingDemo {
         // Execute different types of hedges
         await this.hedgingSystem.executeManualHedge('BTC/USDT', 'DELTA_NEUTRAL', 0.5);
         await this.sleep(1000);
-        
+
         await this.hedgingSystem.executeManualHedge('ETH/USDT', 'CORRELATION_BASED', 3.0);
         await this.sleep(1000);
-        
+
         await this.hedgingSystem.executeManualHedge('BNB/USDT', 'VOLATILITY_HEDGE', 15.0);
         await this.sleep(2000);
 
         // Show hedge effectiveness report
         const effectivenessReport = this.hedgingSystem.getHedgeEffectivenessReport();
         console.log('\n📈 Hedge Effectiveness Report:', JSON.stringify(effectivenessReport, null, 2));
-        
+
         console.log('\n✅ Phase 2 Complete: Basic hedging demonstrated\n');
     }
 
@@ -329,7 +339,7 @@ class AutoHedgingDemo {
         this.logger.info('Demonstrating delta-neutral portfolio management...');
 
         const deltaManager = this.hedgingSystem.getDeltaNeutralManager();
-        
+
         // Show current delta metrics
         let deltaMetrics = deltaManager.getCurrentMetrics();
         console.log('\n📊 Current Delta Metrics:', JSON.stringify(deltaMetrics, null, 2));
@@ -344,7 +354,7 @@ class AutoHedgingDemo {
         // Show updated metrics
         deltaMetrics = deltaManager.getCurrentMetrics();
         console.log('\n📊 Updated Delta Metrics:', JSON.stringify(deltaMetrics, null, 2));
-        
+
         console.log('\n✅ Phase 3 Complete: Delta-neutral management demonstrated\n');
     }
 
@@ -358,16 +368,16 @@ class AutoHedgingDemo {
         this.logger.info('Demonstrating risk management integration...');
 
         const riskIntegration = this.hedgingSystem.getRiskIntegration();
-        
+
         // Start simulated risk events
         this.riskManagement.simulateRiskEvents();
-        
+
         // Monitor integration for a short period
         let eventCount = 0;
         const monitoringInterval = setInterval(() => {
             const queueStatus = riskIntegration.getEventQueueStatus();
             console.log(`📋 Event Queue Status: ${queueStatus.totalEvents} total, ${queueStatus.unprocessedEvents} unprocessed`);
-            
+
             eventCount++;
             if (eventCount >= 3) {
                 clearInterval(monitoringInterval);
@@ -378,7 +388,7 @@ class AutoHedgingDemo {
 
         const integrationMetrics = riskIntegration.getCurrentMetrics();
         console.log('\n📊 Integration Metrics:', JSON.stringify(integrationMetrics, null, 2));
-        
+
         console.log('\n✅ Phase 4 Complete: Risk integration demonstrated\n');
     }
 
@@ -392,10 +402,10 @@ class AutoHedgingDemo {
         this.logger.info('Demonstrating advanced hedging strategies...');
 
         const advancedStrategies = this.hedgingSystem.getAdvancedStrategies();
-        
+
         // Update market data to trigger correlation analysis
         this.updateMarketData();
-        
+
         await this.sleep(3000);
 
         // Execute correlation-based hedging
@@ -416,7 +426,7 @@ class AutoHedgingDemo {
 
         // Execute volatility hedging
         await advancedStrategies.volatilityHedging(allPositions);
-        
+
         console.log('\n✅ Phase 5 Complete: Advanced strategies demonstrated\n');
     }
 
@@ -442,7 +452,7 @@ class AutoHedgingDemo {
             console.log(`   Neutrality Score: ${(status.components.deltaNeutral.neutralityScore * 100).toFixed(1)}%`);
             console.log(`   Hedge Value: $${status.metrics.totalHedgeValue.toLocaleString()}`);
             console.log(`   Portfolio Coverage: ${(status.metrics.portfolioCoverage * 100).toFixed(1)}%`);
-            
+
             if (status.alerts.length > 0) {
                 console.log(`   🚨 Alerts: ${status.alerts.length}`);
             }
@@ -454,7 +464,7 @@ class AutoHedgingDemo {
         }, 5000);
 
         await this.sleep(30000); // Monitor for 30 seconds
-        
+
         console.log('\n✅ Phase 6 Complete: Real-time monitoring demonstrated\n');
     }
 
@@ -481,7 +491,7 @@ class AutoHedgingDemo {
         // Show final system status
         const finalStatus = this.hedgingSystem.getSystemStatus();
         console.log('\n📋 Final System Status:', JSON.stringify(finalStatus, null, 2));
-        
+
         console.log('\n✅ Phase 7 Complete: System optimization demonstrated\n');
     }
 
@@ -495,7 +505,7 @@ class AutoHedgingDemo {
         symbols.forEach(symbol => {
             const basePrice = basePrices[symbol as keyof typeof basePrices];
             const price = basePrice * (0.98 + Math.random() * 0.04); // ±2% variation
-            
+
             const marketData: MarketData = {
                 symbol,
                 price,
@@ -527,9 +537,9 @@ class AutoHedgingDemo {
         if (this.demoInterval) {
             clearInterval(this.demoInterval);
         }
-        
+
         await this.hedgingSystem.stop();
-        
+
         console.log('\n🏁 DEMONSTRATION COMPLETE');
         console.log('=========================\n');
         console.log('✅ Auto-Hedging System demonstration finished successfully!');
@@ -551,7 +561,7 @@ class AutoHedgingDemo {
 
 async function runAutoHedgingDemo(): Promise<void> {
     const demo = new AutoHedgingDemo();
-    
+
     try {
         await demo.runDemo();
         await demo.cleanup();
@@ -572,7 +582,7 @@ export async function testAutoHedgingSystem(): Promise<boolean> {
     const logger = new DemoLogger();
     const portfolio = new MockPortfolio(logger);
     const riskManagement = new MockRiskManagement(logger);
-    
+
     try {
         // Test system creation
         const hedgingSystem = AutoHedgingSystemFactory.create(

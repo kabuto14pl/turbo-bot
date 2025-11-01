@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
  * ENTERPRISE PERFORMANCE INTEGRATION EXAMPLE
  * Turbo Bot Deva Trading Platform - Phase 1 Implementation
  *

@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  optimization_debugger.ts - NARZĘDZIE DO DEBUGOWANIA PROCESU OPTYMALIZACJI
 //  Ten plik zawiera funkcje do monitorowania i debugowania procesu optymalizacji

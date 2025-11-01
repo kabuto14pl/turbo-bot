@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // PWA Registration and Management
 export class PWAManager {
   private registration: ServiceWorkerRegistration | null = null;

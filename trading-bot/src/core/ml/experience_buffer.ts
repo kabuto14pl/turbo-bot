@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * � ADVANCED EXPERIENCE REPLAY BUFFER
  * Sophisticated memory system for Deep RL training
  * Replaces SimpleRL's primitive actionHistory with enterprise-grade experience management

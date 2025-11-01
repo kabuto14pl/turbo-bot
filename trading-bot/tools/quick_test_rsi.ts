@@ -1,3 +1,7 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 // ============================================================================
 //  quick_test_rsi.ts - Prosty test pojedynczej strategii RSITurbo
 // ============================================================================

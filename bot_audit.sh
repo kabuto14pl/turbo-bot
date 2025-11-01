@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 
 echo "🔍 KOMPLEKSOWY AUDYT AUTONOMICZNEGO TRADING BOTA"
 echo "================================================================="

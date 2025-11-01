@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🔍 ADVANCED HYPERPARAMETER SEARCH SYSTEM
  * Comprehensive grid search, random search, and Bayesian optimization
  * Implements Gaussian Process-based optimization with acquisition functions

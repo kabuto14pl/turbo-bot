@@ -1,4 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+import * as path from 'path';
+import * as fs from 'fs';
 import { runOptunaBayesianOptimization } from './optuna_optimizer';
+import type { StrategyName, TestConfig } from '../main';
 
 // Typ dla definicji zakresu parametrów do optymalizacji
 interface ParamRange {

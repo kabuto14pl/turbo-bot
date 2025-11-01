@@ -1,3 +1,5 @@
+# 🔧 [DEVELOPMENT-TOOL]
+# Development configuration file
 apiVersion: 1
 
 datasources:

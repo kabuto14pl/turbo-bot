@@ -1,4 +1,16 @@
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Trading bot testing component
+ */
+/**
+ * 🧪 [BACKTEST-ONLY] 
+ * This component is designed exclusively for backtesting and simulation purposes.
+ * Should NEVER be used in production trading environments.
+ * 
  * Advanced Backtesting System - Phase 3.2
  * 
  * Implementuje zaawansowane techniki backtestingu:

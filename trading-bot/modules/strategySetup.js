@@ -1,4 +1,12 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared module component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 // strategySetup.ts - Strategy Configuration and Initialization
 // Extracted from main.ts for better modularity and strategy management

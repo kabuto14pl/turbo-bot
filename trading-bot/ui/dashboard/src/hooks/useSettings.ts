@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { useState, useCallback } from 'react';
 
 export type Theme = 'light' | 'dark';

@@ -1,11 +1,18 @@
-#!/usr/bin/env npx ts-node
 "use strict";
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Trading bot testing component
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BlackSwanSimulator = void 0;
 /**
  * 🧪 BLACK SWAN TESTING FRAMEWORK 2025
  * Zaawansowane testowanie scenariuszy ekstremalnych dla trading bota
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BlackSwanSimulator = void 0;
 const events_1 = require("events");
 // Simple logger implementation for Black Swan testing
 class Logger {

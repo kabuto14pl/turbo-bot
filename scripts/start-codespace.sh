@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 
 # Codespace startup script
 echo "🚀 Starting Turbo Trading Bot in Codespace..."

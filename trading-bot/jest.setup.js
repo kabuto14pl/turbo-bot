@@ -1,4 +1,12 @@
 "use strict";
+/**
+ * 🔧 [PRODUCTION-CONFIG]
+ * Production configuration component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
 // Jest setup file for trading bot tests
 // Configure global test environment and mocks
 Object.defineProperty(exports, "__esModule", { value: true });

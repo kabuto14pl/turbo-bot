@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 // ============================================================================
 //  optimal_rsi_test.ts - Test optymalnych parametrów RSI
 //  Ten skrypt przeprowadza test dla optymalnych parametrów RSI znalezionych

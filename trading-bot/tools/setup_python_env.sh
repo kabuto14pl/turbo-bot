@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 # Skrypt do konfiguracji środowiska Python dla optymalizacji w WSL
 # 🐧 WERSJA LINUX/WSL - Zaktualizowano 2025-07-28
 # ✅ Używa systemowego Python 3.10.18 zamiast Windows venv

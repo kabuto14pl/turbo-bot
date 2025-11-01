@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
+/**
  * 🚀 OPTIMIZED AUTONOMOUS TRADING BOT STARTUP
  * Performance-optimized version for i3 hardware
  */

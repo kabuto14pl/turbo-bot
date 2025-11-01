@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared module component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 // types.ts - Bot Configuration Types and Interfaces
 // Extracted from main.ts for better modularity and maintainability
@@ -95,13 +103,6 @@ export interface PerformanceMetrics {
   cvar95: number;
 }
 
-// --- MODULE EXPORT ---
-export default {
-  StrategyName,
-  StrategyConfig,
-  TestConfig,
-  SignalEvent,
-  TradeEvent,
-  BotRuntimeState,
-  PerformanceMetrics
-};
+// --- NO DEFAULT EXPORT NEEDED - These are type definitions only ---
+// Types are automatically available for import/export via TypeScript
+// No need to export them as values

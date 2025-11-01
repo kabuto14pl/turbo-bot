@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 
 # Ten skrypt tworzy środowisko Python i testuje Ray Tune
 

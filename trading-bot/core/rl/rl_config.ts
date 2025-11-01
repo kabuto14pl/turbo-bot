@@ -1,4 +1,12 @@
 /**
+ * 🔧 [PRODUCTION-CONFIG]
+ * Production configuration component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎛️ RL SYSTEM CONFIGURATION
  * 
  * Complete configuration for RL Learning system

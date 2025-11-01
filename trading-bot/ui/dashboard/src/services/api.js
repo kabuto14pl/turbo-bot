@@ -4,6 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleApiError = exports.checkApiHealth = exports.tradingApi = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const axios_1 = __importDefault(require("axios"));
 // API Configuration
 const API_BASE_URL = process.env.VITE_API_URL || 'http://localhost:9091/api';

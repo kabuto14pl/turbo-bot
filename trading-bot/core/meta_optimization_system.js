@@ -1,4 +1,12 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 // ============================================================================
 //  meta_optimization_system.ts – PHASE 4.3 META-OPTYMALIZACJA
 //  Optymalizacja samego procesu optymalizacji (meta-parametry)

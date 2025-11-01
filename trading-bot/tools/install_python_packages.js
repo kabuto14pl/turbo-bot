@@ -33,6 +33,10 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const child_process = __importStar(require("child_process"));
@@ -78,7 +82,8 @@ async function installPythonPackages() {
             console.log('Packages installed successfully!');
         }
         catch (installError) {
-            console.warn('Error installing packages with pip. The error was:', installError.message);
+            const errorMsg = installError instanceof Error ? installError.message : String(installError);
+            console.warn('Error installing packages with pip. The error was:', errorMsg);
             console.log('Trying alternative installation without Ray (which may require Python 3.8-3.11)...');
             // Try installing just the essential packages without Ray
             try {
@@ -95,7 +100,8 @@ async function installPythonPackages() {
                 console.log('Note: Ray was not installed. The optimizer will run in single-machine mode only.');
             }
             catch (alternativeError) {
-                console.error('Error installing essential packages:', alternativeError.message);
+                const altErrorMsg = alternativeError instanceof Error ? alternativeError.message : String(alternativeError);
+                console.error('Error installing essential packages:', altErrorMsg);
                 throw new Error('Failed to install required Python packages. Please check your Python installation.');
             }
         }
@@ -138,15 +144,17 @@ for package in packages:
             };
         }
         catch (verifyError) {
-            console.error('Error verifying packages:', verifyError.message);
+            const verifyErrorMsg = verifyError instanceof Error ? verifyError.message : String(verifyError);
+            console.error('Error verifying packages:', verifyErrorMsg);
             throw new Error('Failed to verify installed packages.');
         }
     }
     catch (error) {
-        console.error('Error installing Python packages:', error.message);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error('Error installing Python packages:', errorMsg);
         return {
             success: false,
-            message: `Error: ${error.message}`
+            message: `Error: ${errorMsg}`
         };
     }
 }

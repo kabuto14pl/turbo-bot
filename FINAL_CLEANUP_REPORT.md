@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🎉 PROJEKT TURBO BOT - FINALNE CZYSZCZENIE ZAKOŃCZONE
 
 ## 📊 STATYSTYKI KOŃCOWE

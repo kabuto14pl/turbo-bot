@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { Logger } from '../../infrastructure/logging/logger';
 import { AbstractRiskManager } from './abstract_risk_manager';
 import { StrategySignal } from '../types/strategy';

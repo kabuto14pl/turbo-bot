@@ -1,7 +1,18 @@
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ **
+ * 🧪 [TESTING-FRAMEWORK]
+ * 🧪 [BACKTEST-ONLY]
  * SAFE VAR INTEGRATION TEST
- * Turbo Bot Deva Trading Platform - Safe test without infinite loops
+ * Turbo Bot Deva Trading Platform - Safe backtesting without infinite loops
+ *
+ * Controlled backtesting environment for VaR calculations and performance analysis
+ * Historical data validation with safety constraints
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.safeVarTest = safeVarTest;

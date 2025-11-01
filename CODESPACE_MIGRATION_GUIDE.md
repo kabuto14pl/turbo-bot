@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🚀 Turbo Trading Bot - GitHub Codespaces Migration Guide
 
 ## Gotowe do przeniesienia! 🎯

@@ -1,0 +1,323 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "🧠 ML Model Performance Dashboard",
+    "description": "Advanced machine learning model monitoring and performance tracking",
+    "tags": ["ml", "ai", "trading-bot", "performance", "monitoring"],
+    "timezone": "browser",
+    "refresh": "10s",
+    "time": {
+      "from": "now-2h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "🎯 Model Accuracy Metrics",
+        "type": "stat",
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "ml_model_accuracy_percent",
+            "legendFormat": "Model Accuracy (%)",
+            "refId": "A"
+          },
+          {
+            "expr": "ml_model_confidence_avg",
+            "legendFormat": "Average Confidence",
+            "refId": "B"
+          },
+          {
+            "expr": "ml_prediction_success_rate",
+            "legendFormat": "Prediction Success Rate (%)",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 60
+                },
+                {
+                  "color": "green",
+                  "value": 80
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "📈 Model Training Progress",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 6
+        },
+        "targets": [
+          {
+            "expr": "ml_training_loss",
+            "legendFormat": "Training Loss",
+            "refId": "A"
+          },
+          {
+            "expr": "ml_validation_loss",
+            "legendFormat": "Validation Loss",
+            "refId": "B"
+          },
+          {
+            "expr": "ml_learning_rate",
+            "legendFormat": "Learning Rate",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "🎲 Prediction Confidence Distribution",
+        "type": "heatmap",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 6
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, ml_prediction_confidence_histogram)",
+            "legendFormat": "95th Percentile Confidence",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, ml_prediction_confidence_histogram)",
+            "legendFormat": "50th Percentile Confidence",
+            "refId": "B"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "🔄 Model Performance Over Time",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 14
+        },
+        "targets": [
+          {
+            "expr": "ml_model_accuracy_percent",
+            "legendFormat": "Accuracy (%)",
+            "refId": "A"
+          },
+          {
+            "expr": "ml_prediction_success_rate",
+            "legendFormat": "Success Rate (%)",
+            "refId": "B"
+          },
+          {
+            "expr": "ml_model_confidence_avg * 100",
+            "legendFormat": "Confidence (%)",
+            "refId": "C"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "⚡ Model Inference Performance",
+        "type": "stat",
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 0,
+          "y": 22
+        },
+        "targets": [
+          {
+            "expr": "ml_inference_latency_ms",
+            "legendFormat": "Inference Latency (ms)",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(ml_predictions_total[5m]) * 60",
+            "legendFormat": "Predictions per Minute",
+            "refId": "B"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "🎯 Prediction Accuracy by Strategy",
+        "type": "table",
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 12,
+          "y": 22
+        },
+        "targets": [
+          {
+            "expr": "ml_strategy_accuracy by (strategy)",
+            "legendFormat": "{{strategy}} Accuracy",
+            "refId": "A",
+            "format": "table"
+          },
+          {
+            "expr": "ml_strategy_confidence by (strategy)",
+            "legendFormat": "{{strategy}} Confidence",
+            "refId": "B",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "🔥 Model Training Metrics",
+        "type": "graph",
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 26
+        },
+        "targets": [
+          {
+            "expr": "ml_epoch_duration_seconds",
+            "legendFormat": "Epoch Duration (s)",
+            "refId": "A"
+          },
+          {
+            "expr": "ml_batch_size",
+            "legendFormat": "Batch Size",
+            "refId": "B"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "📊 Feature Importance",
+        "type": "gauge",
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 26
+        },
+        "targets": [
+          {
+            "expr": "ml_feature_importance_rsi",
+            "legendFormat": "RSI Importance",
+            "refId": "A"
+          },
+          {
+            "expr": "ml_feature_importance_macd",
+            "legendFormat": "MACD Importance",
+            "refId": "B"
+          },
+          {
+            "expr": "ml_feature_importance_bollinger",
+            "legendFormat": "Bollinger Importance",
+            "refId": "C"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "🚨 Model Health Alerts",
+        "type": "stat",
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 26
+        },
+        "targets": [
+          {
+            "expr": "ml_model_drift_detected",
+            "legendFormat": "Model Drift Detected",
+            "refId": "A"
+          },
+          {
+            "expr": "ml_retraining_required",
+            "legendFormat": "Retraining Required",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Model Retraining Events",
+          "enable": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "query": "changes(ml_model_version[1h])"
+        },
+        {
+          "name": "Accuracy Drops",
+          "enable": true,
+          "iconColor": "rgba(255, 96, 96, 1)",
+          "query": "ALERTS{alertname=\"ml_model_accuracy_degradation\"}"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "model_version",
+          "type": "query",
+          "query": "label_values(ml_model_accuracy_percent, version)",
+          "refresh": 1,
+          "includeAll": false,
+          "multi": false
+        }
+      ]
+    }
+  },
+  "folderId": 0,
+  "overwrite": true
+}

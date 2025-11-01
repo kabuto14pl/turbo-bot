@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { Logger } from '../logging';
 import { Portfolio } from '../../core/portfolio';
 import { AbstractRiskManager } from '../../core/risk/abstract_risk_manager';

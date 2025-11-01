@@ -1,13 +1,20 @@
-#!/usr/bin/env node
 "use strict";
 /**
- * Turbo Trading Bot - Main Entry Point
- * Optimized for GitHub Codespaces
+ * 🚀 [PRODUCTION-API]
+ * Production API component
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🚀 [PRODUCTION-API]
+ * This is the production API server for the trading bot.
+ * Provides health checks, metrics, and monitoring endpoints.
+ *
+ * Turbo Trading Bot - Main API Server Entry Point (Express API - 193 lines)
+ * Optimized for GitHub Codespaces and production deployment
+ */
 const dotenv_1 = __importDefault(require("dotenv"));
 const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));

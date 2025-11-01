@@ -2,6 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.calculateROC = calculateROC;
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * Oblicza wskaźnik Rate of Change (ROC).
  * @param closes - Tablica cen zamknięcia.
  * @param period - Okres, dla którego obliczany jest ROC.

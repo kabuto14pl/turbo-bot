@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  professional_optimizer.ts - PROFESJONALNY SYSTEM OPTYMALIZACJI
 //  Ten moduł implementuje zaawansowane techniki optymalizacji stosowane
@@ -212,9 +216,9 @@ async function optimizeStrategy(config) {
             initialParams[key] = range.min + Math.random() * (range.max - range.min);
         }
         // Pomocnicza funkcja do modyfikacji parametrów wokół obecnych wartości
-        function generateParameterVariation(currentParams, explorationFactor) {
+        const generateParameterVariation = (currentParams, explorationFactor, parameterSpaceLocal) => {
             const newParams = {};
-            for (const [key, range] of Object.entries(parameterSpace)) {
+            for (const [key, range] of Object.entries(parameterSpaceLocal)) {
                 const currentValue = currentParams[key];
                 const rangeSize = (range.max - range.min) * explorationFactor;
                 // Generujemy nową wartość w okolicy obecnej
@@ -228,7 +232,7 @@ async function optimizeStrategy(config) {
                 newParams[key] = newValue;
             }
             return newParams;
-        }
+        };
         // Główna pętla optymalizacji
         for (let i = 0; i < maxIterations; i++) {
             // Generowanie parametrów dla tej iteracji
@@ -244,7 +248,7 @@ async function optimizeStrategy(config) {
                     : initialParams
                 : results[Math.floor(Math.random() * results.length)].params;
             // Generujemy nowy zestaw parametrów
-            const params = generateParameterVariation(baseParams, explorationFactor);
+            const params = generateParameterVariation(baseParams, explorationFactor, parameterSpace);
             console.log(`Iteracja ${i + 1}/${maxIterations}: Testowanie parametrów`, params);
             try {
                 // Wykonujemy backtesting dla tych parametrów

@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 # Skrypt aktywacji środowiska Python dla WSL/Linux
 # Używamy lokalnego środowiska zamiast ścieżki Windows
 

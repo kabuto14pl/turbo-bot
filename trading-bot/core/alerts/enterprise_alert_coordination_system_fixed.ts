@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚨 ENTERPRISE ALERT COORDINATION SYSTEM V2.0
  * 
  * Advanced, high-performance alert management system for enterprise trading operations.

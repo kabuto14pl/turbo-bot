@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🚀 PRODUCTION DEPLOYMENT GUIDE
 ## Enterprise ML System Integration with Main Trading Bot
 

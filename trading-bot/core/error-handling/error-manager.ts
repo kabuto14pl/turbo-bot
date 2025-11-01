@@ -1,4 +1,11 @@
-#!/usr/bin/env ts-node
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 /**
  * 🚨 COMPREHENSIVE ERROR MANAGEMENT SYSTEM
  * Advanced error handling, retry mechanisms, and edge case management

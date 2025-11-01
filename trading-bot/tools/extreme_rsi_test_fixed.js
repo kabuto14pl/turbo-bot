@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 // extreme_rsi_test_fixed.ts
 // Script to test a very basic RSI strategy on Bitcoin data with fixed CSV parsing
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {

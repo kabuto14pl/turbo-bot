@@ -47,6 +47,14 @@ exports.recordTradingCycle = recordTradingCycle;
 exports.triggerAlert = triggerAlert;
 exports.getMetrics = getMetrics;
 exports.getRegistry = getRegistry;
+/**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 const promClient = __importStar(require("prom-client"));
 /**
  * 🚀 PROMETHEUS METRICS EXPORTER FOR TRADING BOT

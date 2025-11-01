@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🛡️ AUTO-HEDGING SYSTEM V1.0 - MAIN INDEX
  *
  * Complete auto-hedging system for trading bot with enterprise-grade features.

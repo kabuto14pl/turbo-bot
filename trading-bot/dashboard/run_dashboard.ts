@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { DashboardAPI } from './dashboard_api';
 import { AdvancedDashboardManager } from './dashboard_manager';
 import DashboardWebSocketServer from './ws_stub';

@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 📊 Skumulowany raport Optuna (wszystkie strategie i interwały)
 
 | Strategy | Interval | Sharpe | Net Profit | Trades | Win Trades | Loss Trades | Avg Profit | Avg Loss | Max Profit | Max Loss | PF | EV | Skew | Kurtosis |

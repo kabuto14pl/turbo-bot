@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // UWAGA: Brak obsługi ETHUSDT/SOLUSDT – agregacja dotyczy tylko symboli, dla których są dostępne dane (np. BTCUSDT).
 import * as fs from 'fs';
 import * as csv from 'csv-parse/sync';

@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚀 KAFKA REAL-TIME STREAMING - PRODUCTION UPGRADE
  * 
  * Zaawansowany system Kafka streaming z:

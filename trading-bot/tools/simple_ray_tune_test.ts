@@ -1,7 +1,14 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 import { spawn } from 'child_process';
 import * as path from 'path';
 
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ **
+ * 🧪 [TESTING-FRAMEWORK]
  * Prosty test Ray Tune z bardzo prostą funkcją celu
  */
 

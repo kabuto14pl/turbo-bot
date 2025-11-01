@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import * as cluster from 'cluster';
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import * as os from 'os';

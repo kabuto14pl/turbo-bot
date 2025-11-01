@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🔍 EXPLAINABLE AI SYSTEM
  * System wyjaśnialnej sztucznej inteligencji dla interpretacji modeli ML
  */

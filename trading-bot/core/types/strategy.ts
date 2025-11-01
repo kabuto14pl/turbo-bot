@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { Regime } from './regime';
 import { IndicatorSet } from './indicator_set';
 import { Position } from './position';
@@ -47,6 +55,10 @@ export interface StrategySignal {
     stopLoss?: number;
     takeProfit?: number;
     size?: number;
+    quantity?: number; // Added for compatibility
+    action?: 'ENTER_LONG' | 'ENTER_SHORT' | 'EXIT_LONG' | 'EXIT_SHORT'; // Added for compatibility
+    symbol?: string; // Added for compatibility
+    strategyId?: string; // Added for compatibility
     indicators: {
         [key: string]: number;
     };

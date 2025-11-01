@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  optimize_all_strategies_full.ts - PEŁNA WERSJA OPTYMALIZACJI
 //  Skrypt optymalizacyjny używający rzeczywistych strategii i poprawnych danych

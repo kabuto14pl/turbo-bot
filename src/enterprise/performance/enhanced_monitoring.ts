@@ -1,0 +1,493 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * Enhanced Prometheus Monitoring Integration
+ * Enterprise-grade observability with custom metrics, alerting, and performance tracking
+ */
+
+import { register, Counter, Gauge, Histogram, Summary, collectDefaultMetrics } from 'prom-client';
+import { EventEmitter } from 'events';
+
+interface MetricConfig {
+    name: string;
+    help: string;
+    labelNames?: string[];
+    buckets?: number[];
+}
+
+interface AlertRule {
+    name: string;
+    expr: string;
+    severity: 'critical' | 'warning' | 'info';
+    duration: string;
+    description: string;
+    runbook?: string;
+}
+
+interface PerformanceAlert {
+    rule: AlertRule;
+    value: number;
+    timestamp: number;
+    labels: Record<string, string>;
+    status: 'firing' | 'resolved';
+}
+
+export class EnhancedMonitoringSystem extends EventEmitter {
+    private metrics: Map<string, any> = new Map();
+    private alertRules: AlertRule[] = [];
+    private activeAlerts: Map<string, PerformanceAlert> = new Map();
+    private performanceBaseline: Map<string, number> = new Map();
+
+    constructor() {
+        super();
+        this.initializeDefaultMetrics();
+        this.setupTradingMetrics();
+        this.setupPerformanceMetrics();
+        this.setupBusinessMetrics();
+        this.startAlertEvaluation();
+    }
+
+    private initializeDefaultMetrics(): void {
+        // Collect default Node.js metrics
+        collectDefaultMetrics({
+            register,
+            prefix: 'trading_bot_',
+            gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5],
+            eventLoopMonitoringPrecision: 5
+        });
+    }
+
+    private setupTradingMetrics(): void {
+        // Trading operations metrics
+        this.createCounter('trading_orders_total', 'Total number of orders placed', ['symbol', 'side', 'type', 'status']);
+        this.createCounter('trading_fills_total', 'Total number of order fills', ['symbol', 'side']);
+        this.createGauge('trading_portfolio_value', 'Current portfolio value in USD', ['instance']);
+        this.createGauge('trading_position_size', 'Current position size', ['symbol', 'side']);
+        this.createGauge('trading_unrealized_pnl', 'Unrealized profit and loss', ['symbol']);
+        this.createGauge('trading_realized_pnl', 'Realized profit and loss', ['symbol']);
+        
+        // Risk metrics
+        this.createGauge('risk_drawdown_current', 'Current drawdown percentage', ['instance']);
+        this.createGauge('risk_drawdown_max', 'Maximum drawdown percentage', ['instance']);
+        this.createGauge('risk_var_1d', 'Value at Risk (1 day)', ['confidence', 'instance']);
+        this.createGauge('risk_exposure_total', 'Total market exposure', ['instance']);
+        
+        // Strategy metrics
+        this.createCounter('strategy_signals_total', 'Total strategy signals generated', ['strategy', 'action', 'symbol']);
+        this.createHistogram('strategy_execution_time', 'Strategy execution time in seconds', ['strategy'], 
+            { buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0] });
+        this.createGauge('strategy_confidence', 'Strategy signal confidence', ['strategy', 'symbol']);
+        this.createCounter('strategy_errors_total', 'Total strategy errors', ['strategy', 'error_type']);
+    }
+
+    private setupPerformanceMetrics(): void {
+        // API performance metrics
+        this.createHistogram('api_request_duration', 'API request duration in seconds', ['method', 'endpoint', 'status'],
+            { buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0] });
+        this.createCounter('api_requests_total', 'Total API requests', ['method', 'endpoint', 'status']);
+        
+        // Database performance
+        this.createHistogram('db_query_duration', 'Database query duration in seconds', ['operation', 'table'],
+            { buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0] });
+        this.createCounter('db_operations_total', 'Total database operations', ['operation', 'table', 'status']);
+        
+        // Cache performance
+        this.createCounter('cache_operations_total', 'Total cache operations', ['operation', 'status']);
+        this.createGauge('cache_hit_ratio', 'Cache hit ratio', ['cache_type']);
+        this.createGauge('cache_memory_usage', 'Cache memory usage in bytes', ['cache_type']);
+        
+        // Message queue metrics
+        this.createGauge('queue_size', 'Current queue size', ['queue_name']);
+        this.createCounter('queue_messages_total', 'Total messages processed', ['queue_name', 'status']);
+        this.createHistogram('queue_processing_duration', 'Message processing duration', ['queue_name'],
+            { buckets: [0.001, 0.01, 0.1, 1.0, 10.0] });
+    }
+
+    private setupBusinessMetrics(): void {
+        // Business KPIs
+        this.createGauge('trading_sharpe_ratio', 'Sharpe ratio', ['period', 'instance']);
+        this.createGauge('trading_win_rate', 'Win rate percentage', ['period', 'instance']);
+        this.createGauge('trading_avg_trade_return', 'Average trade return', ['period', 'instance']);
+        this.createGauge('trading_max_consecutive_losses', 'Maximum consecutive losses', ['instance']);
+        
+        // System health
+        this.createGauge('system_health_score', 'Overall system health score (0-100)', ['component']);
+        this.createCounter('system_errors_total', 'Total system errors', ['component', 'severity']);
+        this.createGauge('system_uptime_seconds', 'System uptime in seconds', ['instance']);
+        
+        // Market data metrics
+        this.createCounter('market_data_updates_total', 'Total market data updates', ['symbol', 'type']);
+        this.createGauge('market_data_latency', 'Market data latency in milliseconds', ['symbol', 'source']);
+        this.createCounter('market_data_gaps_total', 'Total market data gaps detected', ['symbol']);
+    }
+
+    private createCounter(name: string, help: string, labelNames: string[] = []): Counter<string> {
+        const counter = new Counter({
+            name: `trading_bot_${name}`,
+            help,
+            labelNames,
+            registers: [register]
+        });
+        this.metrics.set(name, counter);
+        return counter;
+    }
+
+    private createGauge(name: string, help: string, labelNames: string[] = []): Gauge<string> {
+        const gauge = new Gauge({
+            name: `trading_bot_${name}`,
+            help,
+            labelNames,
+            registers: [register]
+        });
+        this.metrics.set(name, gauge);
+        return gauge;
+    }
+
+    private createHistogram(name: string, help: string, labelNames: string[] = [], options: any = {}): Histogram<string> {
+        const histogram = new Histogram({
+            name: `trading_bot_${name}`,
+            help,
+            labelNames,
+            buckets: options.buckets || [0.1, 0.5, 1, 5, 10, 50, 100],
+            registers: [register]
+        });
+        this.metrics.set(name, histogram);
+        return histogram;
+    }
+
+    private createSummary(name: string, help: string, labelNames: string[] = [], options: any = {}): Summary<string> {
+        const summary = new Summary({
+            name: `trading_bot_${name}`,
+            help,
+            labelNames,
+            percentiles: options.percentiles || [0.5, 0.9, 0.95, 0.99],
+            registers: [register]
+        });
+        this.metrics.set(name, summary);
+        return summary;
+    }
+
+    // Public methods for recording metrics
+    public recordOrder(symbol: string, side: string, type: string, status: string): void {
+        this.metrics.get('trading_orders_total')?.inc({ symbol, side, type, status });
+    }
+
+    public recordFill(symbol: string, side: string): void {
+        this.metrics.get('trading_fills_total')?.inc({ symbol, side });
+    }
+
+    public updatePortfolioValue(value: number, instance: string = 'primary'): void {
+        this.metrics.get('trading_portfolio_value')?.set({ instance }, value);
+    }
+
+    public updatePosition(symbol: string, side: string, size: number): void {
+        this.metrics.get('trading_position_size')?.set({ symbol, side }, size);
+    }
+
+    public updatePnL(symbol: string, unrealized: number, realized: number): void {
+        this.metrics.get('trading_unrealized_pnl')?.set({ symbol }, unrealized);
+        this.metrics.get('trading_realized_pnl')?.set({ symbol }, realized);
+    }
+
+    public recordStrategySignal(strategy: string, action: string, symbol: string): void {
+        this.metrics.get('strategy_signals_total')?.inc({ strategy, action, symbol });
+    }
+
+    public recordStrategyExecution(strategy: string, duration: number): void {
+        this.metrics.get('strategy_execution_time')?.observe({ strategy }, duration);
+    }
+
+    public updateStrategyConfidence(strategy: string, symbol: string, confidence: number): void {
+        this.metrics.get('strategy_confidence')?.set({ strategy, symbol }, confidence);
+    }
+
+    public recordAPIRequest(method: string, endpoint: string, status: string, duration: number): void {
+        this.metrics.get('api_requests_total')?.inc({ method, endpoint, status });
+        this.metrics.get('api_request_duration')?.observe({ method, endpoint, status }, duration);
+    }
+
+    public recordDatabaseQuery(operation: string, table: string, duration: number, status: string = 'success'): void {
+        this.metrics.get('db_operations_total')?.inc({ operation, table, status });
+        this.metrics.get('db_query_duration')?.observe({ operation, table }, duration);
+    }
+
+    public recordCacheOperation(operation: string, status: string): void {
+        this.metrics.get('cache_operations_total')?.inc({ operation, status });
+    }
+
+    public updateCacheHitRatio(cacheType: string, ratio: number): void {
+        this.metrics.get('cache_hit_ratio')?.set({ cache_type: cacheType }, ratio);
+    }
+
+    public updateSystemHealth(component: string, score: number): void {
+        this.metrics.get('system_health_score')?.set({ component }, score);
+    }
+
+    public recordSystemError(component: string, severity: string): void {
+        this.metrics.get('system_errors_total')?.inc({ component, severity });
+    }
+
+    public recordMarketDataUpdate(symbol: string, type: string): void {
+        this.metrics.get('market_data_updates_total')?.inc({ symbol, type });
+    }
+
+    public updateMarketDataLatency(symbol: string, source: string, latency: number): void {
+        this.metrics.get('market_data_latency')?.set({ symbol, source }, latency);
+    }
+
+    // Alert system
+    public setupAlertRules(): void {
+        this.alertRules = [
+            {
+                name: 'HighErrorRate',
+                expr: 'rate(trading_bot_api_requests_total{status=~"5.."}[5m]) > 0.05',
+                severity: 'critical',
+                duration: '5m',
+                description: 'API error rate is above 5%',
+                runbook: 'Check API logs and system health'
+            },
+            {
+                name: 'HighMemoryUsage',
+                expr: 'process_resident_memory_bytes / (1024*1024*1024) > 2',
+                severity: 'warning',
+                duration: '10m',
+                description: 'Memory usage is above 2GB',
+                runbook: 'Check for memory leaks and consider optimization'
+            },
+            {
+                name: 'HighDrawdown',
+                expr: 'trading_bot_risk_drawdown_current > 0.15',
+                severity: 'critical',
+                duration: '1m',
+                description: 'Portfolio drawdown exceeds 15%',
+                runbook: 'Review trading strategy and consider position reduction'
+            },
+            {
+                name: 'LowCacheHitRatio',
+                expr: 'trading_bot_cache_hit_ratio < 0.8',
+                severity: 'warning',
+                duration: '15m',
+                description: 'Cache hit ratio is below 80%',
+                runbook: 'Review cache configuration and data access patterns'
+            },
+            {
+                name: 'StrategyErrors',
+                expr: 'rate(trading_bot_strategy_errors_total[5m]) > 0.1',
+                severity: 'warning',
+                duration: '5m',
+                description: 'Strategy error rate is elevated',
+                runbook: 'Check strategy logs and configuration'
+            },
+            {
+                name: 'DatabaseSlowQueries',
+                expr: 'histogram_quantile(0.95, rate(trading_bot_db_query_duration_bucket[5m])) > 0.5',
+                severity: 'warning',
+                duration: '10m',
+                description: '95th percentile database query time exceeds 500ms',
+                runbook: 'Review database performance and query optimization'
+            }
+        ];
+    }
+
+    private startAlertEvaluation(): void {
+        setInterval(() => {
+            this.evaluateAlertRules();
+        }, 30000); // Evaluate every 30 seconds
+    }
+
+    private async evaluateAlertRules(): Promise<void> {
+        for (const rule of this.alertRules) {
+            try {
+                const isTriggered = await this.evaluateAlertRule(rule);
+                const alertKey = `${rule.name}`;
+                const existingAlert = this.activeAlerts.get(alertKey);
+
+                if (isTriggered && !existingAlert) {
+                    // New alert
+                    const alert: PerformanceAlert = {
+                        rule,
+                        value: 0, // Will be populated by actual evaluation
+                        timestamp: Date.now(),
+                        labels: {},
+                        status: 'firing'
+                    };
+                    this.activeAlerts.set(alertKey, alert);
+                    this.emit('alert', alert);
+                    console.warn(`[ALERT] ${rule.severity.toUpperCase()}: ${rule.name} - ${rule.description}`);
+
+                } else if (!isTriggered && existingAlert && existingAlert.status === 'firing') {
+                    // Resolve alert
+                    existingAlert.status = 'resolved';
+                    existingAlert.timestamp = Date.now();
+                    this.emit('alertResolved', existingAlert);
+                    console.info(`[ALERT RESOLVED] ${rule.name}`);
+                    this.activeAlerts.delete(alertKey);
+                }
+            } catch (error) {
+                console.error(`[ALERT EVALUATION ERROR] ${rule.name}:`, error);
+            }
+        }
+    }
+
+    private async evaluateAlertRule(rule: AlertRule): Promise<boolean> {
+        // Simplified alert evaluation - in production, this would query Prometheus
+        // For now, we'll evaluate based on current metric values
+        
+        switch (rule.name) {
+            case 'HighMemoryUsage':
+                const memUsage = process.memoryUsage();
+                return (memUsage.rss / (1024 * 1024 * 1024)) > 2; // 2GB
+                
+            case 'HighDrawdown':
+                // This would be set by the trading system
+                return this.getCurrentDrawdown() > 0.15;
+                
+            case 'LowCacheHitRatio':
+                // This would be calculated from cache metrics
+                return this.getCurrentCacheHitRatio() < 0.8;
+                
+            default:
+                return false;
+        }
+    }
+
+    private getCurrentDrawdown(): number {
+        // Placeholder - would get from actual portfolio data
+        return 0.05; // 5%
+    }
+
+    private getCurrentCacheHitRatio(): number {
+        // Placeholder - would calculate from cache metrics
+        return 0.85; // 85%
+    }
+
+    public getPerformanceBaseline(): Map<string, number> {
+        return new Map(this.performanceBaseline);
+    }
+
+    public setPerformanceBaseline(metric: string, value: number): void {
+        this.performanceBaseline.set(metric, value);
+    }
+
+    public detectPerformanceRegression(metric: string, currentValue: number, threshold: number = 0.2): boolean {
+        const baseline = this.performanceBaseline.get(metric);
+        if (!baseline) return false;
+
+        const regression = (currentValue - baseline) / baseline;
+        return regression > threshold; // 20% degradation by default
+    }
+
+    public async getMetrics(): Promise<string> {
+        return register.metrics();
+    }
+
+    public clearMetrics(): void {
+        register.clear();
+    }
+
+    public getActiveAlerts(): PerformanceAlert[] {
+        return Array.from(this.activeAlerts.values());
+    }
+
+    public exportAlertingRules(format: 'prometheus' | 'json' = 'prometheus'): string {
+        if (format === 'json') {
+            return JSON.stringify(this.alertRules, null, 2);
+        }
+
+        // Prometheus alerting rules format
+        const rules = this.alertRules.map(rule => {
+            return `
+- alert: ${rule.name}
+  expr: ${rule.expr}
+  for: ${rule.duration}
+  labels:
+    severity: ${rule.severity}
+  annotations:
+    summary: ${rule.description}
+    runbook_url: ${rule.runbook || 'N/A'}`;
+        }).join('\n');
+
+        return `groups:\n- name: trading_bot_alerts\n  rules:${rules}`;
+    }
+
+    // Performance benchmarking methods
+    public async benchmarkFunction<T>(name: string, fn: () => Promise<T> | T): Promise<T> {
+        const startTime = process.hrtime.bigint();
+        const startMemory = process.memoryUsage();
+
+        try {
+            const result = await fn();
+            
+            const endTime = process.hrtime.bigint();
+            const endMemory = process.memoryUsage();
+            
+            const duration = Number(endTime - startTime) / 1000000; // Convert to milliseconds
+            const memoryDelta = endMemory.heapUsed - startMemory.heapUsed;
+
+            // Record benchmark metrics
+            this.metrics.get('benchmark_duration')?.observe({ function: name }, duration);
+            this.metrics.get('benchmark_memory_delta')?.observe({ function: name }, memoryDelta);
+
+            console.log(`[BENCHMARK] ${name}: ${duration.toFixed(2)}ms, Memory: ${(memoryDelta / 1024).toFixed(2)}KB`);
+
+            return result;
+        } catch (error) {
+            this.recordSystemError('benchmark', 'error');
+            throw error;
+        }
+    }
+
+    public createCustomDashboard(): any {
+        return {
+            dashboard: {
+                title: 'Trading Bot Enterprise Monitoring',
+                panels: [
+                    {
+                        title: 'API Performance',
+                        type: 'graph',
+                        targets: [
+                            { expr: 'rate(trading_bot_api_requests_total[5m])' },
+                            { expr: 'histogram_quantile(0.95, rate(trading_bot_api_request_duration_bucket[5m]))' }
+                        ]
+                    },
+                    {
+                        title: 'Portfolio Metrics',
+                        type: 'stat',
+                        targets: [
+                            { expr: 'trading_bot_trading_portfolio_value' },
+                            { expr: 'trading_bot_trading_unrealized_pnl' },
+                            { expr: 'trading_bot_risk_drawdown_current' }
+                        ]
+                    },
+                    {
+                        title: 'System Health',
+                        type: 'graph',
+                        targets: [
+                            { expr: 'process_resident_memory_bytes' },
+                            { expr: 'rate(process_cpu_seconds_total[5m])' },
+                            { expr: 'trading_bot_system_health_score' }
+                        ]
+                    },
+                    {
+                        title: 'Trading Activity',
+                        type: 'graph',
+                        targets: [
+                            { expr: 'rate(trading_bot_trading_orders_total[5m])' },
+                            { expr: 'rate(trading_bot_strategy_signals_total[5m])' }
+                        ]
+                    }
+                ]
+            }
+        };
+    }
+}

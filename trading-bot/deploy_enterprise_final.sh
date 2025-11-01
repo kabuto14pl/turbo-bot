@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # 🚀 ENTERPRISE ML TRADING BOT - PRODUCTION DEPLOYMENT
 # Finalny deployment zaawansowanego systemu ML FAZA 1-5

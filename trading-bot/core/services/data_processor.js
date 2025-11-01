@@ -1,6 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataProcessor = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 const aggregate_csv_1 = require("../../tools/aggregate_csv");
 const MultiTFJoiner_1 = require("../utils/MultiTFJoiner");
 const IndicatorProvider_1 = require("../indicators/IndicatorProvider");

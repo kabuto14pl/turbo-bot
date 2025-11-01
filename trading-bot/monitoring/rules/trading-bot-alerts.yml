@@ -1,3 +1,5 @@
+# 🔧 [DEVELOPMENT-TOOL]
+# Development configuration file
 # Trading Bot Alert Rules
 groups:
   - name: trading-bot-alerts

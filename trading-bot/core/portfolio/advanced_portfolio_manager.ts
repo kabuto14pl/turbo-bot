@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 📊 ADVANCED PORTFOLIO MANAGER
  * Zaawansowane zarządzanie portfelem z automatyczną alokacją i zarządzaniem ryzykiem
  */

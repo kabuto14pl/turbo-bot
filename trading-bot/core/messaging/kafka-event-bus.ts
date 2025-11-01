@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 // Simplified event bus - compatible without external dependencies
 import { EventEmitter } from 'events';
 import { SimpleErrorManager } from '../error-handling/simple-error-manager';

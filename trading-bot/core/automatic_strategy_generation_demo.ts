@@ -1,4 +1,12 @@
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * Automatic Strategy Generation Demo - Phase 3.3
  * 
  * Demonstruje możliwości automatycznego systemu generowania strategii:

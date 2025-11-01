@@ -1,4 +1,13 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔄 [SHARED-INFRASTRUCTURE]
+ * This component is used by BOTH backtest and production systems.
+ * Execution mode determined by configuration parameters.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SimulatedExecutor = void 0;
 class SimulatedExecutor {

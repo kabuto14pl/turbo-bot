@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  optimize_all_strategies_fixed.ts - FIXED VERSION OF OPTIMIZATION SCRIPT
 //  Wersja skryptu optymalizacyjnego z poprawionymi ścieżkami do plików danych

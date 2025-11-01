@@ -34,12 +34,19 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.simpleTest = simpleTest;
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 const data_chunker_1 = require("./data_chunker");
 const experiment_resumer_1 = require("./experiment_resumer");
 const stream_processor_1 = require("./stream_processor");
 const experiment_tracker_1 = require("./experiment_tracker");
 const path = __importStar(require("path"));
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ **
+ * 🧪 [TESTING-FRAMEWORK]
  * Prosty test nowych komponentów
  */
 async function simpleTest() {

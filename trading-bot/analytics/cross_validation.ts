@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  cross_validation.ts - WALIDACJA KRZYŻOWA STRATEGII
 //  Ten moduł implementuje metody walidacji krzyżowej dla strategii tradingowych,

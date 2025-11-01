@@ -1,4 +1,8 @@
 /**
+ * 🔧 [PRODUCTION-CONFIG]
+ * Production configuration component
+ */
+/**
  * ============================================================================
  * ENTERPRISE TRADING BOT - BASE CONFIGURATION INTERFACE
  * ============================================================================

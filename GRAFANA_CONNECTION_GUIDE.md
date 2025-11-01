@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🚀 INSTRUKCJA POŁĄCZENIA GRAFANY Z AUTONOMOUS TRADING BOT
 
 ## ✅ Status: Bot działa i generuje metryki!

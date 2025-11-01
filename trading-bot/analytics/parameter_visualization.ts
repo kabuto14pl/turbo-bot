@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  parameter_visualization.ts - WIZUALIZACJE ANALIZY PARAMETRÓW
 //  Ten moduł implementuje funkcje do generowania wizualizacji dla analizy

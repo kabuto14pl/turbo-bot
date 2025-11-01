@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { generateEquityCurve, calculateStats } from './stats';
 import { generateEquityCurveHtml } from './charts';
 import * as fs from 'fs';

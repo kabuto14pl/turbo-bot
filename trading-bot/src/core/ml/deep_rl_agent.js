@@ -1,8 +1,15 @@
 "use strict";
 /**
- * 🤖 DEEP RL AGENT SYSTEM
- * Enterprise-grade Deep Reinforcement Learning Agent
- * Replaces SimpleRLAgent with real neural networks and advanced algorithms
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * ENTERPRISE DEEP RL AGENT SYSTEM
+ * Advanced reinforcement learning agent with shared neural network management
+ *
+ * Shared component providing deep RL capabilities across environments
+ * Eliminates duplicate network manager instantiation and TensorFlow conflicts
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -45,6 +52,7 @@ exports.createBalancedAgent = createBalancedAgent;
 const tf = __importStar(require("@tensorflow/tfjs"));
 const feature_extractor_1 = require("./feature_extractor");
 const neural_networks_1 = require("./neural_networks");
+const enterprise_neural_network_manager_1 = require("./enterprise_neural_network_manager");
 const experience_buffer_1 = require("./experience_buffer");
 const logger_1 = require("../../../core/utils/logger");
 class DeepRLAgent {
@@ -56,33 +64,32 @@ class DeepRLAgent {
         this.trainingActive = false;
         // Performance tracking
         this.episodeRewards = [];
+        this.agentId = `agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         this.config = {
-            algorithm: config.algorithm,
+            algorithm: config.algorithm || 'PPO',
             policy_hidden_layers: config.policy_hidden_layers || [256, 128, 64],
             value_hidden_layers: config.value_hidden_layers || [256, 128, 64],
-            learning_rate: config.learning_rate,
-            policy_learning_rate: config.policy_learning_rate,
-            value_learning_rate: config.value_learning_rate,
-            batch_size: config.batch_size,
-            epochs: config.epochs,
-            epsilon: config.epsilon,
-            epsilon_decay: config.epsilon_decay,
-            epsilon_min: config.epsilon_min,
-            gamma: config.gamma,
-            tau: config.tau,
-            buffer_size: config.buffer_size,
-            update_frequency: config.update_frequency,
-            target_update_frequency: config.target_update_frequency,
-            grad_clip: config.grad_clip,
-            prioritized_replay: config.prioritized_replay,
-            multi_step_returns: config.multi_step_returns,
-            distributional_rl: config.distributional_rl,
-            noisy_networks: config.noisy_networks,
-            dropout_rate: config.dropout_rate,
-            episodes_per_update: config.episodes_per_update
+            learning_rate: config.learning_rate || 0.0003,
+            batch_size: config.batch_size || 32,
+            epochs: config.epochs || 10,
+            epsilon: config.epsilon || 0.1,
+            epsilon_decay: config.epsilon_decay || 0.995,
+            epsilon_min: config.epsilon_min || 0.01,
+            gamma: config.gamma || 0.99,
+            tau: config.tau || 0.005,
+            buffer_size: config.buffer_size || 100000,
+            update_frequency: config.update_frequency || 4,
+            target_update_frequency: config.target_update_frequency || 100,
+            grad_clip: config.grad_clip || 1.0,
+            prioritized_replay: config.prioritized_replay || false,
+            multi_step_returns: config.multi_step_returns || 1,
+            distributional_rl: config.distributional_rl || false,
+            noisy_networks: config.noisy_networks || false,
+            episodes_per_update: config.episodes_per_update || 1
         };
         this.logger = new logger_1.Logger();
-        this.logger.info(`🧠 Deep RL Agent initialized with ${this.config.algorithm} algorithm`);
+        this.logger.info(`🧠 Enterprise Deep RL Agent initialized: ${this.agentId}`);
+        this.logger.info(`🎯 Algorithm: ${this.config.algorithm}`);
         // Initialize components asynchronously
         this.initializeAsync();
     }
@@ -93,87 +100,92 @@ class DeepRLAgent {
         await this.initializeComponents();
     }
     /**
-     * Initialize all components
+     * Initialize all components using shared enterprise network manager
      */
     async initializeComponents() {
-        // Feature extraction
-        this.featureExtractor = new feature_extractor_1.AdvancedFeatureExtractor();
-        // Neural networks
-        const policyConfig = (0, neural_networks_1.createDefaultPolicyConfig)();
-        policyConfig.learning_rate = this.config.learning_rate;
-        this.policyNetwork = new neural_networks_1.PolicyNetwork();
-        await this.policyNetwork.initialize(policyConfig);
-        const valueConfig = (0, neural_networks_1.createDefaultValueConfig)();
-        valueConfig.learning_rate = this.config.learning_rate;
-        this.valueNetwork = new neural_networks_1.ValueNetwork();
-        await this.valueNetwork.initialize(valueConfig);
-        // Target networks for stable learning
-        if (this.config.algorithm === 'SAC' || this.config.algorithm === 'DDPG') {
-            await this.createTargetNetworks();
+        try {
+            this.logger.info(`🚀 Initializing Enterprise Deep RL Agent: ${this.agentId}`);
+            // 1. Feature extraction
+            this.featureExtractor = new feature_extractor_1.AdvancedFeatureExtractor();
+            // 2. Get shared enterprise neural network manager
+            this.networkManager = await enterprise_neural_network_manager_1.EnterpriseNeuralNetworkManager.getInstance();
+            // 3. Create Policy and Value networks with shared manager
+            this.policyNetwork = new neural_networks_1.PolicyNetwork();
+            this.valueNetwork = new neural_networks_1.ValueNetwork();
+            // 4. Initialize networks through shared manager (only once)
+            if (!this.networkManager.getHealth().isInitialized) {
+                const policyConfig = (0, neural_networks_1.createDefaultPolicyConfig)();
+                policyConfig.learning_rate = this.config.learning_rate;
+                policyConfig.hidden_layers = this.config.policy_hidden_layers;
+                const valueConfig = (0, neural_networks_1.createDefaultValueConfig)();
+                valueConfig.learning_rate = this.config.learning_rate;
+                valueConfig.hidden_layers = this.config.value_hidden_layers;
+                await this.policyNetwork.initialize(policyConfig, valueConfig, this.config.algorithm);
+                await this.valueNetwork.initialize(valueConfig, this.config.algorithm);
+            }
+            else {
+                this.logger.info('✅ Using already initialized EnterpriseNeuralNetworkManager');
+                // Initialize individual network instances to use shared manager
+                await this.policyNetwork.initialize(undefined, undefined, this.config.algorithm);
+                await this.valueNetwork.initialize(undefined, this.config.algorithm);
+            }
+            // 5. Experience buffer
+            this.experienceBuffer = new experience_buffer_1.AdvancedExperienceBuffer({
+                maxSize: this.config.buffer_size,
+                prioritizedReplay: this.config.prioritized_replay,
+                alpha: 0.6,
+                beta: 0.4
+            });
+            // 6. Initialize performance metrics
+            this.performanceMetrics = {
+                // Trading performance metrics
+                sharpe_ratio: 0,
+                max_drawdown: 0,
+                win_rate: 0,
+                average_return: 0,
+                volatility: 0,
+                sortino_ratio: 0,
+                calmar_ratio: 0,
+                prediction_accuracy: 0,
+                mean_squared_error: 0,
+                mean_absolute_error: 0,
+                profit_factor: 0,
+                total_trades: 0,
+                profitable_trades: 0,
+                largest_win: 0,
+                largest_loss: 0,
+                // Technical performance metrics
+                total_memory_mb: 0,
+                used_memory_mb: 0,
+                peak_memory_mb: 0,
+                memory_fragmentation: 0,
+                tensor_count: 0,
+                training_throughput: 0,
+                inference_latency: 0,
+                gpu_utilization: 0,
+                cpu_utilization: 0,
+                model_size_mb: 0,
+                parameter_count: 0,
+                flops_per_inference: 0,
+                time_per_epoch: 0,
+                convergence_speed: 0,
+                gradient_norm: 0,
+                learning_stability: 0,
+                total_return: 0,
+                information_ratio: 0,
+                tracking_error: 0,
+                beta: 0,
+                alpha: 0,
+                var_95: 0,
+                cvar_95: 0,
+                average_trade_duration: 0
+            };
+            this.logger.info(`✅ Enterprise Deep RL Agent ${this.agentId} ready for trading`);
         }
-        // Experience buffer
-        this.experienceBuffer = new experience_buffer_1.AdvancedExperienceBuffer({
-            maxSize: this.config.buffer_size,
-            prioritizedReplay: this.config.prioritized_replay,
-            alpha: 0.6,
-            beta: 0.4
-        });
-        // Initialize performance metrics
-        this.performanceMetrics = {
-            // Trading performance metrics
-            sharpe_ratio: 0,
-            max_drawdown: 0,
-            win_rate: 0,
-            average_return: 0,
-            volatility: 0,
-            sortino_ratio: 0,
-            calmar_ratio: 0,
-            prediction_accuracy: 0,
-            mean_squared_error: 0,
-            mean_absolute_error: 0, // Add missing field
-            profit_factor: 0,
-            total_trades: 0,
-            profitable_trades: 0,
-            largest_win: 0,
-            largest_loss: 0,
-            // Technical performance metrics
-            total_memory_mb: 0,
-            used_memory_mb: 0,
-            peak_memory_mb: 0,
-            memory_fragmentation: 0,
-            tensor_count: 0,
-            training_throughput: 0,
-            inference_latency: 0,
-            gpu_utilization: 0,
-            cpu_utilization: 0,
-            model_size_mb: 0,
-            parameter_count: 0,
-            flops_per_inference: 0,
-            time_per_epoch: 0,
-            convergence_speed: 0,
-            gradient_norm: 0,
-            learning_stability: 0,
-            total_return: 0,
-            information_ratio: 0,
-            tracking_error: 0,
-            beta: 0,
-            alpha: 0,
-            var_95: 0,
-            cvar_95: 0,
-            average_trade_duration: 0
-        };
-    }
-    /**
-     * Create target networks for stable training
-     */
-    async createTargetNetworks() {
-        // Target networks are copies that update slowly for stable training
-        const policyConfig = (0, neural_networks_1.createDefaultPolicyConfig)();
-        this.targetPolicyNetwork = new neural_networks_1.PolicyNetwork();
-        await this.targetPolicyNetwork.initialize(policyConfig);
-        const valueConfig = (0, neural_networks_1.createDefaultValueConfig)();
-        this.targetValueNetwork = new neural_networks_1.ValueNetwork();
-        await this.targetValueNetwork.initialize(valueConfig);
+        catch (error) {
+            this.logger.error(`❌ Failed to initialize DeepRLAgent ${this.agentId}:`, error);
+            throw error;
+        }
     }
     /**
      * Generate action from market state
@@ -510,6 +522,34 @@ class DeepRLAgent {
         return this.experienceBuffer.exportExperiences();
     }
     /**
+     * Get the policy network model for optimization
+     */
+    getModel() {
+        try {
+            // Note: PolicyNetwork interface needs getModel() method implementation
+            this.logger.warn('⚠️ PolicyNetwork.getModel() method not yet implemented');
+            return null;
+        }
+        catch (error) {
+            this.logger.warn('⚠️ Could not retrieve model from policy network:', error);
+            return null;
+        }
+    }
+    /**
+     * Get training configuration for deployment planning
+     */
+    getTrainingConfig() {
+        return {
+            ...this.config,
+            epochs: this.config.epochs || 100,
+            epsilon: this.config.epsilon || 0.1,
+            epsilon_decay: this.config.epsilon_decay || 0.995,
+            epsilon_min: this.config.epsilon_min || 0.01,
+            target_update_frequency: this.config.target_update_frequency || 1000,
+            prioritized_replay: this.config.prioritized_replay || false
+        };
+    }
+    /**
      * Reset the agent
      */
     reset() {
@@ -523,18 +563,20 @@ class DeepRLAgent {
         this.logger.info('🔄 Deep RL Agent reset completed');
     }
     /**
-     * Dispose and cleanup
+     * Dispose and cleanup - does NOT dispose shared enterprise manager
      */
     dispose() {
-        this.policyNetwork.dispose();
-        this.valueNetwork.dispose();
-        if (this.targetPolicyNetwork) {
-            this.targetPolicyNetwork.dispose();
+        this.logger.info(`🔄 Disposing DeepRLAgent ${this.agentId}...`);
+        // Dispose individual network instances (not the shared manager)
+        if (this.policyNetwork) {
+            this.policyNetwork.dispose();
         }
-        if (this.targetValueNetwork) {
-            this.targetValueNetwork.dispose();
+        if (this.valueNetwork) {
+            this.valueNetwork.dispose();
         }
-        this.logger.info('🗑️ Deep RL Agent disposed');
+        // Clear references
+        this.networkManager = undefined;
+        this.logger.info(`✅ DeepRLAgent ${this.agentId} disposed (shared manager preserved)`);
     }
 }
 exports.DeepRLAgent = DeepRLAgent;

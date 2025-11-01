@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 
 echo "🚀 Preparing Turbo Trading Bot for GitHub Codespaces..."
 echo "=================================================="

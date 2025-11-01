@@ -1,5 +1,13 @@
 /**
- * 🧠 TEST COMPILATION - Simplified types without TensorFlow
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * � [TESTING-FRAMEWORK]
+ * ML TEST TYPES - Simplified types for ML testing without TensorFlow
+ * 
+ * Testing framework providing lightweight ML types for component testing
+ * Eliminates heavy dependencies during test compilation
  */
 
 export interface SimpleDeepRLAction {

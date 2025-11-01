@@ -34,6 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.aggregateCandles = aggregateCandles;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // UWAGA: Brak obsługi ETHUSDT/SOLUSDT – agregacja dotyczy tylko symboli, dla których są dostępne dane (np. BTCUSDT).
 const fs = __importStar(require("fs"));
 const csv = __importStar(require("csv-parse/sync"));

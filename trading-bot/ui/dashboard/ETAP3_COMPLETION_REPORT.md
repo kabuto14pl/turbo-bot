@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🎉 ETAP 3: Zaawansowane Wykresy i Wizualizacje - COMPLETED!
 
 ## ✅ Successfully Implemented Advanced Charts

@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
  * ENTERPRISE SYSTEM HEALTH MONITOR v1.0.0
  * Comprehensive system monitoring for trading bot infrastructure
  *

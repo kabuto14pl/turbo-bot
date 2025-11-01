@@ -1,3 +1,7 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 // extreme_rsi_test.ts
 // Script to test a very basic RSI strategy on Bitcoin data
 

@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎯 ADVANCED PORTFOLIO OPTIMIZER
  * Optymalizacja portfela przy użyciu nowoczesnych teorii portfelowych
  * Modern Portfolio Theory, Black-Litterman, Risk Parity

@@ -1,6 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MomentumConfirmationStrategy = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 const base_strategy_1 = require("./base_strategy");
 class MomentumConfirmationStrategy extends base_strategy_1.BaseStrategy {
     constructor(logger) {

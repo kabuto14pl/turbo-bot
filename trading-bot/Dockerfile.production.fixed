@@ -1,3 +1,4 @@
+# 🔧 [PRODUCTION-CONFIG] Docker configuration for trading bot system
 # PRODUCTION DOCKERFILE - Node.js standard image for TensorFlow.js compatibility
 FROM node:18
 

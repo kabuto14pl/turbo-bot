@@ -1,3 +1,11 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 export type OrderType = 'market' | 'limit' | 'stop' | 'take_profit';
 export type OrderStatus = 'open' | 'filled' | 'cancelled';
 export type OrderDirection = 'buy' | 'sell';

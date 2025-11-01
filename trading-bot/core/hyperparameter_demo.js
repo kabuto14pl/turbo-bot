@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * ============================================================================
  * DEMONSTRACJA SYSTEMU PRZESTRZENI HIPERPARAMETRÓW
  *

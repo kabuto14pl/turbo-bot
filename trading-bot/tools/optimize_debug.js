@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  optimize_debug.ts - DEBUG VERSION OF OPTIMIZATION SCRIPT
 //  Testowa wersja skryptu do śledzenia wykonania

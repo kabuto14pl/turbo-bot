@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚀 UPROSZCZONA WERSJA ALGORYTMÓW OPTYMALIZACJI
  *
  * Implementacja bez skomplikowanych typów - skupiona na działaniu

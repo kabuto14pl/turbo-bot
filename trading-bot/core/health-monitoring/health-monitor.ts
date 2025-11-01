@@ -1,4 +1,11 @@
-#!/usr/bin/env ts-node
+/**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 /**
  * 🏥 DETERMINISTIC HEALTH MONITORING SYSTEM
  * Real health checks instead of random simulations

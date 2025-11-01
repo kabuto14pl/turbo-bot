@@ -1,6 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ParallelOptimizationDemo = void 0;
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 const parallel_optimization_1 = require("./parallel_optimization");
 const hyperparameter_space_1 = require("./hyperparameter_space");
 /**

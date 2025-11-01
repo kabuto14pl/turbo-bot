@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // check_data_range.ts
 // Script to examine the date range and properties of data files
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {

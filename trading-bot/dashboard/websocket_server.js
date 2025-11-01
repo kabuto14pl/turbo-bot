@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🌐 DASHBOARD WEBSOCKET SERVER
  * WebSocket server dla real-time komunikacji z dashboardem
  */

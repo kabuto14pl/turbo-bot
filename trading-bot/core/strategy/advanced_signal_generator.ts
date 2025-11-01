@@ -1,11 +1,19 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎯 ADVANCED SIGNAL GENERATOR
  * Enterprise-grade signal generation with ML enhancement and risk filtering
  */
 
 import { EventEmitter } from 'events';
 import { EnterpriseStrategyManager, defaultStrategyManagerConfig } from './enterprise_strategy_manager';
-import { MultiTimeframeStrategyAnalyzer, MultiTimeframeSignal } from './multi_timeframe_analyzer';
+import { MultiTimeframeStrategyAnalyzer, TimeframeSignal } from './multi_timeframe_analyzer';
 import { BotState, StrategySignal } from '../types/strategy';
 import { Logger } from '../../infrastructure/logging/logger';
 
@@ -95,24 +103,24 @@ export class MLSignalEnhancementEngine {
         try {
             // Simulate ML processing
             const mlStartTime = Date.now();
-            
+
             // Feature extraction
             const features = this.extractFeatures(signal, marketContext);
-            
+
             // ML prediction
             const mlConfidence = this.predictSignalSuccess(features);
-            
+
             // Context-aware adjustment
             const contextualAdjustment = this.calculateContextualAdjustment(signal, marketContext);
-            
+
             // Final enhancement
             const enhancement = mlConfidence * contextualAdjustment;
-            
+
             const processingTime = Date.now() - mlStartTime;
             this.logger.debug(`🤖 ML enhancement: ${enhancement.toFixed(3)} (${processingTime}ms)`);
-            
+
             return Math.max(0, Math.min(1, enhancement));
-            
+
         } catch (error) {
             this.logger.error('❌ ML enhancement failed:', error);
             return 0; // No enhancement on error
@@ -123,7 +131,7 @@ export class MLSignalEnhancementEngine {
         // Extract numerical features for ML model
         return [
             signal.confidence,
-            signal.quantity,
+            signal.quantity || signal.size || 0,
             marketContext.regime?.volatility || 0.5,
             marketContext.regime?.trend || 0,
             marketContext.marketData.lastPrice / 50000, // Normalized price
@@ -137,19 +145,19 @@ export class MLSignalEnhancementEngine {
         // In production, this would use a trained neural network or ensemble
         const weights = [0.3, 0.1, -0.2, 0.4, 0.05, -0.1, 0.1];
         const bias = 0.5;
-        
+
         let prediction = bias;
         for (let i = 0; i < Math.min(features.length, weights.length); i++) {
             prediction += features[i] * weights[i];
         }
-        
+
         // Apply sigmoid activation
         return 1 / (1 + Math.exp(-prediction));
     }
 
     private calculateContextualAdjustment(signal: StrategySignal, marketContext: BotState): number {
         let adjustment = 1.0;
-        
+
         // Market volatility adjustment
         const volatility = marketContext.regime?.volatility || 0.5;
         if (volatility > 0.8) {
@@ -157,7 +165,7 @@ export class MLSignalEnhancementEngine {
         } else if (volatility < 0.3) {
             adjustment *= 1.1; // Boost confidence in low volatility
         }
-        
+
         // Trend alignment adjustment
         const trend = marketContext.regime?.trend || 0;
         if (signal.action === 'ENTER_LONG' && trend > 0.5) {
@@ -170,7 +178,7 @@ export class MLSignalEnhancementEngine {
         ) {
             adjustment *= 0.7; // Penalize counter-trend signals
         }
-        
+
         return adjustment;
     }
 
@@ -181,15 +189,15 @@ export class MLSignalEnhancementEngine {
         if (!this.performanceHistory.has(signalId)) {
             this.performanceHistory.set(signalId, []);
         }
-        
+
         const history = this.performanceHistory.get(signalId)!;
         history.push(actualPerformance);
-        
+
         // Keep only last 50 performances
         if (history.length > 50) {
             history.shift();
         }
-        
+
         // Update model confidence
         const avgPerformance = history.reduce((sum, p) => sum + p, 0) / history.length;
         this.confidenceModel.set(signalId, avgPerformance);
@@ -214,10 +222,10 @@ export class AdvancedRiskFilter {
      */
     filterSignals(signals: EnhancedSignal[], marketContext: BotState): EnhancedSignal[] {
         const filtered: EnhancedSignal[] = [];
-        
+
         for (const signal of signals) {
             const riskScore = this.calculateRiskScore(signal, marketContext);
-            
+
             if (this.passesRiskFilter(signal, riskScore, marketContext)) {
                 // Adjust quantity based on risk
                 signal.riskAdjustedQuantity = this.calculateRiskAdjustedQuantity(signal, riskScore);
@@ -226,63 +234,64 @@ export class AdvancedRiskFilter {
                 this.logger.debug(`🚫 Signal filtered due to risk: ${signal.symbol} (risk: ${riskScore.toFixed(3)})`);
             }
         }
-        
+
         return filtered;
     }
 
     private calculateRiskScore(signal: EnhancedSignal, marketContext: BotState): number {
         let riskScore = 0;
-        
+
         // Base risk from signal uncertainty
         riskScore += (1 - signal.confidence) * 0.3;
-        
+
         // Market volatility risk
         const volatility = marketContext.regime?.volatility || 0.5;
         riskScore += volatility * 0.2;
-        
+
         // Position concentration risk
         const existingPosition = marketContext.positions.find(p => p.symbol === signal.symbol);
         if (existingPosition) {
             riskScore += 0.2; // Higher risk for existing positions
         }
-        
+
         // Portfolio correlation risk
         const correlationRisk = this.calculateCorrelationRisk(signal, marketContext);
         riskScore += correlationRisk * 0.3;
-        
+
         return Math.max(0, Math.min(1, riskScore));
     }
 
     private calculateCorrelationRisk(signal: EnhancedSignal, marketContext: BotState): number {
         // Simplified correlation risk calculation
-        const sameActionPositions = marketContext.positions.filter(p => 
+        const sameActionPositions = marketContext.positions.filter(p =>
             (signal.action === 'ENTER_LONG' && p.quantity > 0) ||
             (signal.action === 'ENTER_SHORT' && p.quantity < 0)
         );
-        
+
         return Math.min(1, sameActionPositions.length / 5); // Risk increases with similar positions
     }
 
     private passesRiskFilter(signal: EnhancedSignal, riskScore: number, marketContext: BotState): boolean {
         // Maximum risk threshold
         if (riskScore > 0.8) return false;
-        
+
         // Minimum confidence after risk adjustment
         if (signal.confidence * (1 - riskScore) < 0.4) return false;
-        
+
         // Position size limits
         const maxPositionSize = 10000; // USD
-        if (signal.quantity * signal.price > maxPositionSize) return false;
-        
+        const quantity = signal.quantity || signal.size || 0;
+        if (quantity * signal.price > maxPositionSize) return false;
+
         // Maximum positions per symbol
         const existingPositions = marketContext.positions.filter(p => p.symbol === signal.symbol);
         if (existingPositions.length >= 2) return false; // Max 2 positions per symbol
-        
+
         return true;
     }
 
     private calculateRiskAdjustedQuantity(signal: EnhancedSignal, riskScore: number): number {
-        const baseQuantity = signal.quantity;
+        const baseQuantity = signal.quantity || signal.size || 0;
         const riskAdjustment = 1 - (riskScore * 0.5); // Reduce quantity by up to 50% based on risk
         return baseQuantity * riskAdjustment;
     }
@@ -306,7 +315,7 @@ export class AdvancedSignalGenerator extends EventEmitter {
         super();
         this.config = config;
         this.logger = logger;
-        
+
         // Initialize components
         this.strategyManager = new EnterpriseStrategyManager(
             defaultStrategyManagerConfig,
@@ -316,7 +325,7 @@ export class AdvancedSignalGenerator extends EventEmitter {
         this.multiTimeframeAnalyzer = new MultiTimeframeStrategyAnalyzer(logger);
         this.mlEnhancementEngine = new MLSignalEnhancementEngine(logger);
         this.riskFilter = new AdvancedRiskFilter(logger);
-        
+
         this.setupEventHandlers();
     }
 
@@ -335,13 +344,13 @@ export class AdvancedSignalGenerator extends EventEmitter {
      */
     async initialize(): Promise<void> {
         this.logger.info('🎯 Initializing Advanced Signal Generator');
-        
+
         await this.strategyManager.initialize();
-        
+
         if (this.config.enableMultiTimeframe) {
             await this.multiTimeframeAnalyzer.start();
         }
-        
+
         this.isRunning = true;
         this.logger.info('✅ Advanced Signal Generator initialized');
         this.emit('generator_initialized');
@@ -383,11 +392,11 @@ export class AdvancedSignalGenerator extends EventEmitter {
 
             // Step 2: Multi-timeframe analysis (if enabled)
             let consolidatedSignals: (StrategySignal | MultiTimeframeSignal)[] = baseSignals;
-            
+
             if (this.config.enableMultiTimeframe) {
                 const mtfStartTime = Date.now();
                 const timeframeAnalysis = this.multiTimeframeAnalyzer.analyzeMultiTimeframe(state);
-                
+
                 // Group signals by timeframe and consolidate
                 const timeframeSignals = new Map<string, StrategySignal[]>();
                 baseSignals.forEach(signal => {
@@ -400,7 +409,7 @@ export class AdvancedSignalGenerator extends EventEmitter {
 
                 const mtfSignals = this.multiTimeframeAnalyzer.generateConsolidatedSignals(timeframeSignals, state);
                 consolidatedSignals = mtfSignals.length > 0 ? mtfSignals : baseSignals;
-                
+
                 report.performanceMetrics.multiTimeframeTime = Date.now() - mtfStartTime;
             }
 
@@ -425,7 +434,7 @@ export class AdvancedSignalGenerator extends EventEmitter {
 
             // Step 5: Final quality filtering
             const qualityFiltered = this.applyQualityFilter(finalSignals);
-            
+
             // Step 6: Generate report
             this.updateReport(report, qualityFiltered, startTime);
 
@@ -503,27 +512,28 @@ export class AdvancedSignalGenerator extends EventEmitter {
 
     private calculateVolatilityAdjustment(state: BotState): number {
         const volatility = state.regime?.volatility || 0.5;
-        
+
         // Reduce position size in high volatility
         if (volatility > 0.8) return 0.7;
         if (volatility > 0.6) return 0.85;
         if (volatility < 0.3) return 1.2; // Increase in low volatility
-        
+
         return 1.0;
     }
 
     private calculateQualityScore(signal: EnhancedSignal): number {
         let score = signal.confidence * 0.4;
-        
+
         // Add bonuses for enhancements
         if (signal.mlConfidenceBoost) score += signal.mlConfidenceBoost * 0.2;
         if (signal.timeframeAlignment) score += signal.timeframeAlignment * 0.2;
         if (signal.enhancementMetadata.enhancementFactors.length > 2) score += 0.1;
-        
+
         // Penalty for high risk
-        const riskPenalty = (signal.riskAdjustedQuantity && signal.riskAdjustedQuantity < signal.quantity) ? 0.1 : 0;
+        const baseQuantity = signal.quantity || signal.size || 0;
+        const riskPenalty = (signal.riskAdjustedQuantity && baseQuantity > 0 && signal.riskAdjustedQuantity < baseQuantity) ? 0.1 : 0;
         score -= riskPenalty;
-        
+
         return Math.max(0, Math.min(1, score));
     }
 
@@ -542,8 +552,8 @@ export class AdvancedSignalGenerator extends EventEmitter {
 
     private updateReport(report: SignalGenerationReport, signals: EnhancedSignal[], startTime: number): void {
         report.signalsAfterFiltering = signals.length;
-        report.averageConfidence = signals.length > 0 
-            ? signals.reduce((sum, s) => sum + s.confidence, 0) / signals.length 
+        report.averageConfidence = signals.length > 0
+            ? signals.reduce((sum, s) => sum + s.confidence, 0) / signals.length
             : 0;
         report.averageQualityScore = signals.length > 0
             ? signals.reduce((sum, s) => sum + s.qualityScore, 0) / signals.length
@@ -555,12 +565,18 @@ export class AdvancedSignalGenerator extends EventEmitter {
         report.topStrategies = managerStatus.topPerformers.slice(0, 3);
 
         // Calculate risk metrics
-        const riskScores = signals.map(s => s.riskAdjustedQuantity ? 1 - (s.riskAdjustedQuantity / s.quantity) : 0);
-        report.riskMetrics.averageRisk = riskScores.length > 0 
-            ? riskScores.reduce((sum, r) => sum + r, 0) / riskScores.length 
+        const riskScores = signals.map(s => {
+            const baseQuantity = s.quantity || s.size || 0;
+            return (s.riskAdjustedQuantity && baseQuantity > 0) ? 1 - (s.riskAdjustedQuantity / baseQuantity) : 0;
+        });
+        report.riskMetrics.averageRisk = riskScores.length > 0
+            ? riskScores.reduce((sum, r) => sum + r, 0) / riskScores.length
             : 0;
         report.riskMetrics.maxRisk = riskScores.length > 0 ? Math.max(...riskScores) : 0;
-        report.riskMetrics.riskAdjustedSignals = signals.filter(s => s.riskAdjustedQuantity && s.riskAdjustedQuantity < s.quantity).length;
+        report.riskMetrics.riskAdjustedSignals = signals.filter(s => {
+            const baseQuantity = s.quantity || s.size || 0;
+            return s.riskAdjustedQuantity && baseQuantity > 0 && s.riskAdjustedQuantity < baseQuantity;
+        }).length;
     }
 
     private handlePerformanceUpdate(data: any): void {
@@ -590,9 +606,9 @@ export class AdvancedSignalGenerator extends EventEmitter {
      */
     async stop(): Promise<void> {
         this.isRunning = false;
-        
+
         await this.strategyManager.stop();
-        
+
         if (this.config.enableMultiTimeframe) {
             await this.multiTimeframeAnalyzer.stop();
         }

@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { ETLProcessor } from '../infrastructure/data/etl/etl_processor';
 import { ETLConfig } from '../infrastructure/data/etl/types';
 import * as path from 'path';

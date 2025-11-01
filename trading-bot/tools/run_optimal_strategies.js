@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  run_optimal_strategies.ts - Uruchamianie optymalnych strategii
 //  Ten skrypt uruchamia wszystkie strategie z optymalnymi parametrami

@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import * as fs from 'fs';
 import * as csv from 'csv-parse/sync';
 import * as stringify from 'csv-stringify/sync';

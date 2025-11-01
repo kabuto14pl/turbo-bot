@@ -1,4 +1,12 @@
 "use strict";
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Unit testing component
+ */
 // ============================================================================
 // types.test.ts - Tests for Bot Configuration Types and Interfaces
 // Unit tests for the modularized types module

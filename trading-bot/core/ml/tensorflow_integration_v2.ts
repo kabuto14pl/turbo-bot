@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * TensorFlow Integration V2 - Enhanced ML Framework
  * Upgrade for Phase 2: Advanced TensorFlow.js 4.22.0+ Integration
  * Compatible with existing Neural Network Optimization Engine V3

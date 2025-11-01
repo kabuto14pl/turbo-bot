@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎯 ADVANCED SIGNAL GENERATOR
  * Enterprise-grade signal generation with ML enhancement and risk filtering
  */
@@ -51,7 +59,7 @@ class MLSignalEnhancementEngine {
         // Extract numerical features for ML model
         return [
             signal.confidence,
-            signal.quantity,
+            signal.quantity || signal.size || 0,
             marketContext.regime?.volatility || 0.5,
             marketContext.regime?.trend || 0,
             marketContext.marketData.lastPrice / 50000, // Normalized price
@@ -173,7 +181,8 @@ class AdvancedRiskFilter {
             return false;
         // Position size limits
         const maxPositionSize = 10000; // USD
-        if (signal.quantity * signal.price > maxPositionSize)
+        const quantity = signal.quantity || signal.size || 0;
+        if (quantity * signal.price > maxPositionSize)
             return false;
         // Maximum positions per symbol
         const existingPositions = marketContext.positions.filter(p => p.symbol === signal.symbol);
@@ -182,7 +191,7 @@ class AdvancedRiskFilter {
         return true;
     }
     calculateRiskAdjustedQuantity(signal, riskScore) {
-        const baseQuantity = signal.quantity;
+        const baseQuantity = signal.quantity || signal.size || 0;
         const riskAdjustment = 1 - (riskScore * 0.5); // Reduce quantity by up to 50% based on risk
         return baseQuantity * riskAdjustment;
     }
@@ -376,7 +385,8 @@ class AdvancedSignalGenerator extends events_1.EventEmitter {
         if (signal.enhancementMetadata.enhancementFactors.length > 2)
             score += 0.1;
         // Penalty for high risk
-        const riskPenalty = (signal.riskAdjustedQuantity && signal.riskAdjustedQuantity < signal.quantity) ? 0.1 : 0;
+        const baseQuantity = signal.quantity || signal.size || 0;
+        const riskPenalty = (signal.riskAdjustedQuantity && baseQuantity > 0 && signal.riskAdjustedQuantity < baseQuantity) ? 0.1 : 0;
         score -= riskPenalty;
         return Math.max(0, Math.min(1, score));
     }
@@ -404,12 +414,18 @@ class AdvancedSignalGenerator extends events_1.EventEmitter {
         const managerStatus = this.strategyManager.getManagerStatus();
         report.topStrategies = managerStatus.topPerformers.slice(0, 3);
         // Calculate risk metrics
-        const riskScores = signals.map(s => s.riskAdjustedQuantity ? 1 - (s.riskAdjustedQuantity / s.quantity) : 0);
+        const riskScores = signals.map(s => {
+            const baseQuantity = s.quantity || s.size || 0;
+            return (s.riskAdjustedQuantity && baseQuantity > 0) ? 1 - (s.riskAdjustedQuantity / baseQuantity) : 0;
+        });
         report.riskMetrics.averageRisk = riskScores.length > 0
             ? riskScores.reduce((sum, r) => sum + r, 0) / riskScores.length
             : 0;
         report.riskMetrics.maxRisk = riskScores.length > 0 ? Math.max(...riskScores) : 0;
-        report.riskMetrics.riskAdjustedSignals = signals.filter(s => s.riskAdjustedQuantity && s.riskAdjustedQuantity < s.quantity).length;
+        report.riskMetrics.riskAdjustedSignals = signals.filter(s => {
+            const baseQuantity = s.quantity || s.size || 0;
+            return s.riskAdjustedQuantity && baseQuantity > 0 && s.riskAdjustedQuantity < baseQuantity;
+        }).length;
     }
     handlePerformanceUpdate(data) {
         // Update internal performance tracking

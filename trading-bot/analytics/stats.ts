@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { PortfolioAnalytics } from '../core/portfolio/portfolio_analytics';
 
 export function generateEquityCurve(trades: { pnl: number }[], startBalance = 10000): number[] {

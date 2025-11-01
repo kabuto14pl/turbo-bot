@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTradingStore } from '../store/tradingStore';

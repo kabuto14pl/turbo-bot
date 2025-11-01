@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
+/**
  * 🏛️ ULTIMATE TRADING BOT v2.0 - UNIFIED ARCHITECTURE
  *
  * ELIMINUJE WSZYSTKIE WYKRYTE KONFLIKTY:

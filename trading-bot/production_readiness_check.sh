@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # 🚀 SZYBKA OCENA GOTOWOŚCI DO PRODUKCJI
 

@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
  * 🧪 ADVANCED A/B TESTING SYSTEM FOR TRADING STRATEGIES
  * Comprehensive A/B testing framework with statistical significance, multi-armed bandits,
  * and sophisticated experiment management for trading strategy optimization
@@ -288,7 +292,7 @@ class Experiment {
         const hash = this.simpleHash(user_id + this.config.experiment_id);
         const allocation_point = hash % 100;
         let cumulative_percentage = 0;
-        for (const variant of this.variants.values()) {
+        for (const variant of Array.from(this.variants.values())) {
             cumulative_percentage += variant.allocated_percentage;
             if (allocation_point < cumulative_percentage) {
                 variant.participant_count++;

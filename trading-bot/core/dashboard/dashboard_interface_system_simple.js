@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🖥️ SIMPLIFIED DASHBOARD INTERFACE SYSTEM
  *
  * Simplified version without external dependencies for compilation compatibility.

@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 export function calcEMA(buf: any[], period: number): number | null {
     if (buf.length < period) return null;
     let k = 2 / (period + 1);

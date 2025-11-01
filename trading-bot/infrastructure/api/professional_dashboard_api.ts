@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🚀 PROFESSIONAL DASHBOARD API SERVER 2025
  * Enterprise-grade RESTful API with real-time monitoring integration
  */

@@ -1,3 +1,7 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 export interface DataResponse {
     timestamp: number;
     data: any;

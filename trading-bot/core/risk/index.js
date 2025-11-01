@@ -1,6 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RiskManagement = void 0;
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 class RiskManagement {
     assessRisk(exposure, volatility) {
         // Implement risk assessment logic here

@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # Turbo Bot Deva Trading Platform - Technical Documentation
 
 **Last Updated:** September 2, 2025  

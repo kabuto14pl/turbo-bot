@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🎯 FINALNA STRUKTURA PROJEKTU PO CZYSZCZENIU
 
 ## 📁 GŁÓWNY FOLDER

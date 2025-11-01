@@ -1,3 +1,7 @@
+/**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
 import express from 'express';
 import { Logger } from '../../infrastructure/logging/logger';
 import { MetricsExporter } from './metrics_exporter';

@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🌐 DASHBOARD WEBSOCKET SERVER
  * WebSocket server dla real-time komunikacji z dashboardem
  */
@@ -22,7 +26,7 @@ export interface WebSocketClient {
 
 export class DashboardWebSocketServer {
     private logger: Logger;
-    private server: WebSocketServer;
+    private server!: WebSocketServer;
     private dashboardManager: AdvancedDashboardManager;
     private clients: Map<string, WebSocketClient> = new Map();
     private port: number;

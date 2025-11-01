@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { AbstractStrategy } from './abstract_strategy';
 import { TradeSignal } from '../types/trade_signal';
 import { BotState } from '../types/bot_state';

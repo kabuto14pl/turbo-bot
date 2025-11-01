@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 📚 MODEL REGISTRY & VERSIONING SYSTEM
  * Zarządzanie wersjami i lifecycle modelów ML
  */

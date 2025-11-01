@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🧠 DEEP RL NEURAL NETWORKS
  * Real TensorFlow.js neural networks replacing SimpleRL's hardcoded if/else logic
  * Implements Policy Network (Actor) and Value Network (Critic) for PPO/SAC algorithms
@@ -337,9 +341,9 @@ class PolicyNetwork {
         });
         target.setWeights(updatedWeights);
         // Dispose temporary tensors
-        sourceWeights.forEach(w => w.dispose());
-        targetWeights.forEach(w => w.dispose());
-        updatedWeights.forEach(w => w.dispose());
+        sourceWeights.forEach((w) => w.dispose());
+        targetWeights.forEach((w) => w.dispose());
+        updatedWeights.forEach((w) => w.dispose());
     }
     /**
      * Save networks to files

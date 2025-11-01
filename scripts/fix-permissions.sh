@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 
 echo "🔧 Making scripts executable..."
 find . -name "*.sh" -type f -exec chmod +x {} \;

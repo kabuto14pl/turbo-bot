@@ -1,3 +1,5 @@
+# 🔧 [DEVELOPMENT-TOOL]
+# Development configuration file
 global:
   smtp_smarthost: 'localhost:587'
   smtp_from: 'alertmanager@tradingbot.local'

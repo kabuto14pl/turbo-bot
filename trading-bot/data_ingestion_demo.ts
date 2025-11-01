@@ -1,4 +1,12 @@
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
  * 🧪 DATA INGESTION SYSTEM - INTEGRATION TEST & DEMO
  * 
  * Test demonstracyjny nowego systemu pobierania danych:

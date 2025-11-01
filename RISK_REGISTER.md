@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # Turbo Bot Deva Trading Platform - Risk Register
 
 **Created**: September 2, 2025  

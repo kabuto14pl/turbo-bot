@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 📊 PHASE 1 EXECUTION PLAN - COMPREHENSIVE BACKTESTING & VALIDATION
 # Turbo Bot Deva Trading Platform - Enterprise Implementation
 

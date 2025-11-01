@@ -1,3 +1,7 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 import { DataChunker } from './data_chunker';
 import { ExperimentResumer } from './experiment_resumer';
 import { StreamProcessor, streamManager } from './stream_processor';

@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 export class DashboardWebSocketServer {
   private port: number;
   constructor(port = 0) { this.port = port; }

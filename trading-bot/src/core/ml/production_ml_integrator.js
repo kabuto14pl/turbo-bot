@@ -1,8 +1,15 @@
 "use strict";
 /**
- * 🚀 PRODUCTION ML INTEGRATION MANAGER
- * Complete integration of FAZA 1-5 enterprise ML system into production trading bot
- * Replaces SimpleRL with full Deep RL, hyperparameter optimization, and production features
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🚀 [PRODUCTION-FINAL]
+ * PRODUCTION ML INTEGRATION MANAGER
+ * Complete production-ready ML integration with FAZA 1-5 enterprise system
+ *
+ * Final production version with full Deep RL, hyperparameter optimization, and live trading
+ * Ready for deployment with comprehensive monitoring and risk management
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PRODUCTION_ML_INTEGRATION_STATUS = exports.DEFAULT_PRODUCTION_ML_CONFIG = exports.ProductionMLIntegrator = void 0;
@@ -19,9 +26,8 @@ const performance_optimizer_1 = require("./performance_optimizer");
 const production_deployment_1 = require("./production_deployment");
 const real_time_monitor_1 = require("./real_time_monitor");
 const ab_testing_system_1 = require("./ab_testing_system");
-const faza4_orchestrator_1 = require("./faza4_orchestrator");
-const faza5_advanced_system_1 = require("./faza5_advanced_system");
-// Remove AdvancedSearch import - not needed for production
+const faza4_orchestrator_1 = require("./faza4_orchestrator"); // REAKTYWOWANY - PEŁNA IMPLEMENTACJA
+const faza5_advanced_system_1 = require("./faza5_advanced_system"); // REAKTYWOWANY - PEŁNA IMPLEMENTACJA
 const hyperparameter_optimizer_1 = require("./hyperparameter_optimizer");
 class ProductionMLIntegrator {
     constructor(config = {}) {
@@ -277,10 +283,16 @@ class ProductionMLIntegrator {
         this.performance_optimizer = new performance_optimizer_1.PerformanceOptimizer({
         // Use default configuration
         });
-        // Production Deployment Manager
-        this.deployment_manager = new production_deployment_1.ProductionDeploymentManager({
-        // Use default configuration
-        });
+        // Production Deployment Manager - Skip in test/simulation mode
+        if (process.env.DISABLE_PRODUCTION_DEPLOYMENT !== 'true' && process.env.MODE !== 'simulation' && process.env.NODE_ENV !== 'test') {
+            this.deployment_manager = new production_deployment_1.ProductionDeploymentManager({
+            // Use default configuration
+            });
+            this.logger.info('✅ Production Deployment Manager enabled');
+        }
+        else {
+            this.logger.info('⚠️  Production Deployment Manager DISABLED (test/simulation mode)');
+        }
         // Real-Time Monitor
         this.monitoring_system = new real_time_monitor_1.RealTimeMonitor({
         // Use default configuration
@@ -412,6 +424,20 @@ class ProductionMLIntegrator {
         }
         // Get action from Deep RL system
         const rl_action = await this.deep_rl_manager.processStep(market_state.price, market_state.rsi, market_state.volume);
+        // Check if rl_action is null/undefined
+        if (!rl_action) {
+            this.logger.warn('Deep RL manager returned null action, falling back to HOLD');
+            return {
+                type: 'HOLD',
+                confidence: 0.5,
+                position_size: 0,
+                stop_loss: 0,
+                take_profit: 0,
+                reasoning: 'Deep RL manager returned null action',
+                model_version: '1.0.0',
+                uncertainty: 1.0
+            };
+        }
         // Convert to MLAction format
         const convertedType = rl_action.action_type === 'CLOSE' || rl_action.action_type === 'SCALE_IN' || rl_action.action_type === 'SCALE_OUT'
             ? 'HOLD'

@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 
 # 📈 Optuna Optimization Report (AdvancedAdaptive - 1h)
 

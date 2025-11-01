@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 📊 REAL-TIME MONITORING & ALERTING SYSTEM
  * Enterprise-grade monitoring with predictive alerting and anomaly detection
  * Implements comprehensive metrics collection, analysis, and intelligent alerting
@@ -695,7 +699,11 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
       overall_status,
       component_statuses,
       active_alerts,
-      performance_summary,
+      performance_summary: {
+        ...performance_summary,
+        memory_usage: performance_summary.memory_usage ?? 0,
+        cpu_usage: performance_summary.cpu_usage ?? 0
+      },
       last_updated: Date.now()
     };
   }

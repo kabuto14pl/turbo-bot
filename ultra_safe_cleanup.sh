@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # 🛡️ ULTRA-BEZPIECZNY SKRYPT CZYSZCZENIA PROJEKTU
 # Tworzy backup i usuwa TYLKO potwierdzone bezpieczne pliki

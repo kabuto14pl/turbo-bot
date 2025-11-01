@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * PERFORMANCE TRACKER INTEGRATION V1.0
  * Turbo Bot Deva Trading Platform - Phase 1 Implementation
  * 

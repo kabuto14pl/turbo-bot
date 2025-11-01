@@ -1,3 +1,7 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
 import { EventEmitter } from 'events';
 import { join } from 'path';
 import * as fs from 'fs';

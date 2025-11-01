@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
 // ============================================================================
 //  advanced_metrics.ts - ROZSZERZONE METRYKI OCENY STRATEGII
 //  Ten moduł implementuje zaawansowane metryki oceny strategii inwestycyjnych,

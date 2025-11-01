@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  experiment_management.ts - KOMPONENT DO ZARZĄDZANIA EKSPERYMENTAMI
 //  Ten plik zawiera komponenty UI do zarządzania i przeglądania eksperymentów
@@ -36,12 +40,15 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExperimentManager = void 0;
 const experiment_tracker_1 = require("./experiment_tracker");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const open = __importStar(require("open"));
+const open_1 = __importDefault(require("open"));
 /**
  * Klasa zarządzająca interfejsem eksperymentów
  */
@@ -61,7 +68,7 @@ class ExperimentManager {
         }
         // Otwórz dashboard w przeglądarce
         const absolutePath = path.resolve(dashboardPath);
-        open(absolutePath);
+        (0, open_1.default)(absolutePath);
         console.log(`[ExperimentManager] Otwarto dashboard: ${absolutePath}`);
     }
     /**
@@ -77,7 +84,7 @@ class ExperimentManager {
         // Wygeneruj/zaktualizuj raport
         const reportPath = experiment_tracker_1.experimentTracker.generateExperimentReport(experimentId);
         // Otwórz raport w przeglądarce
-        open(reportPath);
+        (0, open_1.default)(reportPath);
         console.log(`[ExperimentManager] Otwarto raport eksperymentu: ${reportPath}`);
     }
     /**
@@ -107,7 +114,7 @@ class ExperimentManager {
         const html = ExperimentManager.generateComparisonHtml(experiments, comparison);
         fs.writeFileSync(compareFile, html);
         // Otwórz plik porównania
-        open(compareFile);
+        (0, open_1.default)(compareFile);
         console.log(`[ExperimentManager] Otwarto porównanie eksperymentów: ${compareFile}`);
     }
     /**

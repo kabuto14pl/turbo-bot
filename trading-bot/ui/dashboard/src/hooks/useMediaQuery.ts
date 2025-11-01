@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { useState, useEffect } from 'react';
 
 export const useMediaQuery = (query: string): boolean => {

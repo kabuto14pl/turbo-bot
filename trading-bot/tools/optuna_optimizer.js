@@ -34,6 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runOptunaBayesianOptimization = runOptunaBayesianOptimization;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const optuna_ts_1 = require("optuna-ts");
 const main_1 = require("../main");
 const csv_loader_1 = require("../infrastructure/data/csv_loader");

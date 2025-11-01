@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🎛️ HYPERPARAMETER OPTIMIZATION CONTROLLER
  * Main orchestrator for all hyperparameter optimization activities
  * Coordinates between different optimization strategies and manages experiments

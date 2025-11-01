@@ -1,3 +1,7 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 import * as path from 'path';
 import { RayTuneOptimizer, ParameterSpace } from './ray_tune_optimizer';
 

@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';

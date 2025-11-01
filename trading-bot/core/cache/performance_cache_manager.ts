@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🔧 PERFORMANCE CACHE MANAGER
  * Redis-based caching for reducing RAM usage and CPU load
  */
@@ -28,7 +36,7 @@ export interface CacheStats {
 }
 
 export class PerformanceCacheManager extends EventEmitter {
-  private redis: Redis;
+  private redis!: Redis;
   private config: CacheConfig;
   private stats: CacheStats;
   private compressionEnabled: boolean;

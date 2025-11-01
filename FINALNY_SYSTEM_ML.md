@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🚀 FINALNY SYSTEM MACHINE LEARNING DLA BOTA TRADINGOWEGO
 
 ## 📋 OBECNY STAN vs DOCELOWY SYSTEM

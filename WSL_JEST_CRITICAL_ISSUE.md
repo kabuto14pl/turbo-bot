@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # Critical WSL Jest Incompatibility Issue
 
 **Date**: September 2, 2025  

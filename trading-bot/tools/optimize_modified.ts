@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  optimize_modified.ts - ZMODYFIKOWANA WERSJA OPTYMALIZACJI
 //  Skrypt optymalizacyjny z mniej restrykcyjnymi warunkami dla generowania sygnałów

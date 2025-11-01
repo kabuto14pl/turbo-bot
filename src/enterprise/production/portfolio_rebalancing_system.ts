@@ -1,0 +1,1107 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * PHASE C.4 - Portfolio Rebalancing Automation
+ * 
+ * Intelligent portfolio rebalancing system that automatically adjusts
+ * position sizes based on strategy signals, risk metrics, and market conditions.
+ * 
+ * Integrates with:
+ * - Phase A: Cache for performance optimization
+ * - Phase B: Memory optimization for large calculations
+ * - Phase C.2: Strategy orchestrator for signals
+ * - Phase C.3: Monitoring system for real-time alerts
+ * - Real-Time VaR Monitor for risk assessment
+ * - Emergency Stop System for safety controls
+ */
+
+import { EventEmitter } from 'events';
+
+// Rebalancing Types
+interface RebalancingConfig {
+    // Rebalancing triggers
+    triggers: {
+        timeBasedInterval: number; // milliseconds
+        driftThreshold: number; // percentage (e.g., 0.05 = 5%)
+        volatilityThreshold: number; // volatility change threshold
+        signalStrengthThreshold: number; // minimum signal strength
+        riskLimitThreshold: number; // VaR threshold for rebalancing
+    };
+    
+    // Rebalancing constraints
+    constraints: {
+        maxPositionSize: number; // percentage of portfolio
+        minPositionSize: number; // minimum position size
+        maxTurnover: number; // maximum portfolio turnover per rebalancing
+        correlationLimit: number; // maximum correlation between positions
+        liquidityRequirement: number; // minimum liquidity buffer
+    };
+    
+    // Execution parameters
+    execution: {
+        slippageLimit: number; // maximum acceptable slippage
+        executionTimeLimit: number; // maximum execution time in ms
+        batchSize: number; // number of orders per batch
+        delayBetweenBatches: number; // milliseconds
+        useSmartOrdering: boolean; // intelligent order execution
+    };
+    
+    // Risk management
+    riskManagement: {
+        enableVaRConstraints: boolean;
+        enableCorrelationChecks: boolean;
+        enableLiquidityChecks: boolean;
+        enableEmergencyOverride: boolean;
+    };
+}
+
+interface TargetAllocation {
+    symbol: string;
+    targetWeight: number; // percentage of portfolio
+    currentWeight: number;
+    drift: number; // difference from target
+    confidence: number; // allocation confidence
+    strategy: string; // source strategy
+    lastUpdated: Date;
+}
+
+interface RebalancingOrder {
+    id: string;
+    symbol: string;
+    side: 'buy' | 'sell';
+    quantity: number;
+    orderType: 'market' | 'limit' | 'adaptive';
+    limitPrice?: number;
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+    reason: string;
+    status: 'pending' | 'submitted' | 'filled' | 'cancelled' | 'failed';
+    submittedAt?: Date;
+    filledAt?: Date;
+    executedPrice?: number;
+    slippage?: number;
+    metadata: Record<string, any>;
+}
+
+interface RebalancingEvent {
+    id: string;
+    timestamp: Date;
+    type: 'scheduled' | 'drift' | 'signal' | 'risk' | 'emergency';
+    trigger: string;
+    portfolioValueBefore: number;
+    portfolioValueAfter: number;
+    orders: RebalancingOrder[];
+    executionTime: number;
+    success: boolean;
+    turnover: number; // percentage of portfolio rebalanced
+    costBasis: number; // transaction costs
+    slippage: number; // total slippage
+    riskImpact: {
+        varBefore: number;
+        varAfter: number;
+        riskChange: number;
+    };
+}
+
+interface PortfolioState {
+    totalValue: number;
+    availableCash: number;
+    positions: Position[];
+    targetAllocations: TargetAllocation[];
+    currentDrift: number; // maximum drift from targets
+    rebalancingNeeded: boolean;
+    lastRebalancing: Date | null;
+    riskMetrics: {
+        portfolioVaR: number;
+        correlationRisk: number;
+        concentrationRisk: number;
+        liquidityRisk: number;
+    };
+}
+
+interface RebalancingMetrics {
+    totalRebalancings: number;
+    successRate: number;
+    averageExecutionTime: number;
+    averageTurnover: number;
+    averageSlippage: number;
+    totalCosts: number;
+    riskReduction: number;
+    performanceImpact: number;
+    lastRebalancing: Date | null;
+}
+
+interface OptimizationResult {
+    targetAllocations: TargetAllocation[];
+    expectedVaR: number;
+    expectedReturn: number;
+    sharpeRatio: number;
+    turnover: number;
+    confidence: number;
+    optimizationTime: number;
+}
+
+// External Dependencies
+interface CacheService {
+    get(key: string): Promise<any>;
+    set(key: string, value: any, ttl?: number): Promise<void>;
+    invalidate(pattern: string): Promise<void>;
+}
+
+interface MonitoringSystemIntegration {
+    recordMetric(name: string, value: number, tags?: Record<string, string>): void;
+    sendAlert(alert: { level: string; message: string; component: string; metadata?: any }): Promise<void>;
+}
+
+interface AdvancedStrategyOrchestrator {
+    getStrategySignals(): Promise<StrategySignal[]>;
+    getStrategyWeights(): Promise<Record<string, number>>;
+}
+
+interface RealTimeVaRMonitor {
+    getCurrentPortfolioRisk(): any;
+    getPositionSizingRecommendations(positions: Position[]): Promise<any[]>;
+}
+
+interface Position {
+    symbol: string;
+    side: 'long' | 'short';
+    size: number;
+    entryPrice: number;
+    currentPrice: number;
+    unrealizedPnL: number;
+    timestamp: Date;
+}
+
+interface StrategySignal {
+    symbol: string;
+    action: 'buy' | 'sell' | 'hold';
+    strength: number;
+    confidence: number;
+    strategy: string;
+}
+
+interface OrderExecutor {
+    executeOrder(order: any): Promise<any>;
+    getOrderStatus(orderId: string): Promise<any>;
+    cancelOrder(orderId: string): Promise<void>;
+}
+
+interface MarketDataProvider {
+    getCurrentPrice(symbol: string): Promise<number>;
+    getLiquidity(symbol: string): Promise<number>;
+    getVolatility(symbol: string, period: number): Promise<number>;
+}
+
+/**
+ * Portfolio Rebalancing Automation System
+ * 
+ * Provides intelligent portfolio rebalancing with:
+ * - Multi-factor optimization
+ * - Risk-aware allocation adjustments
+ * - Smart order execution
+ * - Real-time monitoring integration
+ * - Performance tracking
+ */
+export class PortfolioRebalancingSystem extends EventEmitter {
+    private config: RebalancingConfig;
+    private cacheService: CacheService;
+    private monitoringSystem: MonitoringSystemIntegration;
+    private strategyOrchestrator: AdvancedStrategyOrchestrator;
+    private varMonitor: RealTimeVaRMonitor;
+    private orderExecutor: OrderExecutor;
+    private marketDataProvider: MarketDataProvider;
+    
+    private currentPortfolioState: PortfolioState | null = null;
+    private rebalancingHistory: RebalancingEvent[] = [];
+    private activeOrders: Map<string, RebalancingOrder> = new Map();
+    private rebalancingMetrics: RebalancingMetrics = {
+        totalRebalancings: 0,
+        successRate: 0,
+        averageExecutionTime: 0,
+        averageTurnover: 0,
+        averageSlippage: 0,
+        totalCosts: 0,
+        riskReduction: 0,
+        performanceImpact: 0,
+        lastRebalancing: null
+    };
+    
+    private isRebalancing: boolean = false;
+    private isMonitoring: boolean = false;
+    private monitoringInterval: NodeJS.Timeout | null = null;
+    private lastOptimization: Date | null = null;
+    
+    constructor(
+        config: RebalancingConfig,
+        cacheService: CacheService,
+        monitoringSystem: MonitoringSystemIntegration,
+        strategyOrchestrator: AdvancedStrategyOrchestrator,
+        varMonitor: RealTimeVaRMonitor,
+        orderExecutor: OrderExecutor,
+        marketDataProvider: MarketDataProvider
+    ) {
+        super();
+        
+        this.config = config;
+        this.cacheService = cacheService;
+        this.monitoringSystem = monitoringSystem;
+        this.strategyOrchestrator = strategyOrchestrator;
+        this.varMonitor = varMonitor;
+        this.orderExecutor = orderExecutor;
+        this.marketDataProvider = marketDataProvider;
+        
+        this.initializeRebalancingMetrics();
+        this.validateConfiguration();
+    }
+
+    /**
+     * Initialize Portfolio Rebalancing System
+     */
+    public async initialize(): Promise<void> {
+        try {
+            console.log('🔄 Initializing Portfolio Rebalancing System...');
+            
+            // Load historical data and metrics
+            await this.loadRebalancingHistory();
+            
+            // Initialize current portfolio state
+            await this.updatePortfolioState();
+            
+            // Setup monitoring infrastructure
+            await this.setupRebalancingMonitoring();
+            
+            console.log('✅ Portfolio Rebalancing System initialized successfully');
+            
+            this.monitoringSystem.recordMetric('rebalancing_system.initialization', 1, {
+                config_version: '1.0',
+                timestamp: new Date().toISOString()
+            });
+            
+            this.emit('initialized');
+            
+        } catch (error) {
+            console.error('❌ Failed to initialize Portfolio Rebalancing System:', error);
+            
+            await this.monitoringSystem.sendAlert({
+                level: 'critical',
+                message: `Portfolio Rebalancing System initialization failed: ${(error as Error).message}`,
+                component: 'PortfolioRebalancingSystem'
+            });
+            
+            throw error;
+        }
+    }
+
+    /**
+     * Start Automated Rebalancing
+     */
+    public async startRebalancing(): Promise<void> {
+        if (this.isMonitoring) {
+            console.log('⚠️ Rebalancing monitoring is already active');
+            return;
+        }
+
+        try {
+            console.log('🔄 Starting automated portfolio rebalancing...');
+            
+            this.isMonitoring = true;
+            
+            // Start monitoring loop
+            this.monitoringInterval = setInterval(async () => {
+                await this.checkRebalancingTriggers();
+            }, this.config.triggers.timeBasedInterval);
+            
+            // Perform initial rebalancing check
+            await this.checkRebalancingTriggers();
+            
+            console.log(`✅ Automated rebalancing started (interval: ${this.config.triggers.timeBasedInterval}ms)`);
+            
+            this.monitoringSystem.recordMetric('rebalancing_system.start', 1);
+            this.emit('rebalancing_started');
+            
+        } catch (error) {
+            console.error('❌ Failed to start rebalancing:', error);
+            this.isMonitoring = false;
+            
+            await this.monitoringSystem.sendAlert({
+                level: 'error',
+                message: `Rebalancing start failed: ${(error as Error).message}`,
+                component: 'PortfolioRebalancingSystem'
+            });
+            
+            throw error;
+        }
+    }
+
+    /**
+     * Stop Automated Rebalancing
+     */
+    public stopRebalancing(): void {
+        if (!this.isMonitoring) {
+            console.log('⚠️ Rebalancing monitoring is not active');
+            return;
+        }
+
+        console.log('🛑 Stopping automated rebalancing...');
+        
+        this.isMonitoring = false;
+        
+        if (this.monitoringInterval) {
+            clearInterval(this.monitoringInterval);
+            this.monitoringInterval = null;
+        }
+        
+        console.log('✅ Automated rebalancing stopped');
+        
+        this.monitoringSystem.recordMetric('rebalancing_system.stop', 1);
+        this.emit('rebalancing_stopped');
+    }
+
+    /**
+     * Execute Manual Rebalancing
+     */
+    public async executeManualRebalancing(
+        reason: string,
+        customAllocations?: TargetAllocation[]
+    ): Promise<RebalancingEvent> {
+        if (this.isRebalancing) {
+            throw new Error('Rebalancing is already in progress');
+        }
+
+        try {
+            console.log(`🔄 Executing manual rebalancing: ${reason}`);
+            
+            // Use custom allocations or optimize new ones
+            const targetAllocations = customAllocations || await this.optimizePortfolioAllocations();
+            
+            // Execute rebalancing
+            const rebalancingEvent = await this.executeRebalancing('manual', reason, targetAllocations);
+            
+            console.log(`✅ Manual rebalancing completed: ${rebalancingEvent.id}`);
+            
+            return rebalancingEvent;
+            
+        } catch (error) {
+            console.error('❌ Manual rebalancing failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Optimize Portfolio Allocations
+     */
+    public async optimizePortfolioAllocations(): Promise<TargetAllocation[]> {
+        try {
+            console.log('🧮 Optimizing portfolio allocations...');
+            
+            const startTime = Date.now();
+            
+            // Get strategy signals and weights
+            const strategySignals = await this.strategyOrchestrator.getStrategySignals();
+            const strategyWeights = await this.strategyOrchestrator.getStrategyWeights();
+            
+            // Get current portfolio risk
+            const portfolioRisk = this.varMonitor.getCurrentPortfolioRisk();
+            
+            // Perform multi-factor optimization
+            const optimizationResult = await this.performMultiFactorOptimization(
+                strategySignals,
+                strategyWeights,
+                portfolioRisk
+            );
+            
+            const optimizationTime = Date.now() - startTime;
+            this.lastOptimization = new Date();
+            
+            console.log(`✅ Portfolio optimization completed (${optimizationTime}ms)`);
+            console.log(`   Expected VaR: ${(optimizationResult.expectedVaR * 100).toFixed(2)}%`);
+            console.log(`   Expected Return: ${(optimizationResult.expectedReturn * 100).toFixed(2)}%`);
+            console.log(`   Sharpe Ratio: ${optimizationResult.sharpeRatio.toFixed(2)}`);
+            
+            this.monitoringSystem.recordMetric('rebalancing_system.optimization', 1, {
+                optimization_time: optimizationTime.toString(),
+                expected_var: optimizationResult.expectedVaR.toString(),
+                expected_return: optimizationResult.expectedReturn.toString(),
+                sharpe_ratio: optimizationResult.sharpeRatio.toString()
+            });
+            
+            // Cache optimization result
+            await this.cacheService.set('portfolio_optimization', optimizationResult, 1800); // 30 minutes
+            
+            this.emit('optimization_completed', optimizationResult);
+            
+            return optimizationResult.targetAllocations;
+            
+        } catch (error) {
+            console.error('❌ Portfolio optimization failed:', error);
+            
+            await this.monitoringSystem.sendAlert({
+                level: 'warning',
+                message: `Portfolio optimization failed: ${(error as Error).message}`,
+                component: 'PortfolioRebalancingSystem'
+            });
+            
+            throw error;
+        }
+    }
+
+    /**
+     * Get Current Portfolio State
+     */
+    public getCurrentPortfolioState(): PortfolioState | null {
+        return this.currentPortfolioState;
+    }
+
+    /**
+     * Get Rebalancing Metrics
+     */
+    public getRebalancingMetrics(): RebalancingMetrics {
+        return { ...this.rebalancingMetrics };
+    }
+
+    /**
+     * Get Rebalancing History
+     */
+    public getRebalancingHistory(limit?: number): RebalancingEvent[] {
+        const history = [...this.rebalancingHistory].sort((a, b) => 
+            b.timestamp.getTime() - a.timestamp.getTime()
+        );
+        return limit ? history.slice(0, limit) : history;
+    }
+
+    /**
+     * Get Active Rebalancing Orders
+     */
+    public getActiveOrders(): RebalancingOrder[] {
+        return Array.from(this.activeOrders.values());
+    }
+
+    // Private Implementation Methods
+
+    private initializeRebalancingMetrics(): void {
+        this.rebalancingMetrics = {
+            totalRebalancings: 0,
+            successRate: 0,
+            averageExecutionTime: 0,
+            averageTurnover: 0,
+            averageSlippage: 0,
+            totalCosts: 0,
+            riskReduction: 0,
+            performanceImpact: 0,
+            lastRebalancing: null
+        };
+    }
+
+    private validateConfiguration(): void {
+        if (this.config.triggers.driftThreshold <= 0 || this.config.triggers.driftThreshold > 1) {
+            throw new Error('Drift threshold must be between 0 and 1');
+        }
+        
+        if (this.config.constraints.maxPositionSize <= this.config.constraints.minPositionSize) {
+            throw new Error('Max position size must be greater than min position size');
+        }
+        
+        if (this.config.execution.slippageLimit <= 0) {
+            throw new Error('Slippage limit must be positive');
+        }
+        
+        console.log('✅ Rebalancing configuration validated');
+    }
+
+    private async loadRebalancingHistory(): Promise<void> {
+        try {
+            const cached = await this.cacheService.get('rebalancing_history');
+            if (cached && Array.isArray(cached)) {
+                this.rebalancingHistory = cached;
+                console.log(`📈 Loaded ${cached.length} rebalancing events from cache`);
+            }
+            
+            // Load metrics
+            const cachedMetrics = await this.cacheService.get('rebalancing_metrics');
+            if (cachedMetrics) {
+                this.rebalancingMetrics = { ...this.rebalancingMetrics, ...cachedMetrics };
+                console.log('📊 Loaded rebalancing metrics from cache');
+            }
+        } catch (error) {
+            console.error('❌ Failed to load rebalancing history:', error);
+        }
+    }
+
+    private async updatePortfolioState(): Promise<void> {
+        try {
+            // Get current positions (would be provided by production engine)
+            const positions = await this.getCurrentPositions();
+            
+            // Calculate portfolio metrics
+            const totalValue = positions.reduce((sum, pos) => 
+                sum + pos.size * pos.currentPrice, 0);
+            
+            // Get current allocations
+            const currentAllocations = this.calculateCurrentAllocations(positions, totalValue);
+            
+            // Get target allocations (from cache or optimization)
+            const targetAllocations = await this.getTargetAllocations();
+            
+            // Calculate drift
+            const drift = this.calculatePortfolioDrift(currentAllocations, targetAllocations);
+            
+            // Get risk metrics
+            const portfolioRisk = this.varMonitor.getCurrentPortfolioRisk();
+            
+            this.currentPortfolioState = {
+                totalValue,
+                availableCash: totalValue * 0.05, // Simplified - 5% cash buffer
+                positions,
+                targetAllocations,
+                currentDrift: drift,
+                rebalancingNeeded: drift > this.config.triggers.driftThreshold,
+                lastRebalancing: this.rebalancingMetrics.lastRebalancing,
+                riskMetrics: {
+                    portfolioVaR: portfolioRisk?.totalVaR || 0,
+                    correlationRisk: portfolioRisk?.concentrationRisk || 0,
+                    concentrationRisk: portfolioRisk?.concentrationRisk || 0,
+                    liquidityRisk: 0.02 // Simplified
+                }
+            };
+            
+            // Cache portfolio state
+            await this.cacheService.set('portfolio_state', this.currentPortfolioState, 300);
+            
+        } catch (error) {
+            console.error('❌ Failed to update portfolio state:', error);
+        }
+    }
+
+    private async setupRebalancingMonitoring(): Promise<void> {
+        console.log('🔧 Setting up rebalancing monitoring...');
+        
+        // Register rebalancing metrics
+        this.monitoringSystem.recordMetric('rebalancing_system.setup', 1, {
+            drift_threshold: this.config.triggers.driftThreshold.toString(),
+            max_position_size: this.config.constraints.maxPositionSize.toString()
+        });
+        
+        console.log('✅ Rebalancing monitoring infrastructure ready');
+    }
+
+    private async checkRebalancingTriggers(): Promise<void> {
+        if (this.isRebalancing) {
+            return; // Skip if already rebalancing
+        }
+
+        try {
+            await this.updatePortfolioState();
+            
+            if (!this.currentPortfolioState) {
+                return;
+            }
+
+            const triggers = await this.evaluateRebalancingTriggers();
+            
+            if (triggers.length > 0) {
+                console.log(`🔔 Rebalancing triggered: ${triggers.join(', ')}`);
+                
+                const targetAllocations = await this.optimizePortfolioAllocations();
+                await this.executeRebalancing('automatic', triggers.join(', '), targetAllocations);
+            }
+            
+        } catch (error) {
+            console.error('❌ Rebalancing trigger check failed:', error);
+            
+            await this.monitoringSystem.sendAlert({
+                level: 'warning',
+                message: `Rebalancing trigger check failed: ${(error as Error).message}`,
+                component: 'PortfolioRebalancingSystem'
+            });
+        }
+    }
+
+    private async evaluateRebalancingTriggers(): Promise<string[]> {
+        const triggers: string[] = [];
+        
+        if (!this.currentPortfolioState) {
+            return triggers;
+        }
+
+        // Check drift trigger
+        if (this.currentPortfolioState.currentDrift > this.config.triggers.driftThreshold) {
+            triggers.push(`drift_${(this.currentPortfolioState.currentDrift * 100).toFixed(1)}%`);
+        }
+        
+        // Check VaR trigger
+        if (this.config.riskManagement.enableVaRConstraints) {
+            const varRatio = this.currentPortfolioState.riskMetrics.portfolioVaR / this.config.triggers.riskLimitThreshold;
+            if (varRatio > 1.0) {
+                triggers.push(`var_breach_${(varRatio * 100).toFixed(1)}%`);
+            }
+        }
+        
+        // Check volatility trigger
+        const volatilityChange = await this.checkVolatilityChange();
+        if (volatilityChange > this.config.triggers.volatilityThreshold) {
+            triggers.push(`volatility_${(volatilityChange * 100).toFixed(1)}%`);
+        }
+        
+        // Check signal strength trigger
+        const signalStrength = await this.checkSignalStrength();
+        if (signalStrength > this.config.triggers.signalStrengthThreshold) {
+            triggers.push(`signal_${(signalStrength * 100).toFixed(1)}%`);
+        }
+        
+        return triggers;
+    }
+
+    private async executeRebalancing(
+        type: 'automatic' | 'manual',
+        reason: string,
+        targetAllocations: TargetAllocation[]
+    ): Promise<RebalancingEvent> {
+        this.isRebalancing = true;
+        const startTime = Date.now();
+        
+        try {
+            const rebalancingEvent: RebalancingEvent = {
+                id: `rebalancing_${Date.now()}`,
+                timestamp: new Date(),
+                type: type === 'automatic' ? 'scheduled' : 'signal',
+                trigger: reason,
+                portfolioValueBefore: this.currentPortfolioState?.totalValue || 0,
+                portfolioValueAfter: 0,
+                orders: [],
+                executionTime: 0,
+                success: false,
+                turnover: 0,
+                costBasis: 0,
+                slippage: 0,
+                riskImpact: {
+                    varBefore: this.currentPortfolioState?.riskMetrics.portfolioVaR || 0,
+                    varAfter: 0,
+                    riskChange: 0
+                }
+            };
+            
+            console.log(`🔄 Executing rebalancing: ${rebalancingEvent.id}`);
+            
+            // Generate rebalancing orders
+            const orders = await this.generateRebalancingOrders(targetAllocations);
+            rebalancingEvent.orders = orders;
+            
+            // Execute orders
+            await this.executeRebalancingOrders(orders);
+            
+            // Update portfolio state
+            await this.updatePortfolioState();
+            
+            // Calculate execution metrics
+            const executionTime = Date.now() - startTime;
+            rebalancingEvent.executionTime = executionTime;
+            rebalancingEvent.portfolioValueAfter = this.currentPortfolioState?.totalValue || 0;
+            rebalancingEvent.success = orders.every(order => order.status === 'filled');
+            rebalancingEvent.turnover = this.calculateTurnover(orders);
+            rebalancingEvent.slippage = this.calculateAverageSlippage(orders);
+            rebalancingEvent.riskImpact.varAfter = this.currentPortfolioState?.riskMetrics.portfolioVaR || 0;
+            rebalancingEvent.riskImpact.riskChange = 
+                rebalancingEvent.riskImpact.varAfter - rebalancingEvent.riskImpact.varBefore;
+            
+            // Update metrics
+            this.updateRebalancingMetrics(rebalancingEvent);
+            
+            // Save to history
+            this.rebalancingHistory.push(rebalancingEvent);
+            await this.cacheService.set('rebalancing_history', this.rebalancingHistory, 86400); // 24 hours
+            
+            console.log(`✅ Rebalancing completed: ${rebalancingEvent.id} (${executionTime}ms)`);
+            console.log(`   Turnover: ${(rebalancingEvent.turnover * 100).toFixed(2)}%`);
+            console.log(`   Slippage: ${(rebalancingEvent.slippage * 100).toFixed(3)}%`);
+            console.log(`   VaR Change: ${(rebalancingEvent.riskImpact.riskChange * 100).toFixed(2)}%`);
+            
+            this.monitoringSystem.recordMetric('rebalancing_system.execution', 1, {
+                type,
+                execution_time: executionTime.toString(),
+                turnover: rebalancingEvent.turnover.toString(),
+                success: rebalancingEvent.success.toString()
+            });
+            
+            this.emit('rebalancing_completed', rebalancingEvent);
+            
+            return rebalancingEvent;
+            
+        } catch (error) {
+            console.error('❌ Rebalancing execution failed:', error);
+            
+            await this.monitoringSystem.sendAlert({
+                level: 'error',
+                message: `Rebalancing execution failed: ${(error as Error).message}`,
+                component: 'PortfolioRebalancingSystem'
+            });
+            
+            throw error;
+        } finally {
+            this.isRebalancing = false;
+        }
+    }
+
+    private async performMultiFactorOptimization(
+        strategySignals: StrategySignal[],
+        strategyWeights: Record<string, number>,
+        portfolioRisk: any
+    ): Promise<OptimizationResult> {
+        const startTime = Date.now();
+        
+        try {
+            // Aggregate signals by symbol
+            const aggregatedSignals = this.aggregateStrategySignals(strategySignals, strategyWeights);
+            
+            // Apply risk constraints
+            const riskAdjustedAllocations = await this.applyRiskConstraints(aggregatedSignals, portfolioRisk);
+            
+            // Apply position size constraints
+            const constrainedAllocations = this.applyPositionConstraints(riskAdjustedAllocations);
+            
+            // Get current weights for comparison
+            const currentAllocations = this.currentPortfolioState ? 
+                this.calculateCurrentAllocations(this.currentPortfolioState.positions, this.currentPortfolioState.totalValue) : {};
+            
+            // Create target allocations
+            const targetAllocations: TargetAllocation[] = constrainedAllocations.map(allocation => {
+                const currentWeight = currentAllocations[allocation.symbol] || 0;
+                return {
+                    symbol: allocation.symbol,
+                    targetWeight: allocation.weight,
+                    currentWeight,
+                    drift: Math.abs(allocation.weight - currentWeight),
+                    confidence: allocation.confidence,
+                    strategy: allocation.strategy,
+                    lastUpdated: new Date()
+                };
+            });
+            
+            // Calculate optimization metrics
+            const expectedVaR = await this.calculateExpectedVaR(targetAllocations);
+            const expectedReturn = this.calculateExpectedReturn(targetAllocations, strategySignals);
+            const sharpeRatio = expectedReturn / (expectedVaR || 0.01);
+            const turnover = this.calculateExpectedTurnover(targetAllocations);
+            
+            const optimizationTime = Date.now() - startTime;
+            
+            return {
+                targetAllocations,
+                expectedVaR,
+                expectedReturn,
+                sharpeRatio,
+                turnover,
+                confidence: this.calculateOptimizationConfidence(targetAllocations),
+                optimizationTime
+            };
+            
+        } catch (error) {
+            console.error('❌ Multi-factor optimization failed:', error);
+            throw error;
+        }
+    }
+
+    // Helper methods for optimization and execution
+
+    private aggregateStrategySignals(
+        signals: StrategySignal[], 
+        weights: Record<string, number>
+    ): Array<{symbol: string; weight: number; confidence: number; strategy: string; currentWeight?: number}> {
+        const aggregated = new Map<string, {weight: number; confidence: number; strategies: string[]}>();
+        
+        for (const signal of signals) {
+            const strategyWeight = weights[signal.strategy] || 0;
+            const signalWeight = signal.strength * signal.confidence * strategyWeight;
+            
+            if (aggregated.has(signal.symbol)) {
+                const existing = aggregated.get(signal.symbol)!;
+                existing.weight += signalWeight;
+                existing.confidence = Math.max(existing.confidence, signal.confidence);
+                existing.strategies.push(signal.strategy);
+            } else {
+                aggregated.set(signal.symbol, {
+                    weight: signalWeight,
+                    confidence: signal.confidence,
+                    strategies: [signal.strategy]
+                });
+            }
+        }
+        
+        // Normalize weights
+        const totalWeight = Array.from(aggregated.values()).reduce((sum, item) => sum + item.weight, 0);
+        
+        return Array.from(aggregated.entries()).map(([symbol, data]) => ({
+            symbol,
+            weight: totalWeight > 0 ? data.weight / totalWeight : 0,
+            confidence: data.confidence,
+            strategy: data.strategies.join(',')
+        }));
+    }
+
+    private async applyRiskConstraints(
+        allocations: Array<{symbol: string; weight: number; confidence: number; strategy: string}>,
+        portfolioRisk: any
+    ): Promise<Array<{symbol: string; weight: number; confidence: number; strategy: string}>> {
+        // Apply VaR constraints
+        if (this.config.riskManagement.enableVaRConstraints && portfolioRisk) {
+            // Reduce allocations if VaR is too high
+            const riskReduction = Math.min(0.2, Math.max(0, portfolioRisk.totalVaR - 0.02) / 0.02);
+            
+            return allocations.map(allocation => ({
+                ...allocation,
+                weight: allocation.weight * (1 - riskReduction)
+            }));
+        }
+        
+        return allocations;
+    }
+
+    private applyPositionConstraints(
+        allocations: Array<{symbol: string; weight: number; confidence: number; strategy: string}>
+    ): Array<{symbol: string; weight: number; confidence: number; strategy: string}> {
+        return allocations.map(allocation => ({
+            ...allocation,
+            weight: Math.min(
+                this.config.constraints.maxPositionSize,
+                Math.max(this.config.constraints.minPositionSize, allocation.weight)
+            )
+        }));
+    }
+
+    private async generateRebalancingOrders(targetAllocations: TargetAllocation[]): Promise<RebalancingOrder[]> {
+        const orders: RebalancingOrder[] = [];
+        
+        if (!this.currentPortfolioState) {
+            return orders;
+        }
+
+        for (const target of targetAllocations) {
+            if (Math.abs(target.drift) < 0.01) continue; // Skip small adjustments
+            
+            const currentPrice = await this.marketDataProvider.getCurrentPrice(target.symbol);
+            const targetValue = this.currentPortfolioState.totalValue * target.targetWeight;
+            const currentValue = this.currentPortfolioState.totalValue * target.currentWeight;
+            const valueChange = targetValue - currentValue;
+            const quantity = Math.abs(valueChange / currentPrice);
+            
+            if (quantity > 0) {
+                const order: RebalancingOrder = {
+                    id: `rebalance_${Date.now()}_${target.symbol}`,
+                    symbol: target.symbol,
+                    side: valueChange > 0 ? 'buy' : 'sell',
+                    quantity,
+                    orderType: 'adaptive',
+                    priority: this.calculateOrderPriority(target.drift),
+                    reason: `Rebalance to ${(target.targetWeight * 100).toFixed(1)}% (drift: ${(target.drift * 100).toFixed(1)}%)`,
+                    status: 'pending',
+                    metadata: {
+                        targetWeight: target.targetWeight,
+                        currentWeight: target.currentWeight,
+                        drift: target.drift,
+                        strategy: target.strategy
+                    }
+                };
+                
+                orders.push(order);
+            }
+        }
+        
+        // Sort orders by priority
+        orders.sort((a, b) => {
+            const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+            return priorityOrder[b.priority] - priorityOrder[a.priority];
+        });
+        
+        return orders;
+    }
+
+    private async executeRebalancingOrders(orders: RebalancingOrder[]): Promise<void> {
+        console.log(`📋 Executing ${orders.length} rebalancing orders...`);
+        
+        // Execute orders in batches
+        const batchSize = this.config.execution.batchSize;
+        
+        for (let i = 0; i < orders.length; i += batchSize) {
+            const batch = orders.slice(i, i + batchSize);
+            
+            // Execute batch
+            await Promise.all(batch.map(order => this.executeRebalancingOrder(order)));
+            
+            // Delay between batches
+            if (i + batchSize < orders.length) {
+                await new Promise(resolve => setTimeout(resolve, this.config.execution.delayBetweenBatches));
+            }
+        }
+        
+        console.log(`✅ All rebalancing orders executed`);
+    }
+
+    private async executeRebalancingOrder(order: RebalancingOrder): Promise<void> {
+        try {
+            order.status = 'submitted';
+            order.submittedAt = new Date();
+            
+            this.activeOrders.set(order.id, order);
+            
+            const result = await this.orderExecutor.executeOrder({
+                symbol: order.symbol,
+                side: order.side,
+                quantity: order.quantity,
+                type: order.orderType === 'adaptive' ? 'market' : order.orderType,
+                limitPrice: order.limitPrice
+            });
+            
+            order.status = 'filled';
+            order.filledAt = new Date();
+            order.executedPrice = result.price;
+            order.slippage = this.calculateOrderSlippage(order, result.price);
+            
+            console.log(`✅ Order filled: ${order.side} ${order.quantity} ${order.symbol} @ ${result.price}`);
+            
+        } catch (error) {
+            order.status = 'failed';
+            console.error(`❌ Order failed: ${order.symbol}`, error);
+        } finally {
+            this.activeOrders.delete(order.id);
+        }
+    }
+
+    // Helper calculation methods
+
+    private async getCurrentPositions(): Promise<Position[]> {
+        // Get current positions from cache (would be updated by production engine)
+        const cached = await this.cacheService.get('current_positions');
+        return cached || [];
+    }
+
+    private calculateCurrentAllocations(positions: Position[], totalValue: number): Record<string, number> {
+        const allocations: Record<string, number> = {};
+        
+        for (const position of positions) {
+            const positionValue = position.size * position.currentPrice;
+            allocations[position.symbol] = positionValue / totalValue;
+        }
+        
+        return allocations;
+    }
+
+    private async getTargetAllocations(): Promise<TargetAllocation[]> {
+        const cached = await this.cacheService.get('target_allocations');
+        return cached || [];
+    }
+
+    private calculatePortfolioDrift(
+        current: Record<string, number>, 
+        targets: TargetAllocation[]
+    ): number {
+        let maxDrift = 0;
+        
+        for (const target of targets) {
+            const currentWeight = current[target.symbol] || 0;
+            const drift = Math.abs(target.targetWeight - currentWeight);
+            maxDrift = Math.max(maxDrift, drift);
+        }
+        
+        return maxDrift;
+    }
+
+    private async checkVolatilityChange(): Promise<number> {
+        // Simplified volatility change calculation
+        return 0.05; // 5% volatility change
+    }
+
+    private async checkSignalStrength(): Promise<number> {
+        const signals = await this.strategyOrchestrator.getStrategySignals();
+        const averageStrength = signals.reduce((sum, signal) => sum + signal.strength, 0) / signals.length;
+        return averageStrength || 0;
+    }
+
+    private calculateTurnover(orders: RebalancingOrder[]): number {
+        // Calculate portfolio turnover as percentage of total value
+        const totalTradeValue = orders.reduce((sum, order) => {
+            return sum + (order.quantity * (order.executedPrice || 0));
+        }, 0);
+        
+        return this.currentPortfolioState ? 
+            totalTradeValue / this.currentPortfolioState.totalValue : 0;
+    }
+
+    private calculateAverageSlippage(orders: RebalancingOrder[]): number {
+        const filledOrders = orders.filter(order => order.status === 'filled' && order.slippage !== undefined);
+        if (filledOrders.length === 0) return 0;
+        
+        const totalSlippage = filledOrders.reduce((sum, order) => sum + (order.slippage || 0), 0);
+        return totalSlippage / filledOrders.length;
+    }
+
+    private calculateOrderSlippage(order: RebalancingOrder, executedPrice: number): number {
+        // Simplified slippage calculation - would use actual market price at order time
+        const marketPrice = executedPrice; // Would get actual market price
+        return Math.abs(executedPrice - marketPrice) / marketPrice;
+    }
+
+    private calculateOrderPriority(drift: number): 'low' | 'medium' | 'high' | 'urgent' {
+        if (drift > 0.1) return 'urgent';
+        if (drift > 0.05) return 'high';
+        if (drift > 0.02) return 'medium';
+        return 'low';
+    }
+
+    private async calculateExpectedVaR(allocations: TargetAllocation[]): Promise<number> {
+        // Simplified VaR calculation for expected allocations
+        return 0.015; // 1.5% expected VaR
+    }
+
+    private calculateExpectedReturn(allocations: TargetAllocation[], signals: StrategySignal[]): number {
+        // Simplified expected return calculation
+        let weightedReturn = 0;
+        
+        for (const allocation of allocations) {
+            const signal = signals.find(s => s.symbol === allocation.symbol);
+            const expectedReturn = signal ? signal.strength * 0.1 : 0.05; // Simplified
+            weightedReturn += allocation.targetWeight * expectedReturn;
+        }
+        
+        return weightedReturn;
+    }
+
+    private calculateExpectedTurnover(allocations: TargetAllocation[]): number {
+        return allocations.reduce((sum, allocation) => sum + allocation.drift, 0);
+    }
+
+    private calculateOptimizationConfidence(allocations: TargetAllocation[]): number {
+        const avgConfidence = allocations.reduce((sum, allocation) => sum + allocation.confidence, 0) / allocations.length;
+        return avgConfidence || 0;
+    }
+
+    private updateRebalancingMetrics(event: RebalancingEvent): void {
+        this.rebalancingMetrics.totalRebalancings++;
+        this.rebalancingMetrics.lastRebalancing = event.timestamp;
+        
+        // Update success rate
+        const successfulRebalancings = this.rebalancingHistory.filter(e => e.success).length + (event.success ? 1 : 0);
+        this.rebalancingMetrics.successRate = successfulRebalancings / this.rebalancingMetrics.totalRebalancings;
+        
+        // Update averages
+        this.rebalancingMetrics.averageExecutionTime = 
+            (this.rebalancingMetrics.averageExecutionTime + event.executionTime) / 2;
+        this.rebalancingMetrics.averageTurnover = 
+            (this.rebalancingMetrics.averageTurnover + event.turnover) / 2;
+        this.rebalancingMetrics.averageSlippage = 
+            (this.rebalancingMetrics.averageSlippage + event.slippage) / 2;
+        
+        // Cache updated metrics
+        this.cacheService.set('rebalancing_metrics', this.rebalancingMetrics, 86400);
+    }
+}
+
+export default PortfolioRebalancingSystem;

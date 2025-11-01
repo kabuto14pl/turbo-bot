@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🔧 [DEVELOPMENT-TOOL]
+# Development tool script
 
 # ============================================================================
 # ENTERPRISE PHASE 1 VALIDATION EXECUTION SCRIPT

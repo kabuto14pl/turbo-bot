@@ -1,3 +1,5 @@
+# 🔧 [DEVELOPMENT-TOOL]
+# Development configuration file
 # AlertManager configuration for Autonomous Trading Bot
 global:
   smtp_smarthost: 'localhost:587'

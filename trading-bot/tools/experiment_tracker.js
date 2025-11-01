@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  experiment_tracker.ts - SYSTEM ŚLEDZENIA EKSPERYMENTÓW
 //  Ten moduł implementuje zaawansowany system do śledzenia, porównywania

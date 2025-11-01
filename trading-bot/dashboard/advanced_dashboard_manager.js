@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 📊 ADVANCED DASHBOARD MANAGER
  * Centralny manager dashboardu z widget management i real-time updates
  */

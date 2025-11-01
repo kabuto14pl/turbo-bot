@@ -3,6 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const dashboard_api_1 = require("./dashboard_api");
 const dashboard_manager_1 = require("./dashboard_manager");
 const ws_stub_1 = __importDefault(require("./ws_stub"));

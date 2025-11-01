@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * LOGGER UTILITY - Simple logging utility for the trading bot
  */
 Object.defineProperty(exports, "__esModule", { value: true });

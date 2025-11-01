@@ -1,5 +1,12 @@
-#!/usr/bin/env ts-node
 "use strict";
+/**
+ * 🔧 [PRODUCTION-CONFIG]
+ * Production configuration component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
 /**
  * 🔧 KOMPLETNA KONFIGURACJA OKX DEMO API
  * Bazuje na OKX Best Practices - pełna aktywacja i konfiguracja

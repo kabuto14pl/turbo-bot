@@ -1,3 +1,5 @@
+# 🚀 [PRODUCTION-CONFIG]
+# Production deployment configuration
 # 🔐 PRODUCTION KUBERNETES DEPLOYMENT
 # Hardened Kubernetes deployment with comprehensive security controls
 # Implements defense-in-depth security strategy for trading bot

@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🗑️ INSTRUKCJA USUWANIA DASHBOARDÓW Z GRAFANY
 
 ## 🎯 **PROBLEM:** Masz za dużo dashboardów trading bot i chcesz je usunąć

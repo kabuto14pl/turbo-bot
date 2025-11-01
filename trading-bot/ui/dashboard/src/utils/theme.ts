@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { createTheme } from '@mui/material/styles'
 
 // Trading-specific color palette

@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  latency_audit.ts – ENTERPRISE LATENCY BENCHMARKING & OPTIMIZATION
 //  Pomiar krytycznych ścieżek: signal generation → order execution

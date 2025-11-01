@@ -1,4 +1,6 @@
 #!/bin/bash
+# 🚀 [PRODUCTION-OPERATIONAL]
+# Production operational script
 
 # ENTERPRISE MONITORING SYSTEM - QUICK START v1.0.0
 # Direct JavaScript execution without TypeScript compilation

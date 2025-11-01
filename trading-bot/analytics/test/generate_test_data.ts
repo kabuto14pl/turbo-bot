@@ -1,3 +1,7 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 import { MetricsServer } from '../metrics/metrics_server';
 import { Logger } from '../../infrastructure/logging/logger';
 

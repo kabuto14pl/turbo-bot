@@ -1,0 +1,465 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "⚠️ Enterprise Risk Management Dashboard",
+    "description": "Comprehensive risk monitoring and control systems for trading operations",
+    "tags": ["risk", "management", "trading-bot", "enterprise", "monitoring"],
+    "timezone": "browser",
+    "refresh": "1s",
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "⚠️ Risk Metrics Overview",
+        "type": "stat",
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "risk_var_current",
+            "legendFormat": "Current VaR ($)",
+            "refId": "A"
+          },
+          {
+            "expr": "risk_exposure_percent",
+            "legendFormat": "Portfolio Exposure (%)",
+            "refId": "B"
+          },
+          {
+            "expr": "risk_score_current",
+            "legendFormat": "Current Risk Score",
+            "refId": "C"
+          },
+          {
+            "expr": "risk_leverage_ratio",
+            "legendFormat": "Leverage Ratio",
+            "refId": "D"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 50
+                },
+                {
+                  "color": "orange",
+                  "value": 75
+                },
+                {
+                  "color": "red",
+                  "value": 90
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "📊 Risk Evolution Over Time",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 6
+        },
+        "targets": [
+          {
+            "expr": "risk_var_current",
+            "legendFormat": "Value at Risk",
+            "refId": "A"
+          },
+          {
+            "expr": "risk_expected_shortfall",
+            "legendFormat": "Expected Shortfall",
+            "refId": "B"
+          },
+          {
+            "expr": "risk_portfolio_volatility",
+            "legendFormat": "Portfolio Volatility",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "🎯 Risk Breakdown by Asset",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 14
+        },
+        "targets": [
+          {
+            "expr": "risk_asset_exposure by (asset)",
+            "legendFormat": "{{asset}} Exposure",
+            "refId": "A",
+            "format": "table"
+          },
+          {
+            "expr": "risk_asset_var by (asset)",
+            "legendFormat": "{{asset}} VaR",
+            "refId": "B",
+            "format": "table"
+          },
+          {
+            "expr": "risk_asset_beta by (asset)",
+            "legendFormat": "{{asset}} Beta",
+            "refId": "C",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "🚨 Risk Alerts Status",
+        "type": "gauge",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 14
+        },
+        "targets": [
+          {
+            "expr": "risk_drawdown_current_percent",
+            "legendFormat": "Current Drawdown (%)",
+            "refId": "A"
+          },
+          {
+            "expr": "risk_correlation_matrix_instability",
+            "legendFormat": "Correlation Instability",
+            "refId": "B"
+          },
+          {
+            "expr": "risk_concentration_score",
+            "legendFormat": "Concentration Score",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 25
+                },
+                {
+                  "color": "orange",
+                  "value": 50
+                },
+                {
+                  "color": "red",
+                  "value": 75
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "📈 Stress Testing Results",
+        "type": "graph",
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 22
+        },
+        "targets": [
+          {
+            "expr": "risk_stress_test_market_crash",
+            "legendFormat": "Market Crash Scenario",
+            "refId": "A"
+          },
+          {
+            "expr": "risk_stress_test_liquidity_crisis",
+            "legendFormat": "Liquidity Crisis",
+            "refId": "B"
+          },
+          {
+            "expr": "risk_stress_test_volatility_spike",
+            "legendFormat": "Volatility Spike",
+            "refId": "C"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "🔄 Risk Limits Utilization",
+        "type": "gauge",
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 22
+        },
+        "targets": [
+          {
+            "expr": "risk_limit_utilization_var",
+            "legendFormat": "VaR Limit Utilization (%)",
+            "refId": "A"
+          },
+          {
+            "expr": "risk_limit_utilization_exposure",
+            "legendFormat": "Exposure Limit Utilization (%)",
+            "refId": "B"
+          },
+          {
+            "expr": "risk_limit_utilization_concentration",
+            "legendFormat": "Concentration Limit Utilization (%)",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 60
+                },
+                {
+                  "color": "orange",
+                  "value": 80
+                },
+                {
+                  "color": "red",
+                  "value": 95
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "⚡ Real-Time Risk Monitoring",
+        "type": "stat",
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 22
+        },
+        "targets": [
+          {
+            "expr": "risk_circuit_breaker_status",
+            "legendFormat": "Circuit Breaker Status",
+            "refId": "A"
+          },
+          {
+            "expr": "risk_emergency_stop_triggered",
+            "legendFormat": "Emergency Stop",
+            "refId": "B"
+          },
+          {
+            "expr": "risk_monitoring_health_score",
+            "legendFormat": "Monitoring Health Score",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "💹 Portfolio Heat Map",
+        "type": "heatmap",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 28
+        },
+        "targets": [
+          {
+            "expr": "risk_correlation_matrix",
+            "legendFormat": "Asset Correlations",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "📊 Risk-Adjusted Returns",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 28
+        },
+        "targets": [
+          {
+            "expr": "risk_sharpe_ratio",
+            "legendFormat": "Sharpe Ratio",
+            "refId": "A"
+          },
+          {
+            "expr": "risk_sortino_ratio",
+            "legendFormat": "Sortino Ratio",
+            "refId": "B"
+          },
+          {
+            "expr": "risk_calmar_ratio",
+            "legendFormat": "Calmar Ratio",
+            "refId": "C"
+          },
+          {
+            "expr": "risk_information_ratio",
+            "legendFormat": "Information Ratio",
+            "refId": "D"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "🎲 Monte Carlo Simulation Results",
+        "type": "graph",
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 36
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.05, risk_monte_carlo_returns)",
+            "legendFormat": "5th Percentile (Worst Case)",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, risk_monte_carlo_returns)",
+            "legendFormat": "50th Percentile (Expected)",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, risk_monte_carlo_returns)",
+            "legendFormat": "95th Percentile (Best Case)",
+            "refId": "C"
+          }
+        ]
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Risk Limit Breaches",
+          "enable": true,
+          "iconColor": "rgba(255, 96, 96, 1)",
+          "query": "ALERTS{alertname=~\"risk_.*_limit_breach\"}"
+        },
+        {
+          "name": "Emergency Stops",
+          "enable": true,
+          "iconColor": "rgba(204, 204, 220, 1)",
+          "query": "changes(risk_emergency_stop_triggered[1h])"
+        },
+        {
+          "name": "Circuit Breaker Events",
+          "enable": true,
+          "iconColor": "rgba(255, 152, 48, 1)",
+          "query": "changes(risk_circuit_breaker_status[1h])"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "asset",
+          "type": "query",
+          "query": "label_values(risk_asset_exposure, asset)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "scenario",
+          "type": "custom",
+          "options": [
+            {
+              "value": "market_crash",
+              "text": "Market Crash"
+            },
+            {
+              "value": "liquidity_crisis", 
+              "text": "Liquidity Crisis"
+            },
+            {
+              "value": "volatility_spike",
+              "text": "Volatility Spike"
+            },
+            {
+              "value": "correlation_breakdown",
+              "text": "Correlation Breakdown"
+            }
+          ],
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    }
+  },
+  "folderId": 0,
+  "overwrite": true
+}

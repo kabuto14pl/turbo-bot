@@ -1,4 +1,12 @@
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Trading bot testing component
+ */
+/**
  * Advanced Backtesting System Demo - Phase 3.2
  * 
  * Demonstruje możliwości zaawansowanego systemu backtestingu:

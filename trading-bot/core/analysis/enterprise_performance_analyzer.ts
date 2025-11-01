@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * ENTERPRISE PERFORMANCE TRACKER ENHANCEMENT V1.0
  * Turbo Bot Deva Trading Platform - Phase 1 Implementation
  * 

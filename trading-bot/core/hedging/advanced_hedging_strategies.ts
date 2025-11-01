@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎯 ADVANCED HEDGING STRATEGIES V1.0
  * 
  * Sophisticated hedging strategies for portfolio protection and risk mitigation.

@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 export function calculateADX(highs: number[], lows: number[], closes: number[], period = 14): (number | null)[] {
     if (highs.length < period * 2) {
         return new Array(highs.length).fill(null);

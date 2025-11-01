@@ -34,6 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useTradingSelectors = exports.useTradingStore = exports.TradingProvider = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const React = __importStar(require("react"));
 // Initial state
 const initialState = {

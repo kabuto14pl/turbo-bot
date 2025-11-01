@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎯 UPROSZCZONA DEMONSTRACJA ALGORYTMÓW OPTYMALIZACJI
  */
 Object.defineProperty(exports, "__esModule", { value: true });

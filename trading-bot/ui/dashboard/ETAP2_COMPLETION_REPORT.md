@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🎉 ETAP 2: Core Dashboard Components - COMPLETED! 
 
 ## ✅ Successfully Implemented Features

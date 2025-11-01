@@ -1,4 +1,11 @@
-#!/usr/bin/env npx ts-node
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Trading bot testing component
+ */
 
 /**
  * 🧪 BLACK SWAN TESTING FRAMEWORK 2025

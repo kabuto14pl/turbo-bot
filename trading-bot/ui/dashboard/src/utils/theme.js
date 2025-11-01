@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.darkTheme = exports.theme = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const styles_1 = require("@mui/material/styles");
 // Trading-specific color palette
 const colors = {

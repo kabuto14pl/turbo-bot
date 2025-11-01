@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 📊 Enterprise Monitoring System - Deployment Guide
 
 ## 🎯 Overview

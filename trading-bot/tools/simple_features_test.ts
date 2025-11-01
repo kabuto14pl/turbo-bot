@@ -1,3 +1,7 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 import { DataChunker } from './data_chunker';
 import { ExperimentResumer } from './experiment_resumer';
 import { StreamProcessor, streamManager } from './stream_processor';
@@ -6,6 +10,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ **
+ * 🧪 [TESTING-FRAMEWORK]
  * Prosty test nowych komponentów
  */
 async function simpleTest() {

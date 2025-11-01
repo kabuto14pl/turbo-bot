@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  advanced_optimizer.ts - ZAAWANSOWANY SYSTEM OPTYMALIZACJI STRATEGII
 //  Ten moduł implementuje zaawansowane metody optymalizacji strategii
@@ -193,36 +197,38 @@ function createObjectiveFunction(strategyName, candles, baseConfig, metricName =
             const result = await (0, main_1.runTest)(testConfig, candles);
             // Pobieranie odpowiedniej metryki z wyniku
             let metricValue = 0;
+            // Ensure result has stats property - destructure safely
+            const stats = result?.stats || {};
             if (metricName === 'sharpeRatio') {
-                metricValue = result.sharpeRatio || 0;
+                metricValue = stats.sharpeRatio || 0;
             }
             else if (metricName === 'sortinoRatio') {
-                metricValue = result.sortinoRatio || 0;
+                metricValue = stats.sortinoRatio || 0;
             }
             else if (metricName === 'profitFactor') {
-                metricValue = result.profitFactor || 0;
+                metricValue = stats.profitFactor || 0;
             }
             else if (metricName === 'totalReturn') {
-                metricValue = result.totalReturn || 0;
+                metricValue = stats.totalReturn || 0;
             }
             else if (metricName === 'calmarRatio') {
-                metricValue = result.calmarRatio || 0;
+                metricValue = stats.calmarRatio || 0;
             }
             else {
-                metricValue = result.sharpeRatio || 0; // Domyślnie Sharpe Ratio
+                metricValue = stats.sharpeRatio || 0; // Domyślnie Sharpe Ratio
             }
             // Wywołanie callback'a, jeśli został podany
             if (onIterationComplete) {
                 const metrics = {
-                    sharpeRatio: result.sharpeRatio || 0,
-                    sortinoRatio: result.sortinoRatio || 0,
-                    calmarRatio: result.calmarRatio || 0,
-                    maxDrawdown: result.maxDrawdown || 0,
-                    totalPnl: result.totalPnl || 0,
-                    winRate: result.winRate || 0,
-                    profitFactor: result.profitFactor || 0,
-                    totalReturn: result.totalReturn || 0,
-                    tradeCount: result.tradeCount || 0
+                    sharpeRatio: stats.sharpeRatio || 0,
+                    sortinoRatio: stats.sortinoRatio || 0,
+                    calmarRatio: stats.calmarRatio || 0,
+                    maxDrawdown: stats.maxDrawdown || 0,
+                    totalPnl: stats.totalPnl || 0,
+                    winRate: stats.winRate || 0,
+                    profitFactor: stats.profitFactor || 0,
+                    totalReturn: stats.totalReturn || 0,
+                    tradeCount: stats.tradeCount || 0
                 };
                 onIterationComplete(iterationCount, params, metrics);
             }
@@ -235,12 +241,12 @@ function createObjectiveFunction(strategyName, candles, baseConfig, metricName =
                 endTime: Date.now(),
                 bestParams: params,
                 metrics: {
-                    sharpeRatio: result.sharpeRatio || 0,
-                    sortinoRatio: result.sortinoRatio || 0,
-                    calmarRatio: result.calmarRatio || 0,
-                    maxDrawdown: result.maxDrawdown || 0,
-                    totalPnl: result.totalPnl || 0,
-                    winRate: result.winRate || 0
+                    sharpeRatio: stats.sharpeRatio || 0,
+                    sortinoRatio: stats.sortinoRatio || 0,
+                    calmarRatio: stats.calmarRatio || 0,
+                    maxDrawdown: stats.maxDrawdown || 0,
+                    totalPnl: stats.totalPnl || 0,
+                    winRate: stats.winRate || 0
                 },
                 configuration: {
                     initialCapital: baseConfig.initialCapital,
@@ -375,19 +381,20 @@ async function runWalkForwardOptimization(options) {
             strategies: [{ name: strategyName, params: optimizationResult.bestParams }]
         };
         const testResult = await (0, main_1.runTest)(testConfig, testCandles);
+        const testResultAny = testResult;
         walkForwardResults.push({
             period: i + 1,
             trainSize: trainingCandles.length,
             testSize: testCandles.length,
             trainMetric: optimizationResult.bestValue,
-            testMetric: testResult[metricName] || 0,
+            testMetric: testResultAny[metricName] || 0,
             params: optimizationResult.bestParams,
-            overfittingRatio: testResult[metricName]
-                ? optimizationResult.bestValue / testResult[metricName]
+            overfittingRatio: testResultAny[metricName]
+                ? optimizationResult.bestValue / testResultAny[metricName]
                 : Infinity
         });
         console.log(`Okres ${i + 1}: Trening ${metricName}=${optimizationResult.bestValue.toFixed(4)}, ` +
-            `Test ${metricName}=${(testResult[metricName] || 0).toFixed(4)}`);
+            `Test ${metricName}=${(testResultAny[metricName] || 0).toFixed(4)}`);
     }
     // Analiza wyników WFO
     const avgTrainMetric = walkForwardResults.reduce((sum, r) => sum + r.trainMetric, 0) / walkForwardResults.length;
@@ -447,11 +454,12 @@ async function parameterSensitivityAnalysis(options) {
             };
             try {
                 const result = await (0, main_1.runTest)(testConfig, candles);
+                const resultAny = result;
                 paramResults.push({
                     paramValue: value,
-                    metricValue: result[metricName] || 0
+                    metricValue: resultAny[metricName] || 0
                 });
-                console.log(`  ${paramName}=${value}: ${metricName}=${(result[metricName] || 0).toFixed(4)}`);
+                console.log(`  ${paramName}=${value}: ${metricName}=${(resultAny[metricName] || 0).toFixed(4)}`);
             }
             catch (error) {
                 console.error(`Błąd podczas testu parametru ${paramName}=${value}:`, error);

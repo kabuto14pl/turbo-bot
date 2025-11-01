@@ -4,6 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ActivityFeed = exports.RealTimeWidget = exports.VolumeChart = exports.ProfitChart = void 0;
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 // Charts
 var ProfitChart_1 = require("./charts/ProfitChart");
 Object.defineProperty(exports, "ProfitChart", { enumerable: true, get: function () { return __importDefault(ProfitChart_1).default; } });

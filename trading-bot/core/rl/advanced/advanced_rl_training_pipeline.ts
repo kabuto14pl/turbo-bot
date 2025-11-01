@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🧠 ADVANCED RL TRAINING PIPELINE
  * Professional reinforcement learning training system for trading bot
  * Includes model versioning, A/B testing, and automated rollback

@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // rsi_diagnostic_fixed.ts
 // Script to examine RSI values in the Bitcoin data - FIXED VERSION
 

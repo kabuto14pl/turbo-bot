@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🕐 CRON JOB MANAGER
  * Professional-grade task scheduler for trading bot automation
  */

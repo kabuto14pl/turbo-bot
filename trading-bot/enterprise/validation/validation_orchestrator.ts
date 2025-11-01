@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🧪 [BACKTEST-ONLY] 
+ * This component is designed exclusively for backtesting and simulation purposes.
+ * Should NEVER be used in production trading environments.
+ * 
  * ENTERPRISE VALIDATION ORCHESTRATOR v1.0.0
  * Main orchestrator for comprehensive validation pipeline
  * 

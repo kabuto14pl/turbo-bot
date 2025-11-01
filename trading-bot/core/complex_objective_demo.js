@@ -1,6 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ComplexObjectiveDemo = void 0;
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 const complex_objective_functions_1 = require("./complex_objective_functions");
 /**
  * Demonstracja systemu złożonych funkcji celu

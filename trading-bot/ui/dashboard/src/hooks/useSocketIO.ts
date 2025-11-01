@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🔌 REAL-TIME SOCKET.IO HOOK 2025
  * Enhanced WebSocket connection with automatic reconnection
  */

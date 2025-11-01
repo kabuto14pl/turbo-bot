@@ -1,3 +1,11 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { BaseStrategy } from './base_strategy';
 import { BotState, StrategySignal, StrategyConfig } from '../types/strategy';
 import { Logger } from '../../infrastructure/logging/logger';

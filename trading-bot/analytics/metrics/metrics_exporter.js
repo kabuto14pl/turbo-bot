@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MetricsExporter = void 0;
+/**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
 const prom_client_1 = require("prom-client");
 class MetricsExporter {
     constructor(logger) {

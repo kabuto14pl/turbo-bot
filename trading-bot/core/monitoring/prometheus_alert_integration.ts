@@ -1,3 +1,11 @@
+/**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { AlertCoordinationSystem } from '../alerts/alert_coordination_system';
 import { PrometheusMonitoring } from '../monitoring/prometheus-monitoring';
 import { EventEmitter } from 'events';

@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardWebSocketServer = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 class DashboardWebSocketServer {
     constructor(port = 0) { this.port = port; }
     async getStatistics() { return { clients: 0 }; }

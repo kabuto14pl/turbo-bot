@@ -35,33 +35,23 @@
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.fixAll": "explicit"
-        }
+        },
+        "remote.autoForwardPorts": false,
+        "remote.autoForwardPortsSource": "hybrid"
       }
     }
   },
 
-  "forwardPorts": [3000, 8080, 9090, 3001, 8081],
+  "forwardPorts": [3000, 3001],
   
   "portsAttributes": {
     "3000": {
-      "label": "Trading Bot API",
-      "onAutoForward": "notify"
-    },
-    "8080": {
-      "label": "Grafana Dashboard",
+      "label": "Trading Bot Dashboard",
       "onAutoForward": "openPreview"
-    },
-    "9090": {
-      "label": "Prometheus Metrics",
-      "onAutoForward": "silent"
     },
     "3001": {
-      "label": "Frontend UI",
-      "onAutoForward": "openPreview"
-    },
-    "8081": {
-      "label": "Health Check",
-      "onAutoForward": "silent"
+      "label": "Trading Bot API",
+      "onAutoForward": "notify"
     }
   },
 

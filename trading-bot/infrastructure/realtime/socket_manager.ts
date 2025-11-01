@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🔥 REAL-TIME SOCKET.IO MANAGER 2025
  * Professional-grade real-time data streaming with <500ms latency
  */

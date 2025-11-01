@@ -1,5 +1,17 @@
 /**
- * 🔗 HEDGE EXECUTION ADAPTER
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
+ * � [SHARED-INFRASTRUCTURE]
+ * This component is used by BOTH backtest and production systems.
+ * Execution mode determined by configuration parameters.
+ * 
+ * �🔗 HEDGE EXECUTION ADAPTER
  * 
  * Adapter that allows any executor (OKXExecutorAdapter, SimulatedExecutor) 
  * to work as HedgeExecutionEngine for the Auto-Hedging System.

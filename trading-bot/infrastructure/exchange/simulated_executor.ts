@@ -1,3 +1,13 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔄 [SHARED-INFRASTRUCTURE]
+ * This component is used by BOTH backtest and production systems.
+ * Execution mode determined by configuration parameters.
+ */
+
 import { Logger } from '../logging/logger';
 import { Portfolio } from '../../core/portfolio/index';
 import { RiskManager } from '../../core/risk/risk_manager';

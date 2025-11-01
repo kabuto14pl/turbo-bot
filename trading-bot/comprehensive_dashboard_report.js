@@ -1,8 +1,11 @@
-#!/usr/bin/env npx ts-node
 "use strict";
 /**
- * 📊 COMPREHENSIVE DASHBOARD TESTING FINAL REPORT
- * Końcowy raport testów wszystkich funkcjonalności dashboardu
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -39,6 +42,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ComprehensiveDashboardReport = void 0;
+/**
+ * 📊 COMPREHENSIVE DASHBOARD TESTING FINAL REPORT
+ * Końcowy raport testów wszystkich funkcjonalności dashboardu
+ */
 const fs = __importStar(require("fs"));
 class ComprehensiveDashboardReport {
     constructor() {

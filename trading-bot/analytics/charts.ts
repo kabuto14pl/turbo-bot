@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import * as fs from 'fs';
 
 export function generateEquityCurveHtml(curve: number[], outputPath: string) {

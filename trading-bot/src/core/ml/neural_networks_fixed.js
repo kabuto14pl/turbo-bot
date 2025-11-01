@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🧠 DEEP RL NEURAL NETWORKS - FIXED VERSION
  * Real TensorFlow.js neural networks replacing SimpleRL's hardcoded if/else logic
  */

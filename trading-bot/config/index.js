@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [PRODUCTION-CONFIG]
+ * Production configuration component
+ */
+/**
  * ============================================================================
  * ENTERPRISE CONFIGURATION INDEX
  * ============================================================================

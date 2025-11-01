@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚀 PROMETHEUS METRICS SERVER
  * 
  * HTTP server do eksportu metryk dla Prometheus

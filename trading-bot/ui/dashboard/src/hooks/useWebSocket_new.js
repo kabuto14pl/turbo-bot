@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useWebSocket = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const react_1 = require("react");
 const useWebSocket = () => {
     const [connected, setConnected] = (0, react_1.useState)(false);

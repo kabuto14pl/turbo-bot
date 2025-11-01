@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🚀 PERFORMANCE TRACKER - STAGE 4: Sentiment Performance Tracking
  * Comprehensive performance monitoring with sentiment analysis integration
  */

@@ -1,4 +1,11 @@
-#!/usr/bin/env npx ts-node
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
 
 /**
  * 📊 COMPREHENSIVE DASHBOARD TESTING FINAL REPORT

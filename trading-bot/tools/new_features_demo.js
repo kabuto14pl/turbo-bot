@@ -35,6 +35,10 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.demonstrateNewFeatures = demonstrateNewFeatures;
 exports.testIntegration = testIntegration;
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 const data_chunker_1 = require("./data_chunker");
 const experiment_resumer_1 = require("./experiment_resumer");
 const stream_processor_1 = require("./stream_processor");

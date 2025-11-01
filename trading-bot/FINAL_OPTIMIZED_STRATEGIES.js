@@ -1,4 +1,12 @@
 "use strict";
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading infrastructure component
+ */
 // ============================================================================
 //  FINAL_OPTIMIZED_STRATEGIES.ts – FINALNE ZOPTYMALIZOWANE PARAMETRY
 //  Wyniki z Full Multi-Strategy Optimization - WSZYSTKIE STRATEGIE

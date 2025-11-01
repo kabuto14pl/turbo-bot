@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🧠 ADVANCED ML SYSTEM - TYPE DEFINITIONS
  * Replacing SimpleRL with enterprise-grade Deep RL system
  */
@@ -15,8 +19,10 @@ declare global {
     interface Timeout extends Timer {}
   }
   
-  var global: any;
-  var process: any;
+  // Node.js environment compatibility
+  interface NodeJS {
+    Global: typeof globalThis;
+  }
 }
 
 // TensorFlow Types

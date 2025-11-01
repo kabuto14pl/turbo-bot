@@ -1,4 +1,12 @@
 /**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [BACKTEST-ONLY] 
+ * This component is designed exclusively for backtesting and simulation purposes.
+ * Should NEVER be used in production trading environments.
+ * 
  * ENTERPRISE BACKTEST ENGINE v1.0.0
  * Comprehensive backtesting system for Turbo Bot Deva Trading Platform
  * 

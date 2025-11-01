@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 📊 METRICS COLLECTOR
  *
  * Production-grade metrics collection system for trading bot

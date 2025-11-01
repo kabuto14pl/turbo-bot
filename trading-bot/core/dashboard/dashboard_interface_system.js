@@ -1,5 +1,13 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🖥️ COMPREHENSIVE UI/DASHBOARD INTERFACE SYSTEM
  *
  * Enterprise-grade web-based dashboard for trading bot monitoring and control.

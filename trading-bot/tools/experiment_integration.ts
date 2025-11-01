@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  experiment_integration.ts - INTEGRACJA SYSTEMU ŚLEDZENIA EKSPERYMENTÓW
 //  Ten plik integruje nasz tracker eksperymentów z procesem optymalizacji

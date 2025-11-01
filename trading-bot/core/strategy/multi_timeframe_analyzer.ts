@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🎯 MULTI-TIMEFRAME STRATEGY ANALYZER V2
  * Enterprise system for analyzing strategies across multiple timeframes
  */
@@ -28,6 +36,13 @@ export interface TimeframeSignal {
     trend: 'bullish' | 'bearish' | 'neutral';
     confidence: number;
     timestamp: number;
+}
+
+export interface MultiTimeframeSignal extends StrategySignal {
+    sourceTimeframes: string[];
+    alignmentScore: number;
+    conflictScore: number;
+    dominantTimeframe: string;
 }
 
 export interface MultiTimeframeAnalysis {
@@ -76,10 +91,10 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
     constructor(logger?: Logger) {
         super();
         this.logger = logger || new Logger();
-        
+
         // Initialize default timeframe configurations
         this.initializeDefaultTimeframes();
-        
+
         this.logger.info('🎯 Multi-Timeframe Strategy Analyzer initialized');
     }
 
@@ -112,7 +127,7 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
 
         const updated = { ...existing, ...config };
         this.timeframeConfigs.set(timeframe, updated);
-        
+
         if (!this.timeframeSignals.has(timeframe)) {
             this.timeframeSignals.set(timeframe, []);
         }
@@ -135,22 +150,22 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
     // ========================================================================
 
     async analyzeMultiTimeframe(
-        strategies: Map<string, any>, 
+        strategies: Map<string, any>,
         state: BotState
     ): Promise<MultiTimeframeAnalysis> {
         const timeframeSignals: TimeframeSignal[] = [];
-        
+
         // Generate signals for each enabled timeframe
         for (const [timeframe, config] of this.timeframeConfigs) {
             if (!config.enabled) continue;
 
             const tfSignals = await this.generateTimeframeSignals(
-                strategies, 
-                state, 
-                timeframe, 
+                strategies,
+                state,
+                timeframe,
                 config
             );
-            
+
             timeframeSignals.push(...tfSignals);
         }
 
@@ -168,9 +183,9 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
 
         // Generate recommendations
         const recommendations = this.generateRecommendations(
-            overallSignal, 
-            timeframeSignals, 
-            conflictScore, 
+            overallSignal,
+            timeframeSignals,
+            conflictScore,
             trendAlignment
         );
 
@@ -204,7 +219,7 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
         for (const [strategyName, strategy] of strategies) {
             try {
                 const signal = strategy.generateSignal(tfState);
-                
+
                 if (signal && signal.confidence >= config.minConfidence) {
                     const tfSignal: TimeframeSignal = {
                         timeframe,
@@ -228,7 +243,7 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
     private createTimeframeState(state: BotState, timeframe: string): BotState {
         // Create a modified state for the specific timeframe
         const tfState = { ...state };
-        
+
         // Use the appropriate timeframe data
         switch (timeframe) {
             case 'm15':
@@ -388,7 +403,7 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
 
         // Determine supported actions
         const supportedActions: ('BUY' | 'SELL' | 'HOLD')[] = [];
-        
+
         switch (currentRegime) {
             case 'TRENDING':
                 if (upTrends > downTrends) {
@@ -442,7 +457,7 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
 
         const total = signals.length;
         const maxAgreement = Math.max(buySignals, sellSignals, holdSignals);
-        
+
         return 1 - (maxAgreement / total);
     }
 
@@ -498,8 +513,8 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
     }
 
     private calculateOverallConfidence(
-        signals: TimeframeSignal[], 
-        conflictScore: number, 
+        signals: TimeframeSignal[],
+        conflictScore: number,
         trendAlignment: number
     ): number {
         if (signals.length === 0) return 0;
@@ -572,12 +587,12 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
         signals.forEach(signal => {
             const timeframeSignals = this.timeframeSignals.get(signal.timeframe) || [];
             timeframeSignals.push(signal);
-            
+
             // Trim history
             if (timeframeSignals.length > this.maxHistorySize) {
                 timeframeSignals.splice(0, timeframeSignals.length - this.maxHistorySize);
             }
-            
+
             this.timeframeSignals.set(signal.timeframe, timeframeSignals);
         });
     }
@@ -592,12 +607,12 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
         if (timeframe) {
             return this.timeframeSignals.get(timeframe) || [];
         }
-        
+
         const allSignals: TimeframeSignal[] = [];
         for (const signals of this.timeframeSignals.values()) {
             allSignals.push(...signals);
         }
-        
+
         return allSignals.sort((a, b) => b.timestamp - a.timestamp);
     }
 
@@ -617,6 +632,88 @@ export class MultiTimeframeStrategyAnalyzer extends EventEmitter {
             totalSignals: Array.from(this.timeframeSignals.values()).reduce((sum, signals) => sum + signals.length, 0),
             recentRegime: this.regimeHistory.length > 0 ? this.regimeHistory[this.regimeHistory.length - 1] : null,
             trendCache
+        };
+    }
+
+    async start(): Promise<void> {
+        this.logger.info('🚀 Multi-timeframe analyzer started');
+        this.emit('analyzer_started');
+    }
+
+    async stop(): Promise<void> {
+        this.logger.info('🛑 Multi-timeframe analyzer stopped');
+        this.emit('analyzer_stopped');
+    }
+
+    generateConsolidatedSignals(timeframeSignals: Map<string, StrategySignal[]>, state: BotState): MultiTimeframeSignal[] {
+        const consolidated: MultiTimeframeSignal[] = [];
+
+        // Group by symbol
+        const signalsBySymbol = new Map<string, { timeframe: string; signal: StrategySignal }[]>();
+
+        for (const [timeframe, signals] of timeframeSignals) {
+            for (const signal of signals) {
+                const symbol = signal.symbol || 'default';
+                if (!signalsBySymbol.has(symbol)) {
+                    signalsBySymbol.set(symbol, []);
+                }
+                signalsBySymbol.get(symbol)!.push({ timeframe, signal });
+            }
+        }
+
+        // Consolidate each symbol's signals
+        for (const [symbol, tfSignals] of signalsBySymbol) {
+            if (tfSignals.length === 0) continue;
+
+            // Calculate alignment score
+            const buySignals = tfSignals.filter(s => s.signal.action === 'ENTER_LONG');
+            const sellSignals = tfSignals.filter(s => s.signal.action === 'ENTER_SHORT');
+
+            const alignmentScore = Math.abs(buySignals.length - sellSignals.length) / tfSignals.length;
+            const conflictScore = 1 - alignmentScore;
+
+            // Determine dominant signal
+            let dominantSignal: StrategySignal;
+            let dominantTimeframe: string;
+
+            if (buySignals.length > sellSignals.length) {
+                const weighted = buySignals.sort((a, b) => (b.signal.confidence || 0) - (a.signal.confidence || 0))[0];
+                dominantSignal = weighted.signal;
+                dominantTimeframe = weighted.timeframe;
+            } else if (sellSignals.length > buySignals.length) {
+                const weighted = sellSignals.sort((a, b) => (b.signal.confidence || 0) - (a.signal.confidence || 0))[0];
+                dominantSignal = weighted.signal;
+                dominantTimeframe = weighted.timeframe;
+            } else {
+                // Neutral or no clear direction
+                continue;
+            }
+
+            // Create consolidated signal
+            const multiSignal: MultiTimeframeSignal = {
+                ...dominantSignal,
+                sourceTimeframes: tfSignals.map(s => s.timeframe),
+                alignmentScore,
+                conflictScore,
+                dominantTimeframe,
+                symbol,
+            };
+
+            consolidated.push(multiSignal);
+        }
+
+        return consolidated;
+    }
+
+    getAnalyzerStatus(): {
+        isRunning: boolean;
+        enabledTimeframes: string[];
+        totalSignals: number;
+    } {
+        return {
+            isRunning: true,
+            enabledTimeframes: this.getEnabledTimeframes(),
+            totalSignals: Array.from(this.timeframeSignals.values()).reduce((sum, signals) => sum + signals.length, 0),
         };
     }
 }

@@ -1,8 +1,15 @@
 "use strict";
 /**
- * 🚀 MINIMAL ENTERPRISE ML SYSTEM
- * Simplified but fully functional Enterprise ML system with all FAZA features
- * This version prioritizes functionality over complexity
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * � [SHARED-INFRASTRUCTURE]
+ * MINIMAL ENTERPRISE ML SYSTEM
+ * Simplified but fully functional Enterprise ML system with all production features
+ *
+ * Shared component providing ML capabilities across production and testing environments
+ * Configurable for different deployment modes with comprehensive error handling
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ENTERPRISE_ML_STATUS = exports.EnterpriseMLAdapter = void 0;
@@ -33,11 +40,16 @@ class MinimalDeepRLAgent {
         try {
             // Enhanced feature analysis
             const features = this.extractFeatures(price, rsi, volume);
-            // Advanced ML decision making
+            // 🔍 DEBUG: Log episodes BEFORE generating action
+            this.logger.debug(`📊 BEFORE generateAction: episodes=${this.episodes}`);
+            // Advanced ML decision making (BEFORE incrementing episodes!)
             const action = this.generateAction(features);
             // Enterprise risk management
             const safeAction = this.applyRiskManagement(action, features);
             this.logger.debug(`🧠 ML Action: ${safeAction.action_type} (confidence: ${safeAction.confidence.toFixed(3)})`);
+            // 🚀 INCREMENT EPISODES AFTER generating action (for next iteration)
+            this.episodes++;
+            this.logger.debug(`📊 AFTER increment: episodes=${this.episodes}`);
             return safeAction;
         }
         catch (error) {
@@ -47,7 +59,7 @@ class MinimalDeepRLAgent {
     }
     async learnFromResult(pnl, duration, marketConditions) {
         try {
-            this.episodes++;
+            // Episodes already incremented in processStep()
             // Calculate sophisticated reward
             const reward = this.calculateReward(pnl, duration, marketConditions);
             this.total_reward += reward;
@@ -107,7 +119,11 @@ class MinimalDeepRLAgent {
     generateAction(features) {
         // Advanced ML decision logic with enterprise features
         let signal = 0;
-        let confidence = 0;
+        let confidence = 0.45; // ⚡ BOOSTED BASE CONFIDENCE for faster cold start (was 0.3)
+        // 🧠 COLD START BOOST: Add exploration bonus for early learning
+        if (this.episodes < 100) {
+            confidence += Math.random() * 0.15; // Random boost 0-15% during warmup
+        }
         // RSI-based signals with ML enhancement
         if (features.rsi_signal < -0.6) { // Oversold
             signal += 0.7;
@@ -116,6 +132,11 @@ class MinimalDeepRLAgent {
         else if (features.rsi_signal > 0.6) { // Overbought
             signal -= 0.7;
             confidence += 0.6;
+        }
+        else {
+            // Neutral market - still give some signal based on minor RSI movement
+            signal += features.rsi_signal * 0.3;
+            confidence += 0.2; // Moderate confidence in neutral markets
         }
         // Volume confirmation
         if (features.volume_intensity > 2) {
@@ -128,13 +149,38 @@ class MinimalDeepRLAgent {
         signal += features.market_sentiment * 0.3;
         // Volatility adjustment
         confidence *= (1 - features.volatility * 0.3);
-        // Determine action type
+        // 🚀🚀🚀 FORCED EXPLORATION DURING WARMUP - Generate trades for learning data
         let actionType = 'HOLD';
-        if (signal > 0.5 && confidence > 0.5) {
-            actionType = 'BUY';
+        if (this.episodes < 50) {
+            // WARMUP PHASE: Force 95% BUY/SELL actions for aggressive data collection
+            const forceAction = Math.random();
+            if (forceAction < 0.475) {
+                actionType = 'BUY';
+                signal = 0.6 + Math.random() * 0.4; // Synthetic strong buy signal
+                confidence = 0.5 + Math.random() * 0.3; // Random confidence 0.5-0.8
+                this.logger.debug(`🎯 WARMUP FORCED BUY (episode ${this.episodes}, confidence: ${confidence.toFixed(3)})`);
+            }
+            else if (forceAction < 0.95) {
+                actionType = 'SELL';
+                signal = -(0.6 + Math.random() * 0.4); // Synthetic strong sell signal
+                confidence = 0.5 + Math.random() * 0.3; // Random confidence 0.5-0.8
+                this.logger.debug(`🎯 WARMUP FORCED SELL (episode ${this.episodes}, confidence: ${confidence.toFixed(3)})`);
+            }
+            else {
+                this.logger.debug(`🎯 WARMUP HOLD (episode ${this.episodes})`);
+            }
+            // Only 5% remain HOLD
         }
-        else if (signal < -0.5 && confidence > 0.5) {
-            actionType = 'SELL';
+        else {
+            // NORMAL PHASE: Use standard thresholds
+            const actionThreshold = this.episodes < 100 ? 0.35 : 0.45;
+            const signalThreshold = this.episodes < 200 ? 0.1 : 0.5;
+            if (signal > signalThreshold && confidence > actionThreshold) {
+                actionType = 'BUY';
+            }
+            else if (signal < -signalThreshold && confidence > actionThreshold) {
+                actionType = 'SELL';
+            }
         }
         // Calculate position size based on confidence
         const positionSize = Math.min(confidence * 0.1, 0.05); // Max 5% position

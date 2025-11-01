@@ -1,3 +1,7 @@
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
 import * as fs from 'fs';
 import * as path from 'path';
 import { calcRSI } from '../core/indicators/rsi';

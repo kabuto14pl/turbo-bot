@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 # 🚨 WSL STABILITY ISSUE - ROOT CAUSE ANALYSIS & RESOLUTION
 
 **Incident Date:** September 2, 2025  

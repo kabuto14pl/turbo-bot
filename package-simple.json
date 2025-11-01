@@ -1,3 +1,4 @@
+// 🔧 [PRODUCTION-CONFIG] Package configuration for trading bot system
 {
   "scripts": {
     "build-simple": "echo 'Building for Codespaces...' && exit 0",

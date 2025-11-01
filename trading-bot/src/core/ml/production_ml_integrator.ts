@@ -1,7 +1,14 @@
 /**
- * 🚀 PRODUCTION ML INTEGRATION MANAGER
- * Complete integration of FAZA 1-5 enterprise ML system into production trading bot
- * Replaces SimpleRL with full Deep RL, hyperparameter optimization, and production features
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🚀 [PRODUCTION-FINAL]
+ * PRODUCTION ML INTEGRATION MANAGER
+ * Complete production-ready ML integration with FAZA 1-5 enterprise system
+ * 
+ * Final production version with full Deep RL, hyperparameter optimization, and live trading
+ * Ready for deployment with comprehensive monitoring and risk management
  */
 
 // Simple logger implementation for production
@@ -17,9 +24,8 @@ import { PerformanceOptimizer } from './performance_optimizer';
 import { ProductionDeploymentManager } from './production_deployment';
 import { RealTimeMonitor } from './real_time_monitor';
 import { ABTestingSystem } from './ab_testing_system';
-import { Faza4Orchestrator } from './faza4_orchestrator';
-import { Faza5AdvancedSystem } from './faza5_advanced_system';
-// Remove AdvancedSearch import - not needed for production
+import { Faza4Orchestrator } from './faza4_orchestrator'; // REAKTYWOWANY - PEŁNA IMPLEMENTACJA
+import { Faza5AdvancedSystem } from './faza5_advanced_system'; // REAKTYWOWANY - PEŁNA IMPLEMENTACJA
 import { HyperparameterOptimizer } from './hyperparameter_optimizer';
 import { MarketState, PerformanceMetrics, TrainingConfig } from './types';
 
@@ -108,8 +114,8 @@ export class ProductionMLIntegrator {
   private ab_testing_system?: ABTestingSystem;
   
   // Orchestrators
-  private faza4_orchestrator?: Faza4Orchestrator;
-  private faza5_advanced_system?: Faza5AdvancedSystem;
+  private faza4_orchestrator?: Faza4Orchestrator; // REAKTYWOWANY - PEŁNA IMPLEMENTACJA
+  private faza5_advanced_system?: Faza5AdvancedSystem; // REAKTYWOWANY - PEŁNA IMPLEMENTACJA
   
   // State management
   private is_initialized: boolean = false;
@@ -422,10 +428,15 @@ export class ProductionMLIntegrator {
       // Use default configuration
     });
 
-    // Production Deployment Manager
-    this.deployment_manager = new ProductionDeploymentManager({
-      // Use default configuration
-    });
+    // Production Deployment Manager - Skip in test/simulation mode
+    if (process.env.DISABLE_PRODUCTION_DEPLOYMENT !== 'true' && process.env.MODE !== 'simulation' && process.env.NODE_ENV !== 'test') {
+      this.deployment_manager = new ProductionDeploymentManager({
+        // Use default configuration
+      });
+      this.logger.info('✅ Production Deployment Manager enabled');
+    } else {
+      this.logger.info('⚠️  Production Deployment Manager DISABLED (test/simulation mode)');
+    }
 
     // Real-Time Monitor
     this.monitoring_system = new RealTimeMonitor({
@@ -577,6 +588,21 @@ export class ProductionMLIntegrator {
       market_state.rsi,
       market_state.volume
     );
+
+    // Check if rl_action is null/undefined
+    if (!rl_action) {
+      this.logger.warn('Deep RL manager returned null action, falling back to HOLD');
+      return {
+        type: 'HOLD',
+        confidence: 0.5,
+        position_size: 0,
+        stop_loss: 0,
+        take_profit: 0,
+        reasoning: 'Deep RL manager returned null action',
+        model_version: '1.0.0',
+        uncertainty: 1.0
+      };
+    }
 
     // Convert to MLAction format
     const convertedType = rl_action.action_type === 'CLOSE' || rl_action.action_type === 'SCALE_IN' || rl_action.action_type === 'SCALE_OUT' 

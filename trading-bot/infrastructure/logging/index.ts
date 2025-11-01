@@ -1,3 +1,7 @@
+/**
+ * 🚀 [PRODUCTION-API]
+ * Production API component
+ */
 import * as fs from 'fs';
 import * as path from 'path';
 

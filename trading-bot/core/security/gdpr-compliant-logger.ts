@@ -1,4 +1,11 @@
-#!/usr/bin/env ts-node
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 /**
  * 🔒 GDPR-COMPLIANT LOGGING SYSTEM
  * Production-ready logging with data anonymization, encryption, and retention policies

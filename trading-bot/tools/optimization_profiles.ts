@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 // ============================================================================
 //  optimization_profiles.ts - PROFILE OPTYMALIZACJI
 //  Ten moduł definiuje gotowe profile optymalizacji, które można łatwo

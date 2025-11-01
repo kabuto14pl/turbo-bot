@@ -1,4 +1,12 @@
 /**
+ * 🚀 [PRODUCTION-API]
+ * Production enterprise component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🤖 ML-ENHANCED ENTERPRISE STRATEGY ENGINE
  * Integration of ML/AI capabilities with Enterprise Strategy Engine
  */

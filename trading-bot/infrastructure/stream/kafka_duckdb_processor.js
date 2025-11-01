@@ -1,5 +1,9 @@
 "use strict";
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * Kafka-DuckDB Real-time Integration Processor
  * Production-ready enterprise streaming system for 2025
  *

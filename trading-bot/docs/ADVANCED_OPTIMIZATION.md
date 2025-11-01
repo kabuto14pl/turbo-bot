@@ -1,3 +1,5 @@
+<!-- 📚 [SHARED-INFRASTRUCTURE] -->
+<!-- Documentation component -->
 // ============================================================================
 //  README.md - DOKUMENTACJA PROFESJONALNEGO SYSTEMU OPTYMALIZACJI
 //  Ten plik zawiera dokumentację i przykłady użycia zaawansowanych narzędzi

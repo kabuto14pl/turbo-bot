@@ -1,4 +1,12 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
+/**
  * 🔄 DELTA-NEUTRAL MANAGER V1.0
  * 
  * Advanced delta-neutral strategy manager for maintaining portfolio neutrality.

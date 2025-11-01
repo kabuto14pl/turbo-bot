@@ -1,3 +1,7 @@
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 import { BotState } from '../core/types/strategy';
 
 // Scenariusz 1: Silny trend wzrostowy z wysoką zmiennością

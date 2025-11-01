@@ -1,0 +1,31 @@
+# 🔧 [DEVELOPMENT-TOOL]
+# Development configuration file
+groups:
+  - name: trading_bot_alerts
+    rules:
+      - alert: TradingBotDown
+        expr: up{job="trading-bot"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading Bot is down"
+          description: "The trading bot has been down for more than 1 minute"
+
+      - alert: HighErrorRate
+        expr: rate(trading_bot_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      - alert: VaRLimitBreach
+        expr: trading_bot_var_current > trading_bot_var_limit
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "VaR limit breached"
+          description: "Current VaR {{ $value }} exceeds limit"

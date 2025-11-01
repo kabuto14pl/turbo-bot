@@ -1,3 +1,11 @@
+/**
+ * 🚀 [PRODUCTION-OPERATIONAL]
+ * Production monitoring component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 import { register, Registry, Counter, Gauge, Histogram, collectDefaultMetrics } from 'prom-client';
 import express from 'express';
 import { EventEmitter } from 'events';

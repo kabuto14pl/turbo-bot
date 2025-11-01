@@ -1,4 +1,12 @@
 "use strict";
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Testing framework component
+ */
+/**
+ * 🧪 [TESTING-FRAMEWORK]
+ * Unit testing component
+ */
 // ============================================================================
 // helpers.test.ts - Tests for Utility Functions and Helper Methods
 // Unit tests for the modularized helpers module

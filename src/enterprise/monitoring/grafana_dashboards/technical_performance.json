@@ -1,0 +1,474 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Trading Bot - Technical Performance",
+    "tags": ["trading", "technical", "performance", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 1,
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"],
+      "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+    },
+    "refresh": "15s",
+    "version": 1,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Market Data Processing",
+        "type": "row",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Market Data Messages Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(market_data_messages_total[1m]) * 60",
+            "legendFormat": "Messages/min - {{exchange}}/{{symbol}}",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Messages per minute",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 1
+        }
+      },
+      {
+        "id": 3,
+        "title": "Data Quality Score",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "market_data_quality_score",
+            "legendFormat": "Quality Score - {{exchange}}",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Score (0-100)",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 1
+        }
+      },
+      {
+        "id": 4,
+        "title": "Cache Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "market_data_cache_hit_ratio * 100",
+            "legendFormat": "Cache Hit Ratio %",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Hit Ratio %",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 9
+        }
+      },
+      {
+        "id": 5,
+        "title": "Data Latency Distribution",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(market_data_latency_ms_bucket[5m]))",
+            "legendFormat": "95th percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(market_data_latency_ms_bucket[5m]))",
+            "legendFormat": "50th percentile",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 9
+        }
+      },
+      {
+        "id": 6,
+        "title": "Strategy Orchestration",
+        "type": "row",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 17
+        }
+      },
+      {
+        "id": 7,
+        "title": "Signal Generation Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(trading_signals_total[5m]) * 60",
+            "legendFormat": "Total signals/min - {{strategy}}",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(trading_signals_success_total[5m]) * 60",
+            "legendFormat": "Successful signals/min - {{strategy}}",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(trading_signals_error_total[5m]) * 60",
+            "legendFormat": "Error signals/min - {{strategy}}",
+            "refId": "C"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Signals per minute",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 18
+        }
+      },
+      {
+        "id": 8,
+        "title": "Strategy Switches",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(trading_strategy_switches_total[5m]) * 60",
+            "legendFormat": "Strategy switches per minute",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Switches per minute",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 18
+        }
+      },
+      {
+        "id": 9,
+        "title": "Orchestrator Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "orchestrator_memory_usage_bytes / 1024 / 1024",
+            "legendFormat": "Memory Usage (MB)",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Memory (MB)",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 26
+        }
+      },
+      {
+        "id": 10,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "orchestrator_error_rate_percent",
+            "legendFormat": "Error Rate %",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Error Rate %",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "show": false
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [10],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "2m",
+          "frequency": "10s",
+          "handler": 1,
+          "name": "High Error Rate Alert",
+          "noDataState": "no_data",
+          "notifications": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 26
+        }
+      },
+      {
+        "id": 11,
+        "title": "System Resources",
+        "type": "row",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 34
+        }
+      },
+      {
+        "id": 12,
+        "title": "CPU & Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "system_cpu_usage_percent",
+            "legendFormat": "CPU Usage %",
+            "refId": "A"
+          },
+          {
+            "expr": "system_memory_usage_bytes / system_memory_total_bytes * 100",
+            "legendFormat": "Memory Usage %",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Percentage",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 35
+        }
+      },
+      {
+        "id": 13,
+        "title": "System Uptime",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "system_uptime_seconds / 3600",
+            "legendFormat": "Uptime (hours)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "h"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 35
+        }
+      },
+      {
+        "id": 14,
+        "title": "Disk Usage",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "system_disk_usage_percent",
+            "legendFormat": "Disk Usage %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 70
+                },
+                {
+                  "color": "red",
+                  "value": 90
+                }
+              ]
+            },
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 35
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "strategy",
+          "type": "query",
+          "query": "label_values(trading_signals_total, strategy)",
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          },
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "exchange",
+          "type": "query",
+          "query": "label_values(market_data_messages_total, exchange)",
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          },
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "symbol",
+          "type": "query",
+          "query": "label_values(market_data_messages_total{exchange=\"$exchange\"}, symbol)",
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          },
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Strategy Switches",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "increase(trading_strategy_switches_total[1m]) > 0",
+          "iconColor": "blue",
+          "titleFormat": "Strategy Switch",
+          "textFormat": "Strategy switched at {{time}}"
+        },
+        {
+          "name": "High Error Rate",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "orchestrator_error_rate_percent > 5",
+          "iconColor": "orange",
+          "titleFormat": "High Error Rate",
+          "textFormat": "Error rate: {{value}}%"
+        }
+      ]
+    }
+  }
+}

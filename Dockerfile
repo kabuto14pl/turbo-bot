@@ -1,3 +1,4 @@
+# 🔧 [PRODUCTION-CONFIG] Docker configuration for trading bot system
 # Multi-stage Dockerfile optimized for Codespaces
 FROM node:20-alpine AS base
 

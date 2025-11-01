@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🔗 DEEP RL INTEGRATION MANAGER
  * Replaces SimpleRLManager with enterprise-grade Deep RL system
  * Manages transition from old SimpleRL to new DeepRL architecture
@@ -45,7 +49,7 @@ export const DEFAULT_DEEP_RL_CONFIG: DeepRLConfig = {
 };
 
 export class DeepRLManager {
-  private agent: DeepRLAgent;
+  private agent!: DeepRLAgent;
   private config: DeepRLConfig;
   private logger: Logger;
   

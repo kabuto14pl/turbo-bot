@@ -1,4 +1,8 @@
 /**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
+/**
  * 🔄 DAILY REOPTIMIZATION SERVICE V2.0 - ENTERPRISE EDITION
  * 
  * Advanced automated strategy reoptimization system with:

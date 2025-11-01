@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useWebSocket = void 0;
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared infrastructure component
+ */
 const react_1 = require("react");
 const react_hot_toast_1 = require("react-hot-toast");
 const tradingStore_1 = require("../store/tradingStore");

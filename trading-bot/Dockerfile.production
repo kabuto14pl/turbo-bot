@@ -1,3 +1,4 @@
+# 🔧 [PRODUCTION-CONFIG] Docker configuration for trading bot system
 # 🐳 PRODUCTION-READY DOCKERFILE
 # Multi-stage Docker build with security hardening and minimal attack surface
 # Implements security best practices for trading bot container deployment

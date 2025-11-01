@@ -1,3 +1,5 @@
+# 🚀 [PRODUCTION-CONFIG]
+# Production deployment configuration
 apiVersion: v1
 kind: Service
 metadata:

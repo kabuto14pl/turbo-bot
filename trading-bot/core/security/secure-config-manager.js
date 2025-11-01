@@ -1,5 +1,12 @@
-#!/usr/bin/env ts-node
 "use strict";
+/**
+ * 🔧 [PRODUCTION-CONFIG]
+ * Production configuration component
+ */
+/**
+ * 🔧 [SHARED-INFRASTRUCTURE]
+ * Shared trading bot infrastructure
+ */
 /**
  * 🔒 SECURE CONFIGURATION MANAGER
  * Production-ready secrets management and environment configuration

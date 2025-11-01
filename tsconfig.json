@@ -118,6 +118,18 @@
     "**/*_OLD_BROKEN.ts",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "src/professional_trading_dashboard_OLD_BROKEN.ts"
+    "src/professional_trading_dashboard_OLD_BROKEN.ts",
+    "trading-bot/ui/**",
+    "trading-bot/src/**",
+    "trading-bot/tools/**",
+    "trading-bot/test_enterprise_ml_integration.ts",
+    "trading-bot/optimized_bot_runner.ts",
+    "trading-bot/modules/**",
+    "trading-bot/enterprise/**",
+    "trading-bot/infrastructure/**",
+    "trading-bot/data_ingestion_demo.ts",
+    "trading-bot/core/streaming/**",
+    "trading-bot/core/hedging/**",
+    "trading-bot/core/strategy/**"
   ]
 }
