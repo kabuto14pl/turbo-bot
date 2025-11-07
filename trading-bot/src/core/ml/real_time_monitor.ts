@@ -16,17 +16,17 @@ interface MonitoringConfig {
   metrics_collection_interval: number;
   metrics_retention_period: number;
   high_frequency_metrics: string[];
-  
+
   // Alerting configuration
   alerting_enabled: boolean;
   alert_channels: AlertChannel[];
   escalation_rules: EscalationRule[];
-  
+
   // Anomaly detection
   anomaly_detection_enabled: boolean;
   anomaly_sensitivity: 'low' | 'medium' | 'high';
   baseline_learning_period: number;
-  
+
   // Performance thresholds
   latency_thresholds: {
     warning: number;
@@ -40,14 +40,14 @@ interface MonitoringConfig {
     warning: number;
     critical: number;
   };
-  
+
   // Business metrics
   trading_performance_thresholds: {
     min_sharpe_ratio: number;
     max_drawdown: number;
     min_win_rate: number;
   };
-  
+
   // Health check configuration
   health_check_interval: number;
   health_check_timeout: number;
@@ -111,18 +111,18 @@ interface Alert {
   triggered_at: number;
   resolved_at?: number;
   status: 'active' | 'resolved' | 'suppressed' | 'acknowledged';
-  
+
   // Context
   current_value: number;
   threshold_value: number;
   tags: { [key: string]: string };
-  
+
   // Tracking
   notification_count: number;
   last_notification: number;
   acknowledged_by?: string;
   acknowledged_at?: number;
-  
+
   // Remediation
   suggested_actions: string[];
   related_alerts: string[];
@@ -169,24 +169,24 @@ interface SystemStatus {
 export class RealTimeMonitor {
   private config: MonitoringConfig;
   private logger: Logger;
-  
+
   // Metrics storage
   private metrics_store: Map<string, MetricValue[]> = new Map();
   private metric_definitions: Map<string, MetricDefinition> = new Map();
-  
+
   // Alerting
   private active_alerts: Map<string, Alert> = new Map();
   private alert_history: Alert[] = [];
   private alert_channels: Map<string, AlertChannel> = new Map();
-  
+
   // Anomaly detection
   private anomaly_detector: AnomalyDetector;
   private baseline_calculator: BaselineCalculator;
-  
+
   // Health monitoring
   private health_checks: Map<string, () => Promise<HealthCheckResult>> = new Map();
   private component_statuses: Map<string, HealthCheckResult> = new Map();
-  
+
   // Intervals
   private metrics_collection_interval?: NodeJS.Timeout;
   private health_check_interval?: NodeJS.Timeout;
@@ -259,7 +259,7 @@ export class RealTimeMonitor {
     if (!this.metrics_store.has(metric_name)) {
       this.metrics_store.set(metric_name, []);
     }
-    
+
     const metric_history = this.metrics_store.get(metric_name)!;
     metric_history.push(metric_value);
 
@@ -268,7 +268,7 @@ export class RealTimeMonitor {
 
     // Check for anomalies and alerts
     this.checkMetricThresholds(metric_name, value, tags);
-    
+
     // Log high-frequency metrics
     if (this.config.high_frequency_metrics.includes(metric_name)) {
       this.logger.debug(`📈 ${metric_name}: ${value} ${tags ? JSON.stringify(tags) : ''}`);
@@ -345,7 +345,7 @@ export class RealTimeMonitor {
     // Check latency thresholds
     if (metric_name === 'inference.latency') {
       if (value > this.config.latency_thresholds.critical) {
-        this.triggerAlert(metric_name, 'critical', 
+        this.triggerAlert(metric_name, 'critical',
           `Inference latency is critically high: ${value}ms`,
           value, this.config.latency_thresholds.critical, tags);
       } else if (value > this.config.latency_thresholds.warning) {
@@ -447,7 +447,7 @@ export class RealTimeMonitor {
     tags: { [key: string]: string }
   ): void {
     const alert_id = `alert_${metric_name}_${Date.now()}`;
-    
+
     const alert: Alert = {
       alert_id,
       metric_name,
@@ -494,9 +494,9 @@ export class RealTimeMonitor {
         await this.sendNotification(channel, alert);
         alert.notification_count++;
         alert.last_notification = Date.now();
-        
+
         this.logger.info(`📨 Alert notification sent via ${channel.name}`);
-        
+
       } catch (error) {
         this.logger.error(`❌ Failed to send notification via ${channel.name}: ${error}`);
       }
@@ -631,9 +631,9 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
             check_function(),
             this.timeoutPromise(this.config.health_check_timeout)
           ]);
-          
+
           this.component_statuses.set(component, result);
-          
+
           if (result.status !== 'healthy') {
             this.triggerAlert(
               `health.${component}`,
@@ -643,7 +643,7 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
               { component, response_time: result.response_time.toString() }
             );
           }
-          
+
         } catch (error) {
           const failed_result: HealthCheckResult = {
             component,
@@ -653,9 +653,9 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
             details: {},
             timestamp: Date.now()
           };
-          
+
           this.component_statuses.set(component, failed_result);
-          
+
           this.triggerAlert(
             `health.${component}`,
             'critical',
@@ -679,7 +679,7 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
 
     // Determine overall status
     let overall_status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
-    
+
     if (component_statuses.some(c => c.status === 'unhealthy')) {
       overall_status = 'unhealthy';
     } else if (component_statuses.some(c => c.status === 'degraded')) {
@@ -801,7 +801,7 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
           burst_limit: 3
         }
       };
-      
+
       this.alert_channels.set('default_log', default_channel);
     } else {
       for (const channel of this.config.alert_channels) {
@@ -871,15 +871,15 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
   private cleanupOldMetrics(metric_name: string): void {
     const metric_history = this.metrics_store.get(metric_name)!;
     const cutoff_time = Date.now() - this.config.metrics_retention_period;
-    
+
     const filtered_history = metric_history.filter(m => m.timestamp >= cutoff_time);
     this.metrics_store.set(metric_name, filtered_history);
   }
 
   private getMetricLatest(metric_name: string): number | null {
     const metric_history = this.metrics_store.get(metric_name);
-    return metric_history && metric_history.length > 0 
-      ? metric_history[metric_history.length - 1].value 
+    return metric_history && metric_history.length > 0
+      ? metric_history[metric_history.length - 1].value
       : null;
   }
 
@@ -900,19 +900,19 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
 
   private getSuggestedActions(metric_name: string, severity: AlertSeverity): string[] {
     const actions: string[] = [];
-    
+
     if (metric_name.includes('memory')) {
       actions.push('Check for memory leaks');
       actions.push('Restart the service if memory usage is critical');
       actions.push('Scale up instances if consistently high');
     }
-    
+
     if (metric_name.includes('latency')) {
       actions.push('Check network connectivity');
       actions.push('Review recent deployments');
       actions.push('Scale up resources if needed');
     }
-    
+
     if (metric_name.includes('trading')) {
       actions.push('Review trading strategy parameters');
       actions.push('Check market conditions');
@@ -925,10 +925,10 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
   private findRelatedAlerts(metric_name: string, tags: { [key: string]: string }): string[] {
     // Find other active alerts that might be related
     return Array.from(this.active_alerts.values())
-      .filter(alert => 
-        alert.metric_name !== metric_name && 
+      .filter(alert =>
+        alert.metric_name !== metric_name &&
         (alert.metric_name.split('.')[0] === metric_name.split('.')[0] ||
-         Object.keys(alert.tags).some(key => tags[key] === alert.tags[key]))
+          Object.keys(alert.tags).some(key => tags[key] === alert.tags[key]))
       )
       .map(alert => alert.alert_id);
   }
@@ -955,22 +955,22 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
    */
   dispose(): void {
     this.logger.info('🧹 Disposing Real-Time Monitor...');
-    
+
     if (this.metrics_collection_interval) {
       clearInterval(this.metrics_collection_interval);
     }
-    
+
     if (this.health_check_interval) {
       clearInterval(this.health_check_interval);
     }
-    
+
     if (this.anomaly_check_interval) {
       clearInterval(this.anomaly_check_interval);
     }
-    
+
     this.anomaly_detector.dispose();
     this.baseline_calculator.dispose();
-    
+
     this.logger.info('✅ Real-Time Monitor disposed');
   }
 }
@@ -999,8 +999,8 @@ class AnomalyDetector {
     );
 
     const z_score = Math.abs((value - mean) / std_dev);
-    const threshold = this.config.anomaly_sensitivity === 'high' ? 2 : 
-                     this.config.anomaly_sensitivity === 'medium' ? 2.5 : 3;
+    const threshold = this.config.anomaly_sensitivity === 'high' ? 2 :
+      this.config.anomaly_sensitivity === 'medium' ? 2.5 : 3;
 
     const is_anomaly = z_score > threshold;
     const anomaly_score = z_score / threshold;
@@ -1049,7 +1049,7 @@ export const DEFAULT_MONITORING_CONFIGS = {
     anomaly_detection_enabled: false,
     health_check_interval: 60000
   },
-  
+
   STAGING: {
     metrics_collection_interval: 30000, // 30 seconds
     alerting_enabled: true,
@@ -1065,7 +1065,7 @@ export const DEFAULT_MONITORING_CONFIGS = {
       }
     ]
   },
-  
+
   PRODUCTION: {
     metrics_collection_interval: 15000, // 15 seconds
     alerting_enabled: true,

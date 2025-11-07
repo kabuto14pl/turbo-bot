@@ -9,13 +9,13 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import { 
-  PolicyNetworkConfig, 
-  ValueNetworkConfig, 
-  DeepRLAction, 
+import {
+  PolicyNetworkConfig,
+  ValueNetworkConfig,
+  DeepRLAction,
   FeatureVector,
   FEATURE_DIMENSIONS,
-  ACTION_DIMENSIONS 
+  ACTION_DIMENSIONS
 } from './types';
 import { Logger } from '../../../core/utils/logger';
 
@@ -38,7 +38,7 @@ export class PolicyNetwork {
   private valueNetwork?: any; // Changed from MLModel (undefined type)
   private targetPolicyNetwork?: any; // Changed from MLModel (undefined type)
   private targetValueNetwork?: any; // Changed from MLModel (undefined type)
-  
+
   // Training components
   private policyOptimizer?: tf.Optimizer;
   private valueOptimizer?: tf.Optimizer;
@@ -60,22 +60,22 @@ export class PolicyNetwork {
 
       // 1. Initialize Policy Network (Actor)
       await this.initializePolicyNetwork(policyConfig);
-      
+
       // 2. Initialize Value Network (Critic)
       await this.initializeValueNetwork(valueConfig);
-      
+
       // 3. Initialize target networks (for stable training)
       await this.initializeTargetNetworks();
-      
+
       // 4. Initialize optimizers
       this.initializeOptimizers(policyConfig, valueConfig);
 
       this.isInitialized = true;
       this.logger.info('✅ Deep RL Neural Networks initialized successfully');
-      
+
       // Log network summaries
       this.logNetworkInfo();
-      
+
     } catch (error) {
       this.logger.error('Failed to initialize neural networks:', error);
       throw error;
@@ -89,14 +89,14 @@ export class PolicyNetwork {
     this.logger.info('Creating Policy Network (Actor)...');
 
     const inputs = tf.input({ shape: [FEATURE_DIMENSIONS], name: 'state_input' });
-    
+
     // Input normalization layer
     let x = tf.layers.batchNormalization({ name: 'input_norm' }).apply(inputs) as tf.SymbolicTensor;
-    
+
     // Hidden layers with residual connections
     for (let i = 0; i < config.hidden_layers.length; i++) {
       const units = config.hidden_layers[i];
-      
+
       // Dense layer
       const dense = tf.layers.dense({
         units: units,
@@ -104,20 +104,20 @@ export class PolicyNetwork {
         kernelInitializer: 'glorotUniform',
         name: `policy_dense_${i}`
       }).apply(x) as tf.SymbolicTensor;
-      
+
       // Dropout for regularization
-      const dropout = tf.layers.dropout({ 
-        rate: config.dropout_rate, 
-        name: `policy_dropout_${i}` 
+      const dropout = tf.layers.dropout({
+        rate: config.dropout_rate,
+        name: `policy_dropout_${i}`
       }).apply(dense) as tf.SymbolicTensor;
-      
+
       // Batch normalization
       const batchNorm = tf.layers.batchNormalization({
         name: `policy_batch_norm_${i}`
       }).apply(dropout) as tf.SymbolicTensor;
-      
+
       // Residual connection (if dimensions match)
-      if (i > 0 && config.hidden_layers[i] === config.hidden_layers[i-1]) {
+      if (i > 0 && config.hidden_layers[i] === config.hidden_layers[i - 1]) {
         x = tf.layers.add({ name: `policy_residual_${i}` }).apply([x, batchNorm]) as tf.SymbolicTensor;
       } else {
         x = batchNorm;
@@ -127,11 +127,11 @@ export class PolicyNetwork {
     // LSTM layer for temporal patterns
     if (config.lstm_units && config.lstm_units > 0) {
       // Reshape for LSTM (add sequence dimension)
-      const reshaped = tf.layers.reshape({ 
-        targetShape: [1, config.hidden_layers[config.hidden_layers.length - 1]], 
-        name: 'policy_lstm_reshape' 
+      const reshaped = tf.layers.reshape({
+        targetShape: [1, config.hidden_layers[config.hidden_layers.length - 1]],
+        name: 'policy_lstm_reshape'
       }).apply(x) as tf.SymbolicTensor;
-      
+
       x = tf.layers.lstm({
         units: config.lstm_units,
         returnSequences: false,
@@ -162,8 +162,8 @@ export class PolicyNetwork {
       }).apply(x) as tf.SymbolicTensor;
 
       // Combine means and stds
-      const policyOutput = tf.layers.concatenate({ 
-        name: 'policy_output' 
+      const policyOutput = tf.layers.concatenate({
+        name: 'policy_output'
       }).apply([actionMeans, actionStds]) as tf.SymbolicTensor;
 
       this.policyNetwork = tf.model({
@@ -195,28 +195,28 @@ export class PolicyNetwork {
     this.logger.info('Creating Value Network (Critic)...');
 
     const inputs = tf.input({ shape: [FEATURE_DIMENSIONS], name: 'state_input' });
-    
+
     // Input normalization
     let x = tf.layers.batchNormalization({ name: 'value_input_norm' }).apply(inputs) as tf.SymbolicTensor;
-    
+
     // Hidden layers
     for (let i = 0; i < config.hidden_layers.length; i++) {
       const units = config.hidden_layers[i];
-      
+
       x = tf.layers.dense({
         units: units,
         activation: config.activation,
         kernelInitializer: 'glorotUniform',
         name: `value_dense_${i}`
       }).apply(x) as tf.SymbolicTensor;
-      
+
       if (config.dropout_rate > 0) {
-        x = tf.layers.dropout({ 
-          rate: config.dropout_rate, 
-          name: `value_dropout_${i}` 
+        x = tf.layers.dropout({
+          rate: config.dropout_rate,
+          name: `value_dropout_${i}`
         }).apply(x) as tf.SymbolicTensor;
       }
-      
+
       if (config.batch_normalization) {
         x = tf.layers.batchNormalization({
           name: `value_batch_norm_${i}`
@@ -295,8 +295,8 @@ export class PolicyNetwork {
    * Create attention layer
    */
   private createAttentionLayer(
-    input: tf.SymbolicTensor, 
-    numHeads: number, 
+    input: tf.SymbolicTensor,
+    numHeads: number,
     name: string
   ): tf.SymbolicTensor {
     // Simplified multi-head attention (TensorFlow.js doesn't have built-in transformer layers)
@@ -304,7 +304,7 @@ export class PolicyNetwork {
     const headDim = Math.floor(dim / numHeads);
 
     let attention = input;
-    
+
     // Query, Key, Value projections
     const query = tf.layers.dense({
       units: dim,
@@ -337,11 +337,11 @@ export class PolicyNetwork {
     }
 
     const stateTensor = tf.tensor2d([Array.from(state)]);
-    
+
     try {
       const prediction = this.policyNetwork.predict(stateTensor) as tf.Tensor;
       const actionData = await prediction.data();
-      
+
       // Convert to ActionVector
       const action = new Float32Array(ACTION_DIMENSIONS);
       for (let i = 0; i < ACTION_DIMENSIONS; i++) {
@@ -349,7 +349,7 @@ export class PolicyNetwork {
       }
 
       return action;
-      
+
     } finally {
       stateTensor.dispose();
     }
@@ -364,12 +364,12 @@ export class PolicyNetwork {
     }
 
     const stateTensor = tf.tensor2d([Array.from(state)]);
-    
+
     try {
       const prediction = this.valueNetwork.predict(stateTensor) as tf.Tensor;
       const valueData = await prediction.data();
       return valueData[0];
-      
+
     } finally {
       stateTensor.dispose();
     }
@@ -418,7 +418,7 @@ export class PolicyNetwork {
 
     await this.policyNetwork!.save(`file://${basePath}/policy_network`);
     await this.valueNetwork!.save(`file://${basePath}/value_network`);
-    
+
     this.logger.info(`Networks saved to ${basePath}`);
   }
 
@@ -429,13 +429,13 @@ export class PolicyNetwork {
     try {
       this.policyNetwork = await tf.loadLayersModel(`file://${basePath}/policy_network/model.json`) as any;
       this.valueNetwork = await tf.loadLayersModel(`file://${basePath}/value_network/model.json`) as any;
-      
+
       // Reinitialize target networks
       await this.initializeTargetNetworks();
-      
+
       this.isInitialized = true;
       this.logger.info(`Networks loaded from ${basePath}`);
-      
+
     } catch (error) {
       this.logger.error('Failed to load networks:', error);
       throw error;
@@ -449,7 +449,7 @@ export class PolicyNetwork {
     if (this.policyNetwork && this.valueNetwork) {
       const policyParams = this.policyNetwork.countParams();
       const valueParams = this.valueNetwork.countParams();
-      
+
       this.logger.info(`Policy Network: ${policyParams} parameters`);
       this.logger.info(`Value Network: ${valueParams} parameters`);
       this.logger.info(`Total Parameters: ${policyParams + valueParams}`);
@@ -466,7 +466,7 @@ export class PolicyNetwork {
     this.targetValueNetwork?.dispose();
     this.policyOptimizer?.dispose();
     this.valueOptimizer?.dispose();
-    
+
     this.isInitialized = false;
     this.logger.info('Neural networks disposed');
   }
@@ -474,10 +474,10 @@ export class PolicyNetwork {
   /**
    * Get current networks (for training)
    */
-  getNetworks(): { 
-    policy: any; 
-    value: any; 
-    targetPolicy: any; 
+  getNetworks(): {
+    policy: any;
+    value: any;
+    targetPolicy: any;
     targetValue: any;
     policyOptimizer: tf.Optimizer;
     valueOptimizer: tf.Optimizer;

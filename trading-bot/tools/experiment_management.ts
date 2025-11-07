@@ -23,22 +23,22 @@ export class ExperimentManager {
     static openDashboard(): void {
         // Upewnij się, że dashboard został zaktualizowany
         experimentTracker.updateDashboard();
-        
+
         // Pobierz ścieżkę do pliku dashboard
         const dashboardPath = path.join('experiments', 'dashboard', 'index.html');
-        
+
         // Sprawdź czy plik istnieje
         if (!fs.existsSync(dashboardPath)) {
             console.error(`[ExperimentManager] Dashboard nie istnieje: ${dashboardPath}`);
             return;
         }
-        
+
         // Otwórz dashboard w przeglądarce
         const absolutePath = path.resolve(dashboardPath);
         open(absolutePath);
         console.log(`[ExperimentManager] Otwarto dashboard: ${absolutePath}`);
     }
-    
+
     /**
      * Otwiera raport konkretnego eksperymentu
      */
@@ -49,15 +49,15 @@ export class ExperimentManager {
             console.error(`[ExperimentManager] Eksperyment o ID ${experimentId} nie istnieje`);
             return;
         }
-        
+
         // Wygeneruj/zaktualizuj raport
         const reportPath = experimentTracker.generateExperimentReport(experimentId);
-        
+
         // Otwórz raport w przeglądarce
         open(reportPath);
         console.log(`[ExperimentManager] Otwarto raport eksperymentu: ${reportPath}`);
     }
-    
+
     /**
      * Porównuje wybrane eksperymenty i otwiera raport porównawczy
      */
@@ -66,43 +66,43 @@ export class ExperimentManager {
             console.error('[ExperimentManager] Do porównania potrzebne są co najmniej 2 eksperymenty');
             return;
         }
-        
+
         // Sprawdź czy wszystkie eksperymenty istnieją
         const experiments = experimentIds.map(id => experimentTracker.getExperiment(id))
             .filter(exp => exp !== null) as ExperimentMetadata[];
-            
+
         if (experiments.length !== experimentIds.length) {
             console.error('[ExperimentManager] Niektóre z podanych ID eksperymentów nie istnieją');
             return;
         }
-        
+
         // Pobierz dane porównawcze
         const comparison = experimentTracker.compareExperiments(experimentIds);
-        
+
         // Stwórz tymczasowy plik porównawczy
         const compareDir = path.join('experiments', 'dashboard', 'compare');
         if (!fs.existsSync(compareDir)) {
             fs.mkdirSync(compareDir, { recursive: true });
         }
-        
+
         const compareFile = path.join(compareDir, `compare_${Date.now()}.html`);
-        
+
         // Generuj HTML dla porównania
         const html = ExperimentManager.generateComparisonHtml(experiments, comparison);
         fs.writeFileSync(compareFile, html);
-        
+
         // Otwórz plik porównania
         open(compareFile);
         console.log(`[ExperimentManager] Otwarto porównanie eksperymentów: ${compareFile}`);
     }
-    
+
     /**
      * Wyszukuje eksperymenty według filtrów
      */
     static findExperiments(filter: ExperimentFilter = {}): ExperimentMetadata[] {
         return experimentTracker.findExperiments(filter);
     }
-    
+
     /**
      * Generuje HTML dla raportu porównawczego
      */
@@ -114,10 +114,10 @@ export class ExperimentManager {
         const formatDate = (timestamp: number) => {
             return new Date(timestamp).toLocaleString();
         };
-        
+
         const experimentNames = experiments.map(e => e.name);
         const strategyNames = [...new Set(experiments.map(e => e.strategyName))];
-        
+
         // Przygotuj kolory dla wykresów
         const colors = [
             'rgb(54, 162, 235)', // niebieski
@@ -131,7 +131,7 @@ export class ExperimentManager {
             'rgb(139, 69, 19)',   // brązowy
             'rgb(0, 0, 128)'      // granatowy
         ];
-        
+
         return `
         <!DOCTYPE html>
         <html>
@@ -170,11 +170,11 @@ export class ExperimentManager {
                             ${experiments.map(exp => `<th>${exp.name}</th>`).join('')}
                         </tr>
                         ${Object.keys(comparison.metrics).map(metric => {
-                            // Znajdź najlepszą wartość dla metryki
-                            const values = comparison.metrics[metric].map((m: any) => m.value).filter((v: any) => v !== null);
-                            const bestValue = values.length > 0 ? Math.max(...values) : null;
-                            
-                            return `
+            // Znajdź najlepszą wartość dla metryki
+            const values = comparison.metrics[metric].map((m: any) => m.value).filter((v: any) => v !== null);
+            const bestValue = values.length > 0 ? Math.max(...values) : null;
+
+            return `
                             <tr>
                                 <td>${metric}</td>
                                 ${comparison.metrics[metric].map((m: any) => `
@@ -184,7 +184,7 @@ export class ExperimentManager {
                                 `).join('')}
                             </tr>
                             `;
-                        }).join('')}
+        }).join('')}
                     </table>
                     
                     ${Object.keys(comparison.metrics).map((metric, index) => `
