@@ -512,10 +512,32 @@ export class DeepRLManager {
    */
   async loadModels(): Promise<void> {
     try {
+      // 🔧 FIX: Add null check and retry logic
+      if (!this.agent) {
+        this.logger.warn('⚠️ Agent not initialized, skipping model load');
+        return;
+      }
+
+      if (!this.config.modelPath) {
+        this.logger.info('ℹ️ No model path configured, using fresh models');
+        return;
+      }
+
+      // Check if model files exist before trying to load
+      const fs = require('fs');
+      const path = require('path');
+      const modelExists = fs.existsSync(path.join(this.config.modelPath, 'policy'));
+      
+      if (!modelExists) {
+        this.logger.info(`ℹ️ No saved models found at ${this.config.modelPath}, using fresh models`);
+        return;
+      }
+
       await this.agent.loadModels(this.config.modelPath);
       this.logger.info(`📖 Deep RL models loaded from ${this.config.modelPath}`);
-    } catch (error) {
-      this.logger.error(`Failed to load models: ${error}`);
+    } catch (error: any) {
+      // 🔧 FIX: Don't throw, just warn and continue with fresh models
+      this.logger.warn(`⚠️ Could not load models (using fresh models): ${error?.message || error}`);
     }
   }
 

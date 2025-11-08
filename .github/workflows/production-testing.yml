@@ -2,219 +2,220 @@
 name: 2-Hour Bot Stress Test
 
 on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - 'trading-bot/**/*.ts'
-      - 'autonomous_trading_bot_final.ts'
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
-    inputs:
-      duration_minutes:
-        description: 'Test duration in minutes'
-        required: false
-        default: '120'
-      trading_mode:
-        description: 'Trading mode (simulation/backtest)'
-        required: false
-        default: 'simulation'
+    push:
+        branches: [main, master]
+        paths:
+            - "trading-bot/**/*.ts"
+            - "autonomous_trading_bot_final.ts"
+    pull_request:
+        branches: [main, master]
+    workflow_dispatch:
+        inputs:
+            duration_minutes:
+                description: "Test duration in minutes"
+                required: false
+                default: "120"
+            trading_mode:
+                description: "Trading mode (simulation/backtest)"
+                required: false
+                default: "simulation"
 
 jobs:
-  bot-stress-test:
-    name: 2-Hour Bot Live Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 150  # 2.5h to allow for setup and cleanup
-    
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-    
-    - name: 🔧 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-    
-    - name: 📦 Install dependencies
-      run: npm ci
-    
-    - name: 🏗️ Build project
-      run: npm run build || echo "Build step skipped"
-    
-    - name: ⚙️ Configure environment
-      run: |
-        echo "MODE=${{ github.event.inputs.trading_mode || 'simulation' }}" > .env
-        echo "ENABLE_ML=true" >> .env
-        echo "ENABLE_REAL_TRADING=false" >> .env
-        echo "TRADING_INTERVAL=30000" >> .env
-        echo "LOG_LEVEL=info" >> .env
-        echo "TEST_DURATION_MINUTES=${{ github.event.inputs.duration_minutes || '120' }}" >> .env
-        cat .env
-    
-    - name: � Start Bot (2-hour test)
-      id: bot_run
-      run: |
-        echo "🤖 Starting autonomous trading bot for 2-hour stress test..."
-        echo "📊 Mode: ${{ github.event.inputs.trading_mode || 'simulation' }}"
-        echo "⏱️ Duration: ${{ github.event.inputs.duration_minutes || '120' }} minutes"
-        echo ""
-        
-        # Create logs directory
-        mkdir -p logs
-        
-        # Start bot with timeout
-        timeout ${{ github.event.inputs.duration_minutes || '120' }}m \
-          npm exec ts-node trading-bot/autonomous_trading_bot_final.ts \
-          > logs/bot_output.log 2>&1 || true
-        
-        echo "✅ Bot test completed"
-      continue-on-error: true
-    
-    - name: � Analyze Bot Performance
-      if: always()
-      run: |
-        echo "╔════════════════════════════════════════╗"
-        echo "║   2-HOUR BOT PERFORMANCE ANALYSIS      ║"
-        echo "╚════════════════════════════════════════╝"
-        echo ""
-        
-        if [ -f logs/bot_output.log ]; then
-          echo "� Total log lines: $(wc -l < logs/bot_output.log)"
-          echo ""
-          
-          echo "=== TRADING CYCLES COMPLETED ==="
-          grep -c "executeTradingCycle" logs/bot_output.log || echo "0"
-          echo ""
-          
-          echo "=== ORDERS PLACED ==="
-          grep -c "Order placed" logs/bot_output.log || echo "0"
-          echo ""
-          
-          echo "=== ML PREDICTIONS ==="
-          grep -c "ML prediction" logs/bot_output.log || echo "0"
-          echo ""
-          
-          echo "=== ERRORS ==="
-          grep -c "Error" logs/bot_output.log || echo "0"
-          echo ""
-          
-          echo "=== WARNINGS ==="
-          grep -c "Warning" logs/bot_output.log || echo "0"
-          echo ""
-          
-          echo "=== LAST 50 LINES OF OUTPUT ==="
-          tail -50 logs/bot_output.log
-        else
-          echo "❌ No log file found"
-        fi
-    
-    - name: � Extract Trading Metrics
-      if: always()
-      run: |
-        echo "╔════════════════════════════════════════╗"
-        echo "║      TRADING METRICS SUMMARY           ║"
-        echo "╚════════════════════════════════════════╝"
-        
-        if [ -f logs/bot_output.log ]; then
-          echo ""
-          echo "🎯 PERFORMANCE METRICS:"
-          grep -i "portfolio" logs/bot_output.log | tail -10 || echo "No portfolio data"
-          echo ""
-          
-          echo "💰 PnL UPDATES:"
-          grep -i "pnl" logs/bot_output.log | tail -10 || echo "No PnL data"
-          echo ""
-          
-          echo "⚠️ RISK EVENTS:"
-          grep -i "risk\|drawdown\|circuit" logs/bot_output.log | tail -10 || echo "No risk events"
-          echo ""
-          
-          echo "🤖 ML CONFIDENCE:"
-          grep -i "confidence" logs/bot_output.log | tail -10 || echo "No ML confidence data"
-        fi
-    
-    - name: 🧪 Health Check Verification
-      if: always()
-      run: |
-        echo "╔════════════════════════════════════════╗"
-        echo "║        SYSTEM HEALTH CHECK             ║"
-        echo "╚════════════════════════════════════════╝"
-        
-        if [ -f logs/bot_output.log ]; then
-          echo ""
-          echo "✅ Successful operations:"
-          grep -c "success\|Success\|completed\|Completed" logs/bot_output.log || echo "0"
-          echo ""
-          
-          echo "❌ Failed operations:"
-          grep -c "failed\|Failed\|error\|Error" logs/bot_output.log || echo "0"
-          echo ""
-          
-          echo "⚡ Performance issues:"
-          grep -c "slow\|timeout\|delay" logs/bot_output.log || echo "0"
-        fi
-    
-    - name: � Upload Bot Logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: bot-logs-${{ github.run_number }}
-        path: logs/
-        retention-days: 30
-    
-    - name: � Generate Test Report
-      if: always()
-      run: |
-        cat > test_report.md << 'EOF'
-        # 🤖 2-Hour Bot Stress Test Report
-        
-        **Run ID:** ${{ github.run_number }}
-        **Branch:** ${{ github.ref_name }}
-        **Duration:** ${{ github.event.inputs.duration_minutes || '120' }} minutes
-        **Mode:** ${{ github.event.inputs.trading_mode || 'simulation' }}
-        **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        
-        ## � Summary
-        
-        ```
-        Total Cycles: $(grep -c "executeTradingCycle" logs/bot_output.log 2>/dev/null || echo "N/A")
-        Orders Placed: $(grep -c "Order placed" logs/bot_output.log 2>/dev/null || echo "N/A")
-        ML Predictions: $(grep -c "ML prediction" logs/bot_output.log 2>/dev/null || echo "N/A")
-        Errors: $(grep -c "Error" logs/bot_output.log 2>/dev/null || echo "N/A")
-        Warnings: $(grep -c "Warning" logs/bot_output.log 2>/dev/null || echo "N/A")
-        ```
-        
-        ## ✅ Test Status
-        
-        - Bot started successfully
-        - Ran for configured duration
-        - Logs captured and uploaded
-        - See artifacts for full details
-        
-        EOF
-        
-        cat test_report.md
-    
-    - name: � Upload Test Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-report-${{ github.run_number }}
-        path: test_report.md
-        retention-days: 30
-    
-    - name: 🏁 Final Status
-      if: always()
-      run: |
-        echo ""
-        echo "╔════════════════════════════════════════╗"
-        echo "║    2-HOUR BOT TEST COMPLETED ✅        ║"
-        echo "╚════════════════════════════════════════╝"
-        echo ""
-        echo "📦 Artifacts uploaded:"
-        echo "   - Bot logs (logs/)"
-        echo "   - Test report (test_report.md)"
-        echo ""
-        echo "✨ Check the Actions tab for full results"
+    bot-stress-test:
+        name: 2-Hour Bot Live Test
+        runs-on: ubuntu-latest
+        timeout-minutes: 150 # 2.5h to allow for setup and cleanup
 
+        steps:
+            - name: 📥 Checkout code
+              uses: actions/checkout@v4
+
+            - name: 🔧 Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20.x"
+                  cache: "npm"
+
+            - name: 📦 Install dependencies
+              run: npm ci
+
+            - name: 🏗️ Build project
+              run: npm run build || echo "Build step skipped"
+
+            - name: ⚙️ Configure environment
+              run: |
+                  echo "MODE=${{ github.event.inputs.trading_mode || 'simulation' }}" > .env
+                  echo "ENABLE_ML=true" >> .env
+                  echo "ENABLE_REAL_TRADING=false" >> .env
+                  echo "SKIP_HEALTH_SERVER=true" >> .env
+                  echo "REDIS_ENABLED=false" >> .env
+                  echo "TRADING_INTERVAL=30000" >> .env
+                  echo "LOG_LEVEL=info" >> .env
+                  echo "TEST_DURATION_MINUTES=${{ github.event.inputs.duration_minutes || '120' }}" >> .env
+                  cat .env
+
+            - name: � Start Bot (2-hour test)
+              id: bot_run
+              run: |
+                  echo "🤖 Starting autonomous trading bot for 2-hour stress test..."
+                  echo "📊 Mode: ${{ github.event.inputs.trading_mode || 'simulation' }}"
+                  echo "⏱️ Duration: ${{ github.event.inputs.duration_minutes || '120' }} minutes"
+                  echo ""
+
+                  # Create logs directory
+                  mkdir -p logs
+
+                  # Start bot with timeout
+                  timeout ${{ github.event.inputs.duration_minutes || '120' }}m \
+                    npm exec ts-node trading-bot/autonomous_trading_bot_final.ts \
+                    > logs/bot_output.log 2>&1 || true
+
+                  echo "✅ Bot test completed"
+              continue-on-error: true
+
+            - name: � Analyze Bot Performance
+              if: always()
+              run: |
+                  echo "╔════════════════════════════════════════╗"
+                  echo "║   2-HOUR BOT PERFORMANCE ANALYSIS      ║"
+                  echo "╚════════════════════════════════════════╝"
+                  echo ""
+
+                  if [ -f logs/bot_output.log ]; then
+                    echo "� Total log lines: $(wc -l < logs/bot_output.log)"
+                    echo ""
+                    
+                    echo "=== TRADING CYCLES COMPLETED ==="
+                    grep -c "executeTradingCycle" logs/bot_output.log || echo "0"
+                    echo ""
+                    
+                    echo "=== ORDERS PLACED ==="
+                    grep -c "Order placed" logs/bot_output.log || echo "0"
+                    echo ""
+                    
+                    echo "=== ML PREDICTIONS ==="
+                    grep -c "ML prediction" logs/bot_output.log || echo "0"
+                    echo ""
+                    
+                    echo "=== ERRORS ==="
+                    grep -c "Error" logs/bot_output.log || echo "0"
+                    echo ""
+                    
+                    echo "=== WARNINGS ==="
+                    grep -c "Warning" logs/bot_output.log || echo "0"
+                    echo ""
+                    
+                    echo "=== LAST 50 LINES OF OUTPUT ==="
+                    tail -50 logs/bot_output.log
+                  else
+                    echo "❌ No log file found"
+                  fi
+
+            - name: � Extract Trading Metrics
+              if: always()
+              run: |
+                  echo "╔════════════════════════════════════════╗"
+                  echo "║      TRADING METRICS SUMMARY           ║"
+                  echo "╚════════════════════════════════════════╝"
+
+                  if [ -f logs/bot_output.log ]; then
+                    echo ""
+                    echo "🎯 PERFORMANCE METRICS:"
+                    grep -i "portfolio" logs/bot_output.log | tail -10 || echo "No portfolio data"
+                    echo ""
+                    
+                    echo "💰 PnL UPDATES:"
+                    grep -i "pnl" logs/bot_output.log | tail -10 || echo "No PnL data"
+                    echo ""
+                    
+                    echo "⚠️ RISK EVENTS:"
+                    grep -i "risk\|drawdown\|circuit" logs/bot_output.log | tail -10 || echo "No risk events"
+                    echo ""
+                    
+                    echo "🤖 ML CONFIDENCE:"
+                    grep -i "confidence" logs/bot_output.log | tail -10 || echo "No ML confidence data"
+                  fi
+
+            - name: 🧪 Health Check Verification
+              if: always()
+              run: |
+                  echo "╔════════════════════════════════════════╗"
+                  echo "║        SYSTEM HEALTH CHECK             ║"
+                  echo "╚════════════════════════════════════════╝"
+
+                  if [ -f logs/bot_output.log ]; then
+                    echo ""
+                    echo "✅ Successful operations:"
+                    grep -c "success\|Success\|completed\|Completed" logs/bot_output.log || echo "0"
+                    echo ""
+                    
+                    echo "❌ Failed operations:"
+                    grep -c "failed\|Failed\|error\|Error" logs/bot_output.log || echo "0"
+                    echo ""
+                    
+                    echo "⚡ Performance issues:"
+                    grep -c "slow\|timeout\|delay" logs/bot_output.log || echo "0"
+                  fi
+
+            - name: � Upload Bot Logs
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: bot-logs-${{ github.run_number }}
+                  path: logs/
+                  retention-days: 30
+
+            - name: � Generate Test Report
+              if: always()
+              run: |
+                  cat > test_report.md << 'EOF'
+                  # 🤖 2-Hour Bot Stress Test Report
+
+                  **Run ID:** ${{ github.run_number }}
+                  **Branch:** ${{ github.ref_name }}
+                  **Duration:** ${{ github.event.inputs.duration_minutes || '120' }} minutes
+                  **Mode:** ${{ github.event.inputs.trading_mode || 'simulation' }}
+                  **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+                  ## � Summary
+
+                  ```
+                  Total Cycles: $(grep -c "executeTradingCycle" logs/bot_output.log 2>/dev/null || echo "N/A")
+                  Orders Placed: $(grep -c "Order placed" logs/bot_output.log 2>/dev/null || echo "N/A")
+                  ML Predictions: $(grep -c "ML prediction" logs/bot_output.log 2>/dev/null || echo "N/A")
+                  Errors: $(grep -c "Error" logs/bot_output.log 2>/dev/null || echo "N/A")
+                  Warnings: $(grep -c "Warning" logs/bot_output.log 2>/dev/null || echo "N/A")
+                  ```
+
+                  ## ✅ Test Status
+
+                  - Bot started successfully
+                  - Ran for configured duration
+                  - Logs captured and uploaded
+                  - See artifacts for full details
+
+                  EOF
+
+                  cat test_report.md
+
+            - name: � Upload Test Report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-report-${{ github.run_number }}
+                  path: test_report.md
+                  retention-days: 30
+
+            - name: 🏁 Final Status
+              if: always()
+              run: |
+                  echo ""
+                  echo "╔════════════════════════════════════════╗"
+                  echo "║    2-HOUR BOT TEST COMPLETED ✅        ║"
+                  echo "╚════════════════════════════════════════╝"
+                  echo ""
+                  echo "📦 Artifacts uploaded:"
+                  echo "   - Bot logs (logs/)"
+                  echo "   - Test report (test_report.md)"
+                  echo ""
+                  echo "✨ Check the Actions tab for full results"

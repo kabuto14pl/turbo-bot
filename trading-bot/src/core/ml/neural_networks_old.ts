@@ -427,6 +427,18 @@ export class PolicyNetwork {
    */
   async loadNetworks(basePath: string): Promise<void> {
     try {
+      // 🔧 FIX: Add file existence checks
+      const fs = require('fs');
+      const path = require('path');
+      
+      const policyPath = path.join(basePath, 'policy_network', 'model.json');
+      const valuePath = path.join(basePath, 'value_network', 'model.json');
+      
+      if (!fs.existsSync(policyPath) || !fs.existsSync(valuePath)) {
+        this.logger.warn(`⚠️ Model files not found at ${basePath}, skipping load`);
+        return;
+      }
+
       this.policyNetwork = await tf.loadLayersModel(`file://${basePath}/policy_network/model.json`) as any;
       this.valueNetwork = await tf.loadLayersModel(`file://${basePath}/value_network/model.json`) as any;
 
@@ -436,9 +448,10 @@ export class PolicyNetwork {
       this.isInitialized = true;
       this.logger.info(`Networks loaded from ${basePath}`);
 
-    } catch (error) {
-      this.logger.error('Failed to load networks:', error);
-      throw error;
+    } catch (error: any) {
+      // 🔧 FIX: Warn instead of error, continue with fresh networks
+      this.logger.warn(`⚠️ Failed to load networks (using fresh networks): ${error?.message || error}`);
+      // Don't throw - bot can continue with freshly initialized networks
     }
   }
 
