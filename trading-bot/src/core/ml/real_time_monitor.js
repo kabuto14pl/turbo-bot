@@ -383,7 +383,11 @@ ${alert.suggested_actions.map(action => `• ${action}`).join('\n')}
             overall_status,
             component_statuses,
             active_alerts,
-            performance_summary,
+            performance_summary: {
+                ...performance_summary,
+                memory_usage: performance_summary.memory_usage ?? 0,
+                cpu_usage: performance_summary.cpu_usage ?? 0
+            },
             last_updated: Date.now()
         };
     }

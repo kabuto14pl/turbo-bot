@@ -18,10 +18,6 @@ process.env.OKX_PASSPHRASE = 'test_passphrase';
 process.env.OKX_SANDBOX = 'true';
 // Global test timeout
 jest.setTimeout(30000);
-// Mock UUID to avoid ES modules issues
-jest.mock('uuid', () => ({
-    v4: () => 'test-uuid-1234-5678-9012'
-}));
 // Mock console methods in tests
 global.console = {
     ...console,

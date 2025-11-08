@@ -57,8 +57,8 @@ class PerformanceOptimizer {
         this.mixed_precision_enabled = false;
         this.config = {
             memory_growth: true,
-            garbage_collection_threshold: 0.8,
-            tensor_cleanup_interval: 1000,
+            garbage_collection_threshold: 0.90, // Increased from 0.8 to 0.90 (90% memory usage)
+            tensor_cleanup_interval: 60000, // Increased from 1000ms to 60000ms (60 seconds)
             gpu_enabled: true,
             mixed_precision: false,
             xla_enabled: false,
@@ -158,12 +158,16 @@ class PerformanceOptimizer {
      */
     monitorMemoryUsage() {
         const memory_info = tf.memory();
-        const memory_usage_ratio = memory_info.numBytes / (memory_info.numBytes + 1000000 || 1); // Use baseline memory estimate
+        // FIX: Proper memory usage calculation
+        // Calculate actual memory usage ratio based on numBytes
+        const process_memory_mb = process.memoryUsage().heapUsed / 1024 / 1024;
+        const memory_limit_mb = this.config.memory_limit_mb || 512; // Default 512MB limit
+        const memory_usage_ratio = process_memory_mb / memory_limit_mb;
         if (memory_usage_ratio > this.config.garbage_collection_threshold) {
             this.triggerGarbageCollection();
         }
-        // Log memory statistics
-        if (this.config.memory_profiling) {
+        // Log memory statistics periodically (every 10th check to reduce spam)
+        if (this.config.memory_profiling && Math.random() < 0.1) {
             this.logMemoryStatistics(memory_info);
         }
     }
@@ -174,7 +178,9 @@ class PerformanceOptimizer {
         if (this.gc_threshold_reached)
             return;
         this.gc_threshold_reached = true;
-        this.logger.warn('🗑️ Memory threshold reached, triggering cleanup...');
+        // Log at INFO level instead of WARN (this is normal behavior)
+        const process_memory_mb = process.memoryUsage().heapUsed / 1024 / 1024;
+        this.logger.info(`🗑️ Memory cleanup triggered (${process_memory_mb.toFixed(2)}MB used)`);
         try {
             // Dispose tracked tensors
             this.cleanupTrackedTensors();
@@ -185,13 +191,17 @@ class PerformanceOptimizer {
                 global.gc();
             }
             const memory_after = tf.memory();
-            this.logger.info(`🗑️ Cleanup completed. Tensors: ${memory_after.numTensors}, Memory: ${(memory_after.numBytes / 1024 / 1024).toFixed(2)}MB`);
+            const process_memory_after = process.memoryUsage().heapUsed / 1024 / 1024;
+            this.logger.info(`✅ Cleanup completed. Process: ${process_memory_after.toFixed(2)}MB, Tensors: ${memory_after.numTensors}`);
         }
         catch (error) {
             this.logger.error(`❌ Garbage collection failed: ${error}`);
         }
         finally {
-            this.gc_threshold_reached = false;
+            // Add cooldown period to prevent spam (minimum 30 seconds between cleanups)
+            setTimeout(() => {
+                this.gc_threshold_reached = false;
+            }, 30000);
         }
     }
     /**
