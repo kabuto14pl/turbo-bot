@@ -1,0 +1,197 @@
+# ============================================================================
+# 🐳 DOCKER COMPOSE - AUTONOMOUS TRADING BOT
+# ============================================================================
+# Production-ready orchestration with monitoring stack
+# Services: Trading Bot, Prometheus, Grafana
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # TRADING BOT - Main Application
+  # ==========================================================================
+  trading-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: autonomous-trading-bot
+    hostname: trading-bot
+    
+    restart: unless-stopped
+    
+    # Environment configuration
+    env_file:
+      - .env
+    
+    environment:
+      # Trading mode
+      - MODE=${MODE:-simulation}
+      - ENABLE_REAL_TRADING=${ENABLE_REAL_TRADING:-false}
+      
+      # ML Configuration
+      - ENABLE_ML=${ENABLE_ML:-true}
+      - ENABLE_ENSEMBLE=${ENABLE_ENSEMBLE:-true}
+      - ENABLE_PORTFOLIO_OPT=${ENABLE_PORTFOLIO_OPT:-true}
+      
+      # Trading parameters
+      - TRADING_INTERVAL=${TRADING_INTERVAL:-30000}
+      - INITIAL_CAPITAL=${INITIAL_CAPITAL:-10000}
+      - MAX_DRAWDOWN=${MAX_DRAWDOWN:-0.15}
+      - RISK_PER_TRADE=${RISK_PER_TRADE:-0.02}
+      
+      # API Configuration
+      - API_PORT=3001
+      - PROMETHEUS_PORT=9090
+      
+      # Database
+      - DUCKDB_PATH=/app/data/analytics.duckdb
+      
+      # Timezone
+      - TZ=UTC
+    
+    # Ports
+    ports:
+      - "3001:3001"  # Health checks & API
+      - "9090:9090"  # Prometheus metrics (if enabled)
+    
+    # Volumes (persistent data)
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+      - ./reports:/app/reports
+      - ./monitoring:/app/monitoring:ro
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    
+    # Network
+    networks:
+      - trading-network
+
+  # ==========================================================================
+  # PROMETHEUS - Metrics Collection (Optional)
+  # ==========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: trading-bot-prometheus
+    hostname: prometheus
+    
+    restart: unless-stopped
+    
+    # Configuration
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus-data:/prometheus
+    
+    # Command
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    
+    # Ports
+    ports:
+      - "9091:9090"
+    
+    # Network
+    networks:
+      - trading-network
+    
+    # Depends on trading bot
+    depends_on:
+      trading-bot:
+        condition: service_healthy
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # GRAFANA - Visualization Dashboard (Optional)
+  # ==========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: trading-bot-grafana
+    hostname: grafana
+    
+    restart: unless-stopped
+    
+    # Environment
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    
+    # Volumes
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana:/etc/grafana/provisioning:ro
+    
+    # Ports
+    ports:
+      - "3000:3000"
+    
+    # Network
+    networks:
+      - trading-network
+    
+    # Depends on Prometheus
+    depends_on:
+      - prometheus
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  trading-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================================
+# VOLUMES (Persistent Data)
+# ============================================================================
+volumes:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

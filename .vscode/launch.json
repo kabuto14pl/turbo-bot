@@ -1,0 +1,214 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🚀 Launch Bot - Simulation Mode",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/trading-bot/AutonomousTradingBot.ts",
+      "env": {
+        "MODE": "simulation",
+        "ENABLE_ML": "true",
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ],
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ]
+    },
+    {
+      "name": "🧪 Launch Bot - Backtest Mode",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/trading-bot/AutonomousTradingBot.ts",
+      "env": {
+        "MODE": "backtest",
+        "ENABLE_ML": "true",
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ],
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ]
+    },
+    {
+      "name": "⚡ Launch Bot - Live Mode (PRODUCTION)",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/trading-bot/AutonomousTradingBot.ts",
+      "env": {
+        "MODE": "live",
+        "ENABLE_REAL_TRADING": "true",
+        "ENABLE_ML": "true",
+        "NODE_ENV": "production",
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ],
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ]
+    },
+    {
+      "name": "🔧 Debug Current TypeScript File",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "program": "${file}",
+      "env": {
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "🧩 Debug SystemInitializer",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/trading-bot/initialization/SystemInitializer.ts",
+      "env": {
+        "MODE": "simulation",
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "🎯 Debug TradingEngine",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/trading-bot/core/TradingEngine.ts",
+      "env": {
+        "MODE": "simulation",
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "🧠 Debug ML Integration",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/trading-bot/core/MLIntegration.ts",
+      "env": {
+        "MODE": "simulation",
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "🔗 Attach to Running Bot (PM2)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "address": "localhost",
+      "restart": false,
+      "sourceMaps": true,
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": null,
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "🔄 Full Stack Debug (Bot + Dashboard)",
+      "configurations": [
+        "🚀 Launch Bot - Simulation Mode"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "full-stack",
+        "order": 1
+      }
+    }
+  ]
+}

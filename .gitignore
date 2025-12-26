@@ -114,3 +114,34 @@ CRITICAL_BACKUP_*/
 
 # Ray tune results
 ray_results/
+# === TURBO-BOT SPECIFIC RULES ===
+# Compiled JavaScript (TypeScript output)
+*.js
+*.js.map
+
+# Exceptions - Config files
+!jest.setup.js
+!ecosystem.config.js
+!*.config.js
+!dashboard/**/*.js
+!scripts/**/*.js
+
+# Build outputs
+dist/
+build/
+out/
+
+# Enterprise compiled output
+src/**/*.js
+trading-bot/**/*.js
+!trading-bot/config/**/*.js
+
+# Keep dashboard build artifacts
+!dashboard/dist/**/*.js
+!dashboard/src/**/*.js
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+

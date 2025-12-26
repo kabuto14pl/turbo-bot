@@ -227,6 +227,7 @@ export interface NetworkConfig {
   hidden_layers: number[];
   activation: string;
   dropout_rate: number;
+  l2_regularization: number;  // 🚀 KROK 1: L2 weight decay (0.01 recommended)
   batch_normalization: boolean;
   learning_rate: number;
   optimizer: 'adam' | 'rmsprop' | 'sgd';
@@ -293,8 +294,9 @@ export interface TrainingConfig {
   distributional_rl: boolean;
   noisy_networks: boolean;
   
-  // Regularization
-  dropout_rate?: number;
+  // Regularization (🚀 FAZA 1.1: Enhanced ML Regularization)
+  dropout_rate?: number;        // Dropout 20-30% to prevent overfitting
+  l2_regularization?: number;   // L2 weight decay (0.01 recommended)
 }
 
 // =================== HYPERPARAMETER OPTIMIZATION TYPES ===================

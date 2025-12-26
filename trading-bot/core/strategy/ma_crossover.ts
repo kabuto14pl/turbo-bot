@@ -21,7 +21,7 @@ export class MACrossoverStrategy extends BaseStrategy {
             0.25,  // Domyślna waga
             {
                 name: 'MACrossover',
-                timeframes: ['m15', 'h1', 'h4'],
+                timeframes: ['m15'],  // 🚀 FAZA 1.2: Używamy tylko m15 (h1/h4 usunięte)
                 indicators: {
                     ema: {
                         periods: [9, 21, 50, 200]
@@ -53,6 +53,11 @@ export class MACrossoverStrategy extends BaseStrategy {
         const currentEma9 = m15.ema_9;
         const currentEma21 = m15.ema_21;
 
+        // 🚀 FAZA 1.2: Dodatkowe warunki dla większej aktywności
+        const strongTrend = m15.adx > 25;
+        const gapPercentage = Math.abs((currentEma9 - currentEma21) / currentEma21);
+        const significantGap = gapPercentage > 0.002;  // 0.2% gap
+
         // Sprawdź czy mamy poprzednie wartości
         if (this.previousEma9 !== null && this.previousEma21 !== null) {
             // Przecięcie EMA9 powyżej EMA21 (sygnał long)
@@ -72,8 +77,9 @@ export class MACrossoverStrategy extends BaseStrategy {
                     {
                         ema9: currentEma9,
                         ema21: currentEma21,
-                        adx: m15.adx,
-                        atr: m15.atr
+                        adx: Number(m15.adx) || 0,
+                        atr: Number(m15.atr) || 0,
+                        triggerType: 1 // crossover
                     }
                 ));
             }
@@ -94,8 +100,54 @@ export class MACrossoverStrategy extends BaseStrategy {
                     {
                         ema9: currentEma9,
                         ema21: currentEma21,
-                        adx: m15.adx,
-                        atr: m15.atr
+                        adx: Number(m15.adx) || 0,
+                        atr: Number(m15.atr) || 0,
+                        triggerType: 2 // crossunder
+                    }
+                ));
+            }
+            // 🚀 FAZA 1.2: NOWE - Trend continuation signals
+            else if (currentEma9 > currentEma21 && strongTrend && significantGap && state.positions.length === 0) {
+                const confidence = this.calculateConfidence(
+                    gapPercentage,
+                    m15.adx / 100,
+                    state.regime.volatility,
+                    state.regime.trend
+                ) * 0.65;  // Lower confidence for non-crossover
+
+                signals.push(this.createSignal(
+                    'ENTER_LONG',
+                    state.marketData.lastPrice,
+                    confidence,
+                    state,
+                    {
+                        ema9: currentEma9,
+                        ema21: currentEma21,
+                        adx: Number(m15.adx) || 0,
+                        atr: Number(m15.atr) || 0,
+                        triggerType: 3 // continuation
+                    }
+                ));
+            }
+            else if (currentEma9 < currentEma21 && strongTrend && significantGap && state.positions.length === 0) {
+                const confidence = this.calculateConfidence(
+                    gapPercentage,
+                    m15.adx / 100,
+                    state.regime.volatility,
+                    state.regime.trend
+                ) * 0.65;
+
+                signals.push(this.createSignal(
+                    'ENTER_SHORT',
+                    state.marketData.lastPrice,
+                    confidence,
+                    state,
+                    {
+                        ema9: currentEma9,
+                        ema21: currentEma21,
+                        adx: Number(m15.adx) || 0,
+                        atr: Number(m15.atr) || 0,
+                        triggerType: 4 // short continuation
                     }
                 ));
             }

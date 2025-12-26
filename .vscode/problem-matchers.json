@@ -1,0 +1,23 @@
+{
+  "problemMatcher": {
+    "$tsc-watch-custom": {
+      "owner": "typescript",
+      "applyTo": "allDocuments",
+      "fileLocation": "relative",
+      "background": {
+        "activeOnStart": true,
+        "beginsPattern": "^\\s*Starting compilation",
+        "endsPattern": "^\\s*Compilation complete|^\\s*Found \\d+ error"
+      },
+      "pattern": {
+        "regexp": "^([^\\s].*)[\\(:](\\d+)(?:,(\\d+))?[\\):]\\s+(error|warning|info)\\s+(TS\\d+)\\s*:\\s*(.*)$",
+        "file": 1,
+        "line": 2,
+        "column": 3,
+        "severity": 4,
+        "code": 5,
+        "message": 6
+      }
+    }
+  }
+}
