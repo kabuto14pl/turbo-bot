@@ -1,0 +1,326 @@
+<!-- 🖥️ [PRODUCTION-API] -->
+<!-- Production web interface component -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Button Test Dashboard</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #1a1a1a; 
+            color: white;
+        }
+        .status { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border-radius: 5px; 
+        }
+        .success { background: #004d00; }
+        .error { background: #4d0000; }
+        .info { background: #003d4d; }
+        button { 
+            margin: 5px; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            color: white;
+        }
+        .start-btn { background: #00aa00; }
+        .stop-btn { background: #aa0000; }
+        .strategy-btn { background: #0066aa; }
+        .export-btn { background: #aa6600; }
+        .risk-btn { background: #666666; }
+        .risk-selected { background: #aa00aa; }
+        .slider { width: 200px; margin: 10px; }
+        #log { 
+            height: 200px; 
+            overflow-y: scroll; 
+            background: #000; 
+            border: 1px solid #333; 
+            padding: 10px; 
+            margin: 10px 0;
+        }
+        .section { 
+            border: 1px solid #333; 
+            margin: 10px 0; 
+            padding: 15px; 
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 Trading Bot Dashboard - Button Test</h1>
+    
+    <div class="section">
+        <h2>API Status</h2>
+        <div id="api-status" class="status info">Checking...</div>
+        <button onclick="checkAPI()">🔄 Check API</button>
+    </div>
+    
+    <div class="section">
+        <h2>🤖 Bot Control</h2>
+        <div id="bot-status" class="status info">Status: UNKNOWN</div>
+        <button id="start-btn" class="start-btn" onclick="startBot()">▶️ START Bot</button>
+        <button id="stop-btn" class="stop-btn" onclick="stopBot()">⏹️ STOP Bot</button>
+    </div>
+    
+    <div class="section">
+        <h2>🎯 Strategy Control</h2>
+        <div id="strategy-status" class="status info">Current: Unknown</div>
+        <button class="strategy-btn" onclick="switchStrategy('rsi-turbo', 'RSITurbo')">🎯 RSITurbo</button>
+        <button class="strategy-btn" onclick="switchStrategy('momentum-scalping', 'Momentum Scalping')">⚡ Momentum</button>
+        <button class="strategy-btn" onclick="switchStrategy('supertrend', 'SuperTrend')">📈 SuperTrend</button>
+    </div>
+    
+    <div class="section">
+        <h2>⚠️ Alert Settings</h2>
+        <div>
+            <label>Drawdown: <span id="drawdown-val">5</span>%</label><br>
+            <input type="range" id="drawdown-slider" class="slider" min="3" max="10" step="0.5" value="5" oninput="updateDrawdown(this.value)">
+        </div>
+        <div>
+            <label>Profit Target: <span id="profit-val">15</span>%</label><br>
+            <input type="range" id="profit-slider" class="slider" min="10" max="30" step="1" value="15" oninput="updateProfit(this.value)">
+        </div>
+        <div>
+            <label>Risk Level:</label><br>
+            <button id="risk-low" class="risk-btn risk-selected" onclick="setRisk('LOW')">LOW</button>
+            <button id="risk-med" class="risk-btn" onclick="setRisk('MEDIUM')">MEDIUM</button>
+            <button id="risk-high" class="risk-btn" onclick="setRisk('HIGH')">HIGH</button>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>📊 Export Functions</h2>
+        <button class="export-btn" onclick="exportData('csv')">📄 Export CSV</button>
+        <button class="export-btn" onclick="exportData('json')">📄 Export JSON</button>
+    </div>
+    
+    <div class="section">
+        <h2>📝 Activity Log</h2>
+        <div id="log"></div>
+        <button onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:9093/api';
+        
+        function log(message, type = 'info') {
+            const now = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.innerHTML = `<span style="color: ${type === 'success' ? '#00ff00' : type === 'error' ? '#ff0000' : '#00ffff'}">[${now}] ${message}</span>`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        async function apiCall(endpoint, options = {}) {
+            try {
+                log(`🔗 API Call: ${options.method || 'GET'} ${endpoint}`);
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    headers: { 'Content-Type': 'application/json' },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                log(`✅ API Success: ${endpoint}`, 'success');
+                return data;
+            } catch (error) {
+                log(`❌ API Error: ${endpoint} - ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        async function checkAPI() {
+            try {
+                const result = await apiCall('/health');
+                document.getElementById('api-status').innerHTML = `✅ API Connected - ${result.message}`;
+                document.getElementById('api-status').className = 'status success';
+            } catch (error) {
+                document.getElementById('api-status').innerHTML = `❌ API Disconnected - ${error.message}`;
+                document.getElementById('api-status').className = 'status error';
+            }
+        }
+        
+        async function startBot() {
+            log('🤖 START BOT clicked!');
+            const btn = document.getElementById('start-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Starting...';
+            
+            try {
+                const result = await apiCall('/bot/start', { method: 'POST' });
+                if (result.success) {
+                    log('✅ Bot started successfully!', 'success');
+                    document.getElementById('bot-status').innerHTML = '✅ Status: RUNNING';
+                    document.getElementById('bot-status').className = 'status success';
+                } else {
+                    log('❌ Failed to start bot', 'error');
+                }
+            } catch (error) {
+                log(`❌ Start bot error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '▶️ START Bot';
+            }
+        }
+        
+        async function stopBot() {
+            log('🛑 STOP BOT clicked!');
+            const btn = document.getElementById('stop-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Stopping...';
+            
+            try {
+                const result = await apiCall('/bot/stop', { method: 'POST' });
+                if (result.success) {
+                    log('✅ Bot stopped successfully!', 'success');
+                    document.getElementById('bot-status').innerHTML = '⏹️ Status: STOPPED';
+                    document.getElementById('bot-status').className = 'status error';
+                } else {
+                    log('❌ Failed to stop bot', 'error');
+                }
+            } catch (error) {
+                log(`❌ Stop bot error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '⏹️ STOP Bot';
+            }
+        }
+        
+        async function switchStrategy(strategyId, strategyName) {
+            log(`🎯 Switch to ${strategyName} clicked!`);
+            
+            try {
+                const result = await apiCall('/strategies/switch', {
+                    method: 'POST',
+                    body: JSON.stringify({ strategyId, strategyName })
+                });
+                
+                if (result.success) {
+                    log(`✅ Switched to ${strategyName}!`, 'success');
+                    document.getElementById('strategy-status').innerHTML = `✅ Current: ${strategyName}`;
+                    document.getElementById('strategy-status').className = 'status success';
+                } else {
+                    log(`❌ Failed to switch to ${strategyName}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Strategy switch error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function updateDrawdown(value) {
+            log(`📉 Drawdown slider moved to ${value}%`);
+            document.getElementById('drawdown-val').textContent = value;
+            
+            try {
+                const result = await apiCall('/alerts/update', {
+                    method: 'POST',
+                    body: JSON.stringify({ drawdownThreshold: parseFloat(value) })
+                });
+                
+                if (result.success) {
+                    log(`✅ Drawdown set to ${value}%`, 'success');
+                } else {
+                    log('❌ Failed to update drawdown', 'error');
+                }
+            } catch (error) {
+                log(`❌ Drawdown update error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function updateProfit(value) {
+            log(`📈 Profit target slider moved to ${value}%`);
+            document.getElementById('profit-val').textContent = value;
+            
+            try {
+                const result = await apiCall('/alerts/update', {
+                    method: 'POST',
+                    body: JSON.stringify({ profitTarget: parseFloat(value) })
+                });
+                
+                if (result.success) {
+                    log(`✅ Profit target set to ${value}%`, 'success');
+                } else {
+                    log('❌ Failed to update profit target', 'error');
+                }
+            } catch (error) {
+                log(`❌ Profit target update error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function setRisk(level) {
+            log(`⚠️ Risk level ${level} clicked!`);
+            
+            // Update UI
+            document.querySelectorAll('.risk-btn').forEach(btn => {
+                btn.className = 'risk-btn';
+            });
+            document.getElementById(`risk-${level.toLowerCase()}`).className = 'risk-btn risk-selected';
+            
+            try {
+                const result = await apiCall('/alerts/update', {
+                    method: 'POST',
+                    body: JSON.stringify({ riskLevel: level })
+                });
+                
+                if (result.success) {
+                    log(`✅ Risk level set to ${level}`, 'success');
+                } else {
+                    log('❌ Failed to update risk level', 'error');
+                }
+            } catch (error) {
+                log(`❌ Risk level update error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function exportData(format) {
+            log(`📊 Export ${format.toUpperCase()} clicked!`);
+            
+            try {
+                const response = await fetch(`${API_BASE}/export/${format}`, {
+                    headers: { 'Accept': 'application/octet-stream' }
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `trading_data.${format}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    log(`✅ ${format.toUpperCase()} export completed!`, 'success');
+                } else {
+                    log(`❌ Export ${format.toUpperCase()} failed`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Export ${format} error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Dashboard loaded!');
+            checkAPI();
+            
+            // Auto-check API every 10 seconds
+            setInterval(checkAPI, 10000);
+        });
+    </script>
+</body>
+</html>
