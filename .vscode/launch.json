@@ -1,0 +1,413 @@
+{
+  // ==========================================
+  // VS Code Debugger Configuration
+  // Turbo Trading Bot - Enterprise Setup
+  // ==========================================
+  
+  "version": "0.2.0",
+  "configurations": [
+    // ==========================================
+    // MAIN BOT DEBUGGING
+    // ==========================================
+    {
+      "name": "🤖 Debug Trading Bot (Main)",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [
+        "${workspaceFolder}/trading-bot/autonomous_trading_bot_final.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "true",
+        "MODE": "simulation"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "console": "integratedTerminal",
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ],
+      "preLaunchTask": "tsc: build - tsconfig.json"
+    },
+
+    {
+      "name": "🚀 Debug Trading Bot (Production Mode)",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [
+        "${workspaceFolder}/trading-bot/autonomous_trading_bot_final.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "production",
+        "DEBUG": "true",
+        "MODE": "live",
+        "ENABLE_ML": "true"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "console": "integratedTerminal",
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    {
+      "name": "🔬 Debug Trading Bot (Backtest)",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [
+        "${workspaceFolder}/trading-bot/autonomous_trading_bot_final.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "true",
+        "MODE": "backtest",
+        "ENABLE_ML": "true"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "console": "integratedTerminal",
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    // ==========================================
+    // ENTERPRISE SERVER DEBUGGING
+    // ==========================================
+    {
+      "name": "🌐 Debug Enterprise Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [
+        "${workspaceFolder}/main_enterprise.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "true",
+        "PORT": "3000"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "console": "integratedTerminal",
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    // ==========================================
+    // CURRENT FILE DEBUGGING
+    // ==========================================
+    {
+      "name": "📄 Debug Current TS File",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "true"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "console": "integratedTerminal",
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    // ==========================================
+    // TEST DEBUGGING
+    // ==========================================
+    {
+      "name": "🧪 Debug Jest Tests (Current File)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": [
+        "${fileBasename}",
+        "--runInBand",
+        "--no-cache",
+        "--watchAll=false"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "test",
+        "DEBUG": "true"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    {
+      "name": "🧪 Debug Jest Tests (All)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": [
+        "--runInBand",
+        "--no-cache"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "test",
+        "DEBUG": "true"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    {
+      "name": "🧪 Debug Jest Tests (Watch Mode)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": [
+        "--watch",
+        "--runInBand",
+        "--no-cache"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "test",
+        "DEBUG": "true"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    // ==========================================
+    // SPECIFIC COMPONENT DEBUGGING
+    // ==========================================
+    {
+      "name": "🧠 Debug ML System",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [
+        "${workspaceFolder}/trading-bot/src/core/ml/production_ml_integrator.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "true",
+        "ENABLE_ML": "true"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "console": "integratedTerminal",
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    {
+      "name": "📊 Debug Risk Manager",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [
+        "${workspaceFolder}/trading-bot/core/risk/basic_risk_manager.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "true"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "console": "integratedTerminal",
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    // ==========================================
+    // ATTACH TO RUNNING PROCESS
+    // ==========================================
+    {
+      "name": "🔗 Attach to Node Process",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "sourceMaps": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    {
+      "name": "🔗 Attach to Remote Process",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 9229,
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "/app",
+      "sourceMaps": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    // ==========================================
+    // DOCKER DEBUGGING
+    // ==========================================
+    {
+      "name": "🐳 Debug in Docker Container",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "address": "localhost",
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "/usr/src/app",
+      "protocol": "inspector",
+      "restart": true,
+      "sourceMaps": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/**"
+      ]
+    },
+
+    // ==========================================
+    // PERFORMANCE PROFILING
+    // ==========================================
+    {
+      "name": "⚡ Profile Bot Performance",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register",
+        "--prof"
+      ],
+      "args": [
+        "${workspaceFolder}/trading-bot/autonomous_trading_bot_final.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "true",
+        "MODE": "simulation"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "console": "integratedTerminal",
+      "outputCapture": "std"
+    },
+
+    {
+      "name": "🔍 Debug with Inspect",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "--inspect-brk=9229",
+        "-r",
+        "ts-node/register"
+      ],
+      "args": [
+        "${workspaceFolder}/trading-bot/autonomous_trading_bot_final.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "true"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "console": "integratedTerminal",
+      "port": 9229
+    }
+  ],
+
+  // ==========================================
+  // COMPOUND CONFIGURATIONS
+  // ==========================================
+  "compounds": [
+    {
+      "name": "🚀 Full System (Bot + Server)",
+      "configurations": [
+        "🤖 Debug Trading Bot (Main)",
+        "🌐 Debug Enterprise Server"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "🧪 Test + Bot",
+      "configurations": [
+        "🧪 Debug Jest Tests (Watch Mode)",
+        "🤖 Debug Trading Bot (Main)"
+      ],
+      "stopAll": true
+    }
+  ]
+}
