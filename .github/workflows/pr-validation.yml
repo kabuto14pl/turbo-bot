@@ -1,0 +1,62 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ master ]
+
+jobs:
+  validate:
+    name: Validate Changes
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Check for test files in root
+      run: |
+        if find . -maxdepth 1 -name 'test*.js' -o -name 'test*.ts' | grep -q .; then
+          echo "❌ ERROR: Test files found in root directory"
+          find . -maxdepth 1 -name 'test*.js' -o -name 'test*.ts'
+          exit 1
+        fi
+        
+    - name: Check for .bak files
+      run: |
+        if find . -name '*.bak' | grep -q .; then
+          echo "❌ ERROR: Backup files found"
+          find . -name '*.bak'
+          exit 1
+        fi
+        
+    - name: TypeScript compilation
+      run: npm run build
+      
+    - name: Run linter
+      run: npm run lint || true
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Check test coverage
+      run: npm run test:coverage || true
+      
+    - name: Project structure check
+      run: |
+        echo "📊 Checking project structure..."
+        ROOT_FILES=$(ls -1 | grep -v -E "^(node_modules|archive|backups|config|core|dashboard|data|docs|logs|monitoring|reports|scripts|src|tests|trading-bot|tools)$" | wc -l)
+        echo "Root directory files: $ROOT_FILES"
+        if [ $ROOT_FILES -gt 15 ]; then
+          echo "⚠️  WARNING: Too many files in root ($ROOT_FILES > 15)"
+        fi
