@@ -1,0 +1,238 @@
+{
+  // ============================================
+  // 🤖 TRADING BOT SNIPPETS
+  // ============================================
+  
+  "Trading Strategy Class": {
+    "prefix": "strategy",
+    "body": [
+      "import { AbstractStrategy } from './abstract_strategy';",
+      "import { EnhancedStrategySignal, Candle, BotState } from '../types';",
+      "",
+      "export class ${1:StrategyName} extends AbstractStrategy {",
+      "  constructor(config: StrategyConfig) {",
+      "    super('${1:StrategyName}', config);",
+      "  }",
+      "",
+      "  async generateSignal(",
+      "    candles: Candle[],",
+      "    state: BotState",
+      "  ): Promise<EnhancedStrategySignal> {",
+      "    // Calculate indicators",
+      "    const indicators = this.calculateIndicators(candles);",
+      "    ",
+      "    // Generate signal logic",
+      "    let direction: 'buy' | 'sell' | 'hold' = 'hold';",
+      "    let confidence = 0.5;",
+      "    ",
+      "    ${2:// Your strategy logic here}",
+      "    ",
+      "    return {",
+      "      signal: direction,",
+      "      confidence,",
+      "      riskScore: this.calculateRisk(indicators, state),",
+      "      reasoning: '${3:Strategy reasoning}',",
+      "      metadata: { indicators }",
+      "    };",
+      "  }",
+      "}",
+      "$0"
+    ],
+    "description": "Create a new trading strategy class"
+  },
+  
+  "ML Prediction Handler": {
+    "prefix": "mlpred",
+    "body": [
+      "async predict${1:Feature}(marketState: MarketState): Promise<MLPrediction> {",
+      "  try {",
+      "    const features = this.extractFeatures(marketState);",
+      "    ",
+      "    const prediction = await this.${2:model}.predict(features);",
+      "    ",
+      "    return {",
+      "      direction: prediction > 0.5 ? 'up' : 'down',",
+      "      confidence: Math.abs(prediction - 0.5) * 2,",
+      "      timestamp: Date.now(),",
+      "      features: features",
+      "    };",
+      "  } catch (error) {",
+      "    this.logger.error('ML prediction failed', error);",
+      "    return {",
+      "      direction: 'neutral',",
+      "      confidence: 0,",
+      "      timestamp: Date.now(),",
+      "      features: {}",
+      "    };",
+      "  }",
+      "}",
+      "$0"
+    ],
+    "description": "ML prediction handler with error handling"
+  },
+  
+  "Risk Manager Check": {
+    "prefix": "riskcheck",
+    "body": [
+      "const riskAssessment = await this.riskManager.assessRisk(",
+      "  ${1:signal},",
+      "  this.portfolio,",
+      "  ${2:marketConditions}",
+      ");",
+      "",
+      "if (!riskAssessment.approved) {",
+      "  this.logger.warn('Trade rejected by risk manager', { ",
+      "    reason: riskAssessment.reason ",
+      "  });",
+      "  return;",
+      "}",
+      "",
+      "const positionSize = riskAssessment.optimalSize;",
+      "$0"
+    ],
+    "description": "Risk manager assessment check"
+  },
+  
+  "Error Handler with Retry": {
+    "prefix": "tryretry",
+    "body": [
+      "async ${1:functionName}(${2:params}): Promise<${3:ReturnType}> {",
+      "  const maxRetries = ${4:3};",
+      "  let lastError: Error;",
+      "  ",
+      "  for (let attempt = 1; attempt <= maxRetries; attempt++) {",
+      "    try {",
+      "      ${5:// Your code here}",
+      "      return ${6:result};",
+      "    } catch (error) {",
+      "      lastError = error as Error;",
+      "      this.logger.warn(`Attempt ${attempt}/${maxRetries} failed:`, error);",
+      "      ",
+      "      if (attempt < maxRetries) {",
+      "        await this.sleep(1000 * attempt); // Exponential backoff",
+      "      }",
+      "    }",
+      "  }",
+      "  ",
+      "  throw new Error(`Failed after ${maxRetries} attempts: ${lastError.message}`);",
+      "}",
+      "$0"
+    ],
+    "description": "Error handler with retry logic and exponential backoff"
+  },
+  
+  "Ensemble Model Registration": {
+    "prefix": "ensreg",
+    "body": [
+      "this.ensembleEngine.registerModel({",
+      "  name: '${1:model_name}',",
+      "  type: '${2:deep_learning}',",
+      "  predict: async (marketState) => {",
+      "    const forecast = await this.${3:customModel}.predict(marketState);",
+      "    return {",
+      "      direction: forecast.trend > 0 ? 'up' : 'down',",
+      "      confidence: forecast.confidence,",
+      "      features: forecast.components",
+      "    };",
+      "  },",
+      "  updateOutcome: async (actual, predicted) => {",
+      "    await this.${3:customModel}.updateWeights(actual, predicted);",
+      "  }",
+      "});",
+      "$0"
+    ],
+    "description": "Register model in ensemble engine"
+  },
+  
+  "Portfolio Optimization": {
+    "prefix": "portopt",
+    "body": [
+      "const optimization = await this.portfolioOptimizer.optimize(",
+      "  ${1:returns},",
+      "  '${2|markowitz,black_litterman,risk_parity,equal_weight|}'",
+      ");",
+      "",
+      "const trades = await this.portfolioOptimizer.calculateRebalancingTrades(",
+      "  ${3:positions},",
+      "  optimization.weights",
+      ");",
+      "",
+      "// Execute rebalancing trades",
+      "for (const trade of trades) {",
+      "  await this.executeOrder(trade);",
+      "}",
+      "$0"
+    ],
+    "description": "Portfolio optimization and rebalancing"
+  },
+  
+  "API Endpoint Handler": {
+    "prefix": "apiget",
+    "body": [
+      "app.get('/api/${1:endpoint}', async (req, res) => {",
+      "  try {",
+      "    ${2:// Your logic here}",
+      "    ",
+      "    res.json({",
+      "      success: true,",
+      "      data: ${3:data},",
+      "      timestamp: Date.now()",
+      "    });",
+      "  } catch (error) {",
+      "    this.logger.error('API error:', error);",
+      "    res.status(500).json({",
+      "      success: false,",
+      "      error: error.message",
+      "    });",
+      "  }",
+      "});",
+      "$0"
+    ],
+    "description": "Express API endpoint with error handling"
+  },
+  
+  "Async Sleep Utility": {
+    "prefix": "sleep",
+    "body": [
+      "await this.sleep(${1:1000}); // ${2:Wait 1 second}",
+      "$0"
+    ],
+    "description": "Async sleep utility"
+  },
+  
+  "Logger with Context": {
+    "prefix": "logctx",
+    "body": [
+      "this.logger.${1|info,warn,error,debug|}('${2:Message}', {",
+      "  ${3:key}: ${4:value},",
+      "  timestamp: Date.now(),",
+      "  instanceId: this.config.instanceId",
+      "});",
+      "$0"
+    ],
+    "description": "Logger with contextual information"
+  },
+  
+  "Feature Extraction": {
+    "prefix": "features",
+    "body": [
+      "private extractFeatures(${1:data}: ${2:DataType}): number[] {",
+      "  return [",
+      "    ${3:// Technical indicators}",
+      "    this.calculateRSI(${1:data}),",
+      "    this.calculateMACD(${1:data}),",
+      "    this.calculateBollinger(${1:data}),",
+      "    ",
+      "    ${4:// Price features}",
+      "    ${1:data}.close / ${1:data}.sma20,",
+      "    ${1:data}.volume / ${1:data}.avgVolume,",
+      "    ",
+      "    ${5:// Volatility}",
+      "    this.calculateATR(${1:data})",
+      "  ];",
+      "}",
+      "$0"
+    ],
+    "description": "ML feature extraction method"
+  }
+}

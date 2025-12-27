@@ -20,7 +20,7 @@ export class SuperTrendStrategy extends BaseStrategy {
             0.25,  // Domyślna waga
             {
                 name: 'SuperTrend',
-                timeframes: ['m15', 'h1', 'h4'],
+                timeframes: ['m15'],  // 🚀 FAZA 1.2: Używamy tylko m15 (h1/h4 usunięte)
                 indicators: {
                     supertrend: {
                         period: 10,
@@ -50,8 +50,12 @@ export class SuperTrendStrategy extends BaseStrategy {
 
         const signals: StrategySignal[] = [];
         const m15 = state.indicators.m15;
-            const supertrend = m15.supertrend;
+        const supertrend = m15.supertrend;
         const currentDirection = supertrend.direction;
+
+        // 🚀 FAZA 1.2: Dodatkowe warunki dla większej aktywności
+        const strongTrend = m15.adx > 25;  // ADX > 25 = silny trend
+        const volatilityOk = m15.atr > 0;   // Podstawowa walidacja ATR
 
         // Sprawdź czy mamy poprzedni kierunek
         if (this.previousDirection !== null) {
@@ -72,8 +76,9 @@ export class SuperTrendStrategy extends BaseStrategy {
                     {
                         supertrendValue: supertrend.value,
                         supertrendDirection: supertrend.direction === 'buy' ? 1 : -1,
-                        adx: m15.adx,
-                        atr: m15.atr
+                        adx: parseFloat(String(m15.adx)) || 0,
+                        atr: parseFloat(String(m15.atr)) || 0,
+                        triggerType: 1 // crossover
                     }
                 ));
             }
@@ -94,8 +99,52 @@ export class SuperTrendStrategy extends BaseStrategy {
                     {
                         supertrendValue: supertrend.value,
                         supertrendDirection: supertrend.direction === 'buy' ? 1 : -1,
-                        adx: m15.adx,
-                        atr: m15.atr
+                        adx: parseFloat(String(m15.adx)) || 0,
+                        atr: parseFloat(String(m15.atr)) || 0,
+                        triggerType: 1 // crossover
+                    }
+                ));
+            }
+            // 🚀 FAZA 1.2: NOWE - Trend continuation signals (strong trend bez crossover)
+            else if (currentDirection === 'buy' && strongTrend && volatilityOk && state.positions.length === 0) {
+                const confidence = this.calculateConfidence(
+                    (state.marketData.lastPrice - supertrend.value) / supertrend.value,
+                    m15.adx / 100,
+                    state.regime.volatility,
+                    state.regime.trend
+                ) * 0.7;  // Reduced confidence for continuation
+
+                signals.push(this.createSignal(
+                    'ENTER_LONG',
+                    state.marketData.lastPrice,
+                    confidence,
+                    state,
+                    {
+                        supertrendValue: supertrend.value,
+                        supertrendDirection: 1,
+                        adx: parseFloat(String(m15.adx)) || 0,
+                        atr: parseFloat(String(m15.atr)) || 0
+                    }
+                ));
+            }
+            else if (currentDirection === 'sell' && strongTrend && volatilityOk && state.positions.length === 0) {
+                const confidence = this.calculateConfidence(
+                    (supertrend.value - state.marketData.lastPrice) / supertrend.value,
+                    m15.adx / 100,
+                    state.regime.volatility,
+                    state.regime.trend
+                ) * 0.7;
+
+                signals.push(this.createSignal(
+                    'ENTER_SHORT',
+                    state.marketData.lastPrice,
+                    confidence,
+                    state,
+                    {
+                        supertrendValue: supertrend.value,
+                        supertrendDirection: -1,
+                        adx: parseFloat(String(m15.adx)) || 0,
+                        atr: parseFloat(String(m15.atr)) || 0
                     }
                 ));
             }
@@ -126,7 +175,7 @@ export class SuperTrendStrategy extends BaseStrategy {
                     {
                         supertrendValue: supertrend.value,
                         supertrendDirection: supertrend.direction === 'buy' ? 1 : -1,
-                        adx: m15.adx,
+                        adx: parseFloat(String(m15.adx)) || 0,
                         atr: m15.atr
                     }
                 ));

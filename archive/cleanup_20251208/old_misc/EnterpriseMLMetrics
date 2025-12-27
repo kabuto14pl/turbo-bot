@@ -1,0 +1,30 @@
+[INFO] 2025-09-09T15:53:16.241Z: 🔧 Initializing Enterprise ML Prometheus metrics...
+[INFO] 2025-09-09T15:53:16.260Z: ✅ Enterprise ML Prometheus metrics initialized
+[INFO] 2025-09-09T15:53:16.279Z: 🔄 Started periodic ML metrics collection (5s interval)
+[INFO] 2025-09-09T15:53:16.320Z: 🚀 Enterprise ML Metrics Exporter started on port 9091
+[INFO] 2025-09-09T15:53:16.322Z: 📊 Metrics endpoint: http://localhost:9091/metrics
+[INFO] 2025-09-09T15:53:16.324Z: 💚 Health check: http://localhost:9091/health
+[INFO] 2025-09-09T15:53:16.325Z: 📈 ML status: http://localhost:9091/ml-status
+[INFO] 2025-09-09T16:11:10.768Z: 🛑 Stopping Enterprise ML Metrics Exporter...
+[INFO] 2025-09-09T16:11:36.260Z: 🔧 Initializing Enterprise ML Prometheus metrics...
+[INFO] 2025-09-09T16:11:36.262Z: ✅ Enterprise ML Prometheus metrics initialized
+[INFO] 2025-09-09T16:11:36.264Z: 🔄 Started periodic ML metrics collection (5s interval)
+[INFO] 2025-09-09T16:11:36.266Z: 🚀 Enterprise ML Metrics Exporter started on port 9091
+[INFO] 2025-09-09T16:11:36.266Z: 📊 Metrics endpoint: http://localhost:9091/metrics
+[INFO] 2025-09-09T16:11:36.266Z: 💚 Health check: http://localhost:9091/health
+[INFO] 2025-09-09T16:11:36.267Z: 📈 ML status: http://localhost:9091/ml-status
+[INFO] 2025-09-09T16:11:49.595Z: 🛑 Stopping Enterprise ML Metrics Exporter...
+[INFO] 2025-09-09T16:12:05.010Z: 🔧 Initializing Enterprise ML Prometheus metrics...
+[INFO] 2025-09-09T16:12:05.012Z: ✅ Enterprise ML Prometheus metrics initialized
+[INFO] 2025-09-09T16:12:05.013Z: 🔄 Started periodic ML metrics collection (5s interval)
+[INFO] 2025-09-09T16:12:05.016Z: 🚀 Enterprise ML Metrics Exporter started on port 9091
+[INFO] 2025-09-09T16:12:05.016Z: 📊 Metrics endpoint: http://localhost:9091/metrics
+[INFO] 2025-09-09T16:12:05.016Z: 💚 Health check: http://localhost:9091/health
+[INFO] 2025-09-09T16:12:05.016Z: 📈 ML status: http://localhost:9091/ml-status
+[INFO] 2025-10-07T05:00:28.985Z: 🔧 Initializing Enterprise ML Prometheus metrics...
+[INFO] 2025-10-07T05:00:28.989Z: ✅ Enterprise ML Prometheus metrics initialized
+[INFO] 2025-10-07T05:00:28.993Z: 🔄 Started periodic ML metrics collection (5s interval)
+[INFO] 2025-10-07T05:00:29.003Z: 🚀 Enterprise ML Metrics Exporter started on port 9091
+[INFO] 2025-10-07T05:00:29.003Z: 📊 Metrics endpoint: http://localhost:9091/metrics
+[INFO] 2025-10-07T05:00:29.006Z: 💚 Health check: http://localhost:9091/health
+[INFO] 2025-10-07T05:00:29.006Z: 📈 ML status: http://localhost:9091/ml-status

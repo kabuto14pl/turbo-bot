@@ -1,0 +1,89 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "Trading Bot API",
+  "collectionId": "turbo-bot-api",
+  "dateExported": "2025-12-26",
+  "version": "1.0",
+  "folders": [],
+  "requests": [
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "url": "http://localhost:3001/health",
+      "headers": [],
+      "tests": [
+        "pm.test('Status is healthy', () => {",
+        "    pm.expect(pm.response.json().status).to.equal('healthy');",
+        "});"
+      ]
+    },
+    {
+      "name": "Portfolio Status",
+      "method": "GET",
+      "url": "http://localhost:3001/api/portfolio",
+      "headers": [],
+      "tests": [
+        "pm.test('Has total value', () => {",
+        "    pm.expect(pm.response.json().totalValue).to.be.greaterThan(0);",
+        "});"
+      ]
+    },
+    {
+      "name": "Ensemble ML Status",
+      "method": "GET",
+      "url": "http://localhost:3001/api/ensemble/status",
+      "headers": [],
+      "tests": []
+    },
+    {
+      "name": "Trade History",
+      "method": "GET",
+      "url": "http://localhost:3001/api/trades?limit=50",
+      "headers": [],
+      "tests": []
+    },
+    {
+      "name": "Portfolio Optimization",
+      "method": "POST",
+      "url": "http://localhost:3001/api/portfolio/optimization",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"method\": \"markowitz\",\n  \"constraints\": {\n    \"min_weight\": 0.05,\n    \"max_weight\": 0.40\n  }\n}"
+      },
+      "tests": [
+        "pm.test('Returns weights', () => {",
+        "    pm.expect(pm.response.json().weights).to.exist;",
+        "});"
+      ]
+    },
+    {
+      "name": "Backtest Validation",
+      "method": "POST",
+      "url": "http://localhost:3001/api/backtest/validate",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"strategy\": \"AdvancedAdaptive\",\n  \"start_date\": \"2024-01-01\",\n  \"end_date\": \"2024-12-31\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "Prometheus Metrics",
+      "method": "GET",
+      "url": "http://localhost:3001/metrics",
+      "headers": [],
+      "tests": []
+    }
+  ]
+}

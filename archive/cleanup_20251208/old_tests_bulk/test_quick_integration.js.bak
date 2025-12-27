@@ -1,0 +1,170 @@
+#!/usr/bin/env ts-node
+"use strict";
+/**
+ * Quick Enterprise ML Integration Test
+ *
+ * Prosty test sprawdzający czy Enterprise ML może współpracować z Trading Bot
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+const enterprise_ml_integration_manager_1 = require("./src/enterprise_ml_integration_manager");
+async function quickIntegrationTest() {
+    console.log('🚀 QUICK ENTERPRISE ML INTEGRATION TEST\n');
+    try {
+        // 1. Test Enterprise ML Manager
+        console.log('1️⃣ Testing Enterprise ML Manager standalone...');
+        const mlManager = enterprise_ml_integration_manager_1.EnterpriseMLIntegrationManager.getInstance();
+        await mlManager.initialize({
+            enablePerformanceMonitoring: true,
+            enableMetricsDashboard: false, // Disable dashboard to avoid port conflicts
+            enableEnsembleEngine: true,
+            enableFeatureEngineering: true,
+            dashboardPort: 3002,
+            monitoringInterval: 10000,
+            autoOptimization: false,
+            realTimeUpdates: false
+        });
+        console.log('✅ Enterprise ML Manager initialized');
+        // 2. Test Trading Simulation Data
+        console.log('\n2️⃣ Simulating Trading Bot Market Data...');
+        const simulatedTradingScenarios = [
+            {
+                name: 'Morning Bull Run',
+                price: 66500,
+                volume: 1200000,
+                rsi: 65,
+                macd: 0.15,
+                supertrend: 'buy'
+            },
+            {
+                name: 'Afternoon Correction',
+                price: 64800,
+                volume: 1800000,
+                rsi: 35,
+                macd: -0.08,
+                supertrend: 'sell'
+            },
+            {
+                name: 'Evening Consolidation',
+                price: 65200,
+                volume: 900000,
+                rsi: 50,
+                macd: 0.02,
+                supertrend: 'buy'
+            }
+        ];
+        // 3. Test ML Inference in Trading Context
+        console.log('\n3️⃣ Testing ML Inference with Trading Context...');
+        const tradingResults = [];
+        for (const scenario of simulatedTradingScenarios) {
+            console.log(`📊 Processing: ${scenario.name}`);
+            const startTime = Date.now();
+            // Simulate the exact data structure that Trading Bot would send
+            const tradingData = {
+                price: scenario.price,
+                volume: scenario.volume,
+                timestamp: Date.now(),
+                features: [
+                    scenario.price,
+                    scenario.volume,
+                    scenario.price * 0.015, // volatility estimate
+                    scenario.rsi,
+                    scenario.macd,
+                    scenario.supertrend === 'buy' ? 1 : -1
+                ]
+            };
+            const mlPrediction = await mlManager.performMLInference(tradingData);
+            const processingTime = Date.now() - startTime;
+            // Simulate Trading Bot signal generation logic
+            let tradingSignal = 'HOLD';
+            if (mlPrediction.signal === 'BUY') {
+                tradingSignal = 'ENTER_LONG';
+            }
+            else if (mlPrediction.signal === 'SELL') {
+                tradingSignal = 'ENTER_SHORT';
+            }
+            const result = {
+                scenario: scenario.name,
+                marketPrice: scenario.price,
+                mlSignal: mlPrediction.signal,
+                tradingSignal: tradingSignal,
+                confidence: mlPrediction.confidence,
+                processingTime: processingTime,
+                technicalAlignment: {
+                    rsi: scenario.rsi,
+                    macd: scenario.macd,
+                    supertrend: scenario.supertrend
+                }
+            };
+            tradingResults.push(result);
+            console.log(`   ML Signal: ${mlPrediction.signal} → Trading Signal: ${tradingSignal}`);
+            console.log(`   Confidence: ${(mlPrediction.confidence * 100).toFixed(1)}%, Time: ${processingTime}ms`);
+        }
+        // 4. Analysis of Trading Integration
+        console.log('\n4️⃣ Integration Analysis...');
+        const avgProcessingTime = tradingResults.reduce((sum, r) => sum + r.processingTime, 0) / tradingResults.length;
+        const avgConfidence = tradingResults.reduce((sum, r) => sum + r.confidence, 0) / tradingResults.length;
+        const signalDistribution = tradingResults.reduce((dist, r) => {
+            dist[r.tradingSignal] = (dist[r.tradingSignal] || 0) + 1;
+            return dist;
+        }, {});
+        console.log('📊 Performance Metrics:');
+        console.log(`   Average Processing Time: ${avgProcessingTime.toFixed(2)}ms`);
+        console.log(`   Average Confidence: ${(avgConfidence * 100).toFixed(1)}%`);
+        console.log(`   Signal Distribution:`, signalDistribution);
+        // 5. Trading Bot Compatibility Check
+        console.log('\n5️⃣ Trading Bot Compatibility Check...');
+        const compatibilityChecks = {
+            signalFormat: tradingResults.every(r => ['ENTER_LONG', 'ENTER_SHORT', 'HOLD'].includes(r.tradingSignal)),
+            confidenceRange: tradingResults.every(r => r.confidence >= 0 && r.confidence <= 1),
+            processingSpeed: avgProcessingTime < 100, // Must be under 100ms for real-time trading
+            reliableOutput: tradingResults.every(r => r.mlSignal !== undefined)
+        };
+        console.log('✅ Compatibility Results:');
+        Object.entries(compatibilityChecks).forEach(([check, passed]) => {
+            console.log(`   ${check}: ${passed ? '✅ PASS' : '❌ FAIL'}`);
+        });
+        // 6. Performance Report
+        console.log('\n6️⃣ System Performance Report...');
+        const systemStatus = mlManager.getSystemStatus();
+        const performanceReport = mlManager.getPerformanceReport();
+        console.log('📈 System Status:');
+        console.log(`   Performance Monitor: ${systemStatus.performanceMonitor || 'ACTIVE'}`);
+        console.log(`   Ensemble Engine: ${systemStatus.ensembleEngine || 'ACTIVE'}`);
+        console.log(`   Feature Engineering: ${systemStatus.featureEngineering || 'ACTIVE'}`);
+        console.log('📊 Performance Report Components:', Object.keys(performanceReport).length);
+        // 7. Shutdown
+        console.log('\n7️⃣ Graceful Shutdown...');
+        await mlManager.stop();
+        const allCompatible = Object.values(compatibilityChecks).every(check => check);
+        if (allCompatible) {
+            console.log('\n🎉 ENTERPRISE ML INTEGRATION TEST: SUCCESS!');
+            console.log('\n📋 Integration Ready:');
+            console.log('✅ Signal Format: Compatible with Trading Bot');
+            console.log('✅ Processing Speed: Real-time capable');
+            console.log('✅ Confidence Scoring: Proper range');
+            console.log('✅ System Performance: Excellent');
+            console.log('\n🚀 READY FOR TRADING BOT INTEGRATION!');
+        }
+        else {
+            console.log('\n⚠️  INTEGRATION ISSUES DETECTED');
+            console.log('Some compatibility checks failed. Review required.');
+        }
+    }
+    catch (error) {
+        console.error('\n❌ INTEGRATION TEST FAILED:', error.message);
+        console.error('Error details:', error.stack);
+        process.exit(1);
+    }
+}
+// Run the test
+if (require.main === module) {
+    quickIntegrationTest()
+        .then(() => {
+        console.log('\n✨ Quick integration test completed!');
+        process.exit(0);
+    })
+        .catch((error) => {
+        console.error('\n💥 Quick integration test failed:', error.message);
+        process.exit(1);
+    });
+}

@@ -1,141 +1,274 @@
-# 🚀 QUICK START - Professional Trading Dashboard
+# 🚀 Quick Start - Bot + Dashboard 24/7
 
-## ⚡ SZYBKIE URUCHOMIENIE
+## ⚡ 30-Minutowy Setup na VPS
+
+### KROK 1: Załóż VPS (5 min)
+
+**Rekomendacja: DigitalOcean**
+1. Idź na: https://www.digitalocean.com
+2. Sign up (mają $200 credit!)
+3. Create Droplet:
+   - **OS**: Ubuntu 22.04 LTS
+   - **Plan**: Basic $6/miesiąc (1GB RAM)
+   - **Datacenter**: Wybierz najbliższy
+   - **Authentication**: SSH key lub Password
+4. Skopiuj IP adres VPS
+
+---
+
+### KROK 2: Połącz się przez SSH (1 min)
 
 ```bash
-cd /workspaces/turbo-bot
-./start_dashboard.sh
+# Z terminala lokalnego:
+ssh root@YOUR_VPS_IP
+
+# Wpisz hasło (jeśli wybrałeś password auth)
 ```
 
-**LUB**
+---
+
+### KROK 3: Uruchom Deployment Script (15 min)
 
 ```bash
-# Przekompiluj + uruchom
-npx tsc src/professional_trading_dashboard.ts --target ES2020 --module commonjs --esModuleInterop --allowSyntheticDefaultImports --skipLibCheck && node src/professional_trading_dashboard.js
+# W terminalu VPS, wklej tę komendę:
+curl -fsSL https://raw.githubusercontent.com/kabuto14pl/turbo-bot/master/deploy_v4.1.3.sh | bash
 ```
 
-**Dashboard URL**: http://localhost:3002
+**Co się zainstaluje:**
+- ✅ Node.js 20
+- ✅ PM2 process manager
+- ✅ Bot Trading
+- ✅ Dashboard
+- ✅ Health checks (co 5 min)
+- ✅ Firewall config
+- ✅ Auto-restart on crash/reboot
 
 ---
 
-## 🎯 CO POWINNO DZIAŁAĆ
-
-Po otwarciu http://localhost:3002 powinieneś zobaczyć:
-
-### ✅ **Wykres główny**
-- Świece/linie cenowe BTC
-- Wolumen (niebieskie słupki)
-- RSI indicator (żółta linia)
-- Bollinger Bands (fioletowe linie przerywane)
-- Sygnały strategii (zielone/czerwone trójkąty)
-
-### ✅ **Panel kontrolny** (górny pasek)
-- **Timeframe buttons**: 5m, 15m, 1h, 4h (klikalne)
-- **Chart type buttons**: Line, Area, Candles (klikalne)
-- **Indicator toggles**: RSI, Bollinger Bands (klikalne)
-
-### ✅ **Karty strategii** (prawy panel)
-- **RSI TURBO** - klikalna karta
-- **MOMENTUM PRO** - klikalna karta
-- **SUPERTREND** - klikalna karta
-
-Kliknięcie karty powoduje toggle (active/inactive)
-
-### ✅ **Live ceny** (lewy górny róg)
-- **BTC**: Aktualna cena, aktualizacja co 30s
-- **ETH**: Aktualna cena, aktualizacja co 30s
-- **SOL**: Aktualna cena, aktualizacja co 30s
-
-### ✅ **Resize handles**
-- **Prawy brzeg**: Przeciągnij aby zmienić szerokość ↔
-- **Dolny brzeg**: Przeciągnij aby zmienić wysokość ↕
-- **Narożnik (prawy dolny)**: Przeciągnij aby zmienić oba ⤢
-
----
-
-## 🔍 DIAGNOSTYKA (jeśli coś nie działa)
-
-### 1. **Otwórz Console (F12)**
-
-Powinieneś zobaczyć:
-```
-🏛️ Inicjalizacja Profesjonalnego Terminalu Handlowego...
-📊 Rejestracja komponentów Chart.js...
-✅ Komponenty Chart.js zarejestrowane
-📊 Ładowanie początkowych danych...
-✅ Początkowe dane załadowane
-🔧 Konfigurowanie nasłuchiwaczy zdarzeń...
-📊 Znaleziono przycisków timeframe: 4
-🎯 Znaleziono kart strategii: 3
-✅ Inicjalizacja zakończona
-```
-
-### 2. **Jeśli widzisz błędy**
-
-**❌ "Chart.js nie jest dostępny"**
-- Sprawdź połączenie internetowe
-- Odśwież stronę (Ctrl+F5)
-
-**❌ Przyciski nie reagują**
-- Sprawdź Console na czerwone błędy
-- Sprawdź czy są logi "🔧 Konfigurowanie nasłuchiwaczy..."
-
-**❌ Wykres pusty**
-- Sprawdź Console czy są logi "✅ Wygenerowano dane testowe"
-- Sprawdź Network tab czy `/api/market-data` zwraca 200
-
-### 3. **Test API**
+### KROK 4: Skonfiguruj API Keys (5 min)
 
 ```bash
-# Powinno zwrócić {"status":"OK"}
-curl http://localhost:3002/health
+# Edytuj .env
+cd turbo-bot
+nano .env
 
-# Powinno zwrócić tablicę z cenami
-curl http://localhost:3002/api/market-data
+# Zmień te linie:
+API_KEY=your_real_okx_api_key
+SECRET=your_real_okx_secret
+PASSPHRASE=your_real_okx_passphrase
+
+# Dla symulacji zostaw:
+MODE=simulation
+ENABLE_REAL_TRADING=false
+
+# Dla live trading:
+# MODE=live
+# ENABLE_REAL_TRADING=true
+
+# Zapisz: Ctrl+O, Enter, Ctrl+X
 ```
 
-### 4. **Restart**
+---
+
+### KROK 5: Restart i Sprawdź (2 min)
 
 ```bash
-pkill -f "professional_trading_dashboard"
-./start_dashboard.sh
+# Restart bot
+pm2 restart all
+
+# Sprawdź status
+pm2 status
+
+# Sprawdź logi
+pm2 logs turbo-bot --lines 20
+
+# Test health
+curl http://localhost:3001/health
 ```
 
 ---
 
-## 📖 DOKUMENTACJA
+### KROK 6: Otwórz Dashboard (2 min)
 
-- **Pełny raport naprawy**: `DASHBOARD_REPAIR_REPORT.md`
-- **Szczegółowa diagnostyka**: `DASHBOARD_DIAGNOSTIC.md`
-- **Instrukcje Copilot**: `.github/copilot-instructions.md`
+**W przeglądarce otwórz:**
 
----
+```
+http://YOUR_VPS_IP:8080
+```
 
-## 🆘 POMOC
-
-Jeśli dashboard nadal nie działa:
-
-1. Sprawdź Console (F12) i skopiuj wszystkie błędy
-2. Sprawdź `tail -f dashboard.log` i skopiuj logi serwera
-3. Zrób screenshot problemu
-4. Zobacz `DASHBOARD_DIAGNOSTIC.md` dla zaawansowanej diagnostyki
+**Powinien pokazać:**
+- 📊 Trading Dashboard
+- 💰 Portfolio Value
+- 📈 Recent Trades
+- 🌐 WebSocket Status
+- 🧠 ML Status
 
 ---
 
-## ✅ CHECKLIST
+## 🎯 GOTOWE! Bot działa 24/7
 
-Dashboard działa poprawnie gdy:
+### 🌐 Twoje URL-e:
 
-- [ ] Wykres wyświetla dane cenowe
-- [ ] Przyciski timeframe (5m, 15m, etc.) są klikalne
-- [ ] Karty strategii są klikalne i toggle active/inactive
-- [ ] Ceny BTC/ETH/SOL aktualizują się co 30s
-- [ ] Resize handles (3 sztuki) działają płynnie
-- [ ] Console nie pokazuje czerwonych błędów
-- [ ] `/health` endpoint zwraca {"status":"OK"}
-
-Jeśli wszystko ✅ - **DASHBOARD DZIAŁA PRAWIDŁOWO!** 🎉
+```
+Dashboard:        http://YOUR_VPS_IP:8080
+Bot Health:       http://YOUR_VPS_IP:3001/health
+WebSocket Status: http://YOUR_VPS_IP:3001/api/websocket/okx
+API Endpoints:    http://YOUR_VPS_IP:3001/api/*
+```
 
 ---
 
-**Dashboard v1.0.0** | Production Ready | 7 października 2025
+## 📊 Codzienne Monitorowanie
+
+```bash
+# SSH do VPS
+ssh root@YOUR_VPS_IP
+
+# Check status
+pm2 status
+
+# View logs
+pm2 logs turbo-bot --lines 50
+
+# Restart if needed
+pm2 restart turbo-bot
+
+# Update bot
+cd turbo-bot
+git pull
+npm install
+pm2 restart all
+```
+
+---
+
+## 🔒 Bezpieczeństwo
+
+**Deployment script automatycznie:**
+- ✅ Konfiguruje firewall (tylko porty 22, 3001, 8080, 9090)
+- ✅ PM2 auto-restart przy crash
+- ✅ Health checks co 5 min
+- ✅ Auto-start przy reboot serwera
+
+**Dodatkowe zabezpieczenia (opcjonalne):**
+
+```bash
+# Zmień SSH port (zamiast 22)
+nano /etc/ssh/sshd_config
+# Zmień: Port 2222
+systemctl restart sshd
+ufw allow 2222/tcp
+
+# Wyłącz root login
+nano /etc/ssh/sshd_config
+# Ustaw: PermitRootLogin no
+
+# Utwórz sudo user
+adduser trader
+usermod -aG sudo trader
+
+# Fail2Ban (auto-ban brute force)
+apt-get install fail2ban -y
+systemctl enable fail2ban
+```
+
+---
+
+## 💰 Koszt Miesięczny
+
+| Pozycja | Koszt |
+|---------|-------|
+| VPS (DigitalOcean Basic) | $6/miesiąc |
+| **TOTAL** | **$6/miesiąc** |
+
+**Z $200 credit = 33 miesiące za darmo!**
+
+---
+
+## 🚨 Troubleshooting
+
+### Bot nie startuje:
+
+```bash
+pm2 logs turbo-bot --err --lines 50
+```
+
+### Dashboard nie ładuje się:
+
+```bash
+# Check if port 8080 is listening
+netstat -tlnp | grep 8080
+
+# Restart dashboard
+pm2 restart dashboard
+```
+
+### WebSocket nie działa:
+
+```bash
+curl http://localhost:3001/api/websocket/okx
+# Powinien zwrócić JSON z status
+```
+
+### Update bota:
+
+```bash
+cd turbo-bot
+git pull
+npm install
+pm2 restart all
+```
+
+---
+
+## 📈 Przejście na Live Trading
+
+**Po przetestowaniu w simulation (minimum 72h):**
+
+```bash
+# 1. Edit .env
+nano .env
+
+# 2. Zmień:
+MODE=live
+ENABLE_REAL_TRADING=true
+
+# 3. Restart
+pm2 restart all
+
+# 4. Monitor BARDZO blisko przez pierwsze 24h
+pm2 logs turbo-bot --lines 100
+
+# 5. Sprawdź pierwsze transakcje na OKX
+```
+
+**⚠️ UWAGA: Zacznij od małego kapitału! (np. $100)**
+
+---
+
+## ✅ Checklist Przed Live Trading
+
+- [ ] Bot działa stabilnie w simulation 72+ godzin
+- [ ] Win rate >40%
+- [ ] Max drawdown <15%
+- [ ] Sharpe ratio >0.8
+- [ ] WebSocket stable (0 reconnects)
+- [ ] Health checks passing
+- [ ] OKX API keys LIVE (nie demo)
+- [ ] Sprawdzone logi - brak errors
+- [ ] Backup strategy ready
+- [ ] Emergency stop plan
+
+---
+
+## 🎉 Gratulacje!
+
+**Masz teraz:**
+- ✅ Trading bot 24/7
+- ✅ Real-time dashboard
+- ✅ WebSocket market data
+- ✅ ML predictions
+- ✅ Auto-restart & monitoring
+- ✅ Production-ready deployment
+
+**Next: Week 2 - Advanced Features!**

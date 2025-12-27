@@ -3,16 +3,13 @@
   "name": "turbo-trading-bot-enterprise",
   "version": "4.0.4",
   "description": "Enterprise-grade autonomous trading bot with ML capabilities and risk management",
-  "main": "dist/main_enterprise.js",
+  "main": "trading-bot/AutonomousTradingBot.ts",
   "scripts": {
-    "dev": "nodemon --exec ts-node main_enterprise.ts",
-    "start": "node dist/main_enterprise.js",
-    "start:simple": "node dist/main.js",
-    "start:trading": "nodemon --exec ts-node trading-bot/main.ts",
-    "start:enterprise": "ts-node main_enterprise.ts",
-    "start:production": "NODE_ENV=production TRADING_MODE=production ts-node main_enterprise.ts",
-    "start:demo": "TRADING_MODE=demo ts-node main_enterprise.ts",
-    "start:backtest": "TRADING_MODE=backtest ts-node main_enterprise.ts",
+    "dev": "nodemon --exec ts-node trading-bot/AutonomousTradingBot.ts",
+    "start": "ts-node trading-bot/AutonomousTradingBot.ts",
+    "start:simulation": "MODE=simulation ts-node trading-bot/AutonomousTradingBot.ts",
+    "start:backtest": "MODE=backtest ts-node trading-bot/AutonomousTradingBot.ts",
+    "start:live": "MODE=live ENABLE_REAL_TRADING=true ts-node trading-bot/AutonomousTradingBot.ts",
     "enterprise:deploy": "./deploy_enterprise.sh",
     "enterprise:deploy:full": "NODE_ENV=production ./deploy_enterprise.sh deploy",
     "enterprise:test": "./deploy_enterprise.sh test-only",
@@ -25,6 +22,7 @@
     "build:watch": "tsc --watch --noEmit false || true",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch --passWithNoTests",
+    "test:coverage": "jest --coverage --passWithNoTests",
     "test:enterprise": "jest --testPathPattern=enterprise --passWithNoTests",
     "lint": "echo 'Skipping lint for Enterprise preparation'",
     "lint:fix": "echo 'Skipping lint for Enterprise preparation'",
@@ -117,6 +115,7 @@
     "csv-writer": "^1.6.0",
     "decimal.js": "^10.6.0",
     "dotenv": "^16.3.0",
+    "duckdb": "^1.4.2",
     "express": "^4.21.2",
     "express-rate-limit": "^8.1.0",
     "grafana-dash-gen": "^4.0.1",
@@ -175,10 +174,18 @@
     ],
     "testTimeout": 30000,
     "transformIgnorePatterns": [
-      "node_modules/(?!(uuid)/)"
+      "node_modules/(?!uuid)"
     ],
     "moduleNameMapper": {
-      "^uuid$": "<rootDir>/node_modules/uuid/dist/index.js"
+      "^uuid$": "uuid"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsconfig": {
+          "esModuleInterop": true,
+          "allowSyntheticDefaultImports": true
+        }
+      }
     }
   }
 }

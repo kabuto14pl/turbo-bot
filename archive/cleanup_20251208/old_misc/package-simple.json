@@ -1,0 +1,11 @@
+// 🔧 [PRODUCTION-CONFIG] Package configuration for trading bot system
+{
+  "scripts": {
+    "build-simple": "echo 'Building for Codespaces...' && exit 0",
+    "install-deps": "npm install --force --no-optional",
+    "prepare-codespace": "echo 'Project prepared for GitHub Codespaces'",
+    "dev": "nodemon --exec ts-node trading-bot/main.ts",
+    "start": "node dist/trading-bot/main.js",
+    "test": "jest --passWithNoTests"
+  }
+}

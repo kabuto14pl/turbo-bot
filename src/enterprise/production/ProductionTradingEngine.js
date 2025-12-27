@@ -28,7 +28,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductionTradingEngine = void 0;
 const events_1 = require("events");
-const uuid_1 = require("uuid");
+const uuid_helper_1 = require("./uuid-helper");
 /**
  * Production Trading Engine
  *
@@ -195,7 +195,7 @@ class ProductionTradingEngine extends events_1.EventEmitter {
             // Create order
             const order = {
                 ...orderRequest,
-                id: (0, uuid_1.v4)(),
+                id: (0, uuid_helper_1.uuidv4)(),
                 status: 'PENDING',
                 timestamp: new Date()
             };
@@ -472,7 +472,7 @@ class ProductionTradingEngine extends events_1.EventEmitter {
         else {
             // Create new position
             const position = {
-                id: (0, uuid_1.v4)(),
+                id: (0, uuid_helper_1.uuidv4)(),
                 symbol: order.symbol,
                 size: order.side === 'BUY' ? order.quantity : -order.quantity,
                 entryPrice: executionPrice,
@@ -609,7 +609,7 @@ class ProductionTradingEngine extends events_1.EventEmitter {
         for (const position of Array.from(this.positions.values())) {
             // Create closing order
             const closeOrder = {
-                id: (0, uuid_1.v4)(),
+                id: (0, uuid_helper_1.uuidv4)(),
                 symbol: position.symbol,
                 type: 'MARKET',
                 side: position.type === 'LONG' ? 'SELL' : 'BUY',

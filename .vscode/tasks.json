@@ -1,0 +1,319 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // ============================================
+    // 🏗️ BUILD & COMPILE TASKS
+    // ============================================
+    {
+      "label": "🔨 Build TypeScript",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false
+      }
+    },
+    {
+      "label": "🔍 TypeScript Type Check",
+      "type": "shell",
+      "command": "npx",
+      "args": ["tsc", "--noEmit", "--pretty"],
+      "problemMatcher": ["$tsc-watch"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🧹 Clean Build",
+      "type": "shell",
+      "command": "rm -rf trading-bot/**/*.js && echo '✅ Cleaned all compiled JS files'",
+      "problemMatcher": []
+    },
+    
+    // ============================================
+    // 🧪 TESTING TASKS
+    // ============================================
+    {
+      "label": "🧪 Run All Tests",
+      "type": "shell",
+      "command": "npm",
+      "args": ["test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🎯 Run Tests with Coverage",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:coverage"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "⚡ Run Tests (Watch Mode)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:watch"],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    
+    // ============================================
+    // 🤖 BOT OPERATION TASKS
+    // ============================================
+    {
+      "label": "🚀 Start Bot - Simulation",
+      "type": "shell",
+      "command": "MODE=simulation npm start",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^(.*)$",
+          "file": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Starting autonomous trading bot.*$",
+          "endsPattern": "^.*Health server running.*$"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🧪 Start Bot - Backtest",
+      "type": "shell",
+      "command": "MODE=backtest npm start",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "⚡ Start Bot - Live (PRODUCTION)",
+      "type": "shell",
+      "command": "MODE=live ENABLE_REAL_TRADING=true npm start",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      }
+    },
+    
+    // ============================================
+    // 📊 MONITORING & HEALTH CHECKS
+    // ============================================
+    {
+      "label": "🩺 Health Check",
+      "type": "shell",
+      "command": "curl -s http://localhost:3001/health | jq",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "📊 Portfolio Status",
+      "type": "shell",
+      "command": "curl -s http://localhost:3001/api/portfolio | jq",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🧠 Ensemble ML Status",
+      "type": "shell",
+      "command": "curl -s http://localhost:3001/api/ensemble/status | jq",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "📈 Prometheus Metrics",
+      "type": "shell",
+      "command": "curl -s http://localhost:3001/metrics",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    
+    // ============================================
+    // 🔧 DEVELOPMENT UTILITIES
+    // ============================================
+    {
+      "label": "🎨 Format Code (Prettier)",
+      "type": "shell",
+      "command": "npx",
+      "args": ["prettier", "--write", "**/*.{ts,js,json}"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🔍 Lint TypeScript",
+      "type": "shell",
+      "command": "npx",
+      "args": ["eslint", ".", "--ext", ".ts"],
+      "problemMatcher": ["$eslint-stylish"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🧹 Clean Cache",
+      "type": "shell",
+      "command": "rm -rf node_modules/.cache .ts-node && echo '✅ Cache cleared'",
+      "problemMatcher": []
+    },
+    
+    // ============================================
+    // 📦 DEPENDENCY MANAGEMENT
+    // ============================================
+    {
+      "label": "📦 Install Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🔄 Update Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["update"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🔐 Audit Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["audit"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    
+    // ============================================
+    // 🌐 VPS DEPLOYMENT TASKS
+    // ============================================
+    {
+      "label": "🚀 Open Dashboard",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/open-dashboard.ps1"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "📊 Check Bot Status",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/check-status.ps1"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      }
+    },
+    {
+      "label": "🔗 Connect to VPS",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/connect-vps.ps1"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      }
+    },
+    {
+      "label": "📜 View Bot Logs",
+      "type": "shell",
+      "command": "ssh",
+      "args": ["root@64.226.70.149", "pm2 logs turbo-bot --lines 50 --nostream"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      }
+    },
+    {
+      "label": "🔄 Restart Bot",
+      "type": "shell",
+      "command": "ssh",
+      "args": ["root@64.226.70.149", "pm2 restart all"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      }
+    },
+    {
+      "label": "⚙️ PM2 Status",
+      "type": "shell",
+      "command": "ssh",
+      "args": ["root@64.226.70.149", "pm2 status"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      }
+    }
+  ]
+}

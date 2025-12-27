@@ -1,0 +1,736 @@
+[INFO] 2025-10-03T23:38:14.758Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-03T23:38:14.760Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-03T23:38:14.760Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-03T23:56:03.458Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-03T23:56:03.459Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-03T23:56:03.459Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T00:12:28.856Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T00:12:28.857Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T00:12:28.857Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T00:14:02.675Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T00:31:21.962Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T00:31:21.963Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T00:31:21.963Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T00:31:22.265Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T00:39:24.965Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T00:39:25.460Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T00:39:25.513Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T00:39:25.514Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T00:39:27.397Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T00:39:28.541Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T00:39:29.253Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T00:39:37.405Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T00:39:38.189Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T00:39:38.663Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T00:39:40.416Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T00:39:41.240Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T00:39:46.629Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T00:40:03.328Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T00:40:04.628Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T00:40:06.110Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T00:40:09.265Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T00:40:10.626Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T00:40:12.209Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T00:40:32.397Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T00:47:17.798Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T00:47:19.134Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T00:47:19.940Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T00:47:20.556Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T00:47:20.907Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T00:48:30.909Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T07:48:53.432Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T07:48:53.433Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T07:48:53.433Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T08:04:49.961Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T08:04:49.962Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T08:04:49.962Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T08:07:54.465Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T08:07:54.732Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T08:07:54.733Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T08:19:06.284Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T08:19:06.596Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T08:19:06.734Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T08:19:06.798Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T08:19:26.341Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T08:19:28.280Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T08:19:32.502Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T08:19:34.203Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T08:33:25.099Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T08:33:25.100Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T08:33:25.100Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T08:33:26.125Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T08:37:37.528Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T08:43:34.896Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T08:43:55.855Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T08:43:55.856Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T08:43:55.856Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T08:46:49.630Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T08:46:49.720Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T08:46:49.722Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T08:47:13.621Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T08:47:15.543Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T08:47:16.021Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T08:47:16.615Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T08:54:28.117Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T08:54:28.118Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T08:54:28.118Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T08:54:45.957Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T08:55:22.640Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T08:55:22.641Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T08:55:22.641Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T08:58:14.141Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T08:58:14.868Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T08:58:15.414Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T08:58:15.539Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T08:58:15.591Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T08:59:25.173Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T09:04:59.041Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T09:04:59.042Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T09:04:59.042Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T09:05:12.275Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:05:47.293Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T09:05:47.774Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:05:47.839Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T09:05:47.839Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T09:07:04.064Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T09:09:56.899Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T09:10:27.244Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T09:10:27.245Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T09:10:27.245Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T09:11:15.448Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:11:16.552Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T09:11:17.205Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:11:17.322Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T09:11:17.432Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T09:11:32.201Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T09:11:33.584Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T09:11:37.063Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T09:13:04.262Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T09:20:22.701Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T09:20:22.702Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T09:20:22.702Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T09:22:49.183Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T09:24:16.656Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T09:24:16.657Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T09:24:16.657Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T09:27:44.828Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:30:23.963Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T09:30:23.964Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T09:30:23.964Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T09:30:46.957Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T09:30:57.986Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T09:30:57.987Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T09:30:57.987Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T09:31:05.352Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T09:31:27.194Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T09:31:27.195Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T09:31:27.195Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T09:36:02.709Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T09:36:02.710Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T09:36:02.710Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T09:36:35.055Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:36:36.443Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T09:36:36.799Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:36:36.888Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T09:36:36.938Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T09:36:48.722Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T09:36:49.994Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T09:37:51.586Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T09:39:31.118Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:45:25.890Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T09:47:06.009Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T09:57:22.767Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T09:57:22.768Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T09:57:22.768Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T09:58:08.219Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:58:09.810Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T09:58:10.492Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T09:58:10.588Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T09:58:10.732Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T09:58:33.476Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T09:58:43.118Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T09:59:20.466Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T10:05:38.849Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T10:06:23.591Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T10:06:56.303Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T10:08:09.977Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T10:08:09.978Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T10:08:09.978Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T10:09:06.330Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T10:10:10.797Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T10:10:10.798Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T10:10:10.798Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T10:11:11.533Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T10:11:45.162Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T10:11:45.163Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T10:11:45.163Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T10:12:28.180Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T10:12:29.617Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T10:12:29.942Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T10:12:30.059Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T10:12:30.172Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T10:13:39.929Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T10:15:55.535Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T10:16:40.772Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T10:16:40.773Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T10:16:40.774Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T10:17:34.041Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T10:17:34.946Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T10:17:35.563Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T10:17:36.057Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T10:17:36.151Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T10:18:20.430Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T10:19:25.776Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T10:20:40.633Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T10:20:40.634Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T10:20:40.634Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T10:22:37.944Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T10:22:57.693Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T10:22:57.694Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T10:22:57.694Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T10:24:31.949Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T10:24:32.840Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T10:24:33.450Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T10:24:33.603Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T10:24:33.659Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T10:25:04.132Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T10:26:08.364Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T10:30:04.131Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T10:30:42.536Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T10:30:42.537Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T10:30:42.537Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T10:52:12.469Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T10:52:12.470Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T10:52:12.470Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T10:57:42.745Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T10:58:03.314Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T10:58:03.315Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T10:58:03.315Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T10:58:51.320Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T10:59:12.124Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T10:59:31.182Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T11:02:06.973Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T11:20:38.869Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:20:38.870Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:20:38.870Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:20:51.613Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T11:21:31.739Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T11:28:52.909Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:28:52.910Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:28:52.911Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:28:54.579Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T11:29:29.360Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T11:29:48.567Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:29:48.568Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:29:48.568Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:29:49.779Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T11:31:45.362Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T11:32:06.752Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T11:32:23.529Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:32:23.531Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:32:23.531Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:32:37.047Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T11:32:53.785Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T11:33:21.897Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T11:33:37.931Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T11:34:05.011Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T11:34:47.158Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T11:35:01.294Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T11:35:16.076Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:35:16.077Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:35:16.077Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:35:50.225Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T11:36:42.209Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T11:37:00.673Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T11:37:01.140Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T11:37:05.426Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T11:37:06.454Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T11:37:07.932Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T11:37:45.493Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T11:44:03.192Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:44:03.193Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:44:03.194Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:44:24.865Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T11:44:41.381Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:44:41.382Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:44:41.382Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:50:18.935Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:50:18.936Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:50:18.936Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:53:53.034Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:53:53.035Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:53:53.035Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:57:16.576Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:57:16.577Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:57:16.577Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T11:59:11.461Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T11:59:11.462Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T11:59:11.462Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T12:00:50.921Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:00:51.024Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T12:00:51.026Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T12:00:52.993Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T12:00:53.341Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:00:53.442Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:00:53.508Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T12:00:53.509Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T12:01:31.543Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:01:49.660Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T12:01:49.661Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T12:01:49.661Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T12:02:34.500Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:03:01.010Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T12:03:01.012Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T12:03:01.012Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T12:03:16.134Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:04:39.126Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:04:39.578Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:04:40.343Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T12:04:40.812Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:04:40.818Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:04:40.869Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T12:04:40.975Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T12:05:25.766Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T12:05:48.388Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:06:23.224Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:06:24.586Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:06:26.671Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T12:06:26.748Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:06:27.627Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T12:06:27.724Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T12:06:28.507Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T12:06:28.513Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T12:06:29.010Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T12:06:29.025Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:06:29.948Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T12:06:29.964Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:06:30.490Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T12:06:30.496Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T12:06:40.751Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T12:10:12.764Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T12:10:12.765Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T12:10:12.765Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T12:10:49.255Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T12:10:49.562Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:10:49.600Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T12:10:49.853Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T12:10:50.118Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:10:50.315Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:10:50.373Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T12:10:50.514Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T12:11:27.916Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:12:01.379Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:12:20.206Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:12:50.509Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:13:20.379Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:13:23.780Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T12:13:23.881Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:13:24.581Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T12:13:24.702Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T12:13:25.848Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T12:13:25.861Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:13:50.210Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:14:20.152Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:14:50.148Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:15:20.153Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:15:50.292Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:16:20.221Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:16:50.154Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:17:20.145Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:17:50.274Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:18:22.187Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:18:50.280Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:19:52.094Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T12:21:00.812Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T12:21:00.813Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T12:21:00.813Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T12:23:00.263Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T12:23:00.264Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T12:23:00.264Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T12:23:08.135Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T12:23:08.358Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:23:09.252Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T12:23:09.523Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T12:23:09.620Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:23:09.788Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T12:23:09.835Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T12:23:21.577Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T12:23:21.676Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:23:45.267Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:24:09.540Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:33:43.884Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:34:09.659Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:34:39.779Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:35:09.667Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:35:45.762Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:36:45.683Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:37:45.741Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:38:45.808Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:39:45.778Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:40:45.793Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:41:45.749Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:42:45.776Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:43:45.678Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:44:45.808Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:45:45.752Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:46:25.914Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T12:47:19.442Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T12:47:45.750Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:48:45.854Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:49:45.773Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:50:45.664Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:51:45.783Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:52:45.784Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:53:45.816Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:54:45.667Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:55:45.739Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:56:45.791Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:57:45.790Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T12:58:45.668Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T13:33:27.284Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T13:33:27.286Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T13:33:27.286Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T13:35:43.786Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T13:35:43.959Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T13:35:44.349Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T13:35:44.434Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T13:35:51.827Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T13:35:51.840Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T13:36:13.447Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T13:36:25.636Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T13:36:25.740Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T13:36:34.172Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T13:36:34.185Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T13:36:34.691Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T13:36:34.712Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T13:36:35.147Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T13:36:35.162Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:36:43.827Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:37:13.823Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:37:43.870Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:38:05.809Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T13:38:05.824Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T13:38:07.513Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T13:38:07.610Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:38:09.512Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T13:38:09.526Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T13:38:10.932Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T13:38:10.948Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:38:13.468Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:38:43.812Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:39:13.815Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:39:45.834Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:40:45.800Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:41:45.885Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:42:45.884Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:43:45.970Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:44:45.937Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:45:46.071Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:46:07.642Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T13:50:15.277Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T13:50:15.278Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T13:50:15.278Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T13:50:20.110Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T13:50:45.895Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:50:53.892Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T13:50:54.047Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T13:50:54.091Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T13:50:54.092Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T13:50:55.361Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T13:51:23.853Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T13:51:53.792Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T13:52:03.793Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T13:52:03.814Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T13:52:04.911Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T13:52:05.008Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T13:52:07.476Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T13:52:07.491Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:52:08.556Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T13:52:08.576Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T13:52:09.303Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T13:52:09.324Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T13:52:09.929Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T13:52:09.969Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:52:23.900Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:52:53.805Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:53:23.809Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:53:53.889Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:54:26.111Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:54:30.238Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T13:54:30.256Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T13:54:30.823Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T13:54:30.951Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T13:54:32.283Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T13:54:32.298Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T13:54:36.741Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T13:54:36.758Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T13:54:38.187Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T13:54:38.200Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T13:54:41.214Z: ⏱️ Timeframe changed to: 1d
+[INFO] 2025-10-04T13:54:41.234Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:54:53.754Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:55:23.839Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:55:54.024Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:56:23.770Z: 📊 API CALL: market-data/BTCUSDT/1d
+[INFO] 2025-10-04T13:56:25.578Z: ⏱️ Timeframe changed to: 4h
+[INFO] 2025-10-04T13:56:25.670Z: 📊 API CALL: market-data/BTCUSDT/4h
+[INFO] 2025-10-04T13:56:26.368Z: ⏱️ Timeframe changed to: 1h
+[INFO] 2025-10-04T13:56:26.460Z: 📊 API CALL: market-data/BTCUSDT/1h
+[INFO] 2025-10-04T13:56:26.963Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T13:56:26.981Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T13:56:27.500Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T13:56:27.514Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T13:56:45.889Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T13:56:45.902Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:56:48.259Z: ⏱️ Timeframe changed to: 5m
+[INFO] 2025-10-04T13:56:48.271Z: 📊 API CALL: market-data/BTCUSDT/5m
+[INFO] 2025-10-04T13:56:48.845Z: ⏱️ Timeframe changed to: 15m
+[INFO] 2025-10-04T13:56:48.862Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T13:56:50.294Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T13:56:50.308Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:56:51.364Z: ⏱️ Timeframe changed to: 1m
+[INFO] 2025-10-04T13:56:51.380Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:56:53.925Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:57:24.004Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:58:46.052Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T13:59:45.963Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T14:00:45.940Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T14:01:45.944Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T14:02:45.802Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T14:03:45.944Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T14:04:46.278Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T14:05:45.817Z: 📊 API CALL: market-data/BTCUSDT/1m
+[INFO] 2025-10-04T14:06:04.131Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:06:04.271Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T14:06:04.480Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T14:06:04.556Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T14:06:07.646Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T14:06:34.852Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:07:04.799Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:07:34.824Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:08:04.991Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:08:35.460Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:09:04.784Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:09:12.689Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T14:14:11.488Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T14:14:11.490Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T14:14:11.490Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T14:14:12.132Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T14:14:36.259Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:14:37.287Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T14:14:37.784Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:14:37.809Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T14:14:37.928Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T14:14:38.060Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T14:15:07.624Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:15:37.822Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:16:07.653Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:16:37.963Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:17:07.818Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:17:37.846Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:18:45.892Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:19:45.805Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:20:54.195Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T14:20:54.196Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T14:20:54.196Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T14:20:58.195Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T14:21:45.876Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:22:46.204Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:23:26.707Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T14:27:24.388Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T14:27:24.389Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T14:27:24.389Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T14:27:26.126Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T14:27:45.874Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:28:45.950Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:28:53.674Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T14:28:53.991Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T14:28:54.002Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:28:54.279Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T14:28:54.346Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T14:29:24.847Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:29:54.814Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:30:24.816Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:30:54.893Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T14:30:59.797Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-04T14:33:59.028Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-04T18:47:42.927Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-04T18:47:42.929Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-04T18:47:42.929Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-04T18:48:30.517Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:48:30.628Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-04T18:48:30.894Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-04T18:48:30.979Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-04T18:49:00.714Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:49:30.705Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:50:00.699Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:50:30.840Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:51:00.832Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:51:30.863Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:52:45.786Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:53:00.818Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:53:30.819Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:54:45.704Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:55:45.836Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:56:45.869Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:57:45.787Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:58:45.828Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T18:59:45.719Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:00:45.914Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:01:45.852Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:02:45.827Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:03:08.016Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:03:30.794Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:04:00.775Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:04:46.405Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:05:45.876Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:06:00.804Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:06:30.786Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:07:45.836Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:08:45.888Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:09:45.787Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:10:45.728Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:11:45.842Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:12:45.828Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:13:45.846Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:14:45.828Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:15:45.856Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:16:45.799Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-04T19:17:45.812Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:43:03.821Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T10:43:03.823Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T10:43:03.823Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T10:43:50.538Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-05T10:44:20.329Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:44:50.445Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:45:20.461Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:45:50.449Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:46:20.538Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:46:50.322Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:47:45.450Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:48:45.452Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:49:44.813Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T10:49:44.815Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T10:49:44.815Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T10:49:45.452Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:49:46.554Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-05T10:50:45.316Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:51:45.313Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:52:45.480Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:53:45.326Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:54:45.462Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:55:12.232Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T10:55:12.233Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T10:55:12.233Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T10:55:17.494Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-05T10:55:45.480Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:56:45.302Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:57:45.303Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:58:45.454Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:58:49.467Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-05T10:58:49.827Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:58:49.904Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-05T10:58:50.108Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-05T10:58:50.186Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-05T10:59:20.294Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T10:59:50.768Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:00:20.307Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:00:50.305Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:01:20.321Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:01:50.319Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:02:45.411Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:03:45.481Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:04:45.304Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:05:45.305Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:06:45.632Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:07:42.180Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:07:42.181Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:07:42.181Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:07:45.288Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:07:47.571Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-05T11:08:45.408Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:09:20.763Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:09:21.709Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-05T11:09:22.061Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:09:22.131Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-05T11:09:22.348Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-05T11:09:22.389Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-05T11:09:51.909Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:10:21.878Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:10:52.324Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:11:22.310Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:11:52.383Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:12:22.320Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:13:03.257Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-05T11:17:01.520Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:17:01.521Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:17:01.521Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:17:07.509Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-05T11:17:45.420Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:18:45.602Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:19:45.315Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:20:45.504Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:21:45.398Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:22:45.443Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:23:45.408Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:24:45.557Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:24:47.971Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-05T11:24:48.157Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:24:48.409Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-05T11:24:48.471Z: 📊 Client subscribed to market data: BTCUSDT,ETHUSDT,SOLUSDT
+[INFO] 2025-10-05T11:24:48.471Z: 🎯 Client subscribed to strategy signals: RSI_TURBO,MOMENTUM_PRO,SUPERTREND
+[INFO] 2025-10-05T11:25:18.306Z: 📊 API CALL: market-data/BTCUSDT/15m
+[INFO] 2025-10-05T11:25:33.035Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-05T11:29:31.171Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:29:31.172Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:29:31.172Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:29:35.692Z: 📱 Professional dashboard client connected
+[INFO] 2025-10-05T11:29:37.634Z: 📱 Professional dashboard client disconnected
+[INFO] 2025-10-05T11:35:48.938Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:35:48.939Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:35:48.939Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:40:23.739Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:40:23.740Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:40:23.740Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:44:05.624Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-05T11:44:48.055Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:44:48.056Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:44:48.056Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:46:32.353Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-05T11:46:42.452Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:46:42.453Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:46:42.453Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:48:22.267Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:48:22.268Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:48:22.268Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:51:57.850Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:51:57.851Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:51:57.851Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:55:42.740Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-05T11:55:59.621Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:55:59.622Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:55:59.622Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T11:56:32.061Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-05T11:56:51.701Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T11:56:51.702Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T11:56:51.702Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T12:01:55.918Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T12:01:55.919Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T12:01:55.919Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T12:24:33.329Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T12:24:33.330Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T12:24:33.330Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T12:29:10.748Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T12:29:10.749Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T12:29:10.749Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T13:03:42.517Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T13:03:42.519Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T13:03:42.519Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T13:11:32.139Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-05T13:13:57.743Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T13:13:57.744Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T13:13:57.744Z: 💎 Enterprise-grade trading terminal ready
+[INFO] 2025-10-05T13:21:22.210Z: 🛑 Shutting down Professional Trading Dashboard...
+[INFO] 2025-10-05T13:21:30.029Z: 🏛️ Professional Trading Dashboard started on port 3002
+[INFO] 2025-10-05T13:21:30.030Z: 📊 Dashboard URL: http://localhost:3002
+[INFO] 2025-10-05T13:21:30.030Z: 💎 Enterprise-grade trading terminal ready

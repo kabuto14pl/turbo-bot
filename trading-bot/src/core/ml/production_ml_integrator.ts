@@ -392,7 +392,8 @@ export class ProductionMLIntegrator {
       multi_step_returns: 3,
       distributional_rl: true,
       noisy_networks: false,
-      dropout_rate: 0.1,
+      dropout_rate: 0.25,  // 🚀 FAZA 1.1: Increased to 25% (from 0.1)
+      l2_regularization: 0.01,  // 🚀 FAZA 1.1: Added L2 weight decay
       episodes_per_update: 100 // Fix: add missing required field
     };
 
@@ -460,7 +461,7 @@ export class ProductionMLIntegrator {
         model_compression: this.config.performance.model_compression
       },
       production_deployment: {
-        enabled: true,
+        enabled: process.env.DISABLE_PRODUCTION_DEPLOYMENT !== 'true' && process.env.MODE !== 'simulation' && process.env.MODE !== 'paper_trading' && process.env.NODE_ENV !== 'test',
         deployment_strategy: this.config.production.deployment_strategy,
         auto_scaling: true,
         load_balancing: true,

@@ -1,0 +1,48 @@
+# 🚀 [PRODUCTION-CONFIG]
+# Production deployment configuration
+# 🔧 [PRODUCTION-CONFIG] Docker configuration for trading bot system
+version: "3.8"
+
+services:
+  # Trading Bot Application (tylko w razie potrzeby Docker)
+  trading-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: turbo-trading-bot
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    ports:
+      - "3000:3000" # Bot API
+    networks:
+      - trading-network
+    profiles:
+      - docker # Uruchomi się tylko gdy explicitly requested
+
+  # Grafana for dashboards (opcjonalnie)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "8080:3000" # Grafana UI
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - trading-network
+    profiles:
+      - monitoring # Uruchomi się tylko gdy explicitly requested
+
+volumes:
+  grafana_data:
+
+networks:
+  trading-network:
+    driver: bridge

@@ -1,0 +1,61 @@
+[
+  // ============================================
+  // 🤖 TRADING BOT CUSTOM KEYBINDINGS
+  // ============================================
+  
+  // Quick Test Run
+  {
+    "key": "ctrl+shift+t",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🧪 Run All Tests"
+  },
+  
+  // Start Bot Simulation
+  {
+    "key": "ctrl+shift+s",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🚀 Start Bot - Simulation"
+  },
+  
+  // Type Check
+  {
+    "key": "ctrl+shift+c",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🔍 TypeScript Type Check"
+  },
+  
+  // Health Check
+  {
+    "key": "ctrl+shift+h",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🩺 Health Check"
+  },
+  
+  // Portfolio Status
+  {
+    "key": "ctrl+shift+p",
+    "command": "workbench.action.tasks.runTask",
+    "args": "📊 Portfolio Status"
+  },
+  
+  // Clean Build
+  {
+    "key": "ctrl+shift+delete",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🧹 Clean Build"
+  },
+  
+  // Format on Save Toggle
+  {
+    "key": "ctrl+shift+f",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🎨 Format Code (Prettier)"
+  },
+  
+  // Open Terminal at Project Root
+  {
+    "key": "ctrl+`",
+    "command": "workbench.action.terminal.new",
+    "when": "terminalFocus"
+  }
+]
