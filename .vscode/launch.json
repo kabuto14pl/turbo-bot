@@ -269,7 +269,7 @@
         "ts-node/register"
       ],
       "args": [
-        "${workspaceFolder}/trading-bot/core/risk/basic_risk_manager.ts"
+        "${workspaceFolder}/trading-bot/core/risk/risk_manager.ts"
       ],
       "cwd": "${workspaceFolder}",
       "env": {
