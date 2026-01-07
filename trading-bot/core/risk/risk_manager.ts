@@ -10,6 +10,7 @@ import { Logger } from '../../infrastructure/logging/logger';
 import { AbstractRiskManager } from './abstract_risk_manager';
 import { StrategySignal } from '../types/strategy';
 import { OrderRequest } from '../types/order';
+import { DailyTradeLimiter, getDailyTradeLimiter } from './daily_trade_limiter';
 
 interface RiskConfig {
     maxDrawdown: number;
@@ -28,6 +29,7 @@ export class RiskManager implements AbstractRiskManager {
     private readonly config: RiskConfig;
     private rollingVaR: number;
     private targetVaR: number;
+    private dailyTradeLimiter: DailyTradeLimiter;
 
     constructor(logger: Logger, config: Partial<RiskConfig> = {}) {
         this.logger = logger;
@@ -44,6 +46,20 @@ export class RiskManager implements AbstractRiskManager {
         };
         this.rollingVaR = this.config.rollingVaR;
         this.targetVaR = this.config.targetVaR;
+        
+        // Initialize daily trade limiter with enterprise-grade configuration
+        this.dailyTradeLimiter = getDailyTradeLimiter({
+            maxTradesPerDay: 5,
+            maxTradesPerHour: 3,
+            maxBurstTrades: 2,
+            burstWindowMs: 5 * 60 * 1000, // 5 minutes
+            enableCooldown: true,
+            enableAlerts: true,
+            alertThreshold: 0.8,  // Alert at 80% of limit
+            criticalThreshold: 0.95 // Critical at 95% of limit
+        });
+        
+        this.logger.info('✅ RiskManager initialized with Daily Trade Limiter');
     }
 
     checkRisk(signal: StrategySignal): boolean {
@@ -132,6 +148,27 @@ export class RiskManager implements AbstractRiskManager {
     }
 
     async checkRiskLimits(order: OrderRequest): Promise<{ allowed: boolean; reason?: string }> {
+        // 🚦 CHECK DAILY TRADE LIMIT FIRST (NEW!)
+        const symbol = order.symbol || 'UNKNOWN';
+        const strategyId = 'default'; // TODO: Extract from order context
+        
+        const tradeLimitCheck = await this.dailyTradeLimiter.checkTradeLimit(symbol, strategyId);
+        
+        if (!tradeLimitCheck.allowed) {
+            this.logger.warn('🚫 Trade blocked by daily limit', {
+                symbol,
+                reason: tradeLimitCheck.reason,
+                currentCount: tradeLimitCheck.currentCount,
+                limit: tradeLimitCheck.limit,
+                percentUsed: tradeLimitCheck.percentUsed.toFixed(1) + '%'
+            });
+            
+            return {
+                allowed: false,
+                reason: tradeLimitCheck.reason || 'Daily trade limit exceeded'
+            };
+        }
+        
         // Check position size limit
         if (order.price && order.quantity && order.quantity * order.price > 1000000) {
             return {
@@ -152,5 +189,35 @@ export class RiskManager implements AbstractRiskManager {
         }
 
         return { allowed: true };
+    }
+    
+    /**
+     * 📝 RECORD SUCCESSFUL TRADE
+     * Call this after a trade is executed to update daily counter
+     */
+    recordExecutedTrade(
+        symbol: string,
+        strategyId: string,
+        direction: 'buy' | 'sell',
+        quantity: number,
+        price: number
+    ): void {
+        this.dailyTradeLimiter.recordTrade({
+            symbol,
+            strategyId,
+            direction,
+            quantity,
+            price,
+            isEmergencyOverride: false
+        });
+        
+        this.logger.info('📊 Trade recorded in daily limiter', { symbol, strategyId, direction });
+    }
+    
+    /**
+     * 📈 GET DAILY TRADE STATISTICS
+     */
+    getDailyTradeStats() {
+        return this.dailyTradeLimiter.getDailyStats();
     }
 }
