@@ -159,6 +159,6 @@ setInterval(updateDashboard, 5000);
 });
 
 app.listen(PORT, () => {
-    console.log(\`🚀 Dashboard running on http://localhost:\${PORT}\`);
-    console.log(\`📊 Dashboard UI: http://localhost:\${PORT}/dashboard\`);
+    console.log(`🚀 Dashboard running on http://localhost:${PORT}`);
+    console.log(`📊 Dashboard UI: http://localhost:${PORT}/dashboard`);
 });
