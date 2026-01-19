@@ -1,6 +1,10 @@
 /**
  * 🚀 PM2 ECOSYSTEM CONFIGURATION
- * Production-ready configuration for Turbo Bot and Dashboard
+ * Production-ready configuration for Turbo Bot
+ * 
+ * ⚠️ UWAGA: Dashboard działa na zewnętrznym VPS
+ * Dashboard URL: http://64.226.70.149:8080/
+ * Ten plik konfiguruje TYLKO trading bot
  */
 
 module.exports = {
@@ -30,29 +34,6 @@ module.exports = {
       restart_delay: 5000,
       kill_timeout: 5000,
       listen_timeout: 10000,
-      watch: false
-    },
-
-    // ==========================================
-    // DASHBOARD SERVER - Monitoring & Visualization
-    // ==========================================
-    {
-      name: 'dashboard',
-      script: './monitoring/working/dashboard_server.js',
-      instances: 1,
-      exec_mode: 'fork',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 3000
-      },
-      error_file: './logs/dashboard-error.log',
-      out_file: './logs/dashboard-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      merge_logs: true,
-      autorestart: true,
-      max_restarts: 10,
-      min_uptime: '5s',
-      restart_delay: 3000,
       watch: false
     }
   ],

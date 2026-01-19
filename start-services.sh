@@ -1,9 +1,16 @@
 #!/bin/bash
 
 # 🚀 TURBO BOT - Quick Start Script
-# Uruchamia bota i dashboard w tle przez PM2
+# Uruchamia bota w tle przez PM2
+# 
+# ⚠️ UWAGA: Dashboard działa na zewnętrznym VPS
+# Dashboard URL: http://64.226.70.149:8080/
+# Ten skrypt uruchamia TYLKO trading bot
 
-echo "🚀 Starting Turbo Bot and Dashboard..."
+echo "🚀 Starting Turbo Bot..."
+echo ""
+echo "⚠️  NOTE: Dashboard is hosted on VPS"
+echo "📊 Dashboard URL: http://64.226.70.149:8080/"
 echo ""
 
 # Check if PM2 is installed
@@ -13,15 +20,15 @@ if ! command -v pm2 &> /dev/null; then
 fi
 
 # Stop any existing processes
-echo "🛑 Stopping existing processes..."
-pm2 delete all 2>/dev/null || true
+echo "🛑 Stopping existing bot processes..."
+pm2 delete turbo-bot 2>/dev/null || true
 
 # Flush old logs
 echo "🧹 Cleaning old logs..."
 pm2 flush
 
 # Start with ecosystem config
-echo "🚀 Starting services from ecosystem.config.js..."
+echo "🚀 Starting bot from ecosystem.config.js..."
 pm2 start ecosystem.config.js
 
 # Wait for startup
@@ -39,20 +46,19 @@ pm2 save
 
 # Show endpoints
 echo ""
-echo "✅ Services Started Successfully!"
+echo "✅ Bot Started Successfully!"
 echo ""
 echo "📍 Available Endpoints:"
 echo "  🤖 Trading Bot API:  http://localhost:3001/health"
-echo "  📊 Dashboard:        http://localhost:3000/health"
-echo "  📈 Dashboard UI:     http://localhost:3000/dashboard"
+echo "  📊 Dashboard (VPS):  http://64.226.70.149:8080/"
 echo ""
 echo "📝 Useful Commands:"
 echo "  pm2 list              - Show all processes"
-echo "  pm2 logs              - Show logs (all services)"
+echo "  pm2 logs              - Show logs"
 echo "  pm2 logs turbo-bot    - Show bot logs only"
-echo "  pm2 logs dashboard    - Show dashboard logs only"
-echo "  pm2 restart all       - Restart all services"
-echo "  pm2 stop all          - Stop all services"
+echo "  pm2 restart all       - Restart bot"
+echo "  pm2 stop all          - Stop bot"
 echo "  pm2 delete all        - Remove all processes"
 echo ""
-echo "🎉 Setup complete! Bot and Dashboard are running in background."
+echo "🎉 Setup complete! Bot is running in background."
+echo "📊 Dashboard available at: http://64.226.70.149:8080/"
