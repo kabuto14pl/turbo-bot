@@ -80,13 +80,13 @@ export class SimpleRLAdapter {
     }
   }
 
-  async processStep(price: number, rsi: number, volume: number): Promise<SimpleRLAction | null> {
+  async processStep(price: number, rsi: number, volume: number, hasOpenPosition: boolean = false): Promise<SimpleRLAction | null> {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
     try {
-      const action = await this.enterpriseML.processStep(price, rsi, volume);
+      const action = await this.enterpriseML.processStep(price, rsi, volume, hasOpenPosition);
       return action;
     } catch (error) {
       this.logger.error(`❌ SimpleRL processStep failed: ${error}`);

@@ -15,7 +15,7 @@ class MomentumProStrategy extends base_strategy_1.BaseStrategy {
         super('MomentumPro', 'Strategia oparta o momentum z adaptacyjnymi parametrami', 0.25, // Domyślna waga
         {
             name: 'MomentumPro',
-            timeframes: ['m15', 'h1', 'h4'],
+            timeframes: ['m15'], // 🚀 FAZA 1.2: Używamy tylko m15 (h1/h4 usunięte)
             indicators: {
                 rsi: {
                     period: 14,
@@ -47,24 +47,50 @@ class MomentumProStrategy extends base_strategy_1.BaseStrategy {
         const signals = [];
         const m15 = state.indicators.m15;
         const currentRoc = m15.roc || 0;
+        // 🚀 FAZA 1.2: Dodatkowe warunki dla większej aktywności
+        const strongMomentum = Math.abs(currentRoc) > 0.5; // |ROC| > 0.5%
+        const rsiOversold = m15.rsi < 35;
+        const rsiOverbought = m15.rsi > 65;
         // Sprawdź czy mamy poprzednią wartość ROC
         if (this.previousRoc !== null) {
-            // Sygnał long - rosnący momentum
+            // Sygnał long - rosnący momentum (ROC crossover 0)
             if (this.previousRoc < 0 && currentRoc > 0) {
                 const confidence = this.calculateConfidence(currentRoc, m15.rsi / 100, state.regime.volatility, state.regime.trend);
                 signals.push(this.createSignal('ENTER_LONG', state.marketData.lastPrice, confidence, state, {
                     roc: currentRoc,
-                    rsi: m15.rsi,
-                    atr: m15.atr
+                    rsi: parseFloat(m15.rsi) || 0,
+                    atr: parseFloat(m15.atr) || 0,
+                    triggerType: 1 // crossover
                 }));
             }
-            // Sygnał short - malejący momentum
+            // Sygnał short - malejący momentum (ROC crossover 0)
             else if (this.previousRoc > 0 && currentRoc < 0) {
                 const confidence = this.calculateConfidence(-currentRoc, (100 - m15.rsi) / 100, state.regime.volatility, state.regime.trend);
                 signals.push(this.createSignal('ENTER_SHORT', state.marketData.lastPrice, confidence, state, {
                     roc: currentRoc,
-                    rsi: m15.rsi,
-                    atr: m15.atr
+                    rsi: parseFloat(m15.rsi) || 0,
+                    atr: parseFloat(m15.atr) || 0,
+                    triggerType: 1 // crossover
+                }));
+            }
+            // 🚀 FAZA 1.2: NOWE - Strong momentum continuation + RSI confirmation
+            else if (currentRoc > 0 && strongMomentum && !rsiOverbought && state.positions.length === 0) {
+                const confidence = this.calculateConfidence(currentRoc * 0.5, // Reduce raw ROC value for confidence
+                m15.rsi / 100, state.regime.volatility, state.regime.trend) * 0.6; // Lower confidence for continuation
+                signals.push(this.createSignal('ENTER_LONG', state.marketData.lastPrice, confidence, state, {
+                    roc: currentRoc,
+                    rsi: parseFloat(m15.rsi) || 0,
+                    atr: parseFloat(m15.atr) || 0,
+                    triggerType: 5 // momentum
+                }));
+            }
+            else if (currentRoc < 0 && strongMomentum && !rsiOversold && state.positions.length === 0) {
+                const confidence = this.calculateConfidence(Math.abs(currentRoc) * 0.5, (100 - m15.rsi) / 100, state.regime.volatility, state.regime.trend) * 0.6;
+                signals.push(this.createSignal('ENTER_SHORT', state.marketData.lastPrice, confidence, state, {
+                    roc: currentRoc,
+                    rsi: parseFloat(m15.rsi) || 0,
+                    atr: parseFloat(m15.atr) || 0,
+                    triggerType: 5 // momentum
                 }));
             }
         }
@@ -84,7 +110,7 @@ class MomentumProStrategy extends base_strategy_1.BaseStrategy {
             if (this.shouldExitPosition(position, state, stopLoss, takeProfit)) {
                 signals.push(this.createSignal(position.direction === 'long' ? 'EXIT_LONG' : 'EXIT_SHORT', state.marketData.lastPrice, 1, state, {
                     roc: currentRoc,
-                    rsi: m15.rsi,
+                    rsi: parseFloat(m15.rsi) || 0,
                     atr: m15.atr
                 }));
             }

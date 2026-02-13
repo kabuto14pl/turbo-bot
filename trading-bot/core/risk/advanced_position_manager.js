@@ -140,10 +140,24 @@ class AdvancedPositionManager {
                 });
             }
         });
-        // Zamknij pozycje
+        // FIX P3: Return closed position details for bot sync
+        const closedPositionDetails = [];
         for (const positionId of positionsToClose) {
+            const pos = this.activePositions.get(positionId);
+            if (pos) {
+                closedPositionDetails.push({
+                    positionId,
+                    symbol: pos.symbol,
+                    direction: pos.direction,
+                    entryPrice: pos.entryPrice,
+                    size: pos.size,
+                    currentPrice: pos.currentPrice,
+                    unrealizedPnL: pos.unrealizedPnL
+                });
+            }
             await this.closePosition(positionId, 'AUTO_EXIT');
         }
+        return closedPositionDetails;
     }
     /**
      * 🏁 Zamknij pozycję

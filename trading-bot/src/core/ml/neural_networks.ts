@@ -334,7 +334,8 @@ export function createDefaultValueConfig(): ValueNetworkConfig {
     input_dim: FEATURE_DIMENSIONS,
     hidden_layers: [512, 256, 128],
     activation: 'relu',
-    dropout_rate: 0.3,
+    dropout_rate: 0.3,  // 30% dropout as per PLAN
+    l2_regularization: 0.01,  // 🚀 FAZA 1.1: L2 weight decay
     batch_normalization: true,
     learning_rate: 0.001,
     optimizer: 'adam',

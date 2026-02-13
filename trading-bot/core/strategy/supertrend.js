@@ -15,7 +15,7 @@ class SuperTrendStrategy extends base_strategy_1.BaseStrategy {
         super('SuperTrend', 'Strategia oparta o wskaźnik SuperTrend z adaptacyjnymi parametrami', 0.25, // Domyślna waga
         {
             name: 'SuperTrend',
-            timeframes: ['m15', 'h1', 'h4'],
+            timeframes: ['m15'], // 🚀 FAZA 1.2: Używamy tylko m15 (h1/h4 usunięte)
             indicators: {
                 supertrend: {
                     period: 10,
@@ -44,6 +44,12 @@ class SuperTrendStrategy extends base_strategy_1.BaseStrategy {
         const m15 = state.indicators.m15;
         const supertrend = m15.supertrend;
         const currentDirection = supertrend.direction;
+        // 🚀 FAZA 1.2: Dodatkowe warunki dla większej aktywności
+        // 🔴 PROFITABILITY FIX 6: Lowered ADX threshold to match improved ADX approximation
+        // With fixed ADX formula, values now range 5-50+ (vs old 0.5-2.0)
+        // ADX > 15 = moderate trend (was 25 = strong trend with fake formula)
+        const strongTrend = m15.adx > 15; // ADX > 15 = moderate trend (lowered from 25)
+        const volatilityOk = m15.atr > 0; // Podstawowa walidacja ATR
         // Sprawdź czy mamy poprzedni kierunek
         if (this.previousDirection !== null) {
             // Sygnał long - zmiana kierunku na buy
@@ -52,8 +58,9 @@ class SuperTrendStrategy extends base_strategy_1.BaseStrategy {
                 signals.push(this.createSignal('ENTER_LONG', state.marketData.lastPrice, confidence, state, {
                     supertrendValue: supertrend.value,
                     supertrendDirection: supertrend.direction === 'buy' ? 1 : -1,
-                    adx: m15.adx,
-                    atr: m15.atr
+                    adx: parseFloat(m15.adx) || 0,
+                    atr: parseFloat(m15.atr) || 0,
+                    triggerType: 1 // crossover
                 }));
             }
             // Sygnał short - zmiana kierunku na sell
@@ -62,8 +69,30 @@ class SuperTrendStrategy extends base_strategy_1.BaseStrategy {
                 signals.push(this.createSignal('ENTER_SHORT', state.marketData.lastPrice, confidence, state, {
                     supertrendValue: supertrend.value,
                     supertrendDirection: supertrend.direction === 'buy' ? 1 : -1,
-                    adx: m15.adx,
-                    atr: m15.atr
+                    adx: parseFloat(m15.adx) || 0,
+                    atr: parseFloat(m15.atr) || 0,
+                    triggerType: 1 // crossover
+                }));
+            }
+            // 🚀 FAZA 1.2: NOWE - Trend continuation signals (strong trend bez crossover)
+            else if (currentDirection === 'buy' && strongTrend && volatilityOk && state.positions.length === 0) {
+                const confidence = this.calculateConfidence((state.marketData.lastPrice - supertrend.value) / supertrend.value, m15.adx / 100, state.regime.volatility, state.regime.trend) * 0.7; // Reduced confidence for continuation
+                signals.push(this.createSignal('ENTER_LONG', state.marketData.lastPrice, confidence, state, {
+                    supertrendValue: supertrend.value,
+                    supertrendDirection: 1,
+                    adx: parseFloat(m15.adx) || 0,
+                    atr: parseFloat(m15.atr) || 0,
+                    trigger: 'continuation' // Not crossover, just strong trend
+                }));
+            }
+            else if (currentDirection === 'sell' && strongTrend && volatilityOk && state.positions.length === 0) {
+                const confidence = this.calculateConfidence((supertrend.value - state.marketData.lastPrice) / supertrend.value, m15.adx / 100, state.regime.volatility, state.regime.trend) * 0.7;
+                signals.push(this.createSignal('ENTER_SHORT', state.marketData.lastPrice, confidence, state, {
+                    supertrendValue: supertrend.value,
+                    supertrendDirection: -1,
+                    adx: parseFloat(m15.adx) || 0,
+                    atr: parseFloat(m15.atr) || 0,
+                    trigger: 'continuation'
                 }));
             }
         }
@@ -84,7 +113,7 @@ class SuperTrendStrategy extends base_strategy_1.BaseStrategy {
                 signals.push(this.createSignal(position.direction === 'long' ? 'EXIT_LONG' : 'EXIT_SHORT', state.marketData.lastPrice, 1, state, {
                     supertrendValue: supertrend.value,
                     supertrendDirection: supertrend.direction === 'buy' ? 1 : -1,
-                    adx: m15.adx,
+                    adx: parseFloat(m15.adx) || 0,
                     atr: m15.atr
                 }));
             }

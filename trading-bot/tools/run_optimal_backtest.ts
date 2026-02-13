@@ -353,20 +353,30 @@ async function main() {
     
     // Ładowanie danych
     console.log('Ładowanie danych świecowych...');
-    const candles = await loadCandles('BTC_data_15m.csv');
-    console.log(`Załadowano ${candles.length} świec 15-minutowych.`);
+    const rawCandles = await loadCandles(path.join(__dirname, '../../data/BTCUSDT/BTCUSDT_m15.csv'));
+    console.log(`Załadowano ${rawCandles.length} świec 15-minutowych.`);
     
-    // Najlepsze parametry dla RSI Turbo z naszych testów
+    // Convert Candle[] to OHLCVWithTimestamp[]
+    const candles: OHLCVWithTimestamp[] = rawCandles.map(c => ({
+        time: c.timestamp,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        volume: c.volume
+    }));
+    
+    // Najlepsze parametry dla RSI Turbo z FINAL_OPTIMIZED_STRATEGIES.ts
     const rsiParams = {
-        rsiPeriod: 20,
-        oversold: 30,
-        overbought: 70,
-        adxThreshold: 15
+        rsiPeriod: 14,  // Optimized
+        oversold: 29,   // Optimized from 30
+        overbought: 66, // Optimized from 70
+        adxThreshold: 25 // Standard threshold
     };
     
     // Najlepsze parametry dla SuperTrend (z poprzednich testów)
     const superTrendParams = {
-        period: 10,
+        period: 12,     // Optimized from 10
         multiplier: 2.5,
         useEma200Filter: true
     };

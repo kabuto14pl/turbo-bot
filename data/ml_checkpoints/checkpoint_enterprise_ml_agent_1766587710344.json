@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "timestamp": 1766587710344,
+  "modelId": "enterprise_ml_agent",
+  "episodes": 200,
+  "totalReward": 0,
+  "averageReward": 0,
+  "explorationRate": 0.08186488294786357,
+  "performance": {
+    "sharpeRatio": 0,
+    "maxDrawdown": 0.5,
+    "winRate": 0,
+    "totalTrades": 200,
+    "profitableTrades": 0
+  },
+  "config": {
+    "algorithm": "PPO",
+    "learningRate": 0.001,
+    "gamma": 0.99,
+    "epsilon": 0.08186488294786357
+  },
+  "metadata": {
+    "decisionHistorySize": 0,
+    "recentPnLsSize": 0,
+    "savedAt": "2025-12-24T14:48:30.344Z",
+    "nodeVersion": "v20.19.6"
+  }
+}

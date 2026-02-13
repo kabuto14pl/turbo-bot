@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "modelId": "test_model",
+  "timestamp": 1765259740238,
+  "episodes": 42,
+  "totalReward": 110.5,
+  "averageReward": 2.63,
+  "explorationRate": 0.15,
+  "performance": {
+    "winRate": 0.65,
+    "sharpeRatio": 1.5,
+    "maxDrawdown": 0.08,
+    "totalTrades": 100,
+    "profitableTrades": 65
+  },
+  "config": {
+    "algorithm": "PPO",
+    "learningRate": 0.001,
+    "gamma": 0.99,
+    "epsilon": 0.1
+  },
+  "metadata": {
+    "savedAt": "2025-12-09T05:55:40.239Z",
+    "nodeVersion": "v20.19.2"
+  }
+}

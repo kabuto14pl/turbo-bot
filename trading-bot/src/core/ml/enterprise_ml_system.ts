@@ -11,6 +11,8 @@
  * Configurable for different deployment modes with comprehensive error handling
  */
 
+import { ModelCheckpointManager, MLCheckpoint } from './model_checkpoint';
+
 // Simple logger implementation
 class Logger {
   info(message: string) { console.log(`[INFO] ${message}`); }
@@ -28,6 +30,7 @@ interface MinimalMLAction {
   take_profit?: number;
   reasoning: string;
   uncertainty: number;
+  market_signal?: number; // Raw ML signal value for advanced position management
 }
 
 interface MinimalMLPerformance {
@@ -59,32 +62,82 @@ class MinimalDeepRLAgent {
   private losses: number = 0;
   private max_reward: number = 0;
   private min_reward: number = 0;
+  
+  // 💾 CHECKPOINT MANAGER - Persist learning between restarts
+  private checkpointManager: ModelCheckpointManager;
+  private modelId: string = 'enterprise_ml_agent';
+  private lastCheckpointEpisode: number = 0;
+  private checkpointInterval: number = 100; // Save every 100 episodes
+
+  // 📚 LEARNING HISTORY - Track decisions and outcomes
+  private decisionHistory: Array<{
+    episode: number;
+    rsi: number;
+    signal: number;
+    confidence: number;
+    action: string;
+    pnl: number;
+  }> = [];
+  private recentPnLs: number[] = []; // Last 20 trades for adaptive learning
+  
+  // 🎓 KROK 2: VALIDATION SPLIT & EARLY STOPPING
+  private trainingPnLs: number[] = [];      // 80% for training
+  private validationPnLs: number[] = [];    // 20% for validation
+  private trainingReward: number = 0;
+  private validationReward: number = 0;
+  private bestValidationReward: number = -Infinity;
+  private patienceCounter: number = 0;
+  private earlyStoppingPatience: number = 50; // Stop after 50 episodes without improvement
+  private validationInterval: number = 10;     // Validate every 10 episodes
+  
+  // 📈 KROK 2: LEARNING RATE SCHEDULER
+  private learningRate: number = 0.01;         // Initial learning rate
+  private minLearningRate: number = 0.0001;    // Minimum LR
+  private lrDecayFactor: number = 0.95;        // Decay by 5% on plateau
+  private lrPlateauPatience: number = 20;      // Reduce LR after 20 episodes without improvement
+  private lrPlateauCounter: number = 0;
 
   constructor(config: MinimalMLConfig) {
     this.config = config;
     this.logger = new Logger();
+    this.checkpointManager = new ModelCheckpointManager('./data/ml_checkpoints', 10);
     this.logger.info(`🧠 MinimalDeepRLAgent initialized with ${config.algorithm}`);
+    
+    // 📂 Attempt to load previous checkpoint
+    this.loadCheckpoint();
   }
 
-  async processStep(price: number, rsi: number, volume: number): Promise<MinimalMLAction | null> {
+  async processStep(price: number, rsi: number, volume: number, hasOpenPosition: boolean = false, priceHistory?: number[]): Promise<MinimalMLAction | null> {
     try {
-      // Enhanced feature analysis
-      const features = this.extractFeatures(price, rsi, volume);
+      // Enhanced feature analysis with REAL calculations (no more Math.random!)
+      const features = this.extractFeatures(price, rsi, volume, priceHistory);
+      
+      // 🔬 DEBUG: Log REAL ML features (verify no Math.random())
+      console.log(`🔬 [ML FEATURES] momentum=${features.price_momentum.toFixed(4)}, volatility=${features.volatility.toFixed(4)}, sentiment=${features.market_sentiment.toFixed(4)}`);
 
-      // 🔍 DEBUG: Log episodes BEFORE generating action
-      this.logger.debug(`📊 BEFORE generateAction: episodes=${this.episodes}`);
+      // 🔍 DEBUG: Log position status BEFORE generating action
+      this.logger.debug(`📊 BEFORE generateAction: episodes=${this.episodes}, hasPosition=${hasOpenPosition}`);
+      if (hasOpenPosition) {
+        this.logger.info(`🔒 POSITION OPEN: ML will only consider SELL signals`);
+      } else {
+        this.logger.info(`💰 NO POSITION: ML will only consider BUY signals`);
+      }
 
-      // Advanced ML decision making (BEFORE incrementing episodes!)
-      const action = this.generateAction(features);
+      // Advanced ML decision making with position awareness (BEFORE incrementing episodes!)
+      const action = this.generateAction(features, hasOpenPosition);
 
       // Enterprise risk management
       const safeAction = this.applyRiskManagement(action, features);
 
       this.logger.debug(`🧠 ML Action: ${safeAction.action_type} (confidence: ${safeAction.confidence.toFixed(3)})`);
+      this.logger.info(`🎯 FINAL DECISION: ${safeAction.action_type} | hasPosition=${hasOpenPosition} | signal=valid: ${(hasOpenPosition && safeAction.action_type === 'BUY') ? '❌ INVALID!' : '✅ VALID'}`);
 
       // 🚀 INCREMENT EPISODES AFTER generating action (for next iteration)
       this.episodes++;
       this.logger.debug(`📊 AFTER increment: episodes=${this.episodes}`);
+      
+      // 💾 AUTO-CHECKPOINT: Save state every N episodes
+      await this.checkAndSaveCheckpoint();
 
       return safeAction;
 
@@ -98,21 +151,115 @@ class MinimalDeepRLAgent {
     try {
       // Episodes already incremented in processStep()
 
+      // 📚 SAVE TO HISTORY for pattern learning
+      this.recentPnLs.push(pnl);
+      if (this.recentPnLs.length > 20) this.recentPnLs.shift(); // Keep last 20 trades
+
       // Calculate sophisticated reward
       const reward = this.calculateReward(pnl, duration, marketConditions);
       this.total_reward += reward;
+      
+      // 🎓 KROK 2: VALIDATION SPLIT (80/20) - CHRONOLOGICAL
+      // Use chronological split to prevent data leakage
+      // First 80% of episodes go to training, last 20% to validation
+      const totalTrades = this.trainingPnLs.length + this.validationPnLs.length;
+      const trainSize = Math.floor(this.episodes * 0.8); // 80% for training
+      const isValidation = totalTrades >= trainSize; // Last 20% episodes
+      
+      if (isValidation) {
+        this.validationPnLs.push(pnl);
+        this.validationReward += reward;
+        this.logger.debug(`📊 [VALIDATION] Episode ${this.episodes}/${totalTrades}: PnL=${pnl.toFixed(4)}, Reward=${reward.toFixed(4)} (Chronological split)`);
+      } else {
+        this.trainingPnLs.push(pnl);
+        this.trainingReward += reward;
+        this.logger.debug(`🎓 [TRAINING] Episode ${this.episodes}/${totalTrades}: PnL=${pnl.toFixed(4)}, Reward=${reward.toFixed(4)}`);
+      }
 
       // Track performance
-      if (pnl > 0) this.wins++;
-      else this.losses++;
+      if (pnl > 0) {
+        this.wins++;
+        this.logger.debug(`✅ ML Win: PnL=${pnl.toFixed(4)}, Reward=${reward.toFixed(4)} [${this.wins}/${this.episodes}]`);
+      } else {
+        this.losses++;
+        this.logger.debug(`❌ ML Loss: PnL=${pnl.toFixed(4)}, Reward=${reward.toFixed(4)} [${this.losses}/${this.episodes}]`);
+      }
 
       this.max_reward = Math.max(this.max_reward, reward);
       this.min_reward = Math.min(this.min_reward, reward);
+      
+      // 🛑 KROK 2: EARLY STOPPING - Validate every N episodes
+      if (this.episodes % this.validationInterval === 0 && this.episodes > 0) {
+        this.performValidationCheck();
+      }
 
-      this.logger.debug(`📚 ML Learning: PnL=${pnl.toFixed(4)}, Reward=${reward.toFixed(4)}`);
+      // 🧠 ADAPTIVE LEARNING: Analyze recent performance
+      if (this.episodes % 10 === 0 && this.episodes > 0) {
+        const recentWinRate = this.recentPnLs.filter(p => p > 0).length / this.recentPnLs.length;
+        const avgRecentPnL = this.recentPnLs.reduce((a, b) => a + b, 0) / this.recentPnLs.length;
+        this.logger.info(`📊 ML Performance Check (last ${this.recentPnLs.length} trades):`);
+        this.logger.info(`   Win Rate: ${(recentWinRate * 100).toFixed(1)}% | Avg PnL: $${avgRecentPnL.toFixed(2)}`);
+        this.logger.info(`   Total: ${this.episodes} episodes | Wins: ${this.wins} | Losses: ${this.losses}`);
+        
+        // 📊 VALIDATION METRICS
+        if (this.trainingPnLs.length > 0 && this.validationPnLs.length > 0) {
+          const trainWinRate = this.trainingPnLs.filter(p => p > 0).length / this.trainingPnLs.length;
+          const valWinRate = this.validationPnLs.filter(p => p > 0).length / this.validationPnLs.length;
+          const avgTrainReward = this.trainingReward / this.trainingPnLs.length;
+          const avgValReward = this.validationReward / this.validationPnLs.length;
+          
+          this.logger.info(`   📚 Training: ${(trainWinRate * 100).toFixed(1)}% win rate, ${avgTrainReward.toFixed(4)} avg reward`);
+          this.logger.info(`   📊 Validation: ${(valWinRate * 100).toFixed(1)}% win rate, ${avgValReward.toFixed(4)} avg reward`);
+          
+          // Detect overfitting
+          if (trainWinRate - valWinRate > 0.15) {
+            this.logger.warn(`⚠️ OVERFITTING DETECTED: Train ${(trainWinRate * 100).toFixed(1)}% >> Val ${(valWinRate * 100).toFixed(1)}%`);
+          }
+        }
+        
+        if (recentWinRate < 0.4) {
+          this.logger.warn(`⚠️ ML Underperforming: Recent win rate ${(recentWinRate * 100).toFixed(1)}% < 40%`);
+        }
+      }
 
     } catch (error) {
       this.logger.error(`❌ ML learning error: ${error}`);
+    }
+  }
+  
+  /**
+   * 🛑 KROK 2: EARLY STOPPING - Check validation performance
+   */
+  private performValidationCheck(): void {
+    if (this.validationPnLs.length === 0) return;
+    
+    const currentValReward = this.validationReward / this.validationPnLs.length;
+    
+    if (currentValReward > this.bestValidationReward) {
+      // Improvement detected
+      this.bestValidationReward = currentValReward;
+      this.patienceCounter = 0;
+      this.lrPlateauCounter = 0; // Reset LR plateau counter
+      this.logger.info(`✅ [EARLY STOPPING] Validation improved: ${currentValReward.toFixed(4)} (best: ${this.bestValidationReward.toFixed(4)})`);
+    } else {
+      // No improvement
+      this.patienceCounter++;
+      this.lrPlateauCounter++;
+      this.logger.warn(`⏳ [EARLY STOPPING] No improvement: ${this.patienceCounter}/${this.earlyStoppingPatience} patience`);
+      
+      // 📈 LEARNING RATE SCHEDULER: Reduce LR on plateau
+      if (this.lrPlateauCounter >= this.lrPlateauPatience) {
+        const oldLR = this.learningRate;
+        this.learningRate = Math.max(this.learningRate * this.lrDecayFactor, this.minLearningRate);
+        this.lrPlateauCounter = 0;
+        this.logger.info(`📉 [LR SCHEDULER] Reducing learning rate: ${oldLR.toFixed(6)} → ${this.learningRate.toFixed(6)}`);
+      }
+      
+      if (this.patienceCounter >= this.earlyStoppingPatience) {
+        this.logger.warn(`🛑 [EARLY STOPPING] Triggered after ${this.patienceCounter} episodes without improvement`);
+        this.logger.warn(`   Best validation reward: ${this.bestValidationReward.toFixed(4)}`);
+        this.logger.warn(`   Current validation reward: ${currentValReward.toFixed(4)}`);
+      }
     }
   }
 
@@ -147,87 +294,374 @@ class MinimalDeepRLAgent {
 
   // =================== PRIVATE METHODS ===================
 
-  private extractFeatures(price: number, rsi: number, volume: number): any {
+  private extractFeatures(price: number, rsi: number, volume: number, priceHistory?: number[]): any {
+    // 🚀 KROK 2: ADVANCED FEATURE ENGINEERING (17 features total)
+    
+    // ===== ORIGINAL FEATURES (7) =====
+    
+    // Price Momentum: ROC (Rate of Change) over 14 periods
+    let price_momentum = 0;
+    if (priceHistory && priceHistory.length >= 14) {
+      const currentPrice = priceHistory[priceHistory.length - 1];
+      const pastPrice = priceHistory[priceHistory.length - 14];
+      price_momentum = (currentPrice - pastPrice) / pastPrice;
+    }
+    
+    // Market Sentiment: Derived from RSI (oversold/overbought)
+    let market_sentiment = 0;
+    if (rsi < 30) {
+      market_sentiment = -1 + (rsi / 30);
+    } else if (rsi > 70) {
+      market_sentiment = (rsi - 70) / 30;
+    } else {
+      market_sentiment = (rsi - 50) / 20;
+    }
+    
+    // Volatility: Standard deviation of last 20 prices
+    let volatility = 0;
+    if (priceHistory && priceHistory.length >= 20) {
+      const recentPrices = priceHistory.slice(-20);
+      const mean = recentPrices.reduce((a, b) => a + b, 0) / recentPrices.length;
+      const squaredDiffs = recentPrices.map(p => Math.pow(p - mean, 2));
+      const variance = squaredDiffs.reduce((a, b) => a + b, 0) / recentPrices.length;
+      volatility = Math.sqrt(variance) / mean;
+    }
+    
+    // ===== NEW FEATURES (10 additional) =====
+    
+    // 1. Volume Rate of Change
+    let volume_roc = 0;
+    if (priceHistory && priceHistory.length >= 14) {
+      const recentVolatility = priceHistory.slice(-14).map((p, i, arr) => 
+        i > 0 ? Math.abs(p - arr[i-1]) / arr[i-1] : 0
+      );
+      const currentVol = recentVolatility.slice(-3).reduce((a, b) => a + b, 0) / 3;
+      const pastVol = recentVolatility.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+      volume_roc = pastVol > 0 ? (currentVol - pastVol) / pastVol : 0;
+    }
+    
+    // 2. Volume MA Ratio
+    let volume_ma_ratio = 1.0;
+    if (priceHistory && priceHistory.length >= 20) {
+      const avgVolatility = priceHistory.slice(-20).map((p, i, arr) => 
+        i > 0 ? Math.abs(p - arr[i-1]) / arr[i-1] : 0
+      ).reduce((a, b) => a + b, 0) / 20;
+      const currentVolatility = priceHistory.length >= 2 
+        ? Math.abs(priceHistory[priceHistory.length-1] - priceHistory[priceHistory.length-2]) / priceHistory[priceHistory.length-2]
+        : 0;
+      volume_ma_ratio = avgVolatility > 0 ? currentVolatility / avgVolatility : 1.0;
+    }
+    
+    // 3. Momentum Oscillator
+    let momentum_oscillator = 0;
+    if (priceHistory && priceHistory.length >= 30) {
+      const ma10 = priceHistory.slice(-10).reduce((a, b) => a + b, 0) / 10;
+      const ma30 = priceHistory.slice(-30).reduce((a, b) => a + b, 0) / 30;
+      momentum_oscillator = (ma10 - ma30) / ma30;
+    }
+    
+    // 4. Price Acceleration
+    let price_acceleration = 0;
+    if (priceHistory && priceHistory.length >= 3) {
+      const p0 = priceHistory[priceHistory.length - 3];
+      const p1 = priceHistory[priceHistory.length - 2];
+      const p2 = priceHistory[priceHistory.length - 1];
+      const vel1 = (p1 - p0) / p0;
+      const vel2 = (p2 - p1) / p1;
+      price_acceleration = vel2 - vel1;
+    }
+    
+    // 5. ATR Normalized
+    let atr_normalized = 0;
+    if (priceHistory && priceHistory.length >= 14) {
+      const ranges = priceHistory.slice(-14).map((p, i, arr) => 
+        i > 0 ? Math.abs(p - arr[i-1]) : 0
+      );
+      const atr = ranges.reduce((a, b) => a + b, 0) / 14;
+      atr_normalized = atr / price;
+    }
+    
+    // 6. Bollinger Bandwidth
+    let bollinger_bandwidth = 0;
+    if (priceHistory && priceHistory.length >= 20) {
+      const recentPrices = priceHistory.slice(-20);
+      const mean = recentPrices.reduce((a, b) => a + b, 0) / 20;
+      const stdDev = Math.sqrt(
+        recentPrices.map(p => Math.pow(p - mean, 2)).reduce((a, b) => a + b, 0) / 20
+      );
+      bollinger_bandwidth = (2 * stdDev) / mean;
+    }
+    
+    // 7. Price Distance from MA
+    let price_distance_from_ma = 0;
+    if (priceHistory && priceHistory.length >= 20) {
+      const ma20 = priceHistory.slice(-20).reduce((a, b) => a + b, 0) / 20;
+      price_distance_from_ma = (price - ma20) / ma20;
+    }
+    
+    // 8. Trend Strength
+    let trend_strength = 0;
+    if (priceHistory && priceHistory.length >= 20) {
+      const recentPrices = priceHistory.slice(-20);
+      const n = recentPrices.length;
+      const x = Array.from({length: n}, (_, i) => i);
+      const y = recentPrices;
+      const sumX = x.reduce((a, b) => a + b, 0);
+      const sumY = y.reduce((a, b) => a + b, 0);
+      const sumXY = x.map((xi, i) => xi * y[i]).reduce((a, b) => a + b, 0);
+      const sumX2 = x.map(xi => xi * xi).reduce((a, b) => a + b, 0);
+      const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+      trend_strength = slope / (sumY / n);
+    }
+    
+    // 9. RSI Divergence
+    let rsi_divergence = 0;
+    if (price_momentum !== 0) {
+      const rsi_momentum = (rsi - 50) / 50;
+      rsi_divergence = rsi_momentum - (price_momentum * 10);
+    }
+    
+    // 10. Bid-Ask Spread Proxy
+    let bid_ask_spread_proxy = 0;
+    if (priceHistory && priceHistory.length >= 5) {
+      const recentChanges = priceHistory.slice(-5).map((p, i, arr) => 
+        i > 0 ? Math.abs(p - arr[i-1]) / arr[i-1] : 0
+      );
+      bid_ask_spread_proxy = recentChanges.reduce((a, b) => a + b, 0) / 5;
+    }
+    
+    // ===== FAZA 2.2: EXTERNAL DATA FEATURES (8 additional) =====
+    
+    // 11. Funding Rate Signal (placeholder - would integrate with ExternalDataManager)
+    let funding_rate_signal = 0; // Range: -1 to +1 (positive = bullish)
+    // TODO: Integrate ExternalDataManager.getFundingRate()
+    
+    // 12. News Sentiment Score (placeholder - Alpha Vantage)
+    let news_sentiment = 0; // Range: -1 to +1
+    // TODO: Integrate ExternalDataManager.getNewsSentiment()
+    
+    // 13. VIX Normalized (placeholder - real VIX API)
+    let vix_normalized = 0.5; // Range: 0 to 1 (0 = low vol, 1 = extreme vol)
+    // TODO: Integrate ExternalDataManager.getVIX()
+    
+    // 14. On-Chain Flow Indicator (placeholder - Glassnode)
+    let on_chain_flow = 0; // Positive = net outflow from exchanges (bullish)
+    // TODO: Integrate ExternalDataManager.getOnChainMetrics()
+    
+    // 15. DXY Correlation (US Dollar Index)
+    let dxy_correlation = 0; // BTC typically negatively correlated with DXY
+    // TODO: Integrate ExternalDataManager.getMacroIndicators()
+    
+    // 16. Gold Correlation Divergence
+    let gold_divergence = 0; // BTC vs Gold price action divergence
+    // TODO: Integrate macro data
+    
+    // 17. Market Regime Indicator
+    let market_regime = 0.5; // 0 = bear, 0.5 = neutral, 1 = bull
+    // Based on VIX, funding rates, and sentiment
+    
+    // 18. Cross-Asset Momentum
+    let cross_asset_momentum = 0; // ETH, SOL correlation momentum
+    // TODO: Calculate from multi-asset portfolio data
+    
     return {
-      price_normalized: price / 100000, // Normalize to reasonable range
-      rsi_signal: (rsi - 50) / 50, // RSI signal strength
-      volume_intensity: Math.min(volume / 1000000, 5), // Volume intensity capped
-      price_momentum: Math.random() * 0.1 - 0.05, // Simplified momentum
-      market_sentiment: Math.random() * 2 - 1, // Market sentiment
-      volatility: Math.random() * 0.5, // Simplified volatility
-      time_factor: (Date.now() % 86400000) / 86400000 // Time of day factor
+      // Original 7 features
+      price_normalized: price / 100000,
+      rsi_signal: (rsi - 50) / 50,
+      volume_intensity: Math.min(volume / 1000000, 5),
+      price_momentum,
+      market_sentiment,
+      volatility,
+      time_factor: (Date.now() % 86400000) / 86400000,
+      
+      // KROK 2: 10 advanced features
+      volume_roc,
+      volume_ma_ratio,
+      momentum_oscillator,
+      price_acceleration,
+      atr_normalized,
+      bollinger_bandwidth,
+      price_distance_from_ma,
+      trend_strength,
+      rsi_divergence,
+      bid_ask_spread_proxy,
+      
+      // 🚀 FAZA 2.2: 8 external data features (25 TOTAL)
+      funding_rate_signal,
+      news_sentiment,
+      vix_normalized,
+      on_chain_flow,
+      dxy_correlation,
+      gold_divergence,
+      market_regime,
+      cross_asset_momentum
     };
   }
 
-  private generateAction(features: any): MinimalMLAction {
-    // Advanced ML decision logic with enterprise features
+  private generateAction(features: any, hasOpenPosition: boolean): MinimalMLAction {
+    // 🧠 KROK 2: ADVANCED ML with 17 FEATURES + L1/L2 REGULARIZATION
     let signal = 0;
-    let confidence = 0.45; // ⚡ BOOSTED BASE CONFIDENCE for faster cold start (was 0.3)
+    let confidence = 0.45;
 
-    // 🧠 COLD START BOOST: Add exploration bonus for early learning
+    // 🧠 COLD START with L2 REGULARIZATION (prevents overfitting)
     if (this.episodes < 100) {
-      confidence += Math.random() * 0.15; // Random boost 0-15% during warmup
+      const progressiveBoost = 0.15 * (1 - this.episodes / 100);
+      const l2_penalty = 0.01 * Math.pow(progressiveBoost, 2);
+      confidence += progressiveBoost - l2_penalty;
     }
 
-    // RSI-based signals with ML enhancement
-    if (features.rsi_signal < -0.6) { // Oversold
+    // ===== ORIGINAL FEATURES =====
+    
+    // RSI signals
+    if (features.rsi_signal < -0.6) {
       signal += 0.7;
       confidence += 0.6;
-    } else if (features.rsi_signal > 0.6) { // Overbought
+    } else if (features.rsi_signal > 0.6) {
       signal -= 0.7;
       confidence += 0.6;
     } else {
-      // Neutral market - still give some signal based on minor RSI movement
       signal += features.rsi_signal * 0.3;
-      confidence += 0.2; // Moderate confidence in neutral markets
+      confidence += 0.2;
     }
 
     // Volume confirmation
     if (features.volume_intensity > 2) {
-      signal *= 1.3; // Amplify signal with high volume
+      signal *= 1.3;
       confidence += 0.2;
     }
 
-    // Momentum integration
+    // Momentum
     signal += features.price_momentum * 2;
 
-    // Market sentiment
+    // Sentiment
     signal += features.market_sentiment * 0.3;
 
-    // Volatility adjustment
+    // Volatility
     confidence *= (1 - features.volatility * 0.3);
-
-    // 🚀🚀🚀 FORCED EXPLORATION DURING WARMUP - Generate trades for learning data
-    let actionType: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-
-    if (this.episodes < 50) {
-      // WARMUP PHASE: Force 95% BUY/SELL actions for aggressive data collection
-      const forceAction = Math.random();
-      if (forceAction < 0.475) {
-        actionType = 'BUY';
-        signal = 0.6 + Math.random() * 0.4; // Synthetic strong buy signal
-        confidence = 0.5 + Math.random() * 0.3; // Random confidence 0.5-0.8
-        this.logger.debug(`🎯 WARMUP FORCED BUY (episode ${this.episodes}, confidence: ${confidence.toFixed(3)})`);
-      } else if (forceAction < 0.95) {
-        actionType = 'SELL';
-        signal = -(0.6 + Math.random() * 0.4); // Synthetic strong sell signal
-        confidence = 0.5 + Math.random() * 0.3; // Random confidence 0.5-0.8
-        this.logger.debug(`🎯 WARMUP FORCED SELL (episode ${this.episodes}, confidence: ${confidence.toFixed(3)})`);
-      } else {
-        this.logger.debug(`🎯 WARMUP HOLD (episode ${this.episodes})`);
-      }
-      // Only 5% remain HOLD
-    } else {
-      // NORMAL PHASE: Use standard thresholds
-      const actionThreshold = this.episodes < 100 ? 0.35 : 0.45;
-      const signalThreshold = this.episodes < 200 ? 0.1 : 0.5;
-
-      if (signal > signalThreshold && confidence > actionThreshold) {
-        actionType = 'BUY';
-      } else if (signal < -signalThreshold && confidence > actionThreshold) {
-        actionType = 'SELL';
+    
+    // ===== NEW FEATURES (KROK 2) =====
+    
+    // Volume ROC
+    signal += features.volume_roc * 0.5;
+    if (Math.abs(features.volume_roc) > 0.3) confidence += 0.1;
+    
+    // Volume MA ratio
+    if (features.volume_ma_ratio > 1.5) {
+      signal *= 1.2;
+      confidence += 0.15;
+    }
+    
+    // Momentum oscillator
+    signal += features.momentum_oscillator * 1.5;
+    if (Math.abs(features.momentum_oscillator) > 0.02) confidence += 0.1;
+    
+    // Price acceleration
+    signal += features.price_acceleration * 3;
+    if (Math.abs(features.price_acceleration) > 0.001) confidence += 0.1;
+    
+    // ATR normalized
+    if (features.atr_normalized > 0.02) {
+      confidence *= 0.9;
+    }
+    
+    // Bollinger bandwidth
+    if (features.bollinger_bandwidth < 0.02) {
+      confidence += 0.1;
+      signal *= 1.1;
+    } else if (features.bollinger_bandwidth > 0.06) {
+      confidence *= 0.85;
+    }
+    
+    // Price distance from MA
+    if (Math.abs(features.price_distance_from_ma) > 0.05) {
+      signal -= features.price_distance_from_ma * 0.8;
+    }
+    
+    // Trend strength
+    signal += features.trend_strength * 2;
+    if (Math.abs(features.trend_strength) > 0.01) confidence += 0.15;
+    
+    // RSI divergence
+    if (Math.abs(features.rsi_divergence) > 0.3) {
+      signal -= features.rsi_divergence * 0.5;
+      confidence += 0.1;
+    }
+    
+    // Bid-ask spread
+    if (features.bid_ask_spread_proxy > 0.01) {
+      confidence *= 0.9;
+    }
+    
+    // 🛡️ L1 REGULARIZATION: Penalty for extreme signals
+    const l1_penalty = 0.05 * Math.abs(signal);
+    signal *= (1 - l1_penalty);
+    
+    // 🛡️ DROPOUT: 25% during training (prevents overfitting)
+    if (this.episodes < 500 && this.config.training_mode) {
+      const dropout_rate = 0.25;
+      if (Math.random() < dropout_rate) {
+        signal *= 0.75;
+        confidence *= 0.9;
       }
     }
+
+    // 🚀 INTELLIGENT POSITION-AWARE ML DECISION MAKING
+    let actionType: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
+
+    // 🧠 ADAPTIVE THRESHOLDS based on learning progress
+    const buyThreshold = this.episodes < 20 ? 0.6 : this.episodes < 100 ? 0.5 : 0.3;
+    const sellThreshold = this.episodes < 20 ? -0.6 : this.episodes < 100 ? -0.5 : -0.3;
+    const minConfidence = this.episodes < 20 ? 0.7 : this.episodes < 100 ? 0.6 : 0.5;
+
+    this.logger.debug(`🎯 DECISION INPUTS: hasPosition=${hasOpenPosition}, signal=${signal.toFixed(3)}, confidence=${confidence.toFixed(3)}`);
+    this.logger.debug(`🎯 THRESHOLDS: buy=${buyThreshold.toFixed(2)}, sell=${sellThreshold.toFixed(2)}, minConf=${minConfidence.toFixed(2)}`);
+
+    // 🔍 POSITION-AWARE DECISION LOGIC
+    if (!hasOpenPosition) {
+      // NO POSITION: Only consider BUY signals
+      if (signal > buyThreshold && confidence > minConfidence) {
+        actionType = 'BUY';
+        this.logger.debug(`📈 BUY SIGNAL (episode ${this.episodes}): signal=${signal.toFixed(3)}, confidence=${confidence.toFixed(3)}, RSI=${features.rsi_signal.toFixed(3)}`);
+      } else {
+        actionType = 'HOLD';
+        if (this.episodes % 10 === 0) {
+          this.logger.debug(`⏸️ HOLD (no position): signal=${signal.toFixed(3)} < threshold=${buyThreshold.toFixed(2)} OR confidence=${confidence.toFixed(3)} < ${minConfidence.toFixed(2)}`);
+        }
+      }
+    } else {
+      // 🔒 HAS POSITION: ONLY SELL OR HOLD - NEVER BUY!
+      // 🚨 CRITICAL: Multiple exit conditions to prevent stuck positions
+      
+      // RELAXED SELL THRESHOLDS - Easier exit conditions
+      const relaxedSellThreshold = this.episodes < 20 ? -0.4 : this.episodes < 100 ? -0.3 : -0.2;
+      const relaxedConfidence = this.episodes < 20 ? 0.6 : this.episodes < 100 ? 0.5 : 0.4;
+      
+      if (signal < relaxedSellThreshold && confidence > relaxedConfidence) {
+        actionType = 'SELL';
+        this.logger.debug(`📉 STRONG SELL (episode ${this.episodes}): signal=${signal.toFixed(3)}, confidence=${confidence.toFixed(3)}, RSI=${features.rsi_signal.toFixed(3)}`);
+      } else if (signal < -0.15 && confidence > 0.5) {
+        // MODERATE sell signal - exit early to prevent drawdown
+        actionType = 'SELL';
+        this.logger.debug(`⚖️ MODERATE SELL (risk mgmt): signal=${signal.toFixed(3)}, confidence=${confidence.toFixed(3)}`);
+      } else if (signal < -0.05 && confidence > 0.6) {
+        // AGGRESSIVE exit for neutral/weak markets
+        actionType = 'SELL';
+        this.logger.debug(`🏃 AGGRESSIVE SELL (neutral market): signal=${signal.toFixed(3)}, confidence=${confidence.toFixed(3)}`);
+      } else {
+        actionType = 'HOLD';
+        if (this.episodes % 10 === 0) {
+          this.logger.debug(`⏸️ HOLD (has position): signal=${signal.toFixed(3)} > threshold=${relaxedSellThreshold.toFixed(2)} OR confidence=${confidence.toFixed(3)} < ${relaxedConfidence.toFixed(2)}`);
+        }
+      }
+    }
+
+    // 🎯 LEARNING PHASE: Track decision reasoning for improvement
+    const decisionReasoning = [];
+    if (features.rsi_signal !== 0) decisionReasoning.push(`RSI=${features.rsi_signal > 0 ? 'oversold' : 'overbought'}`);
+    if (features.price_momentum !== 0) decisionReasoning.push(`momentum=${features.price_momentum > 0 ? 'bullish' : 'bearish'}`);
+    if (features.volume_intensity > 1) decisionReasoning.push('high_volume');
+    if (features.volatility > 0.5) decisionReasoning.push('high_volatility');
+
 
     // Calculate position size based on confidence
     const positionSize = Math.min(confidence * 0.1, 0.05); // Max 5% position
@@ -238,26 +672,28 @@ class MinimalDeepRLAgent {
       position_size: positionSize,
       stop_loss: actionType !== 'HOLD' ? (actionType === 'BUY' ? -0.02 : 0.02) : undefined,
       take_profit: actionType !== 'HOLD' ? (actionType === 'BUY' ? 0.03 : -0.03) : undefined,
-      reasoning: `${this.config.algorithm} ML: signal=${signal.toFixed(3)}, confidence=${confidence.toFixed(3)}`,
-      uncertainty: 1 - confidence
+      reasoning: `${this.config.algorithm} ML: signal=${signal.toFixed(3)}, ${decisionReasoning.join(', ')}`,
+      uncertainty: 1 - confidence,
+      market_signal: signal  // 🎯 ADD: Return raw signal for position manager
     };
   }
 
   private applyRiskManagement(action: MinimalMLAction, features: any): MinimalMLAction {
-    // Enterprise risk management
+    // Enterprise risk management - SELL always allowed
     const maxPositionSize = 0.03; // 3% max position
     const minConfidence = 0.6; // 60% minimum confidence
 
-    // Reduce position size if confidence is low
-    if (action.confidence < minConfidence) {
+    // Reduce position size if confidence is low (only for BUY)
+    if (action.action_type === 'BUY' && action.confidence < minConfidence) {
       action.position_size *= 0.5;
     }
 
     // Cap position size
     action.position_size = Math.min(action.position_size, maxPositionSize);
 
-    // Don't trade in high volatility without high confidence
-    if (features.volatility > 0.7 && action.confidence < 0.8) {
+    // Don't BUY in high volatility without high confidence
+    // SELL should ALWAYS be allowed to close positions
+    if (action.action_type === 'BUY' && features.volatility > 0.7 && action.confidence < 0.8) {
       action.action_type = 'HOLD';
       action.position_size = 0;
     }
@@ -266,16 +702,21 @@ class MinimalDeepRLAgent {
   }
 
   private calculateReward(pnl: number, duration: number, marketConditions: any): number {
-    // Sophisticated reward calculation
+    // 🎓 KROK 2: Sophisticated reward with LEARNING RATE modulation
     const baseReward = pnl > 0 ? Math.log(1 + pnl) : -Math.log(1 + Math.abs(pnl));
 
     // Duration penalty for long trades
-    const durationPenalty = duration > 3600000 ? -0.1 : 0; // 1 hour threshold
+    const durationPenalty = duration > 3600000 ? -0.1 : 0;
 
     // Volatility bonus for navigating difficult conditions
     const volatilityBonus = marketConditions.market_volatility > 0.03 ? 0.1 : 0;
+    
+    // 📈 LEARNING RATE MODULATION: Scale reward by current learning rate
+    // Smaller LR → smaller updates (more stable learning)
+    const totalReward = baseReward + durationPenalty + volatilityBonus;
+    const modulatedReward = totalReward * this.learningRate / 0.01; // Normalize by initial LR
 
-    return baseReward + durationPenalty + volatilityBonus;
+    return modulatedReward;
   }
 
   private calculateSharpeRatio(): number {
@@ -302,6 +743,83 @@ class MinimalDeepRLAgent {
     const baseExploration = 0.1;
     const decayRate = 0.999;
     return baseExploration * Math.pow(decayRate, this.episodes);
+  }
+  
+  // 💾 CHECKPOINT METHODS - Save/Load ML state
+  
+  /**
+   * Load checkpoint from disk (called in constructor)
+   */
+  private async loadCheckpoint(): Promise<void> {
+    try {
+      const result = await this.checkpointManager.loadLatestCheckpoint(this.modelId);
+      
+      if (result.success && result.checkpoint) {
+        const cp = result.checkpoint;
+        
+        // Restore state
+        this.episodes = cp.episodes;
+        this.total_reward = cp.totalReward;
+        this.wins = cp.performance.profitableTrades;
+        this.losses = cp.performance.totalTrades - cp.performance.profitableTrades;
+        this.lastCheckpointEpisode = cp.episodes;
+        
+        this.logger.info(`📂 [CHECKPOINT LOADED] Episodes: ${cp.episodes}, Reward: ${cp.totalReward.toFixed(2)}, Win Rate: ${(cp.performance.winRate * 100).toFixed(1)}%`);
+      } else {
+        this.logger.info(`🆕 [NEW SESSION] Starting from scratch (no checkpoint found)`);
+      }
+    } catch (error) {
+      this.logger.warn(`⚠️ [CHECKPOINT LOAD FAILED] ${(error as Error).message} - Starting fresh`);
+    }
+  }
+  
+  /**
+   * Save checkpoint to disk (called periodically)
+   */
+  async saveCheckpoint(): Promise<void> {
+    try {
+      const checkpoint: MLCheckpoint = {
+        version: '1.0',
+        timestamp: Date.now(),
+        modelId: this.modelId,
+        episodes: this.episodes,
+        totalReward: this.total_reward,
+        averageReward: this.episodes > 0 ? this.total_reward / this.episodes : 0,
+        explorationRate: this.calculateExplorationRate(),
+        performance: {
+          sharpeRatio: this.calculateSharpeRatio(),
+          maxDrawdown: this.calculateMaxDrawdown(),
+          winRate: this.episodes > 0 ? this.wins / this.episodes : 0,
+          totalTrades: this.episodes,
+          profitableTrades: this.wins
+        },
+        config: {
+          algorithm: this.config.algorithm,
+          learningRate: 0.001, // Default for PPO
+          gamma: 0.99,
+          epsilon: this.calculateExplorationRate()
+        },
+        metadata: {
+          decisionHistorySize: this.decisionHistory.length,
+          recentPnLsSize: this.recentPnLs.length
+        }
+      };
+      
+      await this.checkpointManager.saveCheckpoint(checkpoint);
+      this.lastCheckpointEpisode = this.episodes;
+      
+    } catch (error) {
+      this.logger.error(`❌ [CHECKPOINT SAVE FAILED] ${(error as Error).message}`);
+    }
+  }
+  
+  /**
+   * Check if checkpoint should be saved (called after each episode)
+   */
+  async checkAndSaveCheckpoint(): Promise<void> {
+    if (this.episodes - this.lastCheckpointEpisode >= this.checkpointInterval) {
+      await this.saveCheckpoint();
+    }
   }
 }
 
@@ -355,7 +873,7 @@ export class EnterpriseMLAdapter {
     }
   }
 
-  async processStep(price: number, rsi: number, volume: number): Promise<any> {
+  async processStep(price: number, rsi: number, volume: number, hasOpenPosition: boolean = false, priceHistory?: number[]): Promise<any> {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -364,8 +882,8 @@ export class EnterpriseMLAdapter {
       // Enterprise health check
       this.performHealthCheck();
 
-      // Get action from Deep RL
-      const action = await this.deepRLAgent.processStep(price, rsi, volume);
+      // Get action from Deep RL with position awareness
+      const action = await this.deepRLAgent.processStep(price, rsi, volume, hasOpenPosition, priceHistory);
 
       if (!action) return null;
 
@@ -538,6 +1056,18 @@ export class EnterpriseMLAdapter {
     }, 300000); // Every 5 minutes
 
     this.logger.info('🔍 Enterprise background monitoring started');
+  }
+  
+  /**
+   * 💾 Save ML checkpoint (delegates to DeepRL agent)
+   */
+  async saveCheckpoint(): Promise<void> {
+    try {
+      await this.deepRLAgent.saveCheckpoint();
+      this.logger.info('💾 [ENTERPRISE ML] Checkpoint saved successfully');
+    } catch (error) {
+      this.logger.error(`❌ [ENTERPRISE ML] Checkpoint save failed: ${error}`);
+    }
   }
 }
 

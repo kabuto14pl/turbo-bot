@@ -52,12 +52,12 @@ class SimpleRLAdapter {
             throw error;
         }
     }
-    async processStep(price, rsi, volume) {
+    async processStep(price, rsi, volume, hasOpenPosition = false) {
         if (!this.isInitialized) {
             await this.initialize();
         }
         try {
-            const action = await this.enterpriseML.processStep(price, rsi, volume);
+            const action = await this.enterpriseML.processStep(price, rsi, volume, hasOpenPosition);
             return action;
         }
         catch (error) {

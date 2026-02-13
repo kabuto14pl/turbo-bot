@@ -1,72 +1,32 @@
 {
-  "name": "Turbo Trading Bot Development",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
-  
+  "name": "Turbo Bot Trading",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "postStartCommand": "bash /workspaces/turbo-bot/.devcontainer/postStartCommand.sh",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.11"
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
     }
   },
-
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "ms-vscode.vscode-typescript-next",
-        "ms-python.python",
-        "ms-python.pylint",
-        "ms-toolsai.jupyter",
-        "bradlc.vscode-tailwindcss",
-        "esbenp.prettier-vscode",
-        "ms-vscode.vscode-json",
-        "yzhang.markdown-all-in-one",
-        "formulahendry.auto-rename-tag",
-        "ms-vscode-remote.remote-containers",
-        "GitHub.copilot",
-        "ms-kubernetes-tools.vscode-kubernetes-tools",
-        "ms-azuretools.vscode-docker",
-        "redhat.vscode-yaml"
-      ],
-      "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash",
-        "typescript.preferences.includePackageJsonAutoImports": "auto",
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-          "source.fixAll": "explicit"
-        },
-        "remote.autoForwardPorts": false,
-        "remote.autoForwardPortsSource": "hybrid"
-      }
-    }
-  },
-
-  "forwardPorts": [3000, 3001],
-  
+  "forwardPorts": [3000, 3001, 9090],
   "portsAttributes": {
     "3000": {
-      "label": "Trading Bot Dashboard",
-      "onAutoForward": "openPreview"
+      "label": "API",
+      "onAutoForward": "notify"
     },
     "3001": {
-      "label": "Trading Bot API",
-      "onAutoForward": "notify"
+      "label": "Health Check",
+      "onAutoForward": "silent"
+    },
+    "9090": {
+      "label": "Prometheus",
+      "onAutoForward": "silent"
     }
   },
-
-  "postCreateCommand": "bash .devcontainer/setup.sh",
-  
-  "mounts": [
-    "source=${localWorkspaceFolder}/.env,target=/workspaces/turbo-bot/.env,type=bind,consistency=cached"
-  ],
-
-  "remoteEnv": {
-    "NODE_ENV": "development",
-    "CODESPACE": "true"
-  },
-
-  "containerEnv": {
-    "TZ": "Europe/Warsaw"
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
   }
 }

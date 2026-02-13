@@ -268,12 +268,13 @@ export class EnterpriseNeuralNetworkManager {
       for (let i = 0; i < config.hidden_layers.length; i++) {
         const units = config.hidden_layers[i];
         
-        // Dense layer with proper initialization
+        // Dense layer with proper initialization + L2 regularization
         const dense = tf.layers.dense({
           units: units,
           activation: config.activation as any,
           kernelInitializer: 'glorotUniform',
           biasInitializer: 'zeros',
+          kernelRegularizer: tf.regularizers.l2({ l2: config.l2_regularization || 0.01 }),  // 🚀 FAZA 1.1: L2 weight decay
           name: `policy_dense_${i}`
         }).apply(x) as tf.SymbolicTensor;
         
@@ -351,7 +352,7 @@ export class EnterpriseNeuralNetworkManager {
         scale: true
       }).apply(inputs) as tf.SymbolicTensor;
       
-      // Hidden layers
+      // Hidden layers with L2 regularization
       for (let i = 0; i < config.hidden_layers.length; i++) {
         const units = config.hidden_layers[i];
         
@@ -360,6 +361,7 @@ export class EnterpriseNeuralNetworkManager {
           activation: config.activation as any,
           kernelInitializer: 'glorotUniform',
           biasInitializer: 'zeros',
+          kernelRegularizer: tf.regularizers.l2({ l2: config.l2_regularization || 0.01 }),  // 🚀 FAZA 1.1: L2 weight decay
           name: `value_dense_${i}`
         }).apply(x) as tf.SymbolicTensor;
         
@@ -750,6 +752,7 @@ export class EnterpriseNeuralNetworkManager {
       activation: 'relu',
       dropout_rate: 0.3,
       batch_normalization: true,
+      l2_regularization: 0.0001,
       learning_rate: 0.0003,
       optimizer: 'adam',
       action_space_size: 3,
@@ -771,6 +774,7 @@ export class EnterpriseNeuralNetworkManager {
       activation: 'relu',
       dropout_rate: 0.3,
       batch_normalization: true,
+      l2_regularization: 0.0001,
       learning_rate: 0.001,
       optimizer: 'adam',
       output_activation: 'linear',
