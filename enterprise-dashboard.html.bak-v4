@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbo Bot | Enterprise Trading Dashboard</title>
+
+    <!-- TradingView Lightweight Charts v4.2.0 (pinned - v5 has breaking API changes) -->
+    <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+
+    <!-- Chart.js 4.x for portfolio/equity charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0b0e11;
+            --bg-secondary: #1e2329;
+            --bg-tertiary: #2b3139;
+            --bg-hover: #363c44;
+            --bg-card: #181a20;
+            --accent: #f0b90b;
+            --accent-hover: #d4a50a;
+            --green: #0ecb81;
+            --green-bg: rgba(14,203,129,0.1);
+            --red: #f6465d;
+            --red-bg: rgba(246,70,93,0.1);
+            --blue: #1e80ff;
+            --blue-bg: rgba(30,128,255,0.1);
+            --purple: #a855f7;
+            --text-primary: #eaecef;
+            --text-secondary: #848e9c;
+            --text-third: #5e6673;
+            --border: #2b3139;
+            --border-light: rgba(255,255,255,0.06);
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --shadow: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        html { font-size: 14px; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* ============================================ */
+        /* TOP TICKER BAR (Binance-style) */
+        /* ============================================ */
+        .ticker-bar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            overflow-x: auto;
+            white-space: nowrap;
+            font-size: 0.85rem;
+        }
+        .ticker-bar::-webkit-scrollbar { height: 0; }
+        .ticker-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .ticker-item .label { color: var(--text-third); font-size: 0.75rem; }
+        .ticker-item .value { color: var(--text-primary); font-weight: 600; font-family: var(--font-mono); }
+        .ticker-item .value.up { color: var(--green); }
+        .ticker-item .value.down { color: var(--red); }
+        .ticker-divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+
+        /* ============================================ */
+        /* HEADER */
+        /* ============================================ */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+        .logo i { font-size: 1.1rem; }
+        .header-badge {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+        .conn-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .conn-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+        .conn-dot.off { background: var(--red); box-shadow: 0 0 6px var(--red); }
+        .header-clock {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ============================================ */
+        /* CIRCUIT BREAKER ALERT BANNER */
+        /* ============================================ */
+        .cb-alert {
+            display: none;
+            background: linear-gradient(90deg, rgba(246,70,93,0.15), rgba(246,70,93,0.05));
+            border: 1px solid rgba(246,70,93,0.3);
+            padding: 0.6rem 1.5rem;
+            font-size: 0.85rem;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .cb-alert.active { display: flex; }
+        .cb-alert i { color: var(--red); font-size: 1rem; }
+        .cb-alert .cb-text { color: var(--red); font-weight: 600; }
+        .cb-alert .cb-details { color: var(--text-secondary); margin-left: auto; font-family: var(--font-mono); font-size: 0.8rem; }
+        .cb-alert .cb-reset-btn {
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 1rem;
+        }
+        .cb-alert .cb-reset-btn:hover { opacity: 0.85; }
+
+        /* ============================================ */
+        /* MAIN LAYOUT */
+        /* ============================================ */
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            grid-template-rows: auto auto auto;
+            gap: 0;
+            min-height: calc(100vh - 100px);
+        }
+
+        /* ============================================ */
+        /* KPI STRIP (spans full width) */
+        /* ============================================ */
+        .kpi-strip {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            border-bottom: 1px solid var(--border);
+        }
+        .kpi {
+            padding: 1rem 1.25rem;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .kpi:last-child { border-right: none; }
+        .kpi-label {
+            font-size: 0.7rem;
+            color: var(--text-third);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+        .kpi-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            letter-spacing: -0.5px;
+        }
+        .kpi-sub {
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+        .kpi-sub.up { color: var(--green); }
+        .kpi-sub.down { color: var(--red); }
+        .kpi-sub.neutral { color: var(--text-secondary); }
+
+        /* ============================================ */
+        /* CENTER COLUMN (chart + panels) */
+        /* ============================================ */
+        .center-col {
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* CHART SECTION */
+        .chart-section {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .chart-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .chart-symbol {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .chart-symbol i { color: #f7931a; }
+        .timeframe-btns {
+            display: flex;
+            gap: 2px;
+        }
+        .tf-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            transition: all 0.15s;
+        }
+        .tf-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+        .tf-btn.active { color: var(--accent); background: rgba(240,185,11,0.1); }
+        .chart-toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .chart-ohlc {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 0.6rem;
+        }
+        .chart-ohlc span { display: flex; gap: 3px; }
+        .chart-ohlc .ohlc-label { color: var(--text-third); }
+        .chart-ohlc .ohlc-val.up { color: var(--green); }
+        .chart-ohlc .ohlc-val.down { color: var(--red); }
+        #mainChart {
+            width: 100%;
+            height: 480px;
+        }
+
+        /* ============================================ */
+        /* BOTTOM PANELS (trades, performance, ML) */
+        /* ============================================ */
+        .bottom-panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            flex: 1;
+        }
+
+        .panel {
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .panel:nth-child(even) { border-right: none; }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-secondary);
+        }
+        .panel-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .panel-title i { font-size: 0.85rem; }
+        .panel-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+        .panel-body {
+            padding: 1rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Trades table */
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .trades-table th {
+            color: var(--text-third);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 0.4rem 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+        }
+        .trades-table td {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-light);
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+        }
+        .trades-table tr:hover { background: var(--bg-hover); }
+        .action-buy { color: var(--green); font-weight: 600; }
+        .action-sell { color: var(--red); font-weight: 600; }
+        .pnl-pos { color: var(--green); }
+        .pnl-neg { color: var(--red); }
+
+        /* Performance chart */
+        .perf-chart-wrap { height: 220px; position: relative; }
+
+        /* ML metrics grid */
+        .ml-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .ml-metric {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 0.75rem;
+        }
+        .ml-metric-label {
+            font-size: 0.7rem;
+            color: var(--text-third);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
+        }
+        .ml-metric-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+        .ml-progress {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .ml-progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        /* ============================================ */
+        /* RIGHT SIDEBAR */
+        /* ============================================ */
+        .right-sidebar {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+        }
+
+        /* System Info section */
+        .sys-section {
+            border-bottom: 1px solid var(--border);
+            padding: 0;
+        }
+        .sys-section-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .sys-section-header i { font-size: 0.85rem; }
+        .sys-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.8rem;
+        }
+        .sys-row:last-child { border-bottom: none; }
+        .sys-row .sys-label { color: var(--text-secondary); }
+        .sys-row .sys-value {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .sys-row .sys-value.good { color: var(--green); }
+        .sys-row .sys-value.warn { color: var(--accent); }
+        .sys-row .sys-value.bad { color: var(--red); }
+
+        /* Status badges in sidebar */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-badge.healthy { background: var(--green-bg); color: var(--green); }
+        .status-badge.degraded { background: rgba(240,185,11,0.15); color: var(--accent); }
+        .status-badge.unhealthy { background: var(--red-bg); color: var(--red); }
+        .status-badge.simulation { background: var(--blue-bg); color: var(--blue); }
+        .status-badge.live { background: var(--red-bg); color: var(--red); }
+        .status-badge.running { background: var(--green-bg); color: var(--green); }
+        .status-badge.stopped { background: var(--red-bg); color: var(--red); }
+
+        /* Component health dots */
+        .comp-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+        .comp-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-light);
+            border-right: 1px solid var(--border-light);
+        }
+        .comp-item:nth-child(even) { border-right: none; }
+        .comp-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .comp-dot.on { background: var(--green); box-shadow: 0 0 4px var(--green); }
+        .comp-dot.off { background: var(--red); box-shadow: 0 0 4px var(--red); }
+
+        /* ============================================ */
+        /* FOOTER */
+        /* ============================================ */
+        .footer {
+            grid-column: 1 / -1;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: var(--text-third);
+        }
+        .footer a { color: var(--accent); text-decoration: none; }
+
+        /* ============================================ */
+        /* RESPONSIVE */
+        /* ============================================ */
+        @media (max-width: 1200px) {
+            .main { grid-template-columns: 1fr; }
+            .right-sidebar { display: grid; grid-template-columns: 1fr 1fr; }
+            .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+            .bottom-panels { grid-template-columns: 1fr; }
+            .right-sidebar { grid-template-columns: 1fr; }
+            #mainChart { height: 350px; }
+            .ticker-bar { display: none; }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--bg-hover); }
+
+        /* Glow animation for live data */
+        @keyframes glow-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .live-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--red);
+            animation: glow-pulse 1.5s infinite;
+            margin-right: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- TICKER BAR -->
+<div class="ticker-bar" id="tickerBar">
+    <div class="ticker-item">
+        <span class="label">BTC/USDT</span>
+        <span class="value" id="tickBtcPrice">--</span>
+        <span class="value" id="tickBtcChg">--</span>
+    </div>
+    <div class="ticker-divider"></div>
+    <div class="ticker-item">
+        <span class="label">24h High</span>
+        <span class="value" id="tick24hHigh">--</span>
+    </div>
+    <div class="ticker-item">
+        <span class="label">24h Low</span>
+        <span class="value" id="tick24hLow">--</span>
+    </div>
+    <div class="ticker-item">
+        <span class="label">24h Volume</span>
+        <span class="value" id="tick24hVol">--</span>
+    </div>
+    <div class="ticker-divider"></div>
+    <div class="ticker-item">
+        <span class="label">ETH/USDT</span>
+        <span class="value" id="tickEthPrice">--</span>
+    </div>
+    <div class="ticker-item">
+        <span class="label">SOL/USDT</span>
+        <span class="value" id="tickSolPrice">--</span>
+    </div>
+    <div class="ticker-divider"></div>
+    <div class="ticker-item">
+        <span class="label">API</span>
+        <span class="value" id="tickLatency">--</span>
+    </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="header-left">
+        <div class="logo"><i class="fas fa-bolt"></i> TURBO BOT</div>
+        <span class="header-badge" id="tradingMode" style="background:var(--blue-bg);color:var(--blue);">SIMULATION</span>
+        <span class="header-badge" id="healthBadge" style="background:var(--green-bg);color:var(--green);">HEALTHY</span>
+        <span class="header-badge" id="mlPhaseBadge" style="background:rgba(168,85,247,0.15);color:var(--purple);">ML: WARMUP</span>
+    </div>
+    <div class="header-right">
+        <div class="conn-status">
+            <div class="conn-dot" id="statusDot"></div>
+            <span id="statusText">Connecting...</span>
+        </div>
+        <div class="header-clock" id="headerClock">--:--:--</div>
+    </div>
+</div>
+
+<!-- CIRCUIT BREAKER ALERT -->
+<div class="cb-alert" id="circuitBreakerBanner">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span class="cb-text">CIRCUIT BREAKER TRIPPED</span>
+    <span class="cb-details" id="cbDetails">--</span>
+    <button class="cb-reset-btn" onclick="resetCircuitBreaker()"><i class="fas fa-redo"></i> Reset</button>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main">
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+        <div class="kpi">
+            <div class="kpi-label">Portfolio Value</div>
+            <div class="kpi-value">$<span id="totalValue">10,000.00</span></div>
+            <div class="kpi-sub neutral" id="valueChange">+0.00%</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Realized PnL</div>
+            <div class="kpi-value" id="realizedPnLVal">$0.00</div>
+            <div class="kpi-sub neutral" id="pnlChange">+0.00%</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Win Rate</div>
+            <div class="kpi-value"><span id="winRate">0.00</span>%</div>
+            <div class="kpi-sub neutral" id="winRateSub"><span id="successfulTrades">0</span>/<span id="totalTrades">0</span> trades</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Drawdown</div>
+            <div class="kpi-value" id="maxDrawdownVal">0.00%</div>
+            <div class="kpi-sub neutral">Max allowed: 15%</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Sharpe Ratio</div>
+            <div class="kpi-value" id="sharpeRatioVal">0.00</div>
+            <div class="kpi-sub neutral">Risk-adjusted return</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Avg Trade</div>
+            <div class="kpi-value" id="avgTradeVal">$0.00</div>
+            <div class="kpi-sub neutral" id="avgTradeSub">Per trade return</div>
+        </div>
+    </div>
+
+    <!-- CENTER COLUMN -->
+    <div class="center-col">
+
+        <!-- CHART SECTION -->
+        <div class="chart-section">
+            <div class="chart-toolbar">
+                <div class="chart-toolbar-left">
+                    <div class="chart-symbol"><i class="fab fa-bitcoin"></i> BTC/USDT</div>
+                    <div class="timeframe-btns" id="timeframeBtns">
+                        <button class="tf-btn" data-tf="1m">1m</button>
+                        <button class="tf-btn" data-tf="5m">5m</button>
+                        <button class="tf-btn active" data-tf="15m">15m</button>
+                        <button class="tf-btn" data-tf="1h">1H</button>
+                        <button class="tf-btn" data-tf="4h">4H</button>
+                        <button class="tf-btn" data-tf="1d">1D</button>
+                        <button class="tf-btn" data-tf="1w">1W</button>
+                    </div>
+                    <span style="font-size:0.8rem;color:var(--text-third);">|</span>
+                    <span id="btcPrice" style="font-family:var(--font-mono);font-weight:700;font-size:1.1rem;color:var(--green);">Loading...</span>
+                </div>
+                <div class="chart-toolbar-right">
+                    <div class="chart-ohlc" id="ohlcDisplay">
+                        <span><span class="ohlc-label">O</span> <span class="ohlc-val" id="ohlcO">--</span></span>
+                        <span><span class="ohlc-label">H</span> <span class="ohlc-val" id="ohlcH">--</span></span>
+                        <span><span class="ohlc-label">L</span> <span class="ohlc-val" id="ohlcL">--</span></span>
+                        <span><span class="ohlc-label">C</span> <span class="ohlc-val" id="ohlcC">--</span></span>
+                        <span><span class="ohlc-label">Vol</span> <span class="ohlc-val" id="ohlcV">--</span></span>
+                    </div>
+                </div>
+            </div>
+            <div id="mainChart"></div>
+        </div>
+
+        <!-- BOTTOM PANELS: Trades + Performance | ML + Strategies -->
+        <div class="bottom-panels">
+            <!-- TRADES PANEL -->
+            <div class="panel" style="grid-column:1/-1;">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-exchange-alt"></i> Recent Trades</div>
+                    <span class="panel-badge" id="tradesCount" style="background:var(--blue-bg);color:var(--blue);">0</span>
+                </div>
+                <div class="panel-body" style="padding:0;max-height:260px;overflow-y:auto;">
+                    <table class="trades-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Pair</th>
+                                <th>Side</th>
+                                <th>Price</th>
+                                <th>Qty</th>
+                                <th>PnL</th>
+                                <th>Strategy</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradesTable">
+                            <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-third);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PERFORMANCE CHART -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-chart-area"></i> Portfolio Equity</div>
+                </div>
+                <div class="panel-body">
+                    <div class="perf-chart-wrap">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ML STATUS -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-brain"></i> ML Engine</div>
+                    <span class="panel-badge" id="mlPhaseLabel" style="background:rgba(168,85,247,0.15);color:var(--purple);">WARMUP</span>
+                </div>
+                <div class="panel-body">
+                    <div class="ml-grid">
+                        <div class="ml-metric">
+                            <div class="ml-metric-label">Confidence</div>
+                            <div class="ml-metric-value" id="mlConfidence">0.00%</div>
+                            <div class="ml-progress"><div class="ml-progress-fill" id="mlProgress" style="width:0%"></div></div>
+                        </div>
+                        <div class="ml-metric">
+                            <div class="ml-metric-label">Accuracy</div>
+                            <div class="ml-metric-value" id="mlAccuracy">0.00%</div>
+                        </div>
+                        <div class="ml-metric">
+                            <div class="ml-metric-label">Training Cycles</div>
+                            <div class="ml-metric-value" id="trainingCycles">0</div>
+                        </div>
+                        <div class="ml-metric">
+                            <div class="ml-metric-label">Avg Reward</div>
+                            <div class="ml-metric-value" id="mlReward">0.0000</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div class="right-sidebar">
+
+        <!-- Bot Status -->
+        <div class="sys-section">
+            <div class="sys-section-header"><i class="fas fa-robot"></i> Bot Status</div>
+            <div class="sys-row">
+                <span class="sys-label">Status</span>
+                <span class="sys-value" id="botStatus"><span class="status-badge running"><i class="fas fa-circle" style="font-size:6px;"></i> Running</span></span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Uptime</span>
+                <span class="sys-value" id="uptime">--:--:--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Version</span>
+                <span class="sys-value" id="botVersion" style="font-size:0.7rem;">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Strategy</span>
+                <span class="sys-value" id="activeStrategy">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Strategies</span>
+                <span class="sys-value" id="strategiesCount">0</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">API Latency</span>
+                <span class="sys-value good" id="apiLatency">0ms</span>
+            </div>
+        </div>
+
+        <!-- Risk Management -->
+        <div class="sys-section">
+            <div class="sys-section-header"><i class="fas fa-shield-alt"></i> Risk Management</div>
+            <div class="sys-row">
+                <span class="sys-label">Risk/Trade</span>
+                <span class="sys-value" id="maxRiskPerTrade">2.00%</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Circuit Breaker</span>
+                <span class="sys-value" id="circuitBreakerStatus"><span class="status-badge healthy">OK</span></span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Consec. Losses</span>
+                <span class="sys-value" id="cbLosses">0/3</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Trip Count</span>
+                <span class="sys-value" id="cbTripCount">0</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Unrealized PnL</span>
+                <span class="sys-value" id="unrealizedPnL">$0.00</span>
+            </div>
+        </div>
+
+        <!-- Components Health -->
+        <div class="sys-section">
+            <div class="sys-section-header"><i class="fas fa-heartbeat"></i> Component Health</div>
+            <div class="comp-grid" id="compGrid">
+                <div class="comp-item"><span class="comp-dot on" id="compDatabase"></span> Database</div>
+                <div class="comp-item"><span class="comp-dot on" id="compStrategies"></span> Strategies</div>
+                <div class="comp-item"><span class="comp-dot on" id="compMonitoring"></span> Monitoring</div>
+                <div class="comp-item"><span class="comp-dot off" id="compRiskMgr"></span> Risk Mgr</div>
+                <div class="comp-item"><span class="comp-dot on" id="compPortfolio"></span> Portfolio</div>
+                <div class="comp-item"><span class="comp-dot off" id="compCircuitBkr"></span> Circuit Bkr</div>
+            </div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="sys-section">
+            <div class="sys-section-header"><i class="fas fa-cog"></i> Configuration</div>
+            <div class="sys-row">
+                <span class="sys-label">Symbol</span>
+                <span class="sys-value" id="cfgSymbol">BTC-USDT</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Timeframe</span>
+                <span class="sys-value" id="cfgTimeframe">15m</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Initial Capital</span>
+                <span class="sys-value" id="cfgCapital">$10,000</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-label">Live Trading</span>
+                <span class="sys-value" id="cfgLive">OFF</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <span>Turbo Bot Enterprise v4.0 | <span id="lastUpdate">--</span></span>
+        <span id="footerVersion">--</span>
+    </div>
+</div>
+
+<script>
+// =====================================================
+// TURBO BOT ENTERPRISE DASHBOARD v4.0
+// TradingView/Binance-inspired design
+// =====================================================
+
+var chart = null;
+var candleSeries = null;
+var volumeSeries = null;
+var perfChart = null;
+var btcWs = null;
+var perfData = [];
+var currentTimeframe = '15m';
+var isConnected = false;
+var lastOHLC = {};
+
+// ---- UTILITY FUNCTIONS ----
+function $(id) { return document.getElementById(id); }
+
+function setText(id, val) { var el = $(id); if (el) el.textContent = val; }
+
+function fmtNum(n, d) {
+    d = d !== undefined ? d : 2;
+    return (n || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+function fmtPrice(n) { return '$' + fmtNum(n); }
+
+function fmtK(n) {
+    if (Math.abs(n) >= 1e9) return (n/1e9).toFixed(2) + 'B';
+    if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(2) + 'M';
+    if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1) + 'K';
+    return fmtNum(n, 0);
+}
+
+function fmtUptime(s) {
+    var d = Math.floor(s / 86400);
+    var h = Math.floor((s % 86400) / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    if (d > 0) return d + 'd ' + h + 'h ' + m + 'm';
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(Math.floor(s%60)).padStart(2,'0');
+}
+
+// ---- CLOCK ----
+setInterval(function() {
+    $('headerClock').textContent = new Date().toLocaleTimeString();
+}, 1000);
+
+// ---- INIT ----
+async function initDashboard() {
+    console.log('[TURBO] Dashboard v4.0 initializing...');
+    initChart();
+    initPerfChart();
+    await fetchBotData();
+    await fetchTrades();
+    startUpdates();
+    loadBTCData(currentTimeframe);
+    loadTickerData();
+}
+
+// ---- CHART (LightweightCharts v4) ----
+function initChart() {
+    try {
+        if (typeof LightweightCharts === 'undefined') {
+            console.error('LightweightCharts not loaded');
+            $('mainChart').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-third);font-size:0.9rem;"><i class="fas fa-exclamation-circle" style="margin-right:8px;"></i> Chart library failed to load. Check network.</div>';
+            return;
+        }
+        var el = $('mainChart');
+        chart = LightweightCharts.createChart(el, {
+            width: el.clientWidth,
+            height: 480,
+            layout: {
+                background: { type: 'solid', color: '#181a20' },
+                textColor: '#848e9c',
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 11
+            },
+            grid: {
+                vertLines: { color: 'rgba(255,255,255,0.04)' },
+                horzLines: { color: 'rgba(255,255,255,0.04)' }
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+                vertLine: { color: 'rgba(240,185,11,0.3)', labelBackgroundColor: '#2b3139' },
+                horzLine: { color: 'rgba(240,185,11,0.3)', labelBackgroundColor: '#2b3139' }
+            },
+            rightPriceScale: {
+                borderColor: 'rgba(255,255,255,0.08)',
+                scaleMargins: { top: 0.1, bottom: 0.25 }
+            },
+            timeScale: {
+                borderColor: 'rgba(255,255,255,0.08)',
+                timeVisible: true,
+                secondsVisible: false
+            },
+            handleScroll: true,
+            handleScale: true
+        });
+
+        candleSeries = chart.addCandlestickSeries({
+            upColor: '#0ecb81',
+            downColor: '#f6465d',
+            borderVisible: false,
+            wickUpColor: '#0ecb81',
+            wickDownColor: '#f6465d'
+        });
+
+        volumeSeries = chart.addHistogramSeries({
+            priceFormat: { type: 'volume' },
+            priceScaleId: 'volume',
+            scaleMargins: { top: 0.8, bottom: 0 }
+        });
+
+        // OHLC crosshair subscriber
+        chart.subscribeCrosshairMove(function(param) {
+            if (!param || !param.time) return;
+            var data = param.seriesData ? param.seriesData.get(candleSeries) : null;
+            if (data) updateOHLC(data);
+        });
+
+        // Resize
+        var resizeObserver = new ResizeObserver(function() {
+            if (chart) chart.applyOptions({ width: el.clientWidth });
+        });
+        resizeObserver.observe(el);
+
+        // Timeframe buttons
+        var btns = document.querySelectorAll('.tf-btn');
+        btns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                btns.forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                currentTimeframe = btn.dataset.tf;
+                loadBTCData(currentTimeframe);
+            });
+        });
+
+        console.log('[TURBO] Chart initialized (LightweightCharts v4)');
+    } catch (e) {
+        console.error('[TURBO] Chart init error:', e);
+        $('mainChart').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-third);">Chart error: ' + e.message + '</div>';
+    }
+}
+
+function updateOHLC(data) {
+    var oCl = data.close >= data.open ? 'up' : 'down';
+    $('ohlcO').textContent = fmtNum(data.open); $('ohlcO').className = 'ohlc-val ' + oCl;
+    $('ohlcH').textContent = fmtNum(data.high); $('ohlcH').className = 'ohlc-val up';
+    $('ohlcL').textContent = fmtNum(data.low); $('ohlcL').className = 'ohlc-val down';
+    $('ohlcC').textContent = fmtNum(data.close); $('ohlcC').className = 'ohlc-val ' + oCl;
+}
+
+function getBinanceInterval(tf) {
+    var map = { '1m':'1m', '5m':'5m', '15m':'15m', '1h':'1h', '4h':'4h', '1d':'1d', '1w':'1w' };
+    return map[tf] || '15m';
+}
+
+async function loadBTCData(tf) {
+    var priceEl = $('btcPrice');
+    if (priceEl) { priceEl.textContent = 'Loading...'; priceEl.style.color = '#f0b90b'; }
+    try {
+        var interval = getBinanceInterval(tf);
+        var limit = tf === '1m' ? 500 : tf === '5m' ? 300 : 200;
+        var resp = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=' + interval + '&limit=' + limit);
+        if (!resp.ok) throw new Error('Binance API ' + resp.status);
+        var data = await resp.json();
+        if (!data || !data.length) throw new Error('No data');
+
+        var candles = data.map(function(c) {
+            return { time: Math.floor(c[0]/1000), open: parseFloat(c[1]), high: parseFloat(c[2]), low: parseFloat(c[3]), close: parseFloat(c[4]) };
+        });
+        var volumes = data.map(function(c) {
+            var o = parseFloat(c[1]), cl = parseFloat(c[4]);
+            return { time: Math.floor(c[0]/1000), value: parseFloat(c[5]), color: cl >= o ? 'rgba(14,203,129,0.3)' : 'rgba(246,70,93,0.3)' };
+        });
+
+        if (candleSeries) candleSeries.setData(candles);
+        if (volumeSeries) volumeSeries.setData(volumes);
+
+        var last = candles[candles.length - 1];
+        if (priceEl) { priceEl.textContent = '$' + fmtNum(last.close); priceEl.style.color = '#0ecb81'; }
+        updateOHLC(last);
+        lastOHLC = last;
+
+        subscribeBTCLive(tf);
+    } catch (e) {
+        console.error('[TURBO] BTC data error:', e);
+        if (priceEl) { priceEl.textContent = 'API Error'; priceEl.style.color = '#f6465d'; }
+        setTimeout(function() { loadBTCData(tf); }, 15000);
+    }
+}
+
+function subscribeBTCLive(tf) {
+    if (btcWs) { try { btcWs.close(); } catch(e) {} btcWs = null; }
+    try {
+        var interval = getBinanceInterval(tf);
+        btcWs = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_' + interval);
+        btcWs.onmessage = function(ev) {
+            try {
+                var k = JSON.parse(ev.data).k;
+                if (!k) return;
+                var candle = { time: Math.floor(k.t/1000), open: parseFloat(k.o), high: parseFloat(k.h), low: parseFloat(k.l), close: parseFloat(k.c) };
+                var vol = { time: Math.floor(k.t/1000), value: parseFloat(k.v), color: candle.close >= candle.open ? 'rgba(14,203,129,0.3)' : 'rgba(246,70,93,0.3)' };
+                if (candleSeries) candleSeries.update(candle);
+                if (volumeSeries) volumeSeries.update(vol);
+                updateOHLC(candle);
+                lastOHLC = candle;
+                var priceEl = $('btcPrice');
+                if (priceEl) {
+                    priceEl.textContent = '$' + fmtNum(candle.close);
+                    priceEl.style.color = candle.close >= candle.open ? '#0ecb81' : '#f6465d';
+                }
+                // Update ticker
+                setText('tickBtcPrice', '$' + fmtNum(candle.close));
+            } catch(e) {}
+        };
+        btcWs.onclose = function() { setTimeout(function() { subscribeBTCLive(tf); }, 5000); };
+        btcWs.onerror = function() { setTimeout(function() { subscribeBTCLive(tf); }, 10000); };
+    } catch(e) { setTimeout(function() { subscribeBTCLive(tf); }, 15000); }
+}
+
+// ---- TICKER DATA ----
+async function loadTickerData() {
+    try {
+        var resp = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
+        if (resp.ok) {
+            var d = await resp.json();
+            setText('tickBtcPrice', '$' + fmtNum(parseFloat(d.lastPrice)));
+            var chg = parseFloat(d.priceChangePercent);
+            var chgEl = $('tickBtcChg');
+            if (chgEl) {
+                chgEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+                chgEl.className = 'value ' + (chg >= 0 ? 'up' : 'down');
+            }
+            setText('tick24hHigh', '$' + fmtNum(parseFloat(d.highPrice)));
+            setText('tick24hLow', '$' + fmtNum(parseFloat(d.lowPrice)));
+            setText('tick24hVol', fmtK(parseFloat(d.quoteVolume)) + ' USDT');
+        }
+    } catch(e) {}
+    // ETH, SOL
+    try {
+        var resp2 = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["ETHUSDT","SOLUSDT"]');
+        if (resp2.ok) {
+            var arr = await resp2.json();
+            arr.forEach(function(t) {
+                if (t.symbol === 'ETHUSDT') setText('tickEthPrice', '$' + fmtNum(parseFloat(t.price)));
+                if (t.symbol === 'SOLUSDT') setText('tickSolPrice', '$' + fmtNum(parseFloat(t.price)));
+            });
+        }
+    } catch(e) {}
+    setTimeout(loadTickerData, 10000);
+}
+
+// ---- PERFORMANCE CHART ----
+function initPerfChart() {
+    var ctx = $('performanceChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    perfChart = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Portfolio Value',
+                data: [],
+                borderColor: '#0ecb81',
+                backgroundColor: 'rgba(14,203,129,0.08)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                borderWidth: 1.5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: true, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#5e6673', font: { size: 10 }, maxTicksLimit: 8 } },
+                y: { display: true, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#5e6673', font: { size: 10 } } }
+            },
+            interaction: { intersect: false, mode: 'index' }
+        }
+    });
+}
+
+function updatePerfChart(val) {
+    if (!perfChart) return;
+    perfData.push({ t: new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}), v: val });
+    if (perfData.length > 100) perfData.shift();
+    perfChart.data.labels = perfData.map(function(d) { return d.t; });
+    perfChart.data.datasets[0].data = perfData.map(function(d) { return d.v; });
+    // Dynamic color based on trend
+    var color = val >= 10000 ? '#0ecb81' : '#f6465d';
+    perfChart.data.datasets[0].borderColor = color;
+    perfChart.data.datasets[0].backgroundColor = color === '#0ecb81' ? 'rgba(14,203,129,0.08)' : 'rgba(246,70,93,0.08)';
+    perfChart.update('none');
+}
+
+// ---- FETCH BOT DATA ----
+async function fetchBotData() {
+    var t0 = Date.now();
+    try {
+        var ctrl = new AbortController();
+        var tid = setTimeout(function() { ctrl.abort(); }, 8000);
+        var resp = await fetch('/api/status', { signal: ctrl.signal });
+        clearTimeout(tid);
+        if (!resp.ok) throw new Error(resp.status);
+        var data = await resp.json();
+        var latency = Date.now() - t0;
+        if (data.error) { setConn(false); return; }
+        updateDashboard(data, latency);
+        setConn(true);
+    } catch(e) {
+        console.warn('[TURBO] API error:', e.message);
+        setConn(false);
+    }
+}
+
+async function fetchTrades() {
+    try {
+        var ctrl = new AbortController();
+        var tid = setTimeout(function() { ctrl.abort(); }, 8000);
+        var resp = await fetch('/api/trades', { signal: ctrl.signal });
+        clearTimeout(tid);
+        if (!resp.ok) throw new Error(resp.status);
+        var data = await resp.json();
+        updateTradesTable(data.trades || data || []);
+    } catch(e) { console.warn('[TURBO] Trades error:', e.message); }
+}
+
+// ---- UPDATE DASHBOARD ----
+function updateDashboard(data, latency) {
+    // Performance KPIs
+    if (data.performance) {
+        var p = data.performance;
+        var cap = (data.config && data.config.initialCapital) || 10000;
+
+        setText('totalValue', fmtNum(p.totalValue));
+        var vPct = ((p.totalValue - cap) / cap * 100);
+        var vEl = $('valueChange');
+        if (vEl) { vEl.textContent = (vPct >= 0 ? '+' : '') + vPct.toFixed(2) + '%'; vEl.className = 'kpi-sub ' + (vPct >= 0 ? 'up' : 'down'); }
+
+        var rpnl = p.realizedPnL || 0;
+        var rpEl = $('realizedPnLVal');
+        if (rpEl) { rpEl.textContent = (rpnl >= 0 ? '+' : '-') + '$' + fmtNum(Math.abs(rpnl)); rpEl.style.color = rpnl >= 0 ? 'var(--green)' : 'var(--red)'; }
+        var pPct = (rpnl / cap * 100);
+        var pcEl = $('pnlChange');
+        if (pcEl) { pcEl.textContent = (pPct >= 0 ? '+' : '') + pPct.toFixed(2) + '%'; pcEl.className = 'kpi-sub ' + (pPct >= 0 ? 'up' : 'down'); }
+
+        setText('winRate', (p.winRate || 0).toFixed(1));
+        setText('successfulTrades', p.successfulTrades || 0);
+        setText('totalTrades', p.totalTrades || 0);
+
+        var dd = (p.drawdown || 0);
+        var ddEl = $('maxDrawdownVal');
+        if (ddEl) { ddEl.textContent = dd.toFixed(4) + '%'; ddEl.style.color = dd > 5 ? 'var(--red)' : dd > 1 ? 'var(--accent)' : 'var(--text-primary)'; }
+
+        var sr = $('sharpeRatioVal');
+        if (sr) { sr.textContent = (p.sharpeRatio || 0).toFixed(2); sr.style.color = (p.sharpeRatio || 0) > 1 ? 'var(--green)' : 'var(--text-primary)'; }
+
+        var at = (p.avgTradeReturn || 0);
+        var atEl = $('avgTradeVal');
+        if (atEl) { atEl.textContent = (at >= 0 ? '+' : '') + '$' + fmtNum(Math.abs(at), 4); atEl.style.color = at >= 0 ? 'var(--green)' : 'var(--red)'; }
+
+        setText('unrealizedPnL', fmtPrice(p.unrealizedPnL || 0));
+
+        updatePerfChart(p.totalValue);
+    }
+
+    // Trading
+    if (data.trading) {
+        setText('strategiesCount', data.trading.strategiesCount || 0);
+        var bs = $('botStatus');
+        if (bs) {
+            if (data.trading.isRunning) {
+                bs.innerHTML = '<span class="status-badge running"><i class="fas fa-circle" style="font-size:6px;"></i> Running</span>';
+            } else {
+                bs.innerHTML = '<span class="status-badge stopped"><i class="fas fa-circle" style="font-size:6px;"></i> Stopped</span>';
+            }
+        }
+    }
+
+    // Config
+    if (data.config) {
+        var mode = data.config.enableLiveTrading ? 'LIVE' : 'SIMULATION';
+        var modeEl = $('tradingMode');
+        if (modeEl) {
+            modeEl.textContent = mode;
+            modeEl.className = 'header-badge';
+            modeEl.style.background = mode === 'LIVE' ? 'var(--red-bg)' : 'var(--blue-bg)';
+            modeEl.style.color = mode === 'LIVE' ? 'var(--red)' : 'var(--blue)';
+        }
+        setText('maxRiskPerTrade', ((data.config.riskPerTrade || 0.02) * 100).toFixed(1) + '%');
+        setText('activeStrategy', data.config.strategy || '--');
+        setText('cfgSymbol', data.config.symbol || '--');
+        setText('cfgTimeframe', data.config.timeframe || '15m');
+        setText('cfgCapital', '$' + fmtNum(data.config.initialCapital || 10000, 0));
+        setText('cfgLive', data.config.enableLiveTrading ? 'ON' : 'OFF');
+    }
+
+    // Health
+    if (data.health) {
+        setText('uptime', fmtUptime(data.health.uptime || 0));
+        setText('botVersion', data.health.version || '--');
+        setText('footerVersion', data.health.version || '--');
+
+        var hb = $('healthBadge');
+        if (hb) {
+            var st = data.health.status || 'unknown';
+            hb.textContent = st.toUpperCase();
+            hb.className = 'header-badge';
+            var sMap = { healthy: {bg:'var(--green-bg)',c:'var(--green)'}, degraded: {bg:'rgba(240,185,11,0.15)',c:'var(--accent)'}, unhealthy: {bg:'var(--red-bg)',c:'var(--red)'} };
+            var sc = sMap[st] || sMap.unhealthy;
+            hb.style.background = sc.bg;
+            hb.style.color = sc.c;
+        }
+
+        // Component health
+        if (data.health.components) {
+            var comp = data.health.components;
+            setComp('compDatabase', comp.database);
+            setComp('compStrategies', comp.strategies);
+            setComp('compMonitoring', comp.monitoring);
+            setComp('compRiskMgr', comp.riskManager);
+            setComp('compPortfolio', comp.portfolio);
+            setComp('compCircuitBkr', comp.circuitBreaker);
+        }
+
+        // ML metrics
+        if (data.health.metrics) {
+            var m = data.health.metrics;
+            var conf = ((m.mlConfidenceThreshold || 0) * 100);
+            setText('mlConfidence', conf.toFixed(1) + '%');
+            var mpEl = $('mlProgress');
+            if (mpEl) mpEl.style.width = conf + '%';
+
+            var acc = ((1 - (m.mlExplorationRate || 1)) * 100);
+            setText('mlAccuracy', acc.toFixed(1) + '%');
+            setText('trainingCycles', m.mlTradingCount || 0);
+            setText('mlReward', (m.mlAverageReward || 0).toFixed(4));
+
+            var phase = m.mlLearningPhase || 'UNKNOWN';
+            setText('mlPhaseLabel', phase);
+            var mlBadge = $('mlPhaseBadge');
+            if (mlBadge) {
+                mlBadge.textContent = 'ML: ' + phase;
+                var phaseColors = { 'WARMUP': {bg:'rgba(168,85,247,0.15)',c:'var(--purple)'}, 'LEARNING': {bg:'rgba(240,185,11,0.15)',c:'var(--accent)'}, 'AUTONOMOUS': {bg:'var(--green-bg)',c:'var(--green)'} };
+                var pc = phaseColors[phase] || phaseColors['WARMUP'];
+                mlBadge.style.background = pc.bg;
+                mlBadge.style.color = pc.c;
+            }
+        }
+    }
+
+    // Circuit Breaker
+    if (data.circuitBreaker) {
+        var cb = data.circuitBreaker;
+        var banner = $('circuitBreakerBanner');
+        var cbSt = $('circuitBreakerStatus');
+
+        setText('cbLosses', (cb.consecutiveLosses || 0) + '/' + (cb.maxConsecutiveLosses || 3));
+        setText('cbTripCount', cb.tripCount || 0);
+
+        if (cb.isTripped || cb.emergencyStopTriggered) {
+            if (banner) banner.className = 'cb-alert active';
+            setText('cbDetails', 'Losses: ' + (cb.consecutiveLosses || 0) + '/' + (cb.maxConsecutiveLosses || 3) + ' | Trips: ' + (cb.tripCount || 0));
+            if (cbSt) cbSt.innerHTML = '<span class="status-badge unhealthy">TRIPPED</span>';
+        } else {
+            if (banner) banner.className = 'cb-alert';
+            if (cbSt) cbSt.innerHTML = '<span class="status-badge healthy">OK</span>';
+        }
+    }
+
+    // Latency
+    setText('apiLatency', (latency || 0) + 'ms');
+    setText('tickLatency', (latency || 0) + 'ms');
+    setText('lastUpdate', new Date().toLocaleTimeString());
+}
+
+function setComp(id, val) {
+    var el = $(id);
+    if (el) { el.className = 'comp-dot ' + (val ? 'on' : 'off'); }
+}
+
+// ---- TRADES TABLE ----
+function updateTradesTable(trades) {
+    var tbody = $('tradesTable');
+    var cnt = $('tradesCount');
+    if (!trades || trades.length === 0) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-third);">No trades yet</td></tr>';
+        if (cnt) cnt.textContent = '0';
+        return;
+    }
+    if (cnt) cnt.textContent = trades.length;
+    var rows = trades.slice(-20).reverse();
+    if (tbody) {
+        tbody.innerHTML = rows.map(function(t) {
+            var pnl = parseFloat(t.pnl) || 0;
+            var price = parseFloat(t.price || t.entryPrice || 0);
+            var qty = parseFloat(t.quantity || 0);
+            var action = t.action || t.type || '?';
+            var acCls = (action === 'BUY' || action === 'LONG') ? 'action-buy' : 'action-sell';
+            var pnlCls = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+            var time = new Date(t.timestamp).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            return '<tr>' +
+                '<td style="color:var(--text-secondary);">' + time + '</td>' +
+                '<td>' + (t.symbol || 'BTC-USDT') + '</td>' +
+                '<td class="' + acCls + '">' + action + '</td>' +
+                '<td>' + fmtPrice(price) + '</td>' +
+                '<td>' + qty.toFixed(6) + '</td>' +
+                '<td class="' + pnlCls + '">' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(4) + '</td>' +
+                '<td style="color:var(--text-secondary);font-size:0.72rem;">' + (t.strategy || '?') + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+}
+
+// ---- CONNECTION STATUS ----
+function setConn(connected) {
+    isConnected = connected;
+    var dot = $('statusDot');
+    var txt = $('statusText');
+    if (connected) {
+        if (dot) { dot.className = 'conn-dot'; }
+        if (txt) txt.textContent = 'Connected';
+    } else {
+        if (dot) { dot.className = 'conn-dot off'; }
+        if (txt) txt.textContent = 'Disconnected';
+    }
+}
+
+// ---- CIRCUIT BREAKER RESET ----
+async function resetCircuitBreaker() {
+    try {
+        var resp = await fetch('/api/circuit-breaker/reset', { method: 'POST' });
+        if (resp.ok) {
+            console.log('[TURBO] Circuit breaker reset');
+            await fetchBotData();
+        } else {
+            alert('Reset failed: ' + resp.status);
+        }
+    } catch(e) { alert('Reset error: ' + e.message); }
+}
+
+// ---- START UPDATES ----
+function startUpdates() {
+    setInterval(fetchBotData, 5000);
+    setInterval(fetchTrades, 10000);
+}
+
+// ---- INIT ON LOAD ----
+document.addEventListener('DOMContentLoaded', initDashboard);
+</script>
+</body>
+</html>

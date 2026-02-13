@@ -3,6 +3,12 @@
  * @module StrategyRunner
  * @description Manages all trading strategies (2 inline + 3 class-based).
  * Runs analysis and returns signals.
+ * 
+ * PATCH #14:
+ * - Removed noisy fallback BUY/SELL signals from SuperTrend and MACrossover
+ *   (when strategy class returns no signal, we return HOLD, not a weak directional signal)
+ * - RSITurbo: eliminated premature SELL at RSI 65 in non-downtrend
+ * - AdvancedAdaptive: requires minimum 3 confirmations (was 2)
  */
 const ind = require('./indicators');
 
@@ -30,11 +36,11 @@ class StrategyRunner {
     initialize(deps) {
         const logger = deps.Logger ? new deps.Logger('logs/strategies.log') : null;
 
-        // 1. AdvancedAdaptive (inline)
+        // 1. AdvancedAdaptive (inline) — PATCH #14: requires 3+ confirmations
         this.strategies.set('AdvancedAdaptive', {
             name: 'AdvancedAdaptive',
             analyze: (marketData) => {
-                if (marketData.length < 20) return this._hold(marketData);
+                if (marketData.length < 50) return this._hold(marketData);
                 const prices = marketData.map(d => d.close);
                 const volumes = marketData.map(d => d.volume);
                 const sma20 = ind.calculateSMA(prices, 20), sma50 = ind.calculateSMA(prices, 50);
@@ -43,16 +49,21 @@ class StrategyRunner {
                 const vp = ind.calculateVolumeProfile(volumes);
                 const cur = prices[prices.length - 1];
                 let bull = 0, bear = 0;
+                // Trend alignment
                 if (cur > sma20 && sma20 > sma50) bull++;
                 if (cur < sma20 && sma20 < sma50) bear++;
+                // RSI extremes
                 if (rsi < 30) bull++;
                 if (rsi > 70) bear++;
+                // MACD momentum
                 if (macd.signal > 0 && macd.histogram > 0) bull++;
                 if (macd.signal < 0 && macd.histogram < 0) bear++;
+                // Bollinger extremes
                 if (cur < bb.lower) bull++;
                 if (cur > bb.upper) bear++;
+                // Volume confirmation
                 if (vp > 1.2) { if (bull > bear) bull++; if (bear > bull) bear++; }
-                // H5: Multi-TF trend filter
+                // H1 Multi-TF trend filter
                 let h1Bull = false, h1Bear = false;
                 try {
                     const h1 = this.dp.getCachedTimeframeData().h1;
@@ -65,11 +76,12 @@ class StrategyRunner {
                     }
                 } catch(e) {}
                 let action = 'HOLD', conf = 0.5;
-                if (bull >= 2 && bull > bear) {
+                // PATCH #14: require 3+ confirmations (was 2) for stronger signals
+                if (bull >= 3 && bull > bear) {
                     action = 'BUY'; conf = Math.min(0.95, 0.55 + bull * 0.1);
                     if (h1Bull) conf = Math.min(0.95, conf + 0.05);
                     else if (h1Bear) { conf *= 0.7; action = 'HOLD'; }
-                } else if (bear >= 2 && bear > bull) {
+                } else if (bear >= 3 && bear > bull) {
                     action = 'SELL'; conf = Math.min(0.95, 0.55 + bear * 0.1);
                     if (h1Bear) conf = Math.min(0.95, conf + 0.05);
                     else if (h1Bull) { conf *= 0.7; action = 'HOLD'; }
@@ -81,7 +93,7 @@ class StrategyRunner {
             }
         });
 
-        // 2. RSITurbo (inline)
+        // 2. RSITurbo (inline) — PATCH #14: removed premature SELL at RSI 65 in non-downtrend
         this.strategies.set('RSITurbo', {
             name: 'RSITurbo',
             analyze: (marketData) => {
@@ -99,14 +111,30 @@ class StrategyRunner {
                 const uptrend = cur > sma20 && sma20 > sma50;
                 const downtrend = cur < sma20 && sma20 < sma50;
                 let action = 'HOLD', conf = 0.5;
-                if (rsi < 35 && rsi > rsiMA) { action = 'BUY'; conf = Math.min(0.9, 0.65 + (35 - rsi) * 0.015); }
-                else if (rsi > 75 && rsi < rsiMA) { action = 'SELL'; conf = Math.min(0.9, 0.65 + (rsi - 75) * 0.02); }
-                else if (rsi > 65 && rsi < rsiMA && downtrend) { action = 'SELL'; conf = Math.min(0.8, 0.55 + (rsi - 65) * 0.015); }
-                else if (rsi > 65 && rsi < rsiMA && uptrend) { action = 'HOLD'; conf = 0.5; }
-                else if (rsi > 65 && rsi < rsiMA) { action = 'SELL'; conf = Math.min(0.7, 0.55 + (rsi - 65) * 0.01); }
-                else if (rsi < 50 && rsi > 40 && rsi > rsiMA && uptrend) { action = 'BUY'; conf = 0.55; }
-                else if (rsi < 45 && rsi > rsiMA && rsiMA < 40) { action = 'BUY'; conf = 0.6; }
-                else if (rsi > 55 && rsi < rsiMA && rsiMA > 60 && !uptrend) { action = 'SELL'; conf = 0.6; }
+                // Strong oversold: BUY
+                if (rsi < 35 && rsi > rsiMA) {
+                    action = 'BUY'; conf = Math.min(0.9, 0.65 + (35 - rsi) * 0.015);
+                }
+                // Strong overbought: SELL
+                else if (rsi > 75 && rsi < rsiMA) {
+                    action = 'SELL'; conf = Math.min(0.9, 0.65 + (rsi - 75) * 0.02);
+                }
+                // PATCH #14: Only SELL at RSI 65-75 when in confirmed DOWNTREND (was: also sold in no-trend)
+                else if (rsi > 65 && rsi < rsiMA && downtrend) {
+                    action = 'SELL'; conf = Math.min(0.8, 0.55 + (rsi - 65) * 0.015);
+                }
+                // Pullback BUY in uptrend
+                else if (rsi < 50 && rsi > 40 && rsi > rsiMA && uptrend) {
+                    action = 'BUY'; conf = 0.55;
+                }
+                // Deep oversold recovery
+                else if (rsi < 45 && rsi > rsiMA && rsiMA < 40) {
+                    action = 'BUY'; conf = 0.6;
+                }
+                // High RSI weakening in downtrend
+                else if (rsi > 55 && rsi < rsiMA && rsiMA > 60 && downtrend) {
+                    action = 'SELL'; conf = 0.6;
+                }
                 return { symbol: this.config.symbol, action, confidence: conf, price: cur,
                     timestamp: Date.now(), strategy: 'RSITurbo',
                     riskLevel: this.risk.calculateRiskLevel(conf),
@@ -119,32 +147,26 @@ class StrategyRunner {
         const macStrategy = deps.MACrossoverStrategy ? new deps.MACrossoverStrategy(logger) : null;
         const mpStrategy = deps.MomentumProStrategy ? new deps.MomentumProStrategy(logger) : null;
 
+        // PATCH #14: SuperTrend — NO fallback BUY/SELL when strategy returns empty
         if (stStrategy) {
             this.strategies.set('SuperTrend', { name: 'SuperTrend', analyze: async (md) => {
                 const bs = this.dp.convertMarketDataToBotState(md, this._getPortfolioData());
                 const sigs = await stStrategy.run(bs);
                 if (sigs.length === 0) {
-                    const p = md.map(d => d.close);
-                    const e50 = ind.calculateEMA(p, 50), e200 = ind.calculateEMA(p, 200);
-                    const c = p[p.length - 1], atrPct = (ind.calculateATR(md, 14) / c) * 100;
-                    if (c > e50 && e50 > e200 && atrPct < 2.0) return { symbol: this.config.symbol, action:'BUY', confidence:0.35, price:c, timestamp:Date.now(), strategy:'SuperTrend', riskLevel:2, quantity:this.risk.calculateOptimalQuantity(c,0.35) };
-                    if (c < e50 && e50 < e200 && atrPct < 2.0) return { symbol: this.config.symbol, action:'SELL', confidence:0.35, price:c, timestamp:Date.now(), strategy:'SuperTrend', riskLevel:2, quantity:this.risk.calculateOptimalQuantity(c,0.35) };
+                    // PATCH #14: Return HOLD instead of noisy fallback signal at 0.35 confidence
                     return this._hold(md);
                 }
                 return this.dp.convertStrategySignalToTradingSignal(sigs[0], md, this.risk);
             }});
         }
 
+        // PATCH #14: MACrossover — NO fallback BUY/SELL when strategy returns empty
         if (macStrategy) {
             this.strategies.set('MACrossover', { name: 'MACrossover', analyze: async (md) => {
                 const bs = this.dp.convertMarketDataToBotState(md, this._getPortfolioData());
                 const sigs = await macStrategy.run(bs);
                 if (sigs.length === 0) {
-                    const p = md.map(d => d.close);
-                    const e9 = ind.calculateEMA(p,9), e21 = ind.calculateEMA(p,21), e50 = ind.calculateEMA(p,50);
-                    const c = p[p.length-1], gap = ((e9-e21)/e21)*100;
-                    if (e9>e21 && e21>e50 && gap>0.05 && gap<1.5) return { symbol:this.config.symbol, action:'BUY', confidence:0.32, price:c, timestamp:Date.now(), strategy:'MACrossover', riskLevel:2, quantity:this.risk.calculateOptimalQuantity(c,0.32) };
-                    if (e9<e21 && e21<e50 && gap<-0.05 && gap>-1.5) return { symbol:this.config.symbol, action:'SELL', confidence:0.32, price:c, timestamp:Date.now(), strategy:'MACrossover', riskLevel:2, quantity:this.risk.calculateOptimalQuantity(c,0.32) };
+                    // PATCH #14: Return HOLD instead of noisy fallback signal at 0.32 confidence
                     return this._hold(md);
                 }
                 return this.dp.convertStrategySignalToTradingSignal(sigs[0], md, this.risk);
@@ -179,12 +201,12 @@ class StrategyRunner {
                 if (signal) {
                     signals.set(name, signal);
                     this.lastSignals.set(name, signal);
-                    console.log('   ??? ' + name + ': ' + signal.action + ' (conf: ' + (signal.confidence * 100).toFixed(1) + '%)');
+                    console.log('   [' + name + '] ' + signal.action + ' (conf: ' + (signal.confidence * 100).toFixed(1) + '%)');
                 } else {
-                    console.log('   ?????? ' + name + ': null signal');
+                    console.log('   [' + name + '] null signal');
                 }
             } catch (e) {
-                console.error('   ??? ' + name + ' error:', e.message);
+                console.error('   [' + name + ' ERROR] ' + e.message);
             }
         }
         return signals;

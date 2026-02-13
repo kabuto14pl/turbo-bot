@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEGATRON AI — Trading Command Center</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--panel:#12121f;--panel2:#181830;--border:#252545;
+  --accent:#00d4ff;--accent2:#a855f7;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--orange:#f97316;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;height:100vh;overflow:hidden}
+.app{display:grid;grid-template-rows:56px 1fr;height:100vh}
+header{background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:10}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
+.logo h1{font-size:18px;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{font-size:11px;color:var(--text3);display:block;margin-top:-2px}
+.header-status{display:flex;align-items:center;gap:16px;font-size:13px}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.dot-green{background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot-red{background:var(--red);box-shadow:0 0 8px var(--red)}
+.dot-yellow{background:var(--yellow)}
+.main{display:grid;grid-template-columns:300px 1fr 380px;gap:0;overflow:hidden}
+/* ─── ACTIVITY PANEL ─── */
+.activity-panel{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.panel-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-header h2{font-size:14px;font-weight:600;color:var(--accent)}
+.panel-header .badge{background:var(--accent);color:#000;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:700}
+.activity-feed{flex:1;overflow-y:auto;padding:8px}
+.activity-feed::-webkit-scrollbar{width:4px}
+.activity-feed::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.activity-entry{padding:8px 10px;margin-bottom:4px;border-radius:6px;background:var(--panel2);border-left:3px solid var(--border);font-size:12px;transition:all .2s;cursor:default}
+.activity-entry:hover{background:#1e1e3a}
+.activity-entry.importance-high{border-left-color:var(--orange)}
+.activity-entry.importance-critical{border-left-color:var(--red);background:#1a0a0a}
+.activity-entry .ae-time{color:var(--text3);font-size:10px;font-family:'Consolas',monospace}
+.activity-entry .ae-icon{margin-right:4px}
+.activity-entry .ae-title{color:var(--text);font-weight:500}
+.activity-entry .ae-desc{color:var(--text2);font-size:11px;margin-top:2px;word-break:break-word}
+.filter-bar{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;gap:4px;flex-wrap:wrap}
+.filter-btn{background:var(--panel2);border:1px solid var(--border);color:var(--text2);font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all .2s}
+.filter-btn:hover,.filter-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+/* ─── CENTER PANEL ─── */
+.center-panel{display:flex;flex-direction:column;overflow:hidden}
+.metrics-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.metric-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center}
+.metric-card .mc-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.metric-card .mc-value{font-size:18px;font-weight:700;margin-top:2px}
+.mc-value.green{color:var(--green)}.mc-value.red{color:var(--red)}.mc-value.accent{color:var(--accent)}.mc-value.purple{color:var(--accent2)}
+.center-content{flex:1;overflow-y:auto;padding:16px}
+.section{margin-bottom:16px}
+.section h3{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.weights-grid{display:grid;grid-template-columns:1fr;gap:4px}
+.weight-bar{display:flex;align-items:center;gap:8px;font-size:12px}
+.weight-bar .wb-name{width:120px;color:var(--text2);font-size:11px}
+.weight-bar .wb-track{flex:1;height:16px;background:var(--panel2);border-radius:3px;overflow:hidden;position:relative}
+.weight-bar .wb-fill{height:100%;border-radius:3px;transition:width .5s;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-size:9px;font-weight:700;color:#000}
+.weight-bar:nth-child(1) .wb-fill{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.weight-bar:nth-child(2) .wb-fill{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}
+.weight-bar:nth-child(3) .wb-fill{background:linear-gradient(90deg,#06b6d4,#22d3ee)}
+.weight-bar:nth-child(4) .wb-fill{background:linear-gradient(90deg,#10b981,#34d399)}
+.weight-bar:nth-child(5) .wb-fill{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.weight-bar:nth-child(6) .wb-fill{background:linear-gradient(90deg,#ef4444,#f87171)}
+.weight-bar:nth-child(7) .wb-fill{background:linear-gradient(90deg,#ec4899,#f472b6)}
+.positions-table,.trades-table{width:100%;border-collapse:collapse;font-size:12px}
+.positions-table th,.trades-table th{text-align:left;color:var(--text3);font-size:10px;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border)}
+.positions-table td,.trades-table td{padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text2)}
+.pnl-pos{color:var(--green)}.pnl-neg{color:var(--red)}
+.risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.risk-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.risk-card .rc-label{font-size:10px;color:var(--text3);text-transform:uppercase}
+.risk-card .rc-value{font-size:16px;font-weight:700;margin-top:4px}
+.neural-status{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ns-card{background:var(--panel2);border-radius:6px;padding:8px 12px;font-size:12px}
+.ns-card .ns-label{color:var(--text3);font-size:10px}
+.ns-card .ns-val{font-weight:600;margin-top:2px}
+/* ─── CHAT PANEL ─── */
+.chat-panel{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column}
+.chat-header{padding:12px 16px;border-bottom:1px solid var(--border);text-align:center}
+.chat-header h2{font-size:16px;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.chat-header .ch-sub{font-size:11px;color:var(--text3)}
+.chat-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.chat-msg{max-width:90%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.chat-msg.user{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-msg.assistant{background:var(--panel2);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.system{background:transparent;border:1px dashed var(--border);color:var(--text3);align-self:center;font-size:11px;text-align:center;max-width:100%}
+.chat-msg .cm-provider{font-size:10px;color:var(--text3);margin-top:4px;text-align:right}
+.chat-msg .cm-time{font-size:10px;color:var(--text3)}
+.chat-typing{padding:8px 16px;font-size:12px;color:var(--text3);font-style:italic;display:none}
+.chat-typing.visible{display:block}
+.chat-suggestions{padding:8px 12px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px}
+.suggestion-btn{background:var(--panel2);border:1px solid var(--border);color:var(--accent);font-size:11px;padding:4px 10px;border-radius:12px;cursor:pointer;transition:all .2s}
+.suggestion-btn:hover{background:var(--accent);color:#000}
+.chat-input-area{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
+.chat-input-area input{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:13px;outline:none;transition:border .2s}
+.chat-input-area input:focus{border-color:var(--accent)}
+.chat-input-area input::placeholder{color:var(--text3)}
+.chat-send-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;transition:transform .1s}
+.chat-send-btn:hover{transform:scale(1.05)}
+.chat-send-btn:active{transform:scale(.95)}
+@media(max-width:1200px){.main{grid-template-columns:1fr 1fr}.activity-panel{display:none}}
+@media(max-width:800px){.main{grid-template-columns:1fr}.chat-panel{display:none}.metrics-bar{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">M</div>
+      <div>
+        <h1>MEGATRON AI</h1>
+        <span>Trading Command Center v1.0</span>
+      </div>
+    </div>
+    <div class="header-status">
+      <span><span class="status-dot dot-green" id="wsStatus"></span> <span id="wsLabel">Connecting...</span></span>
+      <span id="headerPrice" style="font-weight:700;color:var(--accent)">BTC $---</span>
+      <span id="headerUptime" style="color:var(--text3)">Uptime: --</span>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- ─── LEFT: AI Activity Feed ─── -->
+    <div class="activity-panel">
+      <div class="panel-header">
+        <h2>⚡ AI Activity Feed</h2>
+        <span class="badge" id="activityCount">0</span>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="ALL">All</button>
+        <button class="filter-btn" data-filter="SIGNAL">📊 Signal</button>
+        <button class="filter-btn" data-filter="TRADE">💹 Trade</button>
+        <button class="filter-btn" data-filter="RISK">🛡️ Risk</button>
+        <button class="filter-btn" data-filter="LEARNING">🧠 Learn</button>
+        <button class="filter-btn" data-filter="QUANTUM">⚛️ Quantum</button>
+        <button class="filter-btn" data-filter="SYSTEM">⚙️ System</button>
+      </div>
+      <div class="activity-feed" id="activityFeed"></div>
+    </div>
+
+    <!-- ─── CENTER: Trading Overview ─── -->
+    <div class="center-panel">
+      <div class="metrics-bar">
+        <div class="metric-card"><div class="mc-label">Portfolio</div><div class="mc-value accent" id="mPortfolio">$---</div></div>
+        <div class="metric-card"><div class="mc-label">Unrealized P&L</div><div class="mc-value" id="mUnrealPnL">$---</div></div>
+        <div class="metric-card"><div class="mc-label">Realized P&L</div><div class="mc-value" id="mRealPnL">$---</div></div>
+        <div class="metric-card"><div class="mc-label">Win Rate</div><div class="mc-value" id="mWinRate">--%</div></div>
+        <div class="metric-card"><div class="mc-label">Neural AI</div><div class="mc-value purple" id="mNeuralPhase">--</div></div>
+        <div class="metric-card"><div class="mc-label">Quantum</div><div class="mc-value" id="mQuantum" style="color:var(--accent)">--</div></div>
+      </div>
+
+      <div class="center-content">
+        <div class="section">
+          <h3>📋 Strategy Weights (Ensemble + Thompson Sampling)</h3>
+          <div class="weights-grid" id="weightsGrid"></div>
+        </div>
+
+        <div class="section">
+          <h3>📌 Open Positions</h3>
+          <table class="positions-table"><thead><tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Current</th><th>P&L</th></tr></thead><tbody id="positionsBody"></tbody></table>
+        </div>
+
+        <div class="section">
+          <h3>🛡️ Risk Management</h3>
+          <div class="risk-grid" id="riskGrid"></div>
+        </div>
+
+        <div class="section">
+          <h3>⚡ Neural AI & Quantum Status</h3>
+          <div class="neural-status" id="neuralStatus"></div>
+        </div>
+
+        <div class="section">
+          <h3>📜 Recent Trades</h3>
+          <table class="trades-table"><thead><tr><th>Time</th><th>Action</th><th>Price</th><th>P&L</th><th>Strategy</th></tr></thead><tbody id="tradesBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── RIGHT: MEGATRON Chat ─── -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <h2>🤖 MEGATRON</h2>
+        <div class="ch-sub">AI Trading Assistant | <span id="chatProvider">offline</span></div>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-msg system">
+          <div>Witaj! Jestem <strong>MEGATRON</strong> — Twój asystent AI do zarządzania botem tradingowym.<br>
+          Mogę wyjaśnić decyzje, zmienić parametry i analizować wyniki.<br>
+          Wpisz <strong>"help"</strong> po listę komend.</div>
+        </div>
+      </div>
+      <div class="chat-typing" id="chatTyping">MEGATRON pisze...</div>
+      <div class="chat-suggestions">
+        <button class="suggestion-btn" data-msg="status">📋 Status</button>
+        <button class="suggestion-btn" data-msg="performance">📊 Wyniki</button>
+        <button class="suggestion-btn" data-msg="wyjaśnij ostatnią transakcję">📜 Last Trade</button>
+        <button class="suggestion-btn" data-msg="strategie">⚖️ Strategie</button>
+        <button class="suggestion-btn" data-msg="Jaki jest aktualny reżim rynkowy?">🌍 Reżim</button>
+        <button class="suggestion-btn" data-msg="help">❓ Pomoc</button>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Napisz do Megatrona..." autocomplete="off">
+        <button class="chat-send-btn" id="chatSend">▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// MEGATRON DASHBOARD CLIENT
+// ═══════════════════════════════════════════════════════════════════
+const BOT_API = location.port === '8080' ? location.protocol + '//' + location.hostname + ':3001' : '';
+const WS_URL = 'ws://' + location.hostname + ':3001/ws';
+
+// ─── STATE ──────────────────────────────────────────────────────
+let ws = null;
+let wsConnected = false;
+let activityFilter = 'ALL';
+let activityEntries = [];
+const MAX_ACTIVITY_DISPLAY = 200;
+
+// ─── WEBSOCKET ──────────────────────────────────────────────────
+function connectWebSocket() {
+    try {
+        ws = new WebSocket(WS_URL);
+        ws.onopen = () => {
+            wsConnected = true;
+            document.getElementById('wsStatus').className = 'status-dot dot-green';
+            document.getElementById('wsLabel').textContent = 'Connected';
+        };
+        ws.onclose = () => {
+            wsConnected = false;
+            document.getElementById('wsStatus').className = 'status-dot dot-red';
+            document.getElementById('wsLabel').textContent = 'Disconnected';
+            setTimeout(connectWebSocket, 3000);
+        };
+        ws.onerror = () => {};
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                handleWSMessage(msg);
+            } catch(e) {}
+        };
+    } catch(e) {
+        setTimeout(connectWebSocket, 5000);
+    }
+}
+
+function handleWSMessage(msg) {
+    if (msg.type === 'megatron_activity') {
+        addActivityEntry(msg.data);
+    } else if (msg.type === 'megatron_response' || msg.type === 'megatron_chat') {
+        const data = msg.data;
+        if (data.response) {
+            const resp = typeof data.response === 'string' ? data.response : data.response.response;
+            const provider = data.response.provider || data.provider || '';
+            addChatMessage('assistant', resp, provider);
+            document.getElementById('chatTyping').classList.remove('visible');
+        }
+    } else if (msg.type === 'health_update') {
+        updateFromHealth(msg.data);
+    } else if (msg.type === 'portfolio_update') {
+        updatePortfolioMetrics(msg.data);
+    }
+}
+
+// ─── ACTIVITY FEED ──────────────────────────────────────────────
+function addActivityEntry(entry) {
+    activityEntries.push(entry);
+    if (activityEntries.length > MAX_ACTIVITY_DISPLAY) activityEntries.shift();
+    document.getElementById('activityCount').textContent = activityEntries.length;
+    if (activityFilter === 'ALL' || activityFilter === entry.type) {
+        renderActivityEntry(entry);
+    }
+}
+
+function renderActivityEntry(entry) {
+    const feed = document.getElementById('activityFeed');
+    const div = document.createElement('div');
+    div.className = 'activity-entry importance-' + (entry.importance || 'normal');
+    const time = new Date(entry.timestamp).toLocaleTimeString('pl-PL');
+    div.innerHTML = '<div class="ae-time">' + time + '</div>' +
+        '<div><span class="ae-icon">' + (entry.icon || '📌') + '</span><span class="ae-title">' + escHTML(entry.title || '') + '</span></div>' +
+        (entry.description ? '<div class="ae-desc">' + escHTML(entry.description) + '</div>' : '');
+    feed.appendChild(div);
+    feed.scrollTop = feed.scrollHeight;
+}
+
+function renderAllActivities() {
+    const feed = document.getElementById('activityFeed');
+    feed.innerHTML = '';
+    const filtered = activityFilter === 'ALL' ? activityEntries : activityEntries.filter(e => e.type === activityFilter);
+    filtered.forEach(renderActivityEntry);
+}
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activityFilter = btn.dataset.filter;
+        renderAllActivities();
+    });
+});
+
+// ─── CHAT ───────────────────────────────────────────────────────
+function addChatMessage(role, content, provider) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + role;
+    const time = new Date().toLocaleTimeString('pl-PL');
+    let html = '<div>' + formatChatContent(content) + '</div>';
+    html += '<div class="cm-time">' + time;
+    if (role === 'assistant' && provider) {
+        html += ' · via ' + provider;
+        document.getElementById('chatProvider').textContent = provider;
+    }
+    html += '</div>';
+    div.innerHTML = html;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function formatChatContent(text) {
+    if (!text) return '';
+    // Basic markdown: **bold**, *italic*, and preserve newlines
+    return escHTML(text)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+}
+
+async function sendChat(message) {
+    if (!message.trim()) return;
+    addChatMessage('user', message.trim());
+    document.getElementById('chatInput').value = '';
+    document.getElementById('chatTyping').classList.add('visible');
+
+    // Try WebSocket first
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'megatron_chat', message: message.trim() }));
+        return;
+    }
+
+    // Fallback to REST
+    try {
+        const resp = await fetch(BOT_API + '/api/megatron/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message.trim() }),
+        });
+        const data = await resp.json();
+        document.getElementById('chatTyping').classList.remove('visible');
+        addChatMessage('assistant', data.response, data.provider);
+    } catch(e) {
+        document.getElementById('chatTyping').classList.remove('visible');
+        addChatMessage('assistant', '❌ Nie mogę połączyć się z botem: ' + e.message, 'error');
+    }
+}
+
+// Chat input handlers
+document.getElementById('chatInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChat(e.target.value);
+    }
+});
+document.getElementById('chatSend').addEventListener('click', () => {
+    sendChat(document.getElementById('chatInput').value);
+});
+document.querySelectorAll('.suggestion-btn').forEach(btn => {
+    btn.addEventListener('click', () => sendChat(btn.dataset.msg));
+});
+
+// ─── DATA FETCHING ──────────────────────────────────────────────
+async function fetchData(endpoint) {
+    try {
+        const resp = await fetch(BOT_API + endpoint);
+        return await resp.json();
+    } catch(e) { return null; }
+}
+
+async function refreshAll() {
+    const [health, portfolio, trades, positions, mlStatus, megatronStatus, megatronActivities] = await Promise.all([
+        fetchData('/health'),
+        fetchData('/api/portfolio'),
+        fetchData('/api/trades?limit=15'),
+        fetchData('/api/positions'),
+        fetchData('/api/ml/status'),
+        fetchData('/api/megatron/status'),
+        fetchData('/api/megatron/activities?count=100'),
+    ]);
+
+    if (health) updateFromHealth(health);
+    if (portfolio) updatePortfolioMetrics(portfolio);
+    if (trades) updateTrades(trades.trades || []);
+    if (positions) updatePositions(positions.positions || []);
+    if (megatronStatus) updateMegatronStatus(megatronStatus);
+    if (megatronActivities && megatronActivities.activities) {
+        activityEntries = megatronActivities.activities;
+        document.getElementById('activityCount').textContent = activityEntries.length;
+        renderAllActivities();
+    }
+}
+
+function updateFromHealth(h) {
+    if (!h) return;
+    const m = h.metrics || {};
+    document.getElementById('mPortfolio').textContent = '$' + (m.portfolioValue || m.totalValue || 0).toFixed(2);
+    const urPnL = m.unrealizedPnL || 0;
+    const elUr = document.getElementById('mUnrealPnL');
+    elUr.textContent = (urPnL >= 0 ? '+' : '') + '$' + urPnL.toFixed(2);
+    elUr.className = 'mc-value ' + (urPnL >= 0 ? 'green' : 'red');
+    const rPnL = m.realizedPnL || 0;
+    const elR = document.getElementById('mRealPnL');
+    elR.textContent = (rPnL >= 0 ? '+' : '') + '$' + rPnL.toFixed(2);
+    elR.className = 'mc-value ' + (rPnL >= 0 ? 'green' : 'red');
+    document.getElementById('mWinRate').textContent = (m.winRate || h.winRate || 0).toFixed(1) + '%';
+    document.getElementById('mNeuralPhase').textContent = m.mlLearningPhase || '--';
+    if (h.uptime) document.getElementById('headerUptime').textContent = 'Uptime: ' + formatUptime(h.uptime);
+
+    // Strategy weights from ensemble (if available in health)
+    updateWeights(h);
+
+    // Risk
+    if (h.circuitBreaker) updateRisk(h.circuitBreaker, m);
+}
+
+function updatePortfolioMetrics(p) {
+    if (!p) return;
+    if (p.totalValue) document.getElementById('mPortfolio').textContent = '$' + p.totalValue.toFixed(2);
+}
+
+function updateWeights(h) {
+    const grid = document.getElementById('weightsGrid');
+    // Default weights — will be updated dynamically
+    const defaultWeights = {
+        'AdvancedAdaptive': 0.18, 'RSITurbo': 0.10, 'SuperTrend': 0.12,
+        'MACrossover': 0.10, 'MomentumPro': 0.10, 'EnterpriseML': 0.20, 'NeuralAI': 0.20
+    };
+    const weights = (h && h._ensembleWeights) || defaultWeights;
+    grid.innerHTML = '';
+    for (const [name, w] of Object.entries(weights)) {
+        const pct = (w * 100).toFixed(1);
+        const div = document.createElement('div');
+        div.className = 'weight-bar';
+        div.innerHTML = '<span class="wb-name">' + name + '</span>' +
+            '<div class="wb-track"><div class="wb-fill" style="width:' + (w * 100 * 2) + '%">' + pct + '%</div></div>';
+        grid.appendChild(div);
+    }
+}
+
+function updatePositions(positions) {
+    const body = document.getElementById('positionsBody');
+    if (!positions || positions.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3)">No open positions</td></tr>';
+        return;
+    }
+    body.innerHTML = '';
+    for (const p of positions) {
+        const tr = document.createElement('tr');
+        const pnl = p.unrealizedPnL || 0;
+        tr.innerHTML = '<td>' + (p.symbol || 'BTCUSDT') + '</td><td>' + (p.side || 'LONG') + '</td>' +
+            '<td>$' + (p.entryPrice || 0).toFixed(2) + '</td><td>$' + (p.currentPrice || 0).toFixed(2) + '</td>' +
+            '<td class="' + (pnl >= 0 ? 'pnl-pos' : 'pnl-neg') + '">' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2) + '</td>';
+        body.appendChild(tr);
+    }
+}
+
+function updateTrades(trades) {
+    const body = document.getElementById('tradesBody');
+    if (!trades || trades.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3)">No trades yet</td></tr>';
+        return;
+    }
+    body.innerHTML = '';
+    for (const t of trades.slice(-10).reverse()) {
+        const tr = document.createElement('tr');
+        const pnl = t.pnl || 0;
+        const time = t.timestamp ? new Date(t.timestamp).toLocaleTimeString('pl-PL') : '--';
+        tr.innerHTML = '<td>' + time + '</td><td>' + (t.action || t.type || '?') + '</td>' +
+            '<td>$' + (t.price || 0).toFixed(2) + '</td>' +
+            '<td class="' + (pnl >= 0 ? 'pnl-pos' : 'pnl-neg') + '">' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2) + '</td>' +
+            '<td>' + (t.strategy || '?') + '</td>';
+        body.appendChild(tr);
+    }
+}
+
+function updateRisk(cb, metrics) {
+    const grid = document.getElementById('riskGrid');
+    grid.innerHTML = '';
+    const cards = [
+        { label: 'Circuit Breaker', value: cb.isTripped ? '🔴 TRIPPED' : '🟢 OK', color: cb.isTripped ? 'red' : 'green' },
+        { label: 'Consecutive Losses', value: cb.consecutiveLosses + ' / ' + cb.maxConsecutiveLosses, color: cb.consecutiveLosses >= 3 ? 'red' : '' },
+        { label: 'Daily Trades', value: cb.dailyTradeCount || 0, color: '' },
+    ];
+    for (const c of cards) {
+        const div = document.createElement('div');
+        div.className = 'risk-card';
+        div.innerHTML = '<div class="rc-label">' + c.label + '</div><div class="rc-value" style="color:var(--' + (c.color || 'text') + ')">' + c.value + '</div>';
+        grid.appendChild(div);
+    }
+}
+
+function updateMegatronStatus(s) {
+    if (!s) return;
+    document.getElementById('chatProvider').textContent = (s.llm && s.llm.providers && s.llm.providers.length > 0) ? s.llm.providers.join(', ') : 'rule-based';
+    document.getElementById('mQuantum').textContent = 'Active';
+
+    const ns = document.getElementById('neuralStatus');
+    ns.innerHTML = '';
+    const items = [
+        { label: 'Megatron Uptime', val: s.uptimeFormatted || '--' },
+        { label: 'Chat Messages', val: s.messageCount || 0 },
+        { label: 'Commands Run', val: s.commandCount || 0 },
+        { label: 'LLM Providers', val: (s.llm && s.llm.providers) ? s.llm.providers.join(', ') || 'none' : 'none' },
+        { label: 'Activity Feed', val: (s.activityStats && s.activityStats.total) || 0 },
+        { label: 'Memory Size', val: s.memorySize || 0 },
+    ];
+    for (const it of items) {
+        const div = document.createElement('div');
+        div.className = 'ns-card';
+        div.innerHTML = '<div class="ns-label">' + it.label + '</div><div class="ns-val">' + it.val + '</div>';
+        ns.appendChild(div);
+    }
+}
+
+// ─── UTILITIES ──────────────────────────────────────────────────
+function escHTML(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
+function formatUptime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return h + 'h ' + m + 'm';
+}
+
+// ─── INIT ───────────────────────────────────────────────────────
+connectWebSocket();
+refreshAll();
+setInterval(refreshAll, 15000); // Auto-refresh every 15s
+
+// Price ticker
+setInterval(async () => {
+    const status = await fetchData('/api/status');
+    if (status && status.performance && status.performance.totalValue) {
+        document.getElementById('headerPrice').textContent = 'BTC ~$' + (status.performance.totalValue || 0).toFixed(0);
+    }
+}, 10000);
+</script>
+</body>
+</html>

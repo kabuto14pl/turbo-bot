@@ -599,7 +599,7 @@ class MinimalDeepRLAgent {
         const riskFreeRate = 0.02 / 365; // Daily risk-free rate
         const variance = pnls.reduce((sum, p) => sum + Math.pow(p - avgPnL, 2), 0) / pnls.length;
         const volatility = Math.sqrt(variance);
-        return volatility > 0 ? (avgPnL - riskFreeRate) / volatility : 0;
+        return volatility > 0 ? (avgReward - riskFreeRate) / volatility : 0;
     }
     calculateMaxDrawdown() {
         // Simplified drawdown calculation
