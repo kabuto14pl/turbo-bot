@@ -1,0 +1,121 @@
+.
+├── archive
+│   ├── clean_state_20251227
+│   ├── cleanup_20251208
+│   │   └── old_misc
+│   ├── cleanup_20251226
+│   │   └── old_src_root
+│   └── cleanup_20251227_005450
+│       ├── root_docs
+│       ├── root_json
+│       ├── root_tests
+│       ├── trading_bot_docs
+│       ├── trading_bot_json
+│       └── trading_bot_tests
+├── backups
+├── core
+│   ├── analysis
+│   └── strategies
+├── docs
+├── monitoring
+│   ├── grafana
+│   │   ├── dashboards
+│   │   ├── datasources
+│   │   └── provisioning
+│   ├── production
+│   ├── prometheus
+│   └── working
+├── reports
+├── scripts
+├── src
+│   ├── enterprise
+│   │   ├── api-gateway
+│   │   ├── integration
+│   │   ├── monitoring
+│   │   ├── orchestration
+│   │   ├── performance
+│   │   └── production
+│   ├── monitoring
+│   └── phase_c
+└── trading-bot
+    ├── analytics
+    │   ├── config
+    │   ├── metrics
+    │   ├── templates
+    │   └── test
+    ├── automation
+    ├── config
+    │   ├── environments
+    │   ├── risk
+    │   └── strategies
+    ├── core
+    │   ├── ai
+    │   ├── alerts
+    │   ├── analysis
+    │   ├── automation
+    │   ├── bootstrap
+    │   ├── cache
+    │   ├── conditions
+    │   ├── config
+    │   ├── container
+    │   ├── dashboard
+    │   ├── engine
+    │   ├── environment
+    │   ├── error-handling
+    │   ├── exit
+    │   ├── experimentation
+    │   ├── health-monitoring
+    │   ├── hedging
+    │   ├── indicators
+    │   ├── integration
+    │   ├── interfaces
+    │   ├── logging
+    │   ├── messaging
+    │   ├── ml
+    │   ├── monitoring
+    │   ├── optimization
+    │   ├── performance
+    │   ├── portfolio
+    │   ├── risk
+    │   ├── rl
+    │   ├── security
+    │   ├── services
+    │   ├── state
+    │   ├── strategy
+    │   ├── streaming
+    │   ├── testing
+    │   ├── types
+    │   ├── utils
+    │   └── workers
+    ├── dashboard
+    ├── enterprise
+    │   ├── monitoring
+    │   └── validation
+    ├── infrastructure
+    │   ├── api
+    │   ├── exchange
+    │   ├── logging
+    │   ├── monitoring
+    │   ├── realtime
+    │   ├── stream
+    │   └── types
+    ├── interface
+    │   ├── cli
+    │   ├── gui
+    │   ├── rest
+    │   └── types
+    ├── ml
+    ├── modules
+    ├── monitoring
+    │   └── rules
+    ├── src
+    │   ├── core
+    │   └── market
+    ├── strategies
+    ├── tools
+    │   ├── python
+    │   └── python_archive
+    └── ui
+        └── dashboard
+
+118 directories

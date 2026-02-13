@@ -1,0 +1,49 @@
+# ==========================================
+# Git Attributes - Turbo Trading Bot
+# ==========================================
+
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# TypeScript/JavaScript
+*.ts text eol=lf
+*.js text eol=lf
+*.tsx text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+
+# Markdown
+*.md text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Config files
+*.yml text eol=lf
+*.yaml text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.db binary
+*.sqlite binary
+*.h5 binary
+*.pkl binary
+
+# Diff settings for better code review
+*.ts diff=typescript
+*.js diff=javascript
+*.json diff=json
+
+# Mark generated files
+package-lock.json linguist-generated=true
+*.min.js linguist-generated=true
+*.map linguist-generated=true

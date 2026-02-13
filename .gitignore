@@ -1,116 +1,251 @@
-# 🔧 [DEVELOPMENT-TOOL]
-# Development configuration file
-# Logs
-logs/
-*.log
-*.log.*
+# ==========================================
+# ENTERPRISE .gitignore - Turbo Trading Bot
+# Last Updated: 2025-12-27
+# ==========================================
 
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
+# 🚫 ABSOLUTE BLOCKS - NEVER COMMIT THESE
+# ==========================================
 
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
+# Node.js
 node_modules/
-jspm_packages/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# TypeScript cache
-*.tsbuildinfo
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# dotenv environment variables file
-.env
-.env.test
-.env.production
-.env.local
-
-# Build output
+# Build outputs
 dist/
 build/
+out/
+*.js.map
+*.d.ts.map
 
-# Temporary folders
+# Test outputs - CRITICAL: Keep tests in tests/ only
+test-results/
+test-results-*/
+*.test.js
+*.test.ts
+*_test.js
+*_test.ts
+test_*.js
+test_*.ts
+coverage/
+.nyc_output/
+*.lcov
+
+# Logs - Keep in logs/ directory only
+*.log
+logs/*
+!logs/.gitkeep
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Environment variables - SECURITY CRITICAL
+.env
+.env.*
+!.env.example
+.env.local
+.env.development
+.env.test
+.env.production
+*.pem
+*.key
+*.cert
+
+# IDE / Editor files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Backup files - CRITICAL: Prevent .bak accumulation
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*.temp
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
 tmp/
 temp/
+*.tmp
+*.temp
 
-# Trading specific
-trading_data.duckdb*
-*.duckdb*
-backtests/
-results/
-data/*.csv
-data/*.json
-backups/
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
 
-# Machine Learning
-ml_models/
-*.pkl
-*.joblib
-*.h5
-*.pb
+# CSV data files (unless needed for backtest)
+*.csv
+!test_data.csv
+!backtest_data.csv
 
-# Python
+# JSON report/result files - CRITICAL: These accumulate!
+*_report.json
+*_results.json
+*dashboard*.json
+!grafana_dashboard_config.json
+
+# Compiled Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# IDE
-.vscode/settings.json
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
 
 # Docker
-docker-compose.override.yml
+*.tar
+*.tar.gz
+!Dockerfile
+!docker-compose*.yml
 
-# Monitoring
-grafana/data/
-prometheus/data/
+# Package manager
+package-lock.json.bak
+yarn.lock.bak
 
-# SSL certificates
-*.pem
-*.key
-*.crt
+# ML Model files (large)
+*.h5
+*.pkl
+*.pickle
+*.model
+*.ckpt
+*.pth
 
-# Secrets
-secrets/
-config/production/
+# Archives (unless explicitly needed)
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
 
-# Large binary files and executables
-*.bin
-*.so.*
-minikube-*
-*.exe
-*.dll
+# 🚫 PREVENT MARKDOWN ACCUMULATION
+# ==========================================
+# Block all .md files in root EXCEPT documented ones
+/*_REPORT.md
+/*_GUIDE.md
+/*_PLAN.md
+/*_ANALYSIS.md
+/*_COMPLETE.md
+/*_SUMMARY.md
+/*_STATUS.md
+/*_FIX.md
+/*_IMPLEMENTATION.md
+/*_AUDIT.md
+# Allow only essential docs in root
+!README.md
+!QUICK_START.md
+!CLEAN_STATE_BACKUP.md
+!CONTRIBUTING.md
+!CHANGELOG.md
+!LICENSE.md
 
-# Backups with large files
-SAFETY_BACKUP_*/
-CRITICAL_BACKUP_*/
+# 🚫 PREVENT TEST FILE ACCUMULATION IN ROOT
+# ==========================================
+/test*.js
+/test*.ts
+/*_test.js
+/*_test.ts
 
-# TensorFlow large files - exclude large binaries
-*tensorflow*.so.*
-*.so.2.*
+# 🚫 PREVENT SHELL SCRIPT ACCUMULATION
+# ==========================================
+/analyze_*.sh
+/check_*.sh
+/diagnose_*.sh
+/fix_*.sh
+/debug_*.sh
+/mock_*.sh
+/audit_*.sh
+/simple_*.sh
+/quick_*.sh
+/deep_*.sh
+/ultra_*.sh
+# Allow essential scripts
+!start_bot.sh
+!health_check.sh
+!restore_clean_state.sh
 
-# Ray tune results
-ray_results/
+# 🚫 PREVENT OLD JS/TS FILE ACCUMULATION
+# ==========================================
+/main.js
+/main.ts
+/main_*.js
+/main_*.ts
+# Allow only enterprise main
+!main_enterprise.ts
+
+# 🚫 PREVENT STANDALONE DIRECTORY ACCUMULATION
+# ==========================================
+/CacheService
+/CacheTest
+/EnterpriseML*
+/PerformanceTracker
+/TradingCache*
+/VarTest
+/SafeVarTest
+/InMemoryCacheService
+
+# Keep essential directories
+!core/
+!src/
+!trading-bot/
+!dashboard/
+!docs/
+!tests/
+!scripts/
+!tools/
+!config/
+!monitoring/
+
+# Production/Deployment
+.vercel
+.netlify
+
+# Monitoring/Metrics
+prometheus_data/
+grafana_data/
+
+# Keep archive structure
+!archive/
+archive/*
+!archive/cleanup_*/
+!archive/clean_state_*/
+
+# Misc
+*.retry
+.sass-cache/
+
+# Specific files that keep coming back
+/InMemoryCacheService
+/TradingCacheManager
+
+# Data directory (except gitkeep)
+data/*
+!data/.gitkeep
+
+# Allow specific .vscode files for team
+!.vscode/launch.json
+!.vscode/DEBUGGER_GUIDE.md
+!.vscode/extensions.json

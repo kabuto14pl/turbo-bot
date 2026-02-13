@@ -1,0 +1,173 @@
+ 
+  "remote.autoForwardPorts": false,
+  "remote.autoForwardPortsSource": "process",
+  "remote.localPortHost": "localhost",
+  "workbench.startupEditor": "none",
+  
+  // 🚨 OPTYMALIZACJA COPILOT CHAT - Redukcja Tools
+  "github.copilot.advanced": {
+    "debug.overrideEngine": "gpt-4",
+    "debug.useNodeFetcher": true
+  },
+  
+  // Wyłącz zbędne MCP servers dla lepszej wydajności chatu
+  "github.copilot.chat.tools.enabled": {
+    // Core tools - WŁĄCZONE
+    "read_file": true,
+    "write_file": true,
+    "grep_search": true,
+    "semantic_search": true,
+    "list_dir": true,
+    "run_in_terminal": true,
+    
+    // Wyłącz Docker MCP (przeciąża chat)
+    "mcp_copilot_conta_list_containers": false,
+    "mcp_copilot_conta_list_images": false,
+    "mcp_copilot_conta_inspect_container": false,
+    "mcp_copilot_conta_act_container": false,
+    
+    // Wyłącz niektóre Pylance MCP (przeciąża chat)
+    "mcp_pylance_mcp_s_pylanceRunCodeSnippet": false,
+    "mcp_pylance_mcp_s_pylanceInvokeRefactoring": false
+  },
+  
+  // Limit kontekstu dla lepszej wydajności
+  "github.copilot.chat.contextLimit": 20000,
+  
+  // Optymalizacja TypeScript
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "typescript.disableAutomaticTypeAcquisition": true,
+  
+  // Wyłącz auto-imports dla lepszej wydajności
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  "javascript.preferences.includePackageJsonAutoImports": "off",
+  
+  // Limit plików dla analizy
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/*.js": true,
+    "**/coverage/**": true,
+    "**/logs/**": true,
+    "**/data/**": true,
+    "**/archive/**": true,
+    "**/backups/**": true
+  },
+  
+  // Exclude z search
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/*.js": true,
+    "**/logs": true,
+    "**/archive": true,
+    "**/backups": true
+  },
+  
+  // ============================================
+  // 🎯 TYPESCRIPT OPTIMIZATION
+  // ============================================
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.inlayHints.parameterNames.enabled": "all",
+  "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
+  "typescript.inlayHints.variableTypes.enabled": true,
+  
+  // ============================================
+  // 🎨 EDITOR SETTINGS
+  // ============================================
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll": "explicit"
+  },
+  "editor.rulers": [80, 120],
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.minimap.enabled": true,
+  "editor.minimap.maxColumn": 120,
+  
+  // ============================================
+  // 🔍 SEARCH & NAVIGATION
+  // ============================================
+  "search.quickOpen.includeHistory": true,
+  "search.smartCase": true,
+  "search.useIgnoreFiles": true,
+  
+  // ============================================
+  // 🧪 TESTING CONFIGURATION
+  // ============================================
+  "testing.automaticallyOpenPeekView": "failureInVisibleDocument",
+  "testing.openTesting": "neverOpen",
+  
+  // ============================================
+  // 📁 FILE ASSOCIATIONS
+  // ============================================
+  "files.associations": {
+    "*.env": "dotenv",
+    "*.config.js": "javascript",
+    "*.config.ts": "typescript",
+    "Dockerfile*": "dockerfile",
+    "*.yml": "yaml"
+  },
+  
+  // ============================================
+  // 🐛 DEBUG CONFIGURATION
+  // ============================================
+  "debug.console.fontSize": 14,
+  "debug.console.wordWrap": false,
+  "debug.internalConsoleOptions": "neverOpen",
+  "debug.openDebug": "openOnSessionStart",
+  
+  // ============================================
+  // 📝 CODE LENS
+  // ============================================
+  "typescript.referencesCodeLens.enabled": true,
+  "typescript.implementationsCodeLens.enabled": true,
+  
+  // ============================================
+  // 🎯 PROBLEMS & DIAGNOSTICS
+  // ============================================
+  "problems.showCurrentInStatus": true,
+  "problems.sortOrder": "severity",
+  
+  // ============================================
+  // 📊 GIT CONFIGURATION
+  // ============================================
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "git.ignoreLimitWarning": true,
+  
+  // ============================================
+  // 🚀 TERMINAL CONFIGURATION
+  // ============================================
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.scrollback": 10000,
+  "terminal.integrated.copyOnSelection": true,
+  
+  // ============================================
+  // 💡 SUGGESTIONS
+  // ============================================
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+  "editor.suggestSelection": "first",
+  "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue"
+}
+    "**/build/**": true,
+    "**/.next/**": true,
+    "**/logs/**": true,
+    "**/*.log": true
+  },
+  
+  // Wyłącz ostrzeżenia CSS dla Tailwind directives
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore"
+}
