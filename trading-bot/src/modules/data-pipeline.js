@@ -204,7 +204,7 @@ class DataPipeline {
             prices: { m15: m15Prices, h1: h1Prices, h4: h4Prices, d1: null },
             indicators: { m15: m15Ind, h1: h1Ind, h4: h4Ind, d1: null },
             positions: [], marketData: { symbol: latest.symbol, timestamp: latest.timestamp,
-                open: latest.open, high: latest.high, low: latest.low, close: latest.close, volume: latest.volume, interval: 'm15' },
+                open: latest.open, high: latest.high, low: latest.low, close: latest.close, volume: latest.volume, interval: 'm15', lastPrice: latest.close },  // PATCH #21: strategies use lastPrice
             regime: { name: 'NORMAL', volatility: Math.min(1.0, (atr / latest.close) * 10),
                 trend: Math.max(-1, Math.min(1, (ema9 - ema21) / Math.max(1, ema21) * 100)) },
             marketContext: { symbol: latest.symbol, timeframe: 'm15' }

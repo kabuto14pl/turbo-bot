@@ -20,10 +20,11 @@
 class EnsembleVoting {
     constructor() {
         // PATCH #15: Updated weights -- NeuralAI added at 20%, others redistributed
+        // PATCH #21: Rebalanced - ML+NeuralAI 50% (was 40%) for better AI influence
         this.staticWeights = {
-            'AdvancedAdaptive': 0.18, 'RSITurbo': 0.10, 'SuperTrend': 0.12,
-            'MACrossover': 0.10, 'MomentumPro': 0.10, 'EnterpriseML': 0.20,
-            'NeuralAI': 0.20,
+            'AdvancedAdaptive': 0.14, 'RSITurbo': 0.08, 'SuperTrend': 0.10,
+            'MACrossover': 0.09, 'MomentumPro': 0.09, 'EnterpriseML': 0.25,
+            'NeuralAI': 0.25,
         };
         this.weights = { ...this.staticWeights };
         this.weightProvider = null; // PATCH #15: Dynamic weight source

@@ -201,6 +201,8 @@ class StrategyRunner {
                 if (signal) {
                     signals.set(name, signal);
                     this.lastSignals.set(name, signal);
+                    // PATCH #21: Guard NaN confidence
+                    if (typeof signal.confidence !== 'number' || isNaN(signal.confidence)) signal.confidence = 0.5;
                     console.log('   [' + name + '] ' + signal.action + ' (conf: ' + (signal.confidence * 100).toFixed(1) + '%)');
                 } else {
                     console.log('   [' + name + '] null signal');

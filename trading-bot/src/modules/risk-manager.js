@@ -58,6 +58,9 @@ class RiskManager {
         this.dailyTradeCount++;
     }
 
+    // PATCH #21: Reset daily counter
+    resetDailyCounter() { this.dailyTradeCount = 0; console.log("[RISK] Daily trade counter reset to 0"); }
+
     checkOvertradingLimit() {
         if (Date.now() - this.lastTradeDayReset > 86400000) { this.dailyTradeCount = 0; this.lastTradeDayReset = Date.now(); }
         // PATCH #20: Bypass daily trade limit in simulation/paper mode

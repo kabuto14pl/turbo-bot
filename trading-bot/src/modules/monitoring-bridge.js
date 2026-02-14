@@ -58,7 +58,7 @@ class MonitoringBridge {
         // Metrics wrapper ??? dashboard reads data.metrics.totalValue etc
         this.healthStatus.metrics = {
             totalValue: p.totalValue,
-            unrealizedPnL: p.unrealizedPnL,
+            unrealizedPnL: pm.positionCount > 0 ? p.unrealizedPnL : 0,  // PATCH #21: clear when no positions
             realizedPnL: p.realizedPnL,
             drawdown: p.drawdown,
             peakValue: p.peakValue,
@@ -90,7 +90,7 @@ class MonitoringBridge {
         this.healthStatus.drawdown = p.drawdown;
         this.healthStatus.totalTrades = p.totalTrades;
         this.healthStatus.winRate = p.winRate;
-        this.healthStatus.unrealizedPnL = p.unrealizedPnL;
+        this.healthStatus.unrealizedPnL = pm.positionCount > 0 ? p.unrealizedPnL : 0;  // PATCH #21
         this.healthStatus.realizedPnL = p.realizedPnL;
         this.healthStatus.circuitBreaker = cb;
     }
