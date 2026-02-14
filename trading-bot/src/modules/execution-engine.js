@@ -43,20 +43,27 @@ class ExecutionEngine {
                 const price = await getCurrentPrice(sym);
                 if (!price) continue;
 
-                // Track highest price seen (for Chandelier trailing)
+                // Track highest/lowest price seen (for Chandelier trailing)
                 if (!pos._highestPrice || price > pos._highestPrice) {
                     pos._highestPrice = price;
                 }
+                if (!pos._lowestPrice || price < pos._lowestPrice) {
+                    pos._lowestPrice = price;
+                }
 
                 const atr = pos.atrAtEntry;
-                const profit = price - pos.entryPrice;
+                const isShort = pos.side === 'SHORT';
+                const profit = isShort ? (pos.entryPrice - price) : (price - pos.entryPrice);
                 const atrMult = atr > 0 ? profit / atr : 0;
+
+                // QPM COORDINATION (PATCH #19)
+                const qpmManaged = pos._qpmManaged || false;
 
                 // ============================================
                 // CHANDELIER TRAILING STOP-LOSS (ATR-based)
-                // Continuous trailing from highest price minus N*ATR
+                // Active only for LONG positions without QPM management.
                 // ============================================
-                if (atr > 0) {
+                if (atr > 0 && !qpmManaged && !isShort) {
                     let newSL = pos.stopLoss;
 
                     // Calculate current ATR from recent data for volatility-adaptive SL
@@ -165,12 +172,17 @@ class ExecutionEngine {
                 }
 
                 // ============================================
-                // SL / TP / TIME CHECK - execute close
+                // SL / TP / TIME CHECK - execute close (direction-aware)
                 // ============================================
                 let close = false, reason = '';
                 if (timeExit) { close = true; reason = 'TIME_EXIT'; }
-                else if (price <= pos.stopLoss) { close = true; reason = 'STOP_LOSS'; }
-                else if (price >= pos.takeProfit) { close = true; reason = 'TAKE_PROFIT'; }
+                else if (isShort) {
+                    if (price >= pos.stopLoss) { close = true; reason = 'STOP_LOSS'; }
+                    else if (pos.takeProfit && price <= pos.takeProfit) { close = true; reason = 'TAKE_PROFIT'; }
+                } else {
+                    if (price <= pos.stopLoss) { close = true; reason = 'STOP_LOSS'; }
+                    else if (price >= pos.takeProfit) { close = true; reason = 'TAKE_PROFIT'; }
+                }
 
                 if (close) {
                     const trade = this.pm.closePosition(sym, price, null, reason, reason);

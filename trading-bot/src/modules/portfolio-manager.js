@@ -30,12 +30,15 @@ class PortfolioManager {
     get positionCount() { return this.positions.size; }
 
     openPosition(symbol, data) {
+        const side = data.side || 'LONG';
         const position = {
-            symbol, side: 'LONG', entryPrice: data.entryPrice,
+            symbol, side, entryPrice: data.entryPrice,
             quantity: data.quantity, entryTime: Date.now(),
             value: data.entryPrice * data.quantity,
             stopLoss: data.stopLoss, takeProfit: data.takeProfit,
             atrAtEntry: data.atrAtEntry || 0, _partialTpDone: false,
+            _pyramidLevel: data.pyramidLevel || 0,
+            _qpmManaged: false,
         };
         this.positions.set(symbol, position);
         const val = position.entryPrice * position.quantity;
@@ -53,7 +56,7 @@ class PortfolioManager {
         const closeQty = quantity || pos.quantity;
         const exitValue = exitPrice * closeQty;
         const entryValue = pos.entryPrice * closeQty;
-        const grossPnL = exitValue - entryValue;
+        const grossPnL = pos.side === 'SHORT' ? (entryValue - exitValue) : (exitValue - entryValue);
         const fees = exitValue * this.config.tradingFeeRate;
         const netPnL = grossPnL - fees;
         this.balance.usdtBalance += exitValue - fees;
@@ -84,14 +87,54 @@ class PortfolioManager {
 
     updateStopLoss(symbol, newSL) {
         const p = this.positions.get(symbol);
-        if (p && newSL > p.stopLoss) p.stopLoss = newSL;
+        if (!p) return;
+        if (p.side === 'SHORT') {
+            if (newSL < p.stopLoss) p.stopLoss = newSL;
+        } else {
+            if (newSL > p.stopLoss) p.stopLoss = newSL;
+        }
+    }
+
+    updateTakeProfit(symbol, newTP) {
+        const p = this.positions.get(symbol);
+        if (!p || !newTP || newTP <= 0) return;
+        if (p.side === 'SHORT') {
+            if (newTP < p.entryPrice) p.takeProfit = newTP;
+        } else {
+            if (newTP > p.entryPrice) p.takeProfit = newTP;
+        }
+    }
+
+    addToPosition(symbol, price, quantity, atrAtEntry) {
+        const p = this.positions.get(symbol);
+        if (!p) return null;
+        const oldQty = p.quantity;
+        const oldVal = p.entryPrice * oldQty;
+        const addVal = price * quantity;
+        const newQty = oldQty + quantity;
+        p.entryPrice = (oldVal + addVal) / newQty;
+        p.quantity = newQty;
+        p.value = p.entryPrice * newQty;
+        p._pyramidLevel = (p._pyramidLevel || 0) + 1;
+        if (atrAtEntry) p.atrAtEntry = atrAtEntry;
+        this.balance.usdtBalance -= addVal;
+        this.balance.btcBalance += quantity;
+        this.balance.lockedInPositions += addVal;
+        console.log('[PYRAMID] Added ' + quantity.toFixed(6) + ' to ' + symbol +
+            ' @ $' + price.toFixed(2) + ' | New avg: $' + p.entryPrice.toFixed(2) +
+            ' | Level: ' + p._pyramidLevel + ' | Total qty: ' + newQty.toFixed(6));
+        return p;
     }
 
     updateUnrealizedPnL(currentPrices) {
         let total = 0;
         for (const [sym, pos] of this.positions) {
             const price = currentPrices.get(sym) || pos.entryPrice;
-            total += (price - pos.entryPrice) * pos.quantity;
+            if (pos.side === 'SHORT') {
+                total += (pos.entryPrice - price) * pos.quantity;
+            } else {
+                total += (price - pos.entryPrice) * pos.quantity;
+            }
         }
         this.portfolio.unrealizedPnL = total;
     }

@@ -98,7 +98,8 @@ class QuantumDynamicSLTP {
         const currentSL = position.stopLoss;
         const currentTP = position.takeProfit;
         const atrAtEntry = position.atrAtEntry || currentATR;
-        const profit = currentPrice - entryPrice;
+        const isShort = position.side === 'SHORT';
+        const profit = isShort ? (entryPrice - currentPrice) : (currentPrice - entryPrice);
         const atrMult = atrAtEntry > 0 ? profit / atrAtEntry : 0;
 
         // Start with base classical multipliers
@@ -178,9 +179,30 @@ class QuantumDynamicSLTP {
         tpMultiplier = Math.max(this.minTPMultiplier, Math.min(this.maxTPMultiplier, tpMultiplier));
         trailingMultiplier = Math.max(0.80, Math.min(2.50, trailingMultiplier));
 
-        // ── Calculate new SL level ──
+        // ── Calculate new SL level (Direction-aware) ──
         let newSL;
-        const highestPrice = position._highestPrice || currentPrice;
+        if (isShort) {
+            const lowestPrice = position._lowestPrice || currentPrice;
+            if (atrMult >= 3.0) {
+                const chandelierSL = lowestPrice + trailingMultiplier * currentATR;
+                const maxLock = entryPrice - 1.5 * atrAtEntry;
+                newSL = Math.min(chandelierSL, maxLock);
+            } else if (atrMult >= 2.0) {
+                const lockFactor = 1.0 * (2 - slMultiplier / this.baseSLMultiplier);
+                newSL = entryPrice - Math.max(0.5, lockFactor) * atrAtEntry;
+            } else if (atrMult >= 1.5) {
+                newSL = entryPrice - 0.5 * atrAtEntry;
+            } else if (atrMult >= 1.0) {
+                const beBuffer = entryPrice * 0.003 * slMultiplier;
+                newSL = entryPrice - beBuffer;
+            } else {
+                newSL = entryPrice + slMultiplier * atrAtEntry;
+            }
+            if (currentSL && newSL >= currentSL) {
+                newSL = currentSL;
+            }
+        } else {
+            const highestPrice = position._highestPrice || currentPrice;
 
         if (atrMult >= 3.0) {
             // CHANDELIER zone: quantum-adjusted trailing from highest price
@@ -203,16 +225,24 @@ class QuantumDynamicSLTP {
             newSL = entryPrice - slMultiplier * atrAtEntry;
         }
 
-        // SL constraint: can only move UP (never widen stop)
-        if (currentSL && newSL <= currentSL) {
-            newSL = currentSL;
+            // LONG SL constraint: can only move UP (never widen stop)
+            if (currentSL && newSL <= currentSL) {
+                newSL = currentSL;
+            }
         }
 
-        // ── Calculate new TP level ──
-        let newTP = entryPrice + tpMultiplier * atrAtEntry;
-        // Don't set TP below current price + 0.5 ATR if profitable
-        if (profit > 0 && newTP < currentPrice + 0.5 * currentATR) {
-            newTP = currentPrice + 0.5 * currentATR;
+        // ── Calculate new TP level (Direction-aware) ──
+        let newTP;
+        if (isShort) {
+            newTP = entryPrice - tpMultiplier * atrAtEntry;
+            if (profit > 0 && newTP > currentPrice - 0.5 * currentATR) {
+                newTP = currentPrice - 0.5 * currentATR;
+            }
+        } else {
+            newTP = entryPrice + tpMultiplier * atrAtEntry;
+            if (profit > 0 && newTP < currentPrice + 0.5 * currentATR) {
+                newTP = currentPrice + 0.5 * currentATR;
+            }
         }
 
         // ── Build detailed reasoning ──
@@ -330,7 +360,10 @@ class PositionHealthScorer {
         const unrealizedPnL = (currentPrice - entryPrice) * quantity;
         const pnlPct = (currentPrice - entryPrice) / entryPrice;
         const atr = position.atrAtEntry || (currentPrice * 0.02);
-        const atrMultiple = (currentPrice - entryPrice) / atr;
+        const isShort = position.side === 'SHORT';
+        const directedProfit = isShort ? (entryPrice - currentPrice) : (currentPrice - entryPrice);
+        const atrMultiple = directedProfit / atr;
+        const directedPnlPct = isShort ? (entryPrice - currentPrice) / entryPrice : pnlPct;
         const hoursHeld = (Date.now() - (position.entryTime || Date.now())) / 3600000;
 
         // ── Factor 1: PnL Score (0-100) ──
@@ -342,22 +375,30 @@ class PositionHealthScorer {
         else if (atrMultiple >= -1.0) factors.pnlScore = 20;
         else                          factors.pnlScore = 5;
 
-        // ── Factor 2: Regime Alignment Score (0-100) ──
+        // ── Factor 2: Regime Alignment Score (0-100) — Direction-aware ──
         factors.regimeScore = 50;
         if (vqcRegime && vqcRegime.regime) {
             const regime = vqcRegime.regime;
             const conf = vqcRegime.confidence || 0.5;
-            // For LONG positions
-            if (regime === 'TRENDING_UP')        factors.regimeScore = 70 + conf * 30;
-            else if (regime === 'RANGING')       factors.regimeScore = 50;
-            else if (regime === 'TRENDING_DOWN') factors.regimeScore = 15 + (1 - conf) * 20;
-            else if (regime === 'HIGH_VOLATILITY') factors.regimeScore = 30 + (1 - conf) * 20;
+            if (isShort) {
+                if (regime === 'TRENDING_DOWN')       factors.regimeScore = 70 + conf * 30;
+                else if (regime === 'RANGING')        factors.regimeScore = 50;
+                else if (regime === 'TRENDING_UP')    factors.regimeScore = 15 + (1 - conf) * 20;
+                else if (regime === 'HIGH_VOLATILITY') factors.regimeScore = 30 + (1 - conf) * 20;
+            } else {
+                if (regime === 'TRENDING_UP')        factors.regimeScore = 70 + conf * 30;
+                else if (regime === 'RANGING')       factors.regimeScore = 50;
+                else if (regime === 'TRENDING_DOWN') factors.regimeScore = 15 + (1 - conf) * 20;
+                else if (regime === 'HIGH_VOLATILITY') factors.regimeScore = 30 + (1 - conf) * 20;
+            }
 
-            // Detect adverse regime transitions from history
             const prevScores = this.scoreHistory.get(position.symbol) || [];
             if (prevScores.length >= 2) {
                 const prevRegime = prevScores[prevScores.length - 1].regime;
-                if (prevRegime === 'TRENDING_UP' && (regime === 'TRENDING_DOWN' || regime === 'HIGH_VOLATILITY')) {
+                const adverseFor = isShort
+                    ? (prevRegime === 'TRENDING_DOWN' && (regime === 'TRENDING_UP' || regime === 'HIGH_VOLATILITY'))
+                    : (prevRegime === 'TRENDING_UP' && (regime === 'TRENDING_DOWN' || regime === 'HIGH_VOLATILITY'));
+                if (adverseFor) {
                     factors.regimeScore = Math.min(factors.regimeScore, 25);
                     recommendations.push('REGIME_SHIFT_ADVERSE: ' + prevRegime + ' -> ' + regime);
                 }
@@ -415,12 +456,11 @@ class PositionHealthScorer {
         else if (hoursHeld < 24) factors.timeScore = 55;
         else if (hoursHeld < 48) factors.timeScore = 35;
         else                     factors.timeScore = 15;
-        // Profitable positions get time-decay reprieve
-        if (pnlPct > 0.005 && hoursHeld > 24) {
+        if (directedPnlPct > 0.005 && hoursHeld > 24) {
             factors.timeScore = Math.max(factors.timeScore, 45);
         }
 
-        // ── Factor 6: Momentum Score (0-100) ──
+        // ── Factor 6: Momentum Score (0-100) — Direction-aware ──
         factors.momentumScore = 50;
         if (recentPrices && recentPrices.length >= 10) {
             const recent5 = recentPrices.slice(-5);
@@ -428,11 +468,11 @@ class PositionHealthScorer {
             const recentAvg = recent5.reduce((s, p) => s + p, 0) / recent5.length;
             const prevAvg = prev5.reduce((s, p) => s + p, 0) / prev5.length;
             const momentumPct = (recentAvg - prevAvg) / prevAvg;
-            // For LONG: positive momentum = good
-            if (momentumPct > 0.005)       factors.momentumScore = 75 + Math.min(25, momentumPct * 2000);
-            else if (momentumPct > 0)      factors.momentumScore = 55;
-            else if (momentumPct > -0.005) factors.momentumScore = 40;
-            else                           factors.momentumScore = Math.max(10, 30 + momentumPct * 2000);
+            const directedMomentum = isShort ? -momentumPct : momentumPct;
+            if (directedMomentum > 0.005)       factors.momentumScore = 75 + Math.min(25, directedMomentum * 2000);
+            else if (directedMomentum > 0)      factors.momentumScore = 55;
+            else if (directedMomentum > -0.005) factors.momentumScore = 40;
+            else                                factors.momentumScore = Math.max(10, 30 + directedMomentum * 2000);
         }
 
         // ── Weighted composite score ──
@@ -473,8 +513,8 @@ class PositionHealthScorer {
 
         return {
             score: totalScore, status, factors, recommendations,
-            unrealizedPnL: parseFloat(unrealizedPnL.toFixed(2)),
-            pnlPct: parseFloat((pnlPct * 100).toFixed(2)),
+            unrealizedPnL: parseFloat(((isShort ? (entryPrice - currentPrice) : (currentPrice - entryPrice)) * quantity).toFixed(2)),
+            pnlPct: parseFloat((directedPnlPct * 100).toFixed(2)),
             atrMultiple: parseFloat(atrMultiple.toFixed(2)),
             hoursHeld: parseFloat(hoursHeld.toFixed(1)),
         };
@@ -658,6 +698,13 @@ class ContinuousReEvaluator {
         this.fullReEvalInterval = config.fullReEvalInterval || 15;   // FULL: VQC+QMC+QRA+QAOA
         this.riskReEvalInterval = config.riskReEvalInterval || 3;    // RISK_ONLY: QRA only
 
+        // Market-aware acceleration state (PATCH #19)
+        this._accelerated = false;
+        this._tempRiskInterval = null;
+        this._tempStdInterval = null;
+        this._tempFullInterval = null;
+        this._accelerationReason = null;
+
         // Counters
         this.cycleCount = 0;
         this.totalReEvaluations = 0;
@@ -671,19 +718,54 @@ class ContinuousReEvaluator {
         this.lastRegimePerPosition = new Map();
     }
 
-    /**
-     * Determine if re-evaluation should run this cycle and at what level.
-     * @returns {{ shouldReEval: boolean, level: string }}
-     */
+    setMarketConditions(volatilityLevel, regimeTransition, healthEmergency) {
+        const wasAccelerated = this._accelerated;
+        if (healthEmergency) {
+            this._accelerated = true;
+            this._tempRiskInterval = 1;
+            this._tempStdInterval = 2;
+            this._tempFullInterval = 5;
+            this._accelerationReason = 'HEALTH_EMERGENCY';
+        } else if (regimeTransition) {
+            this._accelerated = true;
+            this._tempRiskInterval = Math.max(1, Math.floor(this.riskReEvalInterval / 2));
+            this._tempStdInterval = Math.max(2, Math.floor(this.reEvalInterval / 2));
+            this._tempFullInterval = Math.max(5, Math.floor(this.fullReEvalInterval / 2));
+            this._accelerationReason = 'REGIME_TRANSITION';
+        } else if (volatilityLevel === 'HIGH' || volatilityLevel === 'EXTREME') {
+            this._accelerated = true;
+            this._tempRiskInterval = Math.max(1, Math.floor(this.riskReEvalInterval / 1.5));
+            this._tempStdInterval = Math.max(3, Math.floor(this.reEvalInterval / 1.5));
+            this._tempFullInterval = Math.max(7, Math.floor(this.fullReEvalInterval / 1.5));
+            this._accelerationReason = 'HIGH_VOLATILITY';
+        } else {
+            this._accelerated = false;
+            this._tempRiskInterval = null;
+            this._tempStdInterval = null;
+            this._tempFullInterval = null;
+            this._accelerationReason = null;
+        }
+        if (this._accelerated !== wasAccelerated) {
+            console.log('[RE-EVAL] Market-aware acceleration ' +
+                (this._accelerated ? 'ACTIVATED (' + this._accelerationReason + ')' : 'DEACTIVATED') +
+                ' | Intervals: risk=' + (this._tempRiskInterval || this.riskReEvalInterval) +
+                ' std=' + (this._tempStdInterval || this.reEvalInterval) +
+                ' full=' + (this._tempFullInterval || this.fullReEvalInterval));
+        }
+    }
+
     shouldReEvaluate() {
         this.cycleCount++;
-        if (this.cycleCount % this.fullReEvalInterval === 0) {
+        const riskInterval = this._accelerated && this._tempRiskInterval ? this._tempRiskInterval : this.riskReEvalInterval;
+        const stdInterval = this._accelerated && this._tempStdInterval ? this._tempStdInterval : this.reEvalInterval;
+        const fullInterval = this._accelerated && this._tempFullInterval ? this._tempFullInterval : this.fullReEvalInterval;
+        if (this.cycleCount % fullInterval === 0) {
             return { shouldReEval: true, level: 'FULL' };
         }
-        if (this.cycleCount % this.reEvalInterval === 0) {
+        if (this.cycleCount % stdInterval === 0) {
             return { shouldReEval: true, level: 'STANDARD' };
         }
-        if (this.cycleCount % this.riskReEvalInterval === 0) {
+        if (this.cycleCount % riskInterval === 0) {
             return { shouldReEval: true, level: 'RISK_ONLY' };
         }
         return { shouldReEval: false, level: 'NONE' };
@@ -743,7 +825,7 @@ class ContinuousReEvaluator {
                     result.regimeTransition = {
                         from: prevRegime,
                         to: vqcRegime.regime,
-                        isAdverse: this._isAdverseTransition(prevRegime, vqcRegime.regime),
+                        isAdverse: this._isAdverseTransition(prevRegime, vqcRegime.regime, pos.side),
                     };
                     if (result.regimeTransition.isAdverse) {
                         actions.push({
@@ -794,36 +876,44 @@ class ContinuousReEvaluator {
         return { positionResults, summary, actions };
     }
 
-    _isAdverseTransition(from, to) {
-        // Adverse transitions for LONG positions
-        const adverseMap = {
-            'TRENDING_UP': ['TRENDING_DOWN', 'HIGH_VOLATILITY'],
-            'RANGING': ['TRENDING_DOWN'],
-        };
-        return adverseMap[from] ? adverseMap[from].includes(to) : false;
+    _isAdverseTransition(from, to, positionSide) {
+        if (positionSide === 'SHORT') {
+            const adverseMap = {
+                'TRENDING_DOWN': ['TRENDING_UP', 'HIGH_VOLATILITY'],
+                'RANGING': ['TRENDING_UP'],
+            };
+            return adverseMap[from] ? adverseMap[from].includes(to) : false;
+        } else {
+            const adverseMap = {
+                'TRENDING_UP': ['TRENDING_DOWN', 'HIGH_VOLATILITY'],
+                'RANGING': ['TRENDING_DOWN'],
+            };
+            return adverseMap[from] ? adverseMap[from].includes(to) : false;
+        }
     }
 
     _generateAction(position, vqcRegime, qraRisk, qmcSim, priceHistory) {
         const currentPrice = priceHistory[priceHistory.length - 1];
-        const profit = currentPrice - position.entryPrice;
+        const isShort = position.side === 'SHORT';
+        const profit = isShort ? (position.entryPrice - currentPrice) : (currentPrice - position.entryPrice);
         const atr = position.atrAtEntry || (currentPrice * 0.02);
         const atrMult = profit / atr;
         const hoursHeld = (Date.now() - (position.entryTime || Date.now())) / 3600000;
 
-        // Emergency: black swan
         if (qraRisk && qraRisk.blackSwanAlert) {
             return { action: 'EMERGENCY_CLOSE', reason: 'Black swan detected', severity: 'CRITICAL', params: { closePct: 1.0 } };
         }
-        // Extreme risk + underwater
         if (qraRisk && (qraRisk.riskScore || 0) > 85 && atrMult < 0) {
             return { action: 'TIGHTEN_SL_AGGRESSIVE', reason: 'Extreme risk + underwater', severity: 'HIGH', params: { slMultiplier: 0.5 } };
         }
-        // Downtrend regime
-        if (vqcRegime && vqcRegime.regime === 'TRENDING_DOWN' && (vqcRegime.confidence || 0) > 0.6) {
+        const adverseRegime = isShort
+            ? (vqcRegime && vqcRegime.regime === 'TRENDING_UP' && (vqcRegime.confidence || 0) > 0.6)
+            : (vqcRegime && vqcRegime.regime === 'TRENDING_DOWN' && (vqcRegime.confidence || 0) > 0.6);
+        if (adverseRegime) {
             if (atrMult > 1.0) {
-                return { action: 'PARTIAL_CLOSE', reason: 'Downtrend, lock profits', severity: 'MEDIUM', params: { closePct: 0.5 } };
+                return { action: 'PARTIAL_CLOSE', reason: 'Adverse regime, lock profits', severity: 'MEDIUM', params: { closePct: 0.5 } };
             } else if (atrMult < -0.5) {
-                return { action: 'CLOSE_POSITION', reason: 'Downtrend + underwater', severity: 'HIGH', params: { closePct: 1.0 } };
+                return { action: 'CLOSE_POSITION', reason: 'Adverse regime + underwater', severity: 'HIGH', params: { closePct: 1.0 } };
             }
         }
         // QMC bearish + large profit
@@ -898,7 +988,8 @@ class PartialCloseAdvisor {
         }
 
         const atr = position.atrAtEntry || currentATR || (currentPrice * 0.02);
-        const profit = currentPrice - position.entryPrice;
+        const isShort = position.side === 'SHORT';
+        const profit = isShort ? (position.entryPrice - currentPrice) : (currentPrice - position.entryPrice);
         const atrMult = atr > 0 ? profit / atr : 0;
 
         // Priority 1: Black swan emergency
@@ -910,12 +1001,15 @@ class PartialCloseAdvisor {
             return { shouldClose: true, closePct: 0.80, reason: 'Health emergency (score=' + healthScore.score + ')', label: 'HEALTH_EMERGENCY', urgency: 'CRITICAL' };
         }
 
-        // Priority 2: Regime-triggered close
-        if (vqcRegime && vqcRegime.regime === 'TRENDING_DOWN' && (vqcRegime.confidence || 0) > this.regimeCloseConfidence) {
+        // Priority 2: Regime-triggered close (direction-aware)
+        const adverseRegime = isShort
+            ? (vqcRegime && vqcRegime.regime === 'TRENDING_UP' && (vqcRegime.confidence || 0) > this.regimeCloseConfidence)
+            : (vqcRegime && vqcRegime.regime === 'TRENDING_DOWN' && (vqcRegime.confidence || 0) > this.regimeCloseConfidence);
+        if (adverseRegime) {
             if (atrMult > 1.0) {
-                return { shouldClose: true, closePct: 0.50, reason: 'Downtrend (conf=' + ((vqcRegime.confidence || 0) * 100).toFixed(0) + '%)', label: 'QUANTUM_REGIME_CLOSE', urgency: 'HIGH' };
+                return { shouldClose: true, closePct: 0.50, reason: 'Adverse regime (conf=' + ((vqcRegime.confidence || 0) * 100).toFixed(0) + '%)', label: 'QUANTUM_REGIME_CLOSE', urgency: 'HIGH' };
             } else if (atrMult < -0.3) {
-                return { shouldClose: true, closePct: 0.75, reason: 'Downtrend + loss', label: 'QUANTUM_REGIME_EXIT', urgency: 'HIGH' };
+                return { shouldClose: true, closePct: 0.75, reason: 'Adverse regime + loss', label: 'QUANTUM_REGIME_EXIT', urgency: 'HIGH' };
             }
         }
 
@@ -1041,7 +1135,25 @@ class QuantumPositionManager {
         this.totalEvaluations++;
         const t0 = Date.now();
 
-        // Check if this cycle warrants re-evaluation
+        // Market-aware re-evaluation acceleration (PATCH #19)
+        let volatilityLevel = 'MEDIUM';
+        if (priceHistory && priceHistory.length >= 20) {
+            const recent = priceHistory.slice(-20);
+            const returns = [];
+            for (let i = 1; i < recent.length; i++) {
+                returns.push(Math.abs((recent[i] - recent[i-1]) / recent[i-1]));
+            }
+            const avgReturn = returns.reduce((s, r) => s + r, 0) / returns.length;
+            if (avgReturn > 0.03)      volatilityLevel = 'EXTREME';
+            else if (avgReturn > 0.015) volatilityLevel = 'HIGH';
+            else if (avgReturn < 0.005) volatilityLevel = 'LOW';
+        }
+        const hasRegimeTransition = this.reEvaluator.lastRegimePerPosition.size > 0 &&
+            Array.from(this.reEvaluator.lastRegimePerPosition.values()).some(
+                r => this._recentRegimeChanged(r, priceHistory)
+            );
+        this.reEvaluator.setMarketConditions(volatilityLevel, hasRegimeTransition, false);
+
         const reEvalCheck = this.reEvaluator.shouldReEvaluate();
         if (!reEvalCheck.shouldReEval) {
             return { adjustments: [], partialCloses: [], healthReport: new Map(), portfolioOpt: null, summary: { skipped: true, reason: 'Not re-eval cycle' } };
@@ -1095,6 +1207,8 @@ class QuantumPositionManager {
                 const recentPrices = priceHistory.slice(-30);
                 const health = this.healthScorer.score(pos, currentPrice, vqcRegime, qmcSim, qraRisk, recentPrices);
                 result.healthReport.set(sym, health);
+
+                pos._qpmManaged = true;
 
                 // ── Dynamic SL/TP ──
                 const sltpResult = this.dynamicSLTP.calculate(pos, currentPrice, currentATR, vqcRegime, qraRisk, qmcSim);
@@ -1177,6 +1291,11 @@ class QuantumPositionManager {
             }
         }
 
+        const hasEmergency = Array.from(result.healthReport.values()).some(h => h.status === 'EMERGENCY');
+        if (hasEmergency) {
+            this.reEvaluator.setMarketConditions(volatilityLevel, true, true);
+        }
+
         // ── Step 4: Multi-position optimization (FULL level only) ──
         if (reEvalCheck.level === 'FULL') {
             try {
@@ -1231,6 +1350,25 @@ class QuantumPositionManager {
 
     getPositionHealth(symbol) {
         return this.healthScorer.getScoreTrend(symbol);
+    }
+
+    _recentRegimeChanged(lastRegime, priceHistory) {
+        if (!priceHistory || priceHistory.length < 20) return false;
+        const recent10 = priceHistory.slice(-10);
+        const recent20 = priceHistory.slice(-20);
+        const sma10 = recent10.reduce((s, p) => s + p, 0) / 10;
+        const sma20 = recent20.reduce((s, p) => s + p, 0) / 20;
+        const smaRatio = (sma10 - sma20) / sma20;
+        let impliedRegime = 'RANGING';
+        if (smaRatio > 0.005) impliedRegime = 'TRENDING_UP';
+        else if (smaRatio < -0.005) impliedRegime = 'TRENDING_DOWN';
+        const returns = [];
+        for (let i = 1; i < recent10.length; i++) {
+            returns.push(Math.abs((recent10[i] - recent10[i-1]) / recent10[i-1]));
+        }
+        const avgVol = returns.reduce((s, r) => s + r, 0) / returns.length;
+        if (avgVol > 0.02) impliedRegime = 'HIGH_VOLATILITY';
+        return impliedRegime !== lastRegime;
     }
 
     onPositionClosed(symbol) {

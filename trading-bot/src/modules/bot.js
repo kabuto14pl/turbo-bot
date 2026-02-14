@@ -378,7 +378,7 @@ class AutonomousTradingBot {
                                     history, async (s) => this._getCurrentPrice(s)
                                 );
                                 if (!qpmResult.summary.skipped) {
-                                    this._applyQuantumPositionActions(qpmResult, history);
+                                    await this._applyQuantumPositionActions(qpmResult, history);
                                 }
                             } catch(e) { console.warn('[WARN] QPM same-candle:', e.message); }
                         }
@@ -658,6 +658,69 @@ class AutonomousTradingBot {
 
                     if (shouldExecute) {
                         await this.exec.executeTradeSignal(consensus, this.dp);
+
+                        // PATCH #19: Quantum Initial SL/TP
+                        if (consensus.action === 'BUY' && this.quantumPosMgr && this.quantumPosMgr.isReady
+                            && this.pm.hasPosition(consensus.symbol)) {
+                            try {
+                                const pos = this.pm.getPosition(consensus.symbol);
+                                pos._qpmManaged = true;
+                                const currentPrice = pos.entryPrice;
+                                let vqcRegime = null, qraRisk = null, qmcSim = null;
+                                if (hybridBoostResult) {
+                                    vqcRegime = hybridBoostResult.regimeClassification || null;
+                                    qraRisk = hybridBoostResult.riskAnalysis || null;
+                                    qmcSim = hybridBoostResult.qmcSimulation || null;
+                                }
+                                let currentATR = pos.atrAtEntry || (currentPrice * 0.02);
+                                if (history && history.length >= 20) {
+                                    try {
+                                        const candleData = history.slice(-20).map(c => ({
+                                            symbol: consensus.symbol, timestamp: Date.now(),
+                                            open: c.open || c.close, high: c.high, low: c.low,
+                                            close: c.close, volume: c.volume || 0,
+                                        }));
+                                        const ind = require('./indicators');
+                                        const liveATR = ind.calculateATR(candleData, 14);
+                                        if (liveATR > 0) currentATR = liveATR;
+                                    } catch (e) { /* use entry ATR */ }
+                                }
+                                const sltpResult = this.quantumPosMgr.dynamicSLTP.calculate(
+                                    pos, currentPrice, currentATR, vqcRegime, qraRisk, qmcSim
+                                );
+                                if (sltpResult.newSL && Math.abs(sltpResult.newSL - pos.stopLoss) > 0.01) {
+                                    const oldSL = pos.stopLoss;
+                                    pos.stopLoss = sltpResult.newSL;
+                                    console.log('[QUANTUM INIT SL] ' + consensus.symbol +
+                                        ': $' + oldSL.toFixed(2) + ' -> $' + sltpResult.newSL.toFixed(2) +
+                                        ' | ' + sltpResult.reasoning);
+                                    if (this.megatron) {
+                                        this.megatron.logActivity('QUANTUM', 'Initial SL (Quantum-Adjusted)',
+                                            consensus.symbol + ': Static $' + oldSL.toFixed(2) +
+                                            ' -> Quantum $' + sltpResult.newSL.toFixed(2), sltpResult.adjustments);
+                                    }
+                                }
+                                if (sltpResult.newTP && Math.abs(sltpResult.newTP - pos.takeProfit) > 0.01) {
+                                    const oldTP = pos.takeProfit;
+                                    this.pm.updateTakeProfit(consensus.symbol, sltpResult.newTP);
+                                    console.log('[QUANTUM INIT TP] ' + consensus.symbol +
+                                        ': $' + (oldTP || 0).toFixed(2) + ' -> $' + sltpResult.newTP.toFixed(2) +
+                                        ' | ' + sltpResult.reasoning);
+                                    if (this.megatron) {
+                                        this.megatron.logActivity('QUANTUM', 'Initial TP (Quantum-Adjusted)',
+                                            consensus.symbol + ': Static $' + (oldTP || 0).toFixed(2) +
+                                            ' -> Quantum $' + sltpResult.newTP.toFixed(2), sltpResult.adjustments);
+                                    }
+                                }
+                                console.log('[QUANTUM INIT] Position ' + consensus.symbol +
+                                    ' opened with quantum SL/TP | Regime: ' +
+                                    (vqcRegime ? vqcRegime.regime : 'N/A') +
+                                    ' | Risk: ' + (qraRisk ? qraRisk.riskScore + '/100' : 'N/A'));
+                            } catch (e) {
+                                console.warn('[WARN] Quantum initial SL/TP:', e.message);
+                            }
+                        }
+
                         this.server.broadcastPortfolioUpdate();
                         if (this.megatron) {
                             this.megatron.logActivity('TRADE', consensus.action + ' executed',
@@ -696,6 +759,30 @@ class AutonomousTradingBot {
                         }
                     } catch(e) { console.warn('[WARN] APM monitor:', e.message); }
                 }
+
+                // PATCH #19: APM-PM State Sync
+                if (this.advancedPositionManager && this._cycleCount % 10 === 0) {
+                    try {
+                        const pmPositions = this.pm.getPositions();
+                        const apmPositions = this.advancedPositionManager.activePositions;
+                        if (apmPositions && apmPositions.size > 0) {
+                            const orphaned = [];
+                            for (const [pid, apmPos] of apmPositions) {
+                                if (apmPos && apmPos.symbol && !pmPositions.has(apmPos.symbol)) {
+                                    orphaned.push(pid);
+                                }
+                            }
+                            for (const pid of orphaned) {
+                                await this.advancedPositionManager.closePosition(pid, 'SYNC_CLEANUP');
+                                console.log('[APM SYNC] Removed orphaned APM position: ' + pid);
+                            }
+                            if (orphaned.length > 0 && this.megatron) {
+                                this.megatron.logActivity('SYSTEM', 'APM-PM Sync',
+                                    'Cleaned ' + orphaned.length + ' orphaned APM position(s)');
+                            }
+                        }
+                    } catch(e) { /* APM sync non-critical */ }
+                }
             }
 
             // PATCH #18: Quantum Position Monitoring (full cycle re-evaluation)
@@ -708,7 +795,7 @@ class AutonomousTradingBot {
                         history, async (s) => this._getCurrentPrice(s)
                     );
                     if (!qpmResult.summary.skipped) {
-                        this._applyQuantumPositionActions(qpmResult, history);
+                        await this._applyQuantumPositionActions(qpmResult, history);
                     }
                 } catch(e) { console.warn('[WARN] QPM full-cycle:', e.message); }
             }
@@ -802,14 +889,14 @@ class AutonomousTradingBot {
      * PATCH #18: Apply quantum position management actions.
      * Executes SL/TP adjustments, partial closes, and logs to Megatron.
      */
-    _applyQuantumPositionActions(qpmResult, marketDataHistory) {
+    async _applyQuantumPositionActions(qpmResult, marketDataHistory) {
         try {
             // Apply SL/TP adjustments
             for (const adj of qpmResult.adjustments) {
                 const pos = this.pm.getPosition(adj.symbol);
                 if (!pos) continue;
 
-                if (adj.type === 'SL_UPDATE' && adj.newValue > pos.stopLoss) {
+                if (adj.type === 'SL_UPDATE' && adj.newValue) {
                     this.pm.updateStopLoss(adj.symbol, adj.newValue);
                     console.log('[QUANTUM SL] ' + adj.symbol + ': $' + adj.oldValue.toFixed(2) +
                         ' -> $' + adj.newValue.toFixed(2) + ' | ' + adj.reasoning);
@@ -820,7 +907,7 @@ class AutonomousTradingBot {
                     }
                 } else if (adj.type === 'TP_UPDATE' && adj.newValue) {
                     if (pos.takeProfit !== adj.newValue) {
-                        pos.takeProfit = adj.newValue;
+                        this.pm.updateTakeProfit(adj.symbol, adj.newValue);
                         console.log('[QUANTUM TP] ' + adj.symbol + ': $' + (adj.oldValue || 0).toFixed(2) +
                             ' -> $' + adj.newValue.toFixed(2) + ' | ' + adj.reasoning);
                         if (this.megatron) {
@@ -880,6 +967,115 @@ class AutonomousTradingBot {
                     'Exposure: ' + (opt.totalExposure * 100).toFixed(1) + '% | Capacity: ' + opt.remainingCapacity +
                     ' | Pyramids: ' + (opt.pyramidRecommendations || []).length +
                     ' | Consolidate: ' + (opt.consolidations || []).length);
+            }
+
+            // PATCH #19: Execute pyramid recommendations
+            if (qpmResult.portfolioOpt && qpmResult.portfolioOpt.pyramidRecommendations) {
+                for (const pyrRec of qpmResult.portfolioOpt.pyramidRecommendations) {
+                    const pos = this.pm.getPosition(pyrRec.symbol);
+                    if (!pos) continue;
+                    try {
+                        const currentPrice = await this._getCurrentPrice(pyrRec.symbol);
+                        if (!currentPrice) continue;
+                        const portfolio = this.pm.getPortfolio();
+                        const addValue = portfolio.totalValue * (pyrRec.addSizePct / 100);
+                        const addQty = addValue / currentPrice;
+                        if (addQty <= 0.000001) continue;
+                        if (!this.rm.checkOvertradingLimit()) {
+                            console.log('[PYRAMID SKIP] Overtrading limit for ' + pyrRec.symbol);
+                            continue;
+                        }
+                        if (addValue > this.pm.balance.usdtBalance * 0.9) {
+                            console.log('[PYRAMID SKIP] Insufficient balance for ' + pyrRec.symbol);
+                            continue;
+                        }
+                        const result = this.pm.addToPosition(pyrRec.symbol, currentPrice, addQty);
+                        if (result) {
+                            const fees = currentPrice * addQty * this.config.tradingFeeRate;
+                            this.pm.portfolio.realizedPnL -= fees;
+                            if (this.quantumPosMgr && this.quantumPosMgr.isReady) {
+                                try {
+                                    let currentATR = pos.atrAtEntry || (currentPrice * 0.02);
+                                    if (marketDataHistory && marketDataHistory.length >= 20) {
+                                        const candleData = marketDataHistory.slice(-20).map(c => ({
+                                            symbol: pyrRec.symbol, timestamp: Date.now(),
+                                            open: c.open || c.close, high: c.high, low: c.low,
+                                            close: c.close, volume: c.volume || 0,
+                                        }));
+                                        const ind = require('./indicators');
+                                        const liveATR = ind.calculateATR(candleData, 14);
+                                        if (liveATR > 0) currentATR = liveATR;
+                                    }
+                                    const sltpResult = this.quantumPosMgr.dynamicSLTP.calculate(
+                                        result, currentPrice, currentATR, null, null, null
+                                    );
+                                    if (sltpResult.newSL) result.stopLoss = sltpResult.newSL;
+                                    if (sltpResult.newTP) this.pm.updateTakeProfit(pyrRec.symbol, sltpResult.newTP);
+                                } catch (e) { /* QPM recalc non-critical */ }
+                            }
+                            console.log('[QUANTUM PYRAMID] Level ' + pyrRec.level + ' ' + pyrRec.symbol +
+                                ': +' + addQty.toFixed(6) + ' @ $' + currentPrice.toFixed(2) +
+                                ' | New avg: $' + result.entryPrice.toFixed(2) + ' | ' + pyrRec.reason);
+                            if (this.megatron) {
+                                this.megatron.logActivity('TRADE', 'Quantum Pyramid: L' + pyrRec.level,
+                                    pyrRec.symbol + ' +' + addQty.toFixed(6) + ' @ $' + currentPrice.toFixed(2) +
+                                    ' | New avg: $' + result.entryPrice.toFixed(2) + ' | ' + pyrRec.reason, pyrRec, 'normal');
+                            }
+                            if (this.advancedPositionManager) {
+                                try {
+                                    const pid = pyrRec.symbol + '-pyramid-' + Date.now();
+                                    await this.advancedPositionManager.openPosition(
+                                        pid, pyrRec.symbol, 'long', currentPrice, addQty, 'QuantumPyramid', 1.0
+                                    );
+                                } catch(e) { /* APM sync non-critical */ }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[WARN] Pyramid execution ' + pyrRec.symbol + ':', e.message);
+                    }
+                }
+            }
+
+            // PATCH #19: Execute consolidation recommendations
+            if (qpmResult.portfolioOpt && qpmResult.portfolioOpt.consolidations) {
+                for (const cons of qpmResult.portfolioOpt.consolidations) {
+                    if (cons.action !== 'CLOSE') continue;
+                    const pos = this.pm.getPosition(cons.symbol);
+                    if (!pos) continue;
+                    try {
+                        const currentPrice = await this._getCurrentPrice(cons.symbol);
+                        if (!currentPrice) continue;
+                        const trade = this.pm.closePosition(cons.symbol, currentPrice, null, 'QUANTUM_CONSOLIDATE', 'QuantumPosMgr');
+                        if (trade) {
+                            this.rm.recordTradeResult(trade.pnl);
+                            console.log('[QUANTUM CONSOLIDATE] ' + cons.symbol +
+                                ' closed | PnL: $' + trade.pnl.toFixed(2) + ' | ' + cons.reason);
+                            if (this.ml) {
+                                this.ml.learnFromTrade(trade.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
+                            }
+                            if (this.megatron) {
+                                this.megatron.logActivity('TRADE', 'Quantum Consolidation',
+                                    cons.symbol + ' | PnL: $' + trade.pnl.toFixed(2) + ' | ' + cons.reason, trade, 'normal');
+                            }
+                            if (this.quantumPosMgr) this.quantumPosMgr.onPositionClosed(cons.symbol);
+                            if (this.advancedPositionManager) {
+                                try {
+                                    const ap = this.advancedPositionManager.activePositions;
+                                    if (ap) {
+                                        for (const [pid, p] of ap) {
+                                            if (p && p.symbol === cons.symbol) {
+                                                await this.advancedPositionManager.closePosition(pid, 'QUANTUM_CONSOLIDATE');
+                                                break;
+                                            }
+                                        }
+                                    }
+                                } catch(e) { /* APM sync non-critical */ }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[WARN] Consolidation ' + cons.symbol + ':', e.message);
+                    }
+                }
             }
 
         } catch (err) {
