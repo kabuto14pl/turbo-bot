@@ -62,7 +62,7 @@ class MonitoringBridge {
             realizedPnL: p.realizedPnL,
             drawdown: p.drawdown,
             peakValue: p.peakValue,
-            winRate: p.winRate / 100,
+            winRate: p.winRate,  // PATCH #21 FIX: winRate is already 0-1 ratio
             totalTrades: p.totalTrades,
             successfulTrades: p.successfulTrades,
             failedTrades: p.failedTrades,
