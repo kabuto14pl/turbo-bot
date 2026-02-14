@@ -154,7 +154,8 @@ const server = http.createServer(async (req, res) => {
     // Standalone Megatron dashboard (minimal)
     serveHTML(res, 'megatron-dashboard.html');
   }
-  else if (pathname === '/health') {
+  else if (pathname === '/dashboard-health') {
+    // Dashboard server own health (moved from /health to avoid conflict)
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       status: 'healthy',
@@ -166,13 +167,13 @@ const server = http.createServer(async (req, res) => {
       pages: { megatron: '/', classic: '/classic' }
     }));
   }
-  else if (pathname.startsWith('/api/')) {
-    // Proxy all /api/* to bot — supports GET, POST, PUT, DELETE
+  else if (pathname === '/health' || pathname.startsWith('/api/')) {
+    // Proxy /health AND all /api/* to bot — supports GET, POST, PUT, DELETE
     proxyToBot(req, res, pathname);
   }
   else {
     res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Not found', availableRoutes: ['/', '/standalone', '/health', '/api/*'] }));
+    res.end(JSON.stringify({ error: 'Not found', availableRoutes: ['/', '/standalone', '/health', '/dashboard-health', '/api/*'] }));
   }
 });
 
@@ -184,7 +185,8 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  Dashboard:  http://0.0.0.0:${PORT}/ (Enterprise + MEGATRON AI)`);
   console.log(`  Standalone: http://0.0.0.0:${PORT}/standalone (Megatron only)`);
   console.log(`  Bot API:    ${BOT_API}`);
-  console.log(`  Health:     http://localhost:${PORT}/health`);
+  console.log(`  Health:     http://localhost:${PORT}/health (proxied to bot)`);
+  console.log(`  DashHealth: http://localhost:${PORT}/dashboard-health (server own)`);
   console.log('  POST proxy: ENABLED (for Megatron chat)');
   console.log('  Caching:    ENABLED (per-path, 3s)');
   console.log('');
