@@ -60,6 +60,11 @@ class RiskManager {
 
     checkOvertradingLimit() {
         if (Date.now() - this.lastTradeDayReset > 86400000) { this.dailyTradeCount = 0; this.lastTradeDayReset = Date.now(); }
+        // PATCH #20: Bypass daily trade limit in simulation/paper mode
+        const mode = (process.env.MODE || 'simulation').toLowerCase();
+        if (mode === 'simulation' || mode === 'paper' || mode === 'paper_trading') {
+            return true; // No daily trade limit in simulation/paper
+        }
         return this.dailyTradeCount < 10;
     }
 
