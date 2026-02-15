@@ -377,3 +377,53 @@ Kompletny redesign Enterprise Dashboard z oceny 4/10 do profesjonalnego poziomu.
 -  Equity Curve i PnL Chart dzialaja
 -  Megatron Chat dziala (POST do /api/megatron/chat)
 -  Activity Feed pokazuje aktywnosci z bota
+
+
+---
+
+## Patch #22 — 2026-02-15 — Multi-Timeframe Confluence Engine (D1+H4+H1)
+
+**Typ:** Feature — Strategy Enhancement / Multi-Timeframe Analysis
+**Commit:** `78a6f8b`
+**Pliki:** 8 (1 nowy + 7 zmodyfikowanych)
+
+**Opis:** Profesjonalny system Multi-Timeframe Top-Down Analysis. Bot dotychczas dzialal wylacznie na interwale 15min, ignorujac wyzsze timeframe'y (H4 dane pobierane ale nieuzywane, D1 w ogole nie pobierane). Patch #22 wprowadza pelna analize MTF w stylu profesjonalnych traderow: D1 = kierunek strategiczny (40%), H4 = potwierdzenie taktyczne (35%), H1 = kontekst natychmiastowy (25%), M15 = tylko execution.
+
+### Nowy modul: `mtf-confluence.js` (~270 LOC)
+
+| Metoda | Opis |
+|--------|------|
+| `analyzeTF(candles, tfName)` | Analiza pojedynczego TF: EMA stack (9/21/50/200), RSI zones, ROC momentum, ADX amplifier, EMA slope. Wynik: direction (BULL/BEAR/NEUTRAL), strength (0-100) |
+| `computeBias(cachedTfData)` | Wazony kompozyt D1(40%)+H4(35%)+H1(25%). Wynik: bias score (-100 do +100), trade permission, confidence multiplier |
+| `filterSignal(action, confidence)` | Filtruje BUY/SELL wzgledem MTF bias. Blokuje counter-trend przy pelnej zgodnosci HTF, karze (0.5x) lub wzmacnia (1.25x) |
+
+### Trade Permission System:
+
+| Warunek | Permission | confMultiplier |
+|---------|-----------|----------------|
+| D1+H4+H1 all BULL | LONG_ONLY | 1.25x |
+| D1+H4+H1 all BEAR | SHORT_ONLY | 1.25x |
+| D1+H4 BULL, H1 divergent | PREFER_LONG | 1.15x / 0.85x |
+| D1+H4 BEAR, H1 divergent | PREFER_SHORT | 1.15x / 0.85x |
+| D1 vs H4 conflict | CAUTION | 0.60x |
+
+### Zmodyfikowane pliki (7):
+
+| Plik | Zmiana |
+|------|--------|
+| `data-pipeline.js` | Dodano 1D timeframe (30 candles), d1 indicators w BotState, fallback chain d1->h4->h1->m15 |
+| `strategy-runner.js` | Import MTFConfluence, pelna integracja w AdvancedAdaptive+RSITurbo, bias injection do class strategies |
+| `supertrend.js` | MTF filter na koncu run() — blokuje/karze/wzmacnia ENTER_LONG/ENTER_SHORT |
+| `ma_crossover.js` | Ten sam MTF filter pattern co supertrend |
+| `momentum_pro.js` | Ten sam MTF filter pattern co supertrend |
+| `ensemble-voting.js` | MTF bias w vote(), blokuje counter-trend vs all-aligned HTF, confidence adjustments, MTF w consensus log |
+| `bot.js` | MTF computation wiring przed strategy run, MTF bias forwarding do ensemble.vote(), periodicze logowanie D1/H4/H1 |
+
+### Wynik:
+
+- ✅ D1 data: 30 candles pobieranych z OKX (potwierdzone w logach: `d1:30`)
+- ✅ MTF bias aktywny w ensemble: `| MTF: BULLISH score=20` (cycle #1), `| MTF: BULLISH score=19` (cycle #10)
+- ✅ Zero bledow MTF w error logach
+- ✅ Bot stabilny po restarcie — wszystkie moduly ladowane poprawnie
+- ✅ Zasada pro-tradera: NIGDY nie handluj przeciw wyzszym timeframe'om
+- ✅ 446 insertions, 24 deletions across 8 files
