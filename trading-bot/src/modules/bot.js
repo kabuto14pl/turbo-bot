@@ -90,6 +90,8 @@ class AutonomousTradingBot {
         this.hybridPipeline = null;
         // PATCH #18: Quantum Position Manager
         this.quantumPosMgr = null;
+        // PATCH #24: Neuron AI Manager (Central Brain/Skynet)
+        this.neuronManager = null;
     }
 
     async initialize() {
@@ -281,6 +283,15 @@ class AutonomousTradingBot {
             });
             if (this.server.app && this.server.wss) {
                 attachMegatronRoutes(this.server.app, this.server.wss, this.server.wsClients, this.megatron);
+
+            // PATCH #24: Neuron AI Manager API endpoint
+            this.server.app.get('/api/neuron-ai/status', (req, res) => {
+                if (this.neuronManager) {
+                    res.json(this.neuronManager.getStatus());
+                } else {
+                    res.json({ error: 'Neuron AI Manager not initialized' });
+                }
+            });
             }
             console.log('[OK] MEGATRON AI: Online | LLM Providers: ' + this.megatron.llm.providers.size);
             this.mon.setComponent('megatron', true);
@@ -292,6 +303,37 @@ class AutonomousTradingBot {
         this.state.load(this.pm, this.rm, this.ml);
 
         this.mon.setComponent('monitoring', true);
+        
+        // PATCH #24: Initialize Neuron AI Manager (Central Brain/Skynet)
+        try {
+            const { NeuronAIManager } = require('../core/ai/neuron_ai_manager');
+            this.neuronManager = new NeuronAIManager();
+            this.neuronManager.initialize(this.megatron);
+            // Apply NeuronAI adapted weights to ensemble if any
+            const adaptedW = this.neuronManager.getAdaptedWeights();
+            if (adaptedW && this.ensemble) {
+                for (const [k, v] of Object.entries(adaptedW)) {
+                    if (this.ensemble.staticWeights && this.ensemble.staticWeights[k] !== undefined) {
+                        this.ensemble.staticWeights[k] = v;
+                    }
+                }
+                const totalW = Object.values(this.ensemble.staticWeights).reduce((s, v) => s + v, 0);
+                if (totalW > 0) {
+                    for (const k of Object.keys(this.ensemble.staticWeights)) {
+                        this.ensemble.staticWeights[k] /= totalW;
+                    }
+                }
+                console.log('[NEURON AI] Adapted weights applied to ensemble');
+            }
+            // Wire to Megatron for chat routing
+            if (this.megatron && this.megatron.setNeuronManager) {
+                this.megatron.setNeuronManager(this.neuronManager);
+            }
+            this.mon.setComponent('neuronManager', true);
+        } catch (e) {
+            console.warn('[WARN] Neuron AI Manager: ' + e.message);
+        }
+
         console.log('[' + this.config.instanceId + '] MODULAR ENTERPRISE Bot initialized');
         console.log('ML: ' + (this.ml ? this.ml.getConfidenceInfo() : 'disabled'));
         console.log('Neural AI: ' + (this.neuralAI ? 'ACTIVE (' + this.neuralAI.phase + ')' : 'disabled'));
@@ -299,6 +341,7 @@ class AutonomousTradingBot {
         console.log('Hybrid Pipeline: ' + (this.hybridPipeline ? 'ACTIVE v' + this.hybridPipeline.version + ' (QMC+QAOA+VQC+QFM+QRA+QDV)' : 'disabled'));
         console.log('Quantum Pos Mgr: ' + (this.quantumPosMgr && this.quantumPosMgr.isReady ? 'ACTIVE v' + this.quantumPosMgr.version + ' (4-stage)' : 'disabled'));
         console.log('Megatron: ' + (this.megatron ? 'ONLINE (' + this.megatron.llm.providers.size + ' LLM providers)' : 'disabled'));
+        console.log('Neuron AI: ' + (this.neuronManager ? 'BRAIN ACTIVE v' + this.neuronManager.version + ' (' + this.neuronManager.totalDecisions + ' decisions, PnL: $' + this.neuronManager.totalPnL.toFixed(2) + ')' : 'disabled'));
     }
 
     _getPortfolioData() {
@@ -494,7 +537,8 @@ class AutonomousTradingBot {
                     const hasPos = this.pm.positionCount > 0;
                     const aiSignal = await this.neuralAI.generateAISignal(history, hasPos);
                     if (aiSignal && aiSignal.action !== 'HOLD') {
-                        allSignals.set('NeuralAI', aiSignal);
+                        // PATCH #24: NeuralAI removed from ensemble voting (now central brain manager)
+                        // allSignals.set('NeuralAI', aiSignal);
                         console.log('[NEURAL AI] ' + aiSignal.action + ' (conf: ' + ((aiSignal.confidence||0)*100).toFixed(1) + '%, regime: ' + (aiSignal.regime || 'N/A') + ')');
                         if (this.megatron) {
                             this.megatron.logActivity('SIGNAL', 'Neural AI: ' + aiSignal.action,
@@ -638,7 +682,97 @@ class AutonomousTradingBot {
             // 6. Ensemble voting (with dynamic Thompson Sampling weights)
             let consensus = null;
             if (allSignals.size > 0) {
-                consensus = this.ensemble.vote(allSignals, this.rm, this.strategies.getMTFConfluence ? this.strategies.getMTFConfluence().getLastBias() : null);
+                consensus = null; // PATCH #24: Neuron AI Manager decides instead of ensemble
+                const mtfBiasForVote = this.strategies.getMTFConfluence ? this.strategies.getMTFConfluence().getLastBias() : null;
+
+                if (this.neuronManager && this.neuronManager.isReady) {
+                    // Get raw votes from ensemble (without NeuralAI)
+                    const rawVotes = this.ensemble.getRawVotes(allSignals, this.rm, mtfBiasForVote);
+
+                    // Build full state for Neuron AI
+                    const portfolioState = this.pm.getPortfolio();
+                    const hasPos = this.pm.positionCount > 0;
+                    let positionSide = 'NONE';
+                    if (hasPos) {
+                        const positions = this.pm.getPositions();
+                        if (positions && positions.size > 0) {
+                            for (const [, p] of positions) {
+                                positionSide = p.side === 'SHORT' ? 'SHORT' : 'LONG';
+                                break;
+                            }
+                        }
+                    }
+                    let rsiVal = null;
+                    try {
+                        const prices = this.dp.getMarketDataHistory().slice(-15).map(function(c) { return c.close; });
+                        if (prices.length >= 14) {
+                            rsiVal = require('./indicators').calculateRSI(prices, 14);
+                        }
+                    } catch(e) {}
+
+                    const neuronState = {
+                        votes: rawVotes.votes,
+                        signalSummary: rawVotes.signalSummary,
+                        mlSignal: rawVotes.mlSignal || {},
+                        mtfBias: mtfBiasForVote || {},
+                        regime: (this.neuralAI && this.neuralAI.currentRegime) || 'UNKNOWN',
+                        portfolio: {
+                            totalValue: (portfolioState && portfolioState.totalValue) || 0,
+                            realizedPnL: (portfolioState && portfolioState.realizedPnL) || 0,
+                            winRate: (portfolioState && portfolioState.winRate) || 0,
+                            totalTrades: (portfolioState && portfolioState.totalTrades) || 0,
+                            drawdownPct: (portfolioState && portfolioState.drawdownPct) || 0,
+                        },
+                        price: ((this.dp.getMarketDataHistory().slice(-1)[0] || {}).close) || 0,
+                        hasPosition: hasPos,
+                        positionSide: positionSide,
+                        indicators: { rsi: rsiVal },
+                        quantumRisk: this._lastQuantumRisk || {},
+                    };
+
+                    try {
+                        const neuronDecision = await this.neuronManager.makeDecision(neuronState);
+
+                        if (neuronDecision && neuronDecision.action !== 'HOLD') {
+                            let consensusPrice = ((this.dp.getMarketDataHistory().slice(-1)[0] || {}).close) || 0;
+                            for (const [, sig] of allSignals) {
+                                if (sig.price && sig.price > 0) { consensusPrice = sig.price; break; }
+                            }
+                            consensus = {
+                                timestamp: Date.now(),
+                                symbol: this.config.symbol || 'BTCUSDT',
+                                action: neuronDecision.action,
+                                price: consensusPrice,
+                                quantity: 0,
+                                confidence: neuronDecision.confidence,
+                                strategy: 'NeuronAI',
+                                reasoning: neuronDecision.reasoning || 'Neuron AI autonomous',
+                                riskLevel: 1,
+                                metadata: {
+                                    votes: rawVotes.votes,
+                                    source: neuronDecision.source,
+                                    isOverride: neuronDecision.isOverride,
+                                    neuronAI: true,
+                                },
+                            };
+
+                            if (this.megatron && this.megatron.logActivity) {
+                                this.megatron.logActivity('NEURON_AI',
+                                    'DECISION: ' + neuronDecision.action,
+                                    (neuronDecision.reasoning || '') + ' | Conf: ' + (neuronDecision.confidence * 100).toFixed(1) + '%' +
+                                    (neuronDecision.isOverride ? ' | OVERRIDE' : ''),
+                                    neuronDecision, 'high');
+                            }
+                        } else {
+                            consensus = null;
+                        }
+                    } catch (neuronErr) {
+                        console.warn('[WARN] Neuron AI decision failed, falling back to ensemble:', neuronErr.message);
+                        consensus = this.ensemble.vote(allSignals, this.rm, mtfBiasForVote);
+                    }
+                } else {
+                    consensus = this.ensemble.vote(allSignals, this.rm, mtfBiasForVote);
+                }
                 // PATCH #21: Log HOLD/no-consensus to Megatron too
                 if (!consensus || consensus.action === 'HOLD') {
                     if (this.megatron && this._cycleCount % 5 === 0) {
@@ -1140,6 +1274,14 @@ class AutonomousTradingBot {
                             pnl: pnlDelta, strategy: stratName,
                             winRate: portfolio.winRate || 0, consecutiveLosses: this.rm.consecutiveLosses || 0,
                         });
+                    // PATCH #24: Neuron AI Manager learning
+                    if (this.neuronManager) {
+                        this.neuronManager.learnFromTrade({
+                            pnl: pnlDelta,
+                            strategy: 'EnsembleVoting',
+                            action: 'close',
+                        });
+                    }
                     }
                     this.neuralAI.learnFromTrade({
                         pnl: pnlDelta, strategy: 'EnsembleVoting',
@@ -1198,6 +1340,9 @@ class AutonomousTradingBot {
         this.state.save(this.pm, this.rm, this.ml);
         if (this.neuralAI) {
             try { await this.neuralAI.saveCheckpoint(); console.log('[NEURAL AI] Checkpoint saved'); } catch(e) {}
+        }
+        if (this.neuronManager) {
+            try { this.neuronManager._saveState(); console.log('[NEURON AI MANAGER] State saved'); } catch(e) {}
         }
         if (this.megatron) this.megatron.logActivity('SYSTEM', 'Bot Shutdown', 'Graceful stop');
         console.log('Bot stopped. State saved.');

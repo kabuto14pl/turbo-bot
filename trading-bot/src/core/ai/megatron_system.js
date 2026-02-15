@@ -741,6 +741,7 @@ class MegatronCore {
         this.memory = new ConversationMemory();
         this.activityFeed = new AIActivityFeed();
         this.isReady = false;
+        this.neuronManager = null; // PATCH #24: Reference to NeuronAI Manager
         this.startTime = Date.now();
         this.messageCount = 0;
         this.commandCount = 0;
@@ -787,6 +788,24 @@ class MegatronCore {
             this.commandCount++;
             const result = await this.commands.execute(cmd);
             this.memory.add('user', userMessage);
+
+        // PATCH #24: Route through Neuron AI Manager if available
+        if (this.neuronManager && this.neuronManager.isReady) {
+            try {
+                const neuronResponse = await this.neuronManager.processChat(userMessage, null);
+                if (neuronResponse && neuronResponse.length > 10) {
+                    this.memory.add('assistant', neuronResponse);
+                    this.activityFeed.log('NEURON_AI', 'Chat: ' + userMessage.substring(0, 40), 'Via Neuron AI Brain', {}, 'high');
+                    return {
+                        type: 'neuron_ai',
+                        response: neuronResponse,
+                        provider: 'NeuronAI',
+                    };
+                }
+            } catch (neuronErr) {
+                console.warn('[MEGATRON] Neuron AI chat failed, falling back to standard:', neuronErr.message);
+            }
+        }
             this.memory.add('assistant', result.message);
             this.activityFeed.log('COMMAND', 'Komenda: ' + cmd.id, result.message.substring(0, 100), cmd, 'high');
             return { type: 'command', response: result.message, success: result.success, command: cmd.id };
@@ -830,6 +849,7 @@ class MegatronCore {
             name: this.name,
             version: this.version,
             isReady: this.isReady,
+            neuronAI: this.neuronManager ? this.neuronManager.getStatus() : null,
             uptime: Date.now() - this.startTime,
             uptimeFormatted: this._formatUptime(Date.now() - this.startTime),
             messageCount: this.messageCount,
@@ -842,6 +862,11 @@ class MegatronCore {
 
     getActivityFeed(count, category) {
         return this.activityFeed.getRecent(count || 50, category || null);
+    }
+
+    setNeuronManager(manager) {
+        this.neuronManager = manager;
+        console.log('[MEGATRON] Neuron AI Manager connected as central brain');
     }
 
     _formatUptime(ms) {

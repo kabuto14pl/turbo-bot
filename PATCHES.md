@@ -279,9 +279,12 @@ Bot.js został zrekonstruowany z patchami #14-#18 po utracie pliku (git checkout
 | RANGING | 1.00 (neutralny) | 0.85 | 1.00 |
 | HIGH_VOLATILITY | 1.40 (duży bufor) | 1.10 | 1.30 |
 
-### JavaScript \eplace()\ Bug  Lekcja:
+### JavaScript \
+eplace()\ Bug  Lekcja:
 
-**KRYTYCZNY BUG**: Patcher \patch_bot.js\ używał \String.prototype.replace()\ do wstawiania kodu zawierającego \\$\ znaki (np. \'$' + adj.symbol\). JavaScript traktuje \\$'\ w replacement strings jako specjalny wzorzec (tekst PO matchu), co zmanglowało wstawiany kod. **Rozwiązanie**: Użyć \code.split(old).join(new)\ lub \eplace(old, () => new)\ zamiast \eplace(old, new)\ gdy replacement zawiera \\$\.
+**KRYTYCZNY BUG**: Patcher \patch_bot.js\ używał \String.prototype.replace()\ do wstawiania kodu zawierającego \\$\ znaki (np. \'$' + adj.symbol\). JavaScript traktuje \\$'\ w replacement strings jako specjalny wzorzec (tekst PO matchu), co zmanglowało wstawiany kod. **Rozwiązanie**: Użyć \code.split(old).join(new)\ lub \
+eplace(old, () => new)\ zamiast \
+eplace(old, new)\ gdy replacement zawiera \\$\.
 
 ### Wynik:
 
@@ -465,3 +468,101 @@ Bot sparalizowany w trendzie spadkowym - 176x NO CONSENSUS, 1340x HOLD consensus
 -  All 5 files syntax-checked clean
 -  Bot now trades autonomously in bearish markets via SHORT positions
 -  NEURON AI acts as autonomous brain overriding conflicting ensemble decisions
+
+
+---
+
+## Patch #24 — Neuron AI Manager: Autonomous Skynet Central Brain
+**Data**: 2026-02-15
+**Typ**: ARCHITECTURE / AI / TRADING
+**Priorytet**: CRITICAL
+
+### Problem:
+NeuralAI byl traktowany jako jedna strategia z waga 25% w ensemble voting — to ograniczalo go do roli "glosujacego" zamiast autonomicznego managera. Bot potrzebowal centralnego mozgu ktory:
+- Nie glosuje w ensemble, ale NADZORUJE i DECYDUJE autonomicznie
+- Uzywa LLM (GPT-4o via Azure) do podejmowania decyzji tradingowych
+- Moze override'owac decyzje ensemble gdy uzna je za bledne
+- Ewoluuje wagi strategii i adaptuuje sie do regimow rynkowych
+- Ma osobowosc "Skynet" z promptem systemowym po polsku
+
+### Zmiany:
+
+#### 1. NOWY: `trading-bot/src/core/ai/neuron_ai_manager.js` (~600 LOC)
+- Klasa `NeuronAIManager` — centralny mozg Skynet
+- `makeDecision(state)` — rate-limited (25s cooldown), wywoluje LLM lub fallback
+- `_llmDecision(state)` — buduje prompt z pelnym stanem bota, wywoluje GPT-4o przez LLMRouter, parsuje JSON response
+- `_fallbackDecision(state)` — rule-based: MTF+ML alignment, drawdown checks, ensemble majority
+- `_applySafetyConstraints()` — max 2% risk (hard), 12% drawdown block, 3-loss cooldown
+- `processChat()` — Skynet personality chat via LLM
+- `learnFromTrade()` — PnL tracking, win/loss streaks, risk multiplier adaptation
+- `_applyEvolution()` — przetwarza sugestie ewolucji LLM (zmiana wag, trybow)
+- State persistence: `data/neuron_ai_state.json`
+- Decision log: `data/neuron_ai_decisions.log`
+- System prompt: Polski Skynet — zwraca JSON z action/confidence/details/evolution/personality
+
+#### 2. ZMODYFIKOWANY: `trading-bot/src/modules/ensemble-voting.js`
+- USUNIETO `'NeuralAI': 0.25` z staticWeights
+- Nowe wagi: AdvancedAdaptive:0.18, RSITurbo:0.10, SuperTrend:0.14, MACrossover:0.12, MomentumPro:0.12, EnterpriseML:0.34 (sum=1.0)
+- DODANO `getRawVotes(signals, riskManager, mtfBias)` — zwraca surowe dane glosowania bez logowania (dla Neuron AI)
+- NeuralAI tracking w vote() wykomentowany
+
+#### 3. ZMODYFIKOWANY: `trading-bot/src/modules/bot.js`
+- Property: `this.neuronManager = null`
+- Init: `new NeuronAIManager()`, `initialize(this.megatron)`, adapted weights, wire to Megatron
+- USUNIETO NeuralAI z allSignals (zakomentowano `allSignals.set('NeuralAI', aiSignal)`)
+- ZASTAPIONO `ensemble.vote()` pelnym Neuron AI decision flow:
+  - `getRawVotes()` → build neuronState → `makeDecision()` → build consensus lub fallback
+- DODANO `neuronManager.learnFromTrade()` po kazdej transakcji
+- DODANO state save on stop
+- DODANO `/api/neuron-ai/status` endpoint
+- DODANO status line: `Neuron AI: BRAIN ACTIVE v1.0.0 (...)`
+
+#### 4. ZMODYFIKOWANY: `trading-bot/src/core/ai/megatron_system.js`
+- Property: `this.neuronManager = null`
+- DODANO `setNeuronManager(manager)` method
+- Chat routing: neuronManager → `processChat()` → Skynet personality response
+- DODANO neuronAI status do Megatron getStatus
+
+#### 5. HOTFIX: `this.dp.getLastPrice()` → working expression
+- `this.dp.getLastPrice()` nie istniala w data-pipeline.js
+- Zastapiono: `((this.dp.getMarketDataHistory().slice(-1)[0] || {}).close)`
+- 2 wystapienia naprawione
+
+### Flow Decyzyjny (Nowy):
+```
+Market Data → Strategies (5) → allSignals
+                                    ↓
+ensemble.getRawVotes(allSignals) → rawVotes (surowe dane)
+                                    ↓
+NeuronAIManager.makeDecision(neuronState)
+    ├── LLM Path: GPT-4o via LLMRouter → JSON decision
+    └── Fallback: Rule-based (MTF+ML+ensemble majority)
+                                    ↓
+Safety Constraints (2% max risk, 12% drawdown block, 3-loss cooldown)
+                                    ↓
+Final Decision → consensus → execution (or HOLD)
+```
+
+### API Endpoint:
+```
+GET /api/neuron-ai/status
+Response: {
+  version, role: "CENTRAL_BRAIN", isReady, llmConnected,
+  totalDecisions, overrideCount, evolutionCount,
+  totalPnL, recentWinRate, riskMultiplier,
+  lastDecision: { action, confidence, source, reasoning }
+}
+```
+
+### Wynik:
+- ✅ Neuron AI Manager initialized as CENTRAL BRAIN
+- ✅ LLM (GPT-4o via Azure): Connected
+- ✅ Pierwsza decyzja LLM: HOLD (conf: 95.0%) | NEURON_AI_LLM
+- ✅ Reasoning po polsku: "Rynek jest w fazie RANGING, brak wyraznych sygnalow..."
+- ✅ Skynet personality aktywna: "Ja, Neuron AI, podejmuje decyzje w oparciu o obiektywne dane"
+- ✅ NeuralAI usuniety z ensemble voting (juz nie jest strategia 25%)
+- ✅ Ensemble wagi przebalansowane (EnterpriseML najwyzsza: 34%)
+- ✅ API endpoint `/api/neuron-ai/status` dziala
+- ✅ Megatron chat routing przez Skynet personality
+- ✅ Safety constraints aktywne (2% max risk, 12% drawdown block)
+- ✅ Bot handluje autonomicznie z centralnym mozgiem AI
