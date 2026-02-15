@@ -427,3 +427,41 @@ Kompletny redesign Enterprise Dashboard z oceny 4/10 do profesjonalnego poziomu.
 - ✅ Bot stabilny po restarcie — wszystkie moduly ladowane poprawnie
 - ✅ Zasada pro-tradera: NIGDY nie handluj przeciw wyzszym timeframe'om
 - ✅ 446 insertions, 24 deletions across 8 files
+
+---
+
+## Patch #23: NEURON AI - Autonomous Brain Override + Short Selling
+
+- **Data**: 2026-02-15
+- **Typ**: FEATURE + FIX (Critical)
+- **Commit**: (pending)
+
+### Problem:
+
+Bot sparalizowany w trendzie spadkowym - 176x NO CONSENSUS, 1340x HOLD consensus, tylko 2 trade'y caly dzien. 5 warstw blokujacych zidentyfikowanych:
+1. ML (enterprise_ml_system.js) - BUY-only lock when no position
+2. NeuralAI (adaptive_neural_engine.js) - HOLD when no position + high min confidence (0.35)
+3. Execution engine - cannot open SHORT positions (validation block)
+4. Ensemble voting - NO CONSENSUS threshold too high, no override mechanism
+5. Bot.js - QPM only wired for BUY
+
+### Rozwiazanie (Patch #23 + #23b):
+
+| Plik | Zmiana |
+|------|--------|
+| enterprise_ml_system.js | ML now generates SELL (SHORT entry) when signal < sellThreshold and no position. Removed BUY-only lock. |
+| daptive_neural_engine.js | NeuralAI returns SELL in TRENDING_DOWN/HIGH_VOLATILITY regime when no position. Min confidence lowered 0.35->0.15. Debug logs added. |
+| execution-engine.js | Removed SELL validation block. Added SHORT position opening with ATR-based SL/TP. Added SHORT Chandelier trailing + partial TP at 1.5x/2.5x ATR. |
+| ensemble-voting.js | (1) NEURON AI override for NO CONSENSUS when MTF |score|>=15 and aligned vote>=15%. (2) NEURON AI override for HOLD consensus when MTF |score|>=20 and ML agrees with MTF direction (conf>50%). |
+| ot.js | QPM wiring extended for SELL positions (BUY -> BUY or SELL). |
+
+### Wynik:
+
+-  ML generates SELL signal: SHORT ENTRY: signal=-0.403, confidence=0.849
+-  NEURON AI HOLD OVERRIDE fires: MTF BEARISH score=-86 + ML SELL conf=82.1%
+-  SHORT position opened: SHORT OPEN: 0.021853 BTC-USDT @ .00
+-  Risk management: SL: .35 (+1.5x ATR) | TP: .39 (-4x ATR)
+-  Quantum regime confirmed: VQC=TRENDING_DOWN(25%)
+-  All 5 files syntax-checked clean
+-  Bot now trades autonomously in bearish markets via SHORT positions
+-  NEURON AI acts as autonomous brain overriding conflicting ensemble decisions

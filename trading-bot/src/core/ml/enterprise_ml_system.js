@@ -73,7 +73,7 @@ class MinimalDeepRLAgent {
                 this.logger.info(`🔒 POSITION OPEN: ML will only consider SELL signals`);
             }
             else {
-                this.logger.info(`💰 NO POSITION: ML will only consider BUY signals`);
+                this.logger.info(`💰 NO POSITION: ML considers BUY or SHORT signals`);
             }
             // Advanced ML decision making with position awareness (BEFORE incrementing episodes!)
             const action = this.generateAction(features, hasOpenPosition);
@@ -497,15 +497,19 @@ class MinimalDeepRLAgent {
         this.logger.debug(`🎯 THRESHOLDS: buy=${buyThreshold.toFixed(2)}, sell=${sellThreshold.toFixed(2)}, minConf=${minConfidence.toFixed(2)}`);
         // 🔍 POSITION-AWARE DECISION LOGIC
         if (!hasOpenPosition) {
-            // NO POSITION: Only consider BUY signals
+            // PATCH #23: NEURON AI - Allow both BUY and SELL (SHORT) when no position
             if (signal > buyThreshold && confidence > minConfidence) {
                 actionType = 'BUY';
-                this.logger.debug(`📈 BUY SIGNAL (episode ${this.episodes}): signal=${signal.toFixed(3)}, confidence=${confidence.toFixed(3)}, RSI=${features.rsi_signal.toFixed(3)}`);
+                this.logger.debug(`BUY SIGNAL (episode ${this.episodes}): signal=${signal.toFixed(3)}, confidence=${confidence.toFixed(3)}, RSI=${features.rsi_signal.toFixed(3)}`);
+            }
+            else if (signal < sellThreshold && confidence > minConfidence) {
+                actionType = 'SELL';
+                this.logger.debug(`SHORT ENTRY (episode ${this.episodes}): signal=${signal.toFixed(3)}, confidence=${confidence.toFixed(3)}, RSI=${features.rsi_signal.toFixed(3)}`);
             }
             else {
                 actionType = 'HOLD';
                 if (this.episodes % 10 === 0) {
-                    this.logger.debug(`⏸️ HOLD (no position): signal=${signal.toFixed(3)} < threshold=${buyThreshold.toFixed(2)} OR confidence=${confidence.toFixed(3)} < ${minConfidence.toFixed(2)}`);
+                    this.logger.debug(`HOLD (no position): signal=${signal.toFixed(3)}, buy_thr=${buyThreshold.toFixed(2)}, sell_thr=${sellThreshold.toFixed(2)}, conf=${confidence.toFixed(3)}`);
                 }
             }
         }

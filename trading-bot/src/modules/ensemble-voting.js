@@ -164,8 +164,25 @@ class EnsembleVoting {
         }
 
         if (consensusPct < threshold) {
-            console.log('[ENSEMBLE] NO CONSENSUS: BUY=' + (votes.BUY*100).toFixed(1) + '%, SELL=' + (votes.SELL*100).toFixed(1) + '%, HOLD=' + (votes.HOLD*100).toFixed(1) + '% (need >' + (threshold*100).toFixed(0) + '%)');
-            return null;
+            // PATCH #23: NEURON AI OVERRIDE - when market direction is clear
+            if (mtfBias && Math.abs(mtfBias.score) >= 15) {
+                var neuronAction = mtfBias.direction === 'BULLISH' ? 'BUY' : 'SELL';
+                var neuronVote = votes[neuronAction] || 0;
+                var oppositeVote = votes[neuronAction === 'BUY' ? 'SELL' : 'BUY'] || 0;
+                
+                if (neuronVote >= 0.15 && neuronVote >= oppositeVote * 0.7) {
+                    console.log('[NEURON AI] OVERRIDE: Ja, NEURON AI, decyduje: ' + neuronAction + ' | MTF ' + mtfBias.direction + ' score=' + mtfBias.score);
+                    console.log('[NEURON AI] Trend potwierdzony D1+H4+H1 | ' + neuronAction + '=' + (neuronVote*100).toFixed(1) + '% vs opposing=' + (oppositeVote*100).toFixed(1) + '%');
+                    action = neuronAction;
+                    weightedConf = Math.max(neuronVote, 0.30) * (mtfBias.confidenceMultiplier || 1.0) * 0.85;
+                } else {
+                    console.log('[ENSEMBLE] NO CONSENSUS: BUY=' + (votes.BUY*100).toFixed(1) + '%, SELL=' + (votes.SELL*100).toFixed(1) + '%, HOLD=' + (votes.HOLD*100).toFixed(1) + '% | NEURON AI: insufficient alignment');
+                    return null;
+                }
+            } else {
+                console.log('[ENSEMBLE] NO CONSENSUS: BUY=' + (votes.BUY*100).toFixed(1) + '%, SELL=' + (votes.SELL*100).toFixed(1) + '%, HOLD=' + (votes.HOLD*100).toFixed(1) + '% (need >' + (threshold*100).toFixed(0) + '%)');
+                return null;
+            }
         }
 
         if (riskManager && !riskManager.checkOvertradingLimit()) {
@@ -217,6 +234,30 @@ class EnsembleVoting {
                 dynamicWeights: this.weightProvider ? true : false,
             },
         };
+        // PATCH #23b: NEURON AI Override for HOLD consensus when MTF strongly directional
+        if (action === 'HOLD' && mtfBias && Math.abs(mtfBias.score) >= 20) {
+            var mtfDir = mtfBias.direction === 'BULLISH' ? 'BUY' : 'SELL';
+            var mlFound = null;
+            for (var si = 0; si < Array.from(signals.values()).length; si++) {
+                var sv = Array.from(signals.values())[si];
+                var sn = Array.from(signals.keys())[si];
+                if (sn === 'EnterpriseML' && sv.action === mtfDir && sv.confidence > 0.5) {
+                    mlFound = sv;
+                }
+            }
+            if (mlFound) {
+                action = mtfDir;
+                var overrideConf = mlFound.confidence * (mtfBias.confidenceMultiplier || 1.0) * 0.80;
+                result.action = action;
+                result.confidence = Math.max(0.1, Math.min(0.95, overrideConf));
+                result.reasoning = 'NEURON AI Override: ' + mtfDir + ' (MTF score=' + mtfBias.score + ', ML conf=' + (mlFound.confidence*100).toFixed(1) + '%)';
+                console.log('[NEURON AI] HOLD OVERRIDE: MTF ' + mtfBias.direction + ' score=' + mtfBias.score + ' + ML ' + mtfDir + ' conf=' + (mlFound.confidence*100).toFixed(1) + '%');
+                console.log('[NEURON AI] Ja, NEURON AI, przejmuję kontrole: ' + mtfDir + ' | HOLD consensus odrzucony');
+                console.log('[ENSEMBLE] FINAL: ' + result.action + ' (conf: ' + (result.confidence*100).toFixed(1) + '%) | NEURON AI OVERRIDE');
+                return result;
+            }
+        }
+
         console.log('[ENSEMBLE] CONSENSUS: ' + action + ' (' + (consensusPct*100).toFixed(1) + '%, conf: ' + (finalConf*100).toFixed(1) + '%)' + (mtfBias ? ' | MTF: ' + (mtfBias.direction || '?') + ' score=' + (mtfBias.score || 0) : ''));
         return result;
     }

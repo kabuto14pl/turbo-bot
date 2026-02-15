@@ -1086,8 +1086,9 @@ class AdaptiveNeuralEngine {
                 action = 'BUY';
                 confidence = confidence * 0.85 * aiTrust; // Moderate in ranging
             } else if (regime === 'TRENDING_DOWN') {
-                action = 'HOLD'; // Don't buy against trend
-                confidence *= 0.5;
+                // PATCH #23: Allow cautious contrarian BUY with heavy penalty
+                action = 'BUY';
+                confidence = confidence * 0.35 * aiTrust;
             } else { // HIGH_VOLATILITY
                 action = 'BUY';
                 confidence = confidence * 0.7 * aiTrust; // Cautious in high vol
@@ -1102,13 +1103,27 @@ class AdaptiveNeuralEngine {
             } else if (regime === 'HIGH_VOLATILITY' && hasPosition) {
                 action = 'SELL';
                 confidence = confidence * 0.75 * aiTrust;
+            } else if (!hasPosition && regime === 'TRENDING_DOWN') {
+                // PATCH #23: NEURON AI - Open SHORT in confirmed downtrend
+                action = 'SELL';
+                confidence = Math.min(0.90, confidence * 1.05 * aiTrust);
+            } else if (!hasPosition && regime === 'HIGH_VOLATILITY') {
+                // PATCH #23: SHORT in high volatility downmove
+                action = 'SELL';
+                confidence = confidence * 0.65 * aiTrust;
             } else if (!hasPosition) {
-                action = 'HOLD'; // Don't sell what we don't have
+                action = 'HOLD'; // No clear regime for shorting
             }
         }
 
         // Minimum confidence filter
-        if (confidence < 0.35) action = 'HOLD';
+        // PATCH #23b: Lower minimum confidence for SHORT in strong trends
+        if (confidence < 0.15) action = 'HOLD';
+        if (action !== 'HOLD') {
+            console.log('[NEURAL AI] SIGNAL: ' + action + ' | conf=' + (confidence*100).toFixed(1) + '% | regime=' + regime + ' | dir=' + prediction.direction + ' | hasPos=' + hasPosition);
+        } else if (prediction.direction === 'DOWN' && !hasPosition) {
+            console.log('[NEURAL AI] FILTERED: conf=' + (confidence*100).toFixed(1) + '% < 15% | regime=' + regime + ' | aiTrust=' + aiTrust.toFixed(3));
+        }
 
         if (action === 'HOLD') return null;
 

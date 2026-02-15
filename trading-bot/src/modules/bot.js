@@ -702,7 +702,7 @@ class AutonomousTradingBot {
                         await this.exec.executeTradeSignal(consensus, this.dp);
 
                         // PATCH #19: Quantum Initial SL/TP
-                        if (consensus.action === 'BUY' && this.quantumPosMgr && this.quantumPosMgr.isReady
+                        if ((consensus.action === 'BUY' || consensus.action === 'SELL') && this.quantumPosMgr && this.quantumPosMgr.isReady
                             && this.pm.hasPosition(consensus.symbol)) {
                             try {
                                 const pos = this.pm.getPosition(consensus.symbol);

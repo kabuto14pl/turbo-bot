@@ -63,6 +63,54 @@ class ExecutionEngine {
                 // CHANDELIER TRAILING STOP-LOSS (ATR-based)
                 // Active only for LONG positions without QPM management.
                 // ============================================
+                // PATCH #23: SHORT trailing stop-loss
+                if (atr > 0 && !qpmManaged && isShort) {
+                    let newShortSL = pos.stopLoss;
+                    const shortProfit = pos.entryPrice - price;
+                    const shortAtrMult = atr > 0 ? shortProfit / atr : 0;
+                    
+                    if (shortAtrMult >= 1.0 && shortAtrMult < 1.5) {
+                        newShortSL = pos.entryPrice - pos.entryPrice * 0.003;
+                    } else if (shortAtrMult >= 1.5 && shortAtrMult < 2.0) {
+                        newShortSL = pos.entryPrice - 0.5 * atr;
+                    } else if (shortAtrMult >= 2.0 && shortAtrMult < 3.0) {
+                        newShortSL = pos.entryPrice - 1.0 * atr;
+                    }
+                    if (shortAtrMult >= 3.0 && pos._lowestPrice) {
+                        var chandelierShortSL = pos._lowestPrice + 1.5 * atr;
+                        var minChanShort = pos.entryPrice - 1.5 * atr;
+                        newShortSL = Math.min(chandelierShortSL, minChanShort);
+                    }
+                    
+                    if (newShortSL < pos.stopLoss) {
+                        var shortPhase = shortAtrMult >= 3.0 ? 'CHANDELIER' : shortAtrMult >= 2.0 ? 'LOCK_1x' : shortAtrMult >= 1.5 ? 'LOCK_0.5x' : 'BREAKEVEN';
+                        console.log('[SHORT TRAIL] ' + shortPhase + ' ' + shortAtrMult.toFixed(1) + 'x ATR | SL: $' + pos.stopLoss.toFixed(2) + ' -> $' + newShortSL.toFixed(2));
+                        this.pm.updateStopLoss(sym, newShortSL);
+                    }
+                    
+                    if (shortAtrMult >= 1.5 && !pos._partialTp1Done && pos.quantity > 0) {
+                        var closeQtyS1 = pos.quantity * 0.25;
+                        if (closeQtyS1 > 0.000001) {
+                            var tradeS1 = this.pm.closePosition(sym, price, closeQtyS1, 'SHORT_TP_L1', 'PARTIAL_TP');
+                            if (tradeS1) {
+                                pos._partialTp1Done = true;
+                                console.log('[SHORT TP L1] 25% @ ' + shortAtrMult.toFixed(1) + 'x ATR | PnL: $' + tradeS1.pnl.toFixed(2));
+                                if (this.ml) this.ml.learnFromTrade(tradeS1.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
+                            }
+                        }
+                    }
+                    if (shortAtrMult >= 2.5 && !pos._partialTp2Done && pos.quantity > 0) {
+                        var closeQtyS2 = pos.quantity * 0.333;
+                        if (closeQtyS2 > 0.000001) {
+                            var tradeS2 = this.pm.closePosition(sym, price, closeQtyS2, 'SHORT_TP_L2', 'PARTIAL_TP');
+                            if (tradeS2) {
+                                pos._partialTp2Done = true;
+                                console.log('[SHORT TP L2] 25% @ ' + shortAtrMult.toFixed(1) + 'x ATR | PnL: $' + tradeS2.pnl.toFixed(2));
+                                if (this.ml) this.ml.learnFromTrade(tradeS2.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
+                            }
+                        }
+                    }
+                }
                 if (atr > 0 && !qpmManaged && !isShort) {
                     let newSL = pos.stopLoss;
 
@@ -289,7 +337,39 @@ class ExecutionEngine {
                 }
             } else if (signal.action === 'SELL') {
                 const pos = this.pm.getPosition(signal.symbol);
-                if (!pos) { console.error(`[SELL] No position for ${signal.symbol}`); return; }
+                if (!pos) {
+                    // PATCH #23: NEURON AI - Open SHORT position
+                    let shortSL, shortTP;
+                    if (atrValue && atrValue > 0) {
+                        shortSL = signal.price + 1.5 * atrValue;
+                        shortTP = signal.price - 4.0 * atrValue;
+                    } else {
+                        shortSL = signal.price * 1.015;
+                        shortTP = signal.price * 0.96;
+                    }
+                    this.pm.openPosition(signal.symbol, {
+                        entryPrice: signal.price, quantity,
+                        stopLoss: shortSL, takeProfit: shortTP,
+                        atrAtEntry: atrValue || 0, side: 'SHORT'
+                    });
+                    console.log('[NEURON AI] SHORT OPEN: ' + quantity.toFixed(6) + ' ' + signal.symbol + ' @ $' + signal.price.toFixed(2));
+                    console.log('[RISK] SL: $' + shortSL.toFixed(2) + ' (+' + (atrValue ? '1.5x ATR' : '1.5%') + ') | TP: $' + shortTP.toFixed(2) + ' (-' + (atrValue ? '4x ATR' : '4%') + ')');
+                    trade.pnl = -fees;
+                    trade.entryPrice = signal.price;
+                    trade.action = 'SHORT';
+                    if (this.advancedPositionManager) {
+                        try {
+                            const pid = signal.symbol + '-SHORT-' + Date.now();
+                            await this.advancedPositionManager.openPosition(pid, signal.symbol, 'short', signal.price, quantity, signal.strategy, 2.0);
+                        } catch(eApmShort) { /* APM non-critical */ }
+                    }
+                    this.pm.trades.push(trade);
+                    if (this.pm.trades.length > 1000) this.pm.trades = this.pm.trades.slice(-1000);
+                    this.pm.balance.totalValue = this.pm.balance.usdtBalance + Math.abs(this.pm.balance.btcBalance) * signal.price;
+                    this.pm.portfolio.totalValue = this.pm.balance.totalValue;
+                    console.log('[EXEC DONE] SHORT ' + trade.quantity.toFixed(4) + ' ' + trade.symbol + ' @ $' + trade.price.toFixed(2) + ' | Fees: $' + fees.toFixed(2));
+                    return;
+                }
                 const result = this.pm.closePosition(signal.symbol, signal.price, null, 'SELL', signal.strategy);
                 if (result) {
                     trade.pnl = result.pnl;
@@ -340,7 +420,7 @@ class ExecutionEngine {
     _validateSignal(signal) {
         if (!signal || !signal.action || !signal.price) return { valid: false, reason: 'Invalid signal' };
         if (signal.action === 'BUY' && this.pm.hasPosition(signal.symbol)) return { valid: false, reason: 'Position already open' };
-        if (signal.action === 'SELL' && !this.pm.hasPosition(signal.symbol)) return { valid: false, reason: 'No position to sell' };
+        // PATCH #23: SELL without position = open SHORT (old validation removed)
         if (signal.action === 'BUY') {
             const maxPos = this.pm.getPortfolio().totalValue * 0.15;
             if (signal.price * (signal.quantity || 0.001) > maxPos) return { valid: false, reason: 'Exceeds max position' };
