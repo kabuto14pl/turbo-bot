@@ -47,7 +47,7 @@ class EnsembleVoting {
      * @param {object} riskManager - for overtrading check
      * @returns {object|null} consensus signal or null
      */
-    vote(signals, riskManager) {
+    vote(signals, riskManager, mtfBias) {
         // PATCH #15: Update weights from Neural AI Thompson Sampling before voting
         if (this.weightProvider) {
             try {
@@ -126,6 +126,25 @@ class EnsembleVoting {
         }
         const sourcesAgree = counts[action] || 0;
 
+        // PATCH #22: MTF Confluence adjustment
+        if (mtfBias && action !== 'HOLD') {
+            var mtfDir = mtfBias.direction;
+            var mtfMul = mtfBias.confidenceMultiplier || 1.0;
+            var aligned = (action === 'BUY' && mtfDir === 'BULLISH') || (action === 'SELL' && mtfDir === 'BEARISH');
+            var counter = (action === 'BUY' && mtfDir === 'BEARISH') || (action === 'SELL' && mtfDir === 'BULLISH');
+
+            if (counter && mtfBias.confluence && mtfBias.confluence.allAligned) {
+                console.log('   [MTF] BLOCKED: ' + action + ' against ALL-' + mtfDir + ' HTF confluence');
+                return null;
+            } else if (counter) {
+                weightedConf *= 0.6;
+                console.log('   [MTF] PENALTY: ' + action + ' vs ' + mtfDir + ' bias (conf *0.6)');
+            } else if (aligned) {
+                weightedConf *= mtfMul;
+                console.log('   [MTF] BOOST: ' + action + ' aligned with ' + mtfDir + ' MTF (conf *' + mtfMul.toFixed(2) + ')');
+            }
+        }
+
         let threshold;
         if (hasConflict) {
             threshold = 0.50;
@@ -198,7 +217,7 @@ class EnsembleVoting {
                 dynamicWeights: this.weightProvider ? true : false,
             },
         };
-        console.log('[ENSEMBLE] CONSENSUS: ' + action + ' (' + (consensusPct*100).toFixed(1) + '%, conf: ' + (finalConf*100).toFixed(1) + '%)');
+        console.log('[ENSEMBLE] CONSENSUS: ' + action + ' (' + (consensusPct*100).toFixed(1) + '%, conf: ' + (finalConf*100).toFixed(1) + '%)' + (mtfBias ? ' | MTF: ' + (mtfBias.direction || '?') + ' score=' + (mtfBias.score || 0) : ''));
         return result;
     }
 }

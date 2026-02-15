@@ -11,6 +11,7 @@
  * - AdvancedAdaptive: requires minimum 3 confirmations (was 2)
  */
 const ind = require('./indicators');
+const { MTFConfluence } = require('./mtf-confluence');
 
 class StrategyRunner {
     /**
@@ -24,10 +25,12 @@ class StrategyRunner {
         this.dp = dataPipeline;
         this.strategies = new Map();
         this.lastSignals = new Map();
+        this.mtf = new MTFConfluence();
     }
 
     getStrategies() { return this.strategies; }
     getLastSignals() { return this.lastSignals; }
+    getMTFConfluence() { return this.mtf; }
 
     /**
      * Initialize all 5 strategies
@@ -63,28 +66,32 @@ class StrategyRunner {
                 if (cur > bb.upper) bear++;
                 // Volume confirmation
                 if (vp > 1.2) { if (bull > bear) bull++; if (bear > bull) bear++; }
-                // H1 Multi-TF trend filter
-                let h1Bull = false, h1Bear = false;
+                // PATCH #22: Full MTF Confluence Analysis (D1+H4+H1)
+                let mtfBias = null;
                 try {
-                    const h1 = this.dp.getCachedTimeframeData().h1;
-                    if (h1 && h1.length >= 50) {
-                        const h1P = h1.map(c => c.close);
-                        const h1E20 = ind.calculateEMA(h1P, 20), h1E50 = ind.calculateEMA(h1P, 50);
-                        const h1L = h1P[h1P.length - 1];
-                        h1Bull = h1L > h1E20 && h1E20 > h1E50;
-                        h1Bear = h1L < h1E20 && h1E20 < h1E50;
+                    const tfData = this.dp.getCachedTimeframeData();
+                    if (tfData && (tfData.h1 || tfData.h4 || tfData.d1)) {
+                        mtfBias = this.mtf.computeBias(tfData);
                     }
                 } catch(e) {}
                 let action = 'HOLD', conf = 0.5;
                 // PATCH #14: require 3+ confirmations (was 2) for stronger signals
                 if (bull >= 3 && bull > bear) {
                     action = 'BUY'; conf = Math.min(0.95, 0.55 + bull * 0.1);
-                    if (h1Bull) conf = Math.min(0.95, conf + 0.05);
-                    else if (h1Bear) { conf *= 0.7; action = 'HOLD'; }
+                    // PATCH #22: MTF Confluence filter for BUY
+                    if (mtfBias) {
+                        const mtfFilter = this.mtf.filterSignal('BUY', conf);
+                        if (!mtfFilter.allowed) { action = 'HOLD'; conf = 0.3; }
+                        else { conf = mtfFilter.adjustedConfidence; }
+                    }
                 } else if (bear >= 3 && bear > bull) {
                     action = 'SELL'; conf = Math.min(0.95, 0.55 + bear * 0.1);
-                    if (h1Bear) conf = Math.min(0.95, conf + 0.05);
-                    else if (h1Bull) { conf *= 0.7; action = 'HOLD'; }
+                    // PATCH #22: MTF Confluence filter for SELL
+                    if (mtfBias) {
+                        const mtfFilter = this.mtf.filterSignal('SELL', conf);
+                        if (!mtfFilter.allowed) { action = 'HOLD'; conf = 0.3; }
+                        else { conf = mtfFilter.adjustedConfidence; }
+                    }
                 }
                 return { symbol: this.config.symbol, action, confidence: conf, price: cur,
                     timestamp: Date.now(), strategy: 'AdvancedAdaptive',
@@ -135,6 +142,12 @@ class StrategyRunner {
                 else if (rsi > 55 && rsi < rsiMA && rsiMA > 60 && downtrend) {
                     action = 'SELL'; conf = 0.6;
                 }
+                // PATCH #22: MTF Confluence filter for RSITurbo
+                if (action !== 'HOLD' && this.mtf.lastBias) {
+                    const mtfFilter = this.mtf.filterSignal(action, conf);
+                    if (!mtfFilter.allowed) { action = 'HOLD'; conf = 0.3; }
+                    else { conf = mtfFilter.adjustedConfidence; }
+                }
                 return { symbol: this.config.symbol, action, confidence: conf, price: cur,
                     timestamp: Date.now(), strategy: 'RSITurbo',
                     riskLevel: this.risk.calculateRiskLevel(conf),
@@ -151,6 +164,7 @@ class StrategyRunner {
         if (stStrategy) {
             this.strategies.set('SuperTrend', { name: 'SuperTrend', analyze: async (md) => {
                 const bs = this.dp.convertMarketDataToBotState(md, this._getPortfolioData());
+                bs.mtfBias = this.mtf.getLastBias();
                 const sigs = await stStrategy.run(bs);
                 if (sigs.length === 0) {
                     // PATCH #14: Return HOLD instead of noisy fallback signal at 0.35 confidence
@@ -164,6 +178,7 @@ class StrategyRunner {
         if (macStrategy) {
             this.strategies.set('MACrossover', { name: 'MACrossover', analyze: async (md) => {
                 const bs = this.dp.convertMarketDataToBotState(md, this._getPortfolioData());
+                bs.mtfBias = this.mtf.getLastBias();
                 const sigs = await macStrategy.run(bs);
                 if (sigs.length === 0) {
                     // PATCH #14: Return HOLD instead of noisy fallback signal at 0.32 confidence
@@ -176,6 +191,7 @@ class StrategyRunner {
         if (mpStrategy) {
             this.strategies.set('MomentumPro', { name: 'MomentumPro', analyze: async (md) => {
                 const bs = this.dp.convertMarketDataToBotState(md, this._getPortfolioData());
+                bs.mtfBias = this.mtf.getLastBias();
                 const sigs = await mpStrategy.run(bs);
                 if (sigs.length === 0) return this._hold(md);
                 return this.dp.convertStrategySignalToTradingSignal(sigs[0], md, this.risk);

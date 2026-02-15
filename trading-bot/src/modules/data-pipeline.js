@@ -53,7 +53,7 @@ class DataPipeline {
                                 const multi = await this.fetchMultipleTimeframes(this.config.symbol);
                                 this._wsOhlcCache = multi.m15;
                                 this._wsOhlcCacheTime = Date.now();
-                                this.cachedTimeframeData = { m5: multi.m5, m15: multi.m15, m30: multi.m30, h1: multi.h1, h4: multi.h4 };
+                                this.cachedTimeframeData = { m5: multi.m5, m15: multi.m15, m30: multi.m30, h1: multi.h1, h4: multi.h4, d1: multi.d1 };
                             } catch (e) { console.warn('[WS HYBRID] Cache refresh failed:', e.message); }
                         }
                         hybrid = this._wsOhlcCache ? [...this._wsOhlcCache] : null;
@@ -76,10 +76,10 @@ class DataPipeline {
         if (this.liveDataEnabled && this.okxClient) {
             try {
                 const multi = await this.fetchMultipleTimeframes(this.config.symbol);
-                this.cachedTimeframeData = { m5: multi.m5, m15: multi.m15, m30: multi.m30, h1: multi.h1, h4: multi.h4 };
+                this.cachedTimeframeData = { m5: multi.m5, m15: multi.m15, m30: multi.m30, h1: multi.h1, h4: multi.h4, d1: multi.d1 };
                 const lat = multi.m15[multi.m15.length - 1];
                 console.log('[LIVE DATA] ' + this.config.symbol + ': $' + lat.close.toFixed(2) +
-                    ' | 5m:' + multi.m5.length + ' 15m:' + multi.m15.length + ' 1h:' + multi.h1.length + ' 4h:' + multi.h4.length);
+                    ' | 5m:' + multi.m5.length + ' 15m:' + multi.m15.length + ' 1h:' + multi.h1.length + ' 4h:' + multi.h4.length + ' d1:' + multi.d1.length);
                 return multi.m15;
             } catch (e) { console.error('[OKX] Fetch failed:', e.message); }
         }
@@ -89,18 +89,19 @@ class DataPipeline {
 
     async fetchMultipleTimeframes(symbol) {
         if (!this.okxClient) throw new Error('OKX client not initialized');
-        const [c5, c15, c30, c1h, c4h] = await Promise.all([
+        const [c5, c15, c30, c1h, c4h, c1d] = await Promise.all([
             this.okxClient.getCandles(symbol, '5m', 200),
             this.okxClient.getCandles(symbol, '15m', 200),
             this.okxClient.getCandles(symbol, '30m', 100),
             this.okxClient.getCandles(symbol, '1H', 100),
             this.okxClient.getCandles(symbol, '4H', 50),
+            this.okxClient.getCandles(symbol, '1D', 30),
         ]);
         const conv = (candles, tf) => candles.map(c => ({
             symbol, timestamp: c.timestamp, open: c.open, high: c.high,
             low: c.low, close: c.close, volume: c.volume, timeframe: tf,
         }));
-        return { m5: conv(c5,'5m'), m15: conv(c15,'15m'), m30: conv(c30,'30m'), h1: conv(c1h,'1h'), h4: conv(c4h,'4h') };
+        return { m5: conv(c5,'5m'), m15: conv(c15,'15m'), m30: conv(c30,'30m'), h1: conv(c1h,'1h'), h4: conv(c4h,'4h'), d1: conv(c1d,'1d') };
     }
 
     generateMockMarketData() {
@@ -181,6 +182,7 @@ class DataPipeline {
 
         const h1 = calcTFIndicators(this.cachedTimeframeData.h1);
         const h4 = calcTFIndicators(this.cachedTimeframeData.h4);
+        const d1 = calcTFIndicators(this.cachedTimeframeData.d1);
 
         // Fallback logic: h1 ??? m15, h4 ??? h1 ??? m15
         const m15Ind = {
@@ -190,24 +192,28 @@ class DataPipeline {
         };
         const m15Prices = { time: latest.timestamp, open: latest.open, high: latest.high, low: latest.low, close: latest.close, volume: latest.volume };
 
+        const d1Ind = d1 ? d1.indicators : (h4 ? h4.indicators : (h1 ? h1.indicators : m15Ind));
         const h1Ind = h1 ? h1.indicators : m15Ind;
+        const d1Prices = d1 ? d1.prices : (h4 ? h4.prices : (h1 ? h1.prices : m15Prices));
         const h1Prices = h1 ? h1.prices : m15Prices;
         const h4Ind = h4 ? h4.indicators : (h1 ? h1.indicators : m15Ind);
         const h4Prices = h4 ? h4.prices : (h1 ? h1.prices : m15Prices);
 
         if (!h1) console.warn('[BOTSTATE FALLBACK] h1 missing, using m15');
         if (!h4) console.warn('[BOTSTATE FALLBACK] h4 missing, using ' + (h1 ? 'h1' : 'm15'));
+        if (!d1) console.warn('[BOTSTATE FALLBACK] d1 missing, using ' + (h4 ? 'h4' : (h1 ? 'h1' : 'm15')));
 
         return {
             portfolio: portfolioData || { cash: 0, btc: 0, totalValue: 0, unrealizedPnL: 0, realizedPnL: 0, averageEntryPrice: latest.close },
             timestamp: latest.timestamp, equity: portfolioData ? portfolioData.totalValue : 0,
-            prices: { m15: m15Prices, h1: h1Prices, h4: h4Prices, d1: null },
-            indicators: { m15: m15Ind, h1: h1Ind, h4: h4Ind, d1: null },
+            prices: { m15: m15Prices, h1: h1Prices, h4: h4Prices, d1: d1Prices },
+            indicators: { m15: m15Ind, h1: h1Ind, h4: h4Ind, d1: d1Ind },
             positions: [], marketData: { symbol: latest.symbol, timestamp: latest.timestamp,
                 open: latest.open, high: latest.high, low: latest.low, close: latest.close, volume: latest.volume, interval: 'm15', lastPrice: latest.close },  // PATCH #21: strategies use lastPrice
             regime: { name: 'NORMAL', volatility: Math.min(1.0, (atr / latest.close) * 10),
                 trend: Math.max(-1, Math.min(1, (ema9 - ema21) / Math.max(1, ema21) * 100)) },
-            marketContext: { symbol: latest.symbol, timeframe: 'm15' }
+            marketContext: { symbol: latest.symbol, timeframe: 'm15' },
+            mtfBias: null
         };
     }
 

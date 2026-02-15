@@ -444,6 +444,19 @@ class AutonomousTradingBot {
                 } catch(e) { console.warn('[WARN] Hybrid pre-process:', e.message); }
             }
 
+            // 4. PATCH #22: Compute MTF bias before strategy run
+            try {
+                var tfData = this.dp.getCachedTimeframeData();
+                if (tfData && (tfData.h1 || tfData.h4 || tfData.d1)) {
+                    var mtfModule = this.strategies.getMTFConfluence();
+                    var mtfBias = mtfModule.computeBias(tfData);
+                    if (this._cycleCount % 10 === 0) {
+                        console.log('[MTF] Bias: ' + mtfBias.direction + ' (score=' + mtfBias.score + ', perm=' + mtfBias.tradePermission + ', reason=' + mtfBias.reason + ')');
+                        console.log('[MTF] D1=' + mtfBias.timeframes.d1.direction + '(' + mtfBias.timeframes.d1.strength + ') H4=' + mtfBias.timeframes.h4.direction + '(' + mtfBias.timeframes.h4.strength + ') H1=' + mtfBias.timeframes.h1.direction + '(' + mtfBias.timeframes.h1.strength + ')');
+                    }
+                }
+            } catch(e) { console.warn('[MTF] Bias computation failed:', e.message); }
+
             // 4. Run all strategies
             const allSignals = await this.strategies.runAll(history);
 
@@ -625,7 +638,7 @@ class AutonomousTradingBot {
             // 6. Ensemble voting (with dynamic Thompson Sampling weights)
             let consensus = null;
             if (allSignals.size > 0) {
-                consensus = this.ensemble.vote(allSignals, this.rm);
+                consensus = this.ensemble.vote(allSignals, this.rm, this.strategies.getMTFConfluence ? this.strategies.getMTFConfluence().getLastBias() : null);
                 // PATCH #21: Log HOLD/no-consensus to Megatron too
                 if (!consensus || consensus.action === 'HOLD') {
                     if (this.megatron && this._cycleCount % 5 === 0) {

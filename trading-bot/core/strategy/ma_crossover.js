@@ -119,6 +119,25 @@ class MACrossoverStrategy extends base_strategy_1.BaseStrategy {
                 }));
             }
         }
+        // PATCH #22: MTF Confluence Filter
+        if (signals.length > 0 && state.mtfBias) {
+            var bias = state.mtfBias;
+            var filtered = [];
+            for (var si = 0; si < signals.length; si++) {
+                var sig = signals[si];
+                if (sig.type === 'ENTER_LONG') {
+                    if (bias.tradePermission === 'SHORT_ONLY') continue;
+                    else if (bias.tradePermission === 'PREFER_SHORT' || bias.tradePermission === 'CAUTION') sig.confidence *= bias.confidenceMultiplier;
+                    else if (bias.tradePermission === 'LONG_ONLY' || bias.tradePermission === 'PREFER_LONG') sig.confidence = Math.min(0.95, sig.confidence * bias.confidenceMultiplier);
+                } else if (sig.type === 'ENTER_SHORT') {
+                    if (bias.tradePermission === 'LONG_ONLY') continue;
+                    else if (bias.tradePermission === 'PREFER_LONG' || bias.tradePermission === 'CAUTION') sig.confidence *= bias.confidenceMultiplier;
+                    else if (bias.tradePermission === 'SHORT_ONLY' || bias.tradePermission === 'PREFER_SHORT') sig.confidence = Math.min(0.95, sig.confidence * bias.confidenceMultiplier);
+                }
+                if (sig.type.startsWith('EXIT') || sig.confidence > 0.2) filtered.push(sig);
+            }
+            return filtered;
+        }
         return signals;
     }
 }
