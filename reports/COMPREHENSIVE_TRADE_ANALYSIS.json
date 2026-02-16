@@ -1,0 +1,1353 @@
+{
+  "metadata": {
+    "generated_at": "2026-02-16T15:04:45.266603Z",
+    "bot_version": "6.0.0-ENTERPRISE-MODULAR",
+    "bot_uptime_seconds": 42488,
+    "data_source": "bot_state.json + API",
+    "raw_trade_count": 78,
+    "deduped_trade_count": 71,
+    "round_trip_count": 21,
+    "complete_trade_count": 21
+  },
+  "section_1_trade_data": [
+    {
+      "trade_id": 1,
+      "direction": "LONG",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-13 14:10:52",
+      "exit_time": "2026-02-13 14:40:42",
+      "entry_price": 67275,
+      "avg_exit_price": 67225.1,
+      "quantity_btc": 0.02229654,
+      "position_value_usd": 1500.0,
+      "duration_minutes": 29.8,
+      "gross_pnl": -1.1126,
+      "net_pnl": -2.6115,
+      "total_fees": 2.9989,
+      "return_pct": -0.0742,
+      "result": "LOSS",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "STOP_LOSS",
+      "exit_count": 1,
+      "has_stop_loss": true,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 2,
+      "direction": "LONG",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-13 14:41:12",
+      "exit_time": "2026-02-13 14:48:24",
+      "entry_price": 67071.9,
+      "avg_exit_price": 67779.55,
+      "quantity_btc": 0.02235487,
+      "position_value_usd": 1499.38,
+      "duration_minutes": 7.2,
+      "gross_pnl": 15.8194,
+      "net_pnl": 14.3042,
+      "total_fees": 3.0146,
+      "return_pct": 1.0551,
+      "result": "WIN",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "PARTIAL_TP_1.5ATR, TAKE_PROFIT",
+      "exit_count": 2,
+      "has_stop_loss": false,
+      "has_take_profit": true,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 3,
+      "direction": "LONG",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-13 14:48:54",
+      "exit_time": "2026-02-13 14:58:28",
+      "entry_price": 67959,
+      "avg_exit_price": 65250.42,
+      "quantity_btc": 0.02209132,
+      "position_value_usd": 1501.3,
+      "duration_minutes": 9.6,
+      "gross_pnl": -59.8361,
+      "net_pnl": -61.2776,
+      "total_fees": 2.9428,
+      "return_pct": -3.9856,
+      "result": "LOSS",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "STOP_LOSS",
+      "exit_count": 1,
+      "has_stop_loss": true,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 4,
+      "direction": "LONG",
+      "symbol": "BTCUSDT",
+      "entry_time": "2026-02-13 15:12:21",
+      "exit_time": "2026-02-13 15:45:33",
+      "entry_price": 68527.3,
+      "avg_exit_price": 68956.5,
+      "quantity_btc": 0.02190483,
+      "position_value_usd": 1501.08,
+      "duration_minutes": 33.2,
+      "gross_pnl": 9.4016,
+      "net_pnl": 7.8911,
+      "total_fees": 3.0116,
+      "return_pct": 0.6263,
+      "result": "WIN",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "PARTIAL_TP, STOP_LOSS",
+      "exit_count": 2,
+      "has_stop_loss": true,
+      "has_take_profit": true,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 5,
+      "direction": "LONG",
+      "symbol": "BTCUSDT",
+      "entry_time": "2026-02-13 15:46:03",
+      "exit_time": "2026-02-13 17:04:38",
+      "entry_price": 68640.1,
+      "avg_exit_price": 69100.35,
+      "quantity_btc": 0.02173492,
+      "position_value_usd": 1491.89,
+      "duration_minutes": 78.6,
+      "gross_pnl": 10.0035,
+      "net_pnl": 8.5016,
+      "total_fees": 2.9938,
+      "return_pct": 0.6705,
+      "result": "WIN",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "PARTIAL_TP, STOP_LOSS",
+      "exit_count": 2,
+      "has_stop_loss": true,
+      "has_take_profit": true,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 6,
+      "direction": "LONG",
+      "symbol": "BTCUSDT",
+      "entry_time": "2026-02-13 17:05:08",
+      "exit_time": "2026-02-13 19:42:08",
+      "entry_price": 68889.9,
+      "avg_exit_price": 68958.5,
+      "quantity_btc": 0.02167329,
+      "position_value_usd": 1493.07,
+      "duration_minutes": 157.0,
+      "gross_pnl": 1.4868,
+      "net_pnl": -0.0078,
+      "total_fees": 2.9876,
+      "return_pct": 0.0996,
+      "result": "LOSS",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "STOP_LOSS",
+      "exit_count": 1,
+      "has_stop_loss": true,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 7,
+      "direction": "LONG",
+      "symbol": "BTCUSDT",
+      "entry_time": "2026-02-13 20:00:17",
+      "exit_time": "2026-02-14 07:45:23",
+      "entry_price": 68910.4,
+      "avg_exit_price": 68895.47,
+      "quantity_btc": 0.02168535,
+      "position_value_usd": 1494.35,
+      "duration_minutes": 705.1,
+      "gross_pnl": -0.3237,
+      "net_pnl": -1.8177,
+      "total_fees": 2.9884,
+      "return_pct": -0.0217,
+      "result": "LOSS",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "QuantumPosMgr, STOP_LOSS",
+      "exit_count": 2,
+      "has_stop_loss": true,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 8,
+      "direction": "LONG",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-14 08:00:30",
+      "exit_time": "2026-02-14 08:02:04",
+      "entry_price": 69224,
+      "avg_exit_price": 69385.7,
+      "quantity_btc": 0.02158709,
+      "position_value_usd": 1494.34,
+      "duration_minutes": 1.6,
+      "gross_pnl": 3.4906,
+      "net_pnl": 1.9928,
+      "total_fees": 2.9922,
+      "return_pct": 0.2336,
+      "result": "WIN",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "PARTIAL_TP, STOP_LOSS",
+      "exit_count": 2,
+      "has_stop_loss": true,
+      "has_take_profit": true,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 9,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-15 20:20:54",
+      "exit_time": "2026-02-15 20:21:56",
+      "entry_price": 68374.6,
+      "avg_exit_price": 68399.4,
+      "quantity_btc": 0.02185128,
+      "position_value_usd": 1494.07,
+      "duration_minutes": 1.0,
+      "gross_pnl": -1.0838,
+      "net_pnl": -4.0731,
+      "total_fees": 4.4831,
+      "return_pct": -0.0363,
+      "result": "LOSS",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "EnsembleVoting, EnsembleVoting",
+      "exit_count": 2,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 10,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-15 20:25:10",
+      "exit_time": "2026-02-15 20:26:43",
+      "entry_price": 68376,
+      "avg_exit_price": 68396.8,
+      "quantity_btc": 0.02185311,
+      "position_value_usd": 1494.23,
+      "duration_minutes": 1.6,
+      "gross_pnl": -0.4545,
+      "net_pnl": -1.9492,
+      "total_fees": 2.9889,
+      "return_pct": -0.0304,
+      "result": "LOSS",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "EnsembleVoting",
+      "exit_count": 1,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 11,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-15 20:30:15",
+      "exit_time": "2026-02-15 20:31:48",
+      "entry_price": 68467.9,
+      "avg_exit_price": 68436.1,
+      "quantity_btc": 0.01091075,
+      "position_value_usd": 747.04,
+      "duration_minutes": 1.6,
+      "gross_pnl": 0.347,
+      "net_pnl": -0.3997,
+      "total_fees": 1.4937,
+      "return_pct": 0.0464,
+      "result": "LOSS",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "EnsembleVoting",
+      "exit_count": 1,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 12,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-15 20:35:20",
+      "exit_time": "2026-02-15 20:36:22",
+      "entry_price": 68501.9,
+      "avg_exit_price": 68536.8,
+      "quantity_btc": 0.01090414,
+      "position_value_usd": 746.95,
+      "duration_minutes": 1.0,
+      "gross_pnl": -0.3806,
+      "net_pnl": -1.1279,
+      "total_fees": 1.4943,
+      "return_pct": -0.0509,
+      "result": "LOSS",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "EnsembleVoting",
+      "exit_count": 1,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 13,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-15 20:40:24",
+      "exit_time": "2026-02-15 20:40:56",
+      "entry_price": 68503.6,
+      "avg_exit_price": 68495.6,
+      "quantity_btc": 0.01090346,
+      "position_value_usd": 746.93,
+      "duration_minutes": 0.5,
+      "gross_pnl": 0.1745,
+      "net_pnl": -1.3192,
+      "total_fees": 2.2407,
+      "return_pct": 0.0117,
+      "result": "LOSS",
+      "entry_strategy": "EnsembleVoting",
+      "exit_strategies": "EnsembleVoting, EnsembleVoting",
+      "exit_count": 2,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 14,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-16 00:45:26",
+      "exit_time": "2026-02-16 03:16:14",
+      "entry_price": 68725.4,
+      "avg_exit_price": 68399.0,
+      "quantity_btc": 0.01086737,
+      "position_value_usd": 746.86,
+      "duration_minutes": 150.8,
+      "gross_pnl": 3.5471,
+      "net_pnl": 2.8038,
+      "total_fees": 1.4902,
+      "return_pct": 0.4749,
+      "result": "WIN",
+      "entry_strategy": "NeuronAI",
+      "exit_strategies": "QuantumPosMgr, NeuronAI",
+      "exit_count": 2,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 15,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-16 03:21:17",
+      "exit_time": "2026-02-16 03:22:19",
+      "entry_price": 68335.7,
+      "avg_exit_price": 68318.1,
+      "quantity_btc": 0.02184926,
+      "position_value_usd": 1493.08,
+      "duration_minutes": 1.0,
+      "gross_pnl": 0.3845,
+      "net_pnl": -1.1082,
+      "total_fees": 2.9858,
+      "return_pct": 0.0258,
+      "result": "LOSS",
+      "entry_strategy": "NeuronAI",
+      "exit_strategies": "NeuronAI",
+      "exit_count": 1,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 16,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-16 03:26:22",
+      "exit_time": "2026-02-16 03:26:54",
+      "entry_price": 68261.7,
+      "avg_exit_price": 68191.0,
+      "quantity_btc": 0.02186882,
+      "position_value_usd": 1492.8,
+      "duration_minutes": 0.5,
+      "gross_pnl": 3.0923,
+      "net_pnl": 0.1097,
+      "total_fees": 4.4769,
+      "return_pct": 0.1036,
+      "result": "WIN",
+      "entry_strategy": "NeuronAI",
+      "exit_strategies": "NeuronAI, NeuronAI",
+      "exit_count": 2,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 17,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-16 03:30:26",
+      "exit_time": "2026-02-16 03:31:59",
+      "entry_price": 68217.3,
+      "avg_exit_price": 68162.7,
+      "quantity_btc": 0.02187638,
+      "position_value_usd": 1492.35,
+      "duration_minutes": 1.6,
+      "gross_pnl": 1.1945,
+      "net_pnl": -0.2967,
+      "total_fees": 2.9835,
+      "return_pct": 0.08,
+      "result": "LOSS",
+      "entry_strategy": "NeuronAI",
+      "exit_strategies": "NeuronAI",
+      "exit_count": 1,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 18,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-16 03:35:32",
+      "exit_time": "2026-02-16 03:36:34",
+      "entry_price": 68221,
+      "avg_exit_price": 68228.6,
+      "quantity_btc": 0.02186928,
+      "position_value_usd": 1491.94,
+      "duration_minutes": 1.0,
+      "gross_pnl": -0.3324,
+      "net_pnl": -3.3166,
+      "total_fees": 4.476,
+      "return_pct": -0.0111,
+      "result": "LOSS",
+      "entry_strategy": "NeuronAI",
+      "exit_strategies": "NeuronAI, NeuronAI",
+      "exit_count": 2,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 19,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-16 09:40:28",
+      "exit_time": "2026-02-16 11:23:11",
+      "entry_price": 69058.3,
+      "avg_exit_price": 68943.94,
+      "quantity_btc": 0.02160125,
+      "position_value_usd": 1491.75,
+      "duration_minutes": 102.7,
+      "gross_pnl": 24.722,
+      "net_pnl": 10.2006,
+      "total_fees": 16.396,
+      "return_pct": 0.1656,
+      "result": "WIN",
+      "entry_strategy": "NeuronAI",
+      "exit_strategies": "NeuronAI, NeuronAI, NeuronAI, NeuronAI, NeuronAI, NeuronAI, NeuronAI, NeuronAI, NeuronAI, QuantumPosMgr, QuantumPosMgr, QuantumPosMgr, NeuronAI",
+      "exit_count": 13,
+      "has_stop_loss": false,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 20,
+      "direction": "SHORT",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-16 11:45:25",
+      "exit_time": "2026-02-16 11:55:46",
+      "entry_price": 68606,
+      "avg_exit_price": 68914.6,
+      "quantity_btc": 0.02171489,
+      "position_value_usd": 1489.77,
+      "duration_minutes": 10.4,
+      "gross_pnl": -6.7012,
+      "net_pnl": -8.1977,
+      "total_fees": 2.9862,
+      "return_pct": -0.4498,
+      "result": "LOSS",
+      "entry_strategy": "NeuronAI",
+      "exit_strategies": "STOP_LOSS",
+      "exit_count": 1,
+      "has_stop_loss": true,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    },
+    {
+      "trade_id": 21,
+      "direction": "LONG",
+      "symbol": "BTC-USDT",
+      "entry_time": "2026-02-16 12:30:09",
+      "exit_time": "2026-02-16 13:07:54",
+      "entry_price": 69491.8,
+      "avg_exit_price": 69326.88,
+      "quantity_btc": 0.02143809,
+      "position_value_usd": 1489.77,
+      "duration_minutes": 37.8,
+      "gross_pnl": -3.5355,
+      "net_pnl": -5.0217,
+      "total_fees": 2.976,
+      "return_pct": -0.2373,
+      "result": "LOSS",
+      "entry_strategy": "NeuronAI",
+      "exit_strategies": "QuantumPosMgr, QuantumPosMgr, QuantumPosMgr, QuantumPosMgr, QuantumPosMgr, QuantumPosMgr, QuantumPosMgr, STOP_LOSS",
+      "exit_count": 8,
+      "has_stop_loss": true,
+      "has_take_profit": false,
+      "has_quantum_emergency": false
+    }
+  ],
+  "section_2_performance_metrics": {
+    "total_trades": 21,
+    "total_pnl_usd": -46.7207,
+    "total_return_pct": -0.4672,
+    "win_count": 7,
+    "loss_count": 14,
+    "win_rate_pct": 33.33,
+    "avg_pnl_per_trade": -2.2248,
+    "avg_win": 6.5434,
+    "avg_loss": -6.6089,
+    "max_win": 14.3042,
+    "max_loss": -61.2776,
+    "profit_factor": 0.495,
+    "expectancy_per_trade": -2.2248,
+    "risk_reward_ratio": 0.9901,
+    "sharpe_ratio_annualized": -2.4243,
+    "sortino_ratio_annualized": -2.5938,
+    "calmar_ratio": -94.2461,
+    "max_drawdown_usd": 61.2776,
+    "max_drawdown_pct": 0.6121,
+    "max_drawdown_start_trade": 2,
+    "max_drawdown_end_trade": 3,
+    "max_consecutive_wins": 2,
+    "max_consecutive_losses": 5,
+    "avg_trade_duration_min": 63.5,
+    "median_trade_duration_min": 7.2,
+    "min_trade_duration_min": 0.52,
+    "max_trade_duration_min": 705.09,
+    "trading_span_hours": 70.95,
+    "pnl_std_dev": 14.5679,
+    "downside_deviation": 13.6161,
+    "total_fees_usd": 75.401,
+    "avg_fees_per_trade": 3.5905,
+    "fees_as_pct_of_volume": 0.2656,
+    "starting_capital": 10000,
+    "ending_capital": 9953.2793,
+    "equity_curve": [
+      10000,
+      9997.39,
+      10011.69,
+      9950.42,
+      9958.31,
+      9966.81,
+      9966.8,
+      9964.98,
+      9966.98,
+      9962.9,
+      9960.95,
+      9960.55,
+      9959.43,
+      9958.11,
+      9960.91,
+      9959.8,
+      9959.91,
+      9959.61,
+      9956.3,
+      9966.5,
+      9958.3,
+      9953.28
+    ]
+  },
+  "section_3_market_context": {
+    "price_environment": {
+      "price_min": 65250.42,
+      "price_max": 69491.8,
+      "price_range_usd": 4241.38,
+      "price_range_pct": 6.5,
+      "avg_price": 68427.14,
+      "current_regime": "BULLISH",
+      "price_volatility": 1.1042
+    },
+    "regime_analysis": {
+      "detected_regime": "BULLISH",
+      "trend_aligned_trades": 12,
+      "contrarian_trades": 9,
+      "trend_aligned_win_rate": 58.33,
+      "contrarian_win_rate": 0.0
+    },
+    "trade_contexts": [
+      {
+        "trade_id": 1,
+        "entry_price": 67275,
+        "price_position_in_range_pct": 47.73,
+        "momentum_from_prev_trade_pct": 0,
+        "direction": "LONG",
+        "result": "LOSS",
+        "pnl": -2.6115
+      },
+      {
+        "trade_id": 2,
+        "entry_price": 67071.9,
+        "price_position_in_range_pct": 42.95,
+        "momentum_from_prev_trade_pct": -0.3019,
+        "direction": "LONG",
+        "result": "WIN",
+        "pnl": 14.3042
+      },
+      {
+        "trade_id": 3,
+        "entry_price": 67959,
+        "price_position_in_range_pct": 63.86,
+        "momentum_from_prev_trade_pct": 1.3226,
+        "direction": "LONG",
+        "result": "LOSS",
+        "pnl": -61.2776
+      },
+      {
+        "trade_id": 4,
+        "entry_price": 68527.3,
+        "price_position_in_range_pct": 77.26,
+        "momentum_from_prev_trade_pct": 0.8362,
+        "direction": "LONG",
+        "result": "WIN",
+        "pnl": 7.8911
+      },
+      {
+        "trade_id": 5,
+        "entry_price": 68640.1,
+        "price_position_in_range_pct": 79.92,
+        "momentum_from_prev_trade_pct": 0.1646,
+        "direction": "LONG",
+        "result": "WIN",
+        "pnl": 8.5016
+      },
+      {
+        "trade_id": 6,
+        "entry_price": 68889.9,
+        "price_position_in_range_pct": 85.81,
+        "momentum_from_prev_trade_pct": 0.3639,
+        "direction": "LONG",
+        "result": "LOSS",
+        "pnl": -0.0078
+      },
+      {
+        "trade_id": 7,
+        "entry_price": 68910.4,
+        "price_position_in_range_pct": 86.29,
+        "momentum_from_prev_trade_pct": 0.0298,
+        "direction": "LONG",
+        "result": "LOSS",
+        "pnl": -1.8177
+      },
+      {
+        "trade_id": 8,
+        "entry_price": 69224,
+        "price_position_in_range_pct": 93.69,
+        "momentum_from_prev_trade_pct": 0.4551,
+        "direction": "LONG",
+        "result": "WIN",
+        "pnl": 1.9928
+      },
+      {
+        "trade_id": 9,
+        "entry_price": 68374.6,
+        "price_position_in_range_pct": 73.66,
+        "momentum_from_prev_trade_pct": -1.227,
+        "direction": "SHORT",
+        "result": "LOSS",
+        "pnl": -4.0731
+      },
+      {
+        "trade_id": 10,
+        "entry_price": 68376,
+        "price_position_in_range_pct": 73.69,
+        "momentum_from_prev_trade_pct": 0.002,
+        "direction": "SHORT",
+        "result": "LOSS",
+        "pnl": -1.9492
+      },
+      {
+        "trade_id": 11,
+        "entry_price": 68467.9,
+        "price_position_in_range_pct": 75.86,
+        "momentum_from_prev_trade_pct": 0.1344,
+        "direction": "SHORT",
+        "result": "LOSS",
+        "pnl": -0.3997
+      },
+      {
+        "trade_id": 12,
+        "entry_price": 68501.9,
+        "price_position_in_range_pct": 76.66,
+        "momentum_from_prev_trade_pct": 0.0497,
+        "direction": "SHORT",
+        "result": "LOSS",
+        "pnl": -1.1279
+      },
+      {
+        "trade_id": 13,
+        "entry_price": 68503.6,
+        "price_position_in_range_pct": 76.7,
+        "momentum_from_prev_trade_pct": 0.0025,
+        "direction": "SHORT",
+        "result": "LOSS",
+        "pnl": -1.3192
+      },
+      {
+        "trade_id": 14,
+        "entry_price": 68725.4,
+        "price_position_in_range_pct": 81.93,
+        "momentum_from_prev_trade_pct": 0.3238,
+        "direction": "SHORT",
+        "result": "WIN",
+        "pnl": 2.8038
+      },
+      {
+        "trade_id": 15,
+        "entry_price": 68335.7,
+        "price_position_in_range_pct": 72.74,
+        "momentum_from_prev_trade_pct": -0.567,
+        "direction": "SHORT",
+        "result": "LOSS",
+        "pnl": -1.1082
+      },
+      {
+        "trade_id": 16,
+        "entry_price": 68261.7,
+        "price_position_in_range_pct": 71.0,
+        "momentum_from_prev_trade_pct": -0.1083,
+        "direction": "SHORT",
+        "result": "WIN",
+        "pnl": 0.1097
+      },
+      {
+        "trade_id": 17,
+        "entry_price": 68217.3,
+        "price_position_in_range_pct": 69.95,
+        "momentum_from_prev_trade_pct": -0.065,
+        "direction": "SHORT",
+        "result": "LOSS",
+        "pnl": -0.2967
+      },
+      {
+        "trade_id": 18,
+        "entry_price": 68221,
+        "price_position_in_range_pct": 70.04,
+        "momentum_from_prev_trade_pct": 0.0054,
+        "direction": "SHORT",
+        "result": "LOSS",
+        "pnl": -3.3166
+      },
+      {
+        "trade_id": 19,
+        "entry_price": 69058.3,
+        "price_position_in_range_pct": 89.78,
+        "momentum_from_prev_trade_pct": 1.2273,
+        "direction": "SHORT",
+        "result": "WIN",
+        "pnl": 10.2006
+      },
+      {
+        "trade_id": 20,
+        "entry_price": 68606,
+        "price_position_in_range_pct": 79.12,
+        "momentum_from_prev_trade_pct": -0.655,
+        "direction": "SHORT",
+        "result": "LOSS",
+        "pnl": -8.1977
+      },
+      {
+        "trade_id": 21,
+        "entry_price": 69491.8,
+        "price_position_in_range_pct": 100.0,
+        "momentum_from_prev_trade_pct": 1.2911,
+        "direction": "LONG",
+        "result": "LOSS",
+        "pnl": -5.0217
+      }
+    ]
+  },
+  "section_4_bot_decisions": {
+    "entry_strategy_counts": {
+      "EnsembleVoting": 13,
+      "NeuronAI": 8
+    },
+    "exit_strategy_counts": {
+      "STOP_LOSS": 9,
+      "PARTIAL_TP_1.5ATR": 1,
+      "TAKE_PROFIT": 1,
+      "PARTIAL_TP": 3,
+      "QuantumPosMgr": 12,
+      "EnsembleVoting": 7,
+      "NeuronAI": 17
+    },
+    "strategy_performance": {
+      "EnsembleVoting": {
+        "total_trades": 13,
+        "wins": 4,
+        "losses": 9,
+        "win_rate_pct": 30.77,
+        "total_pnl": -41.8939,
+        "avg_pnl": -3.2226,
+        "total_fees": 36.6304,
+        "avg_duration_min": 79.05,
+        "pnl_per_trade_details": [
+          -2.6115,
+          14.3042,
+          -61.2776,
+          7.8911,
+          8.5016,
+          -0.0078,
+          -1.8177,
+          1.9928,
+          -4.0731,
+          -1.9492,
+          -0.3997,
+          -1.1279,
+          -1.3192
+        ]
+      },
+      "NeuronAI": {
+        "total_trades": 8,
+        "wins": 3,
+        "losses": 5,
+        "win_rate_pct": 37.5,
+        "total_pnl": -4.8267,
+        "avg_pnl": -0.6033,
+        "total_fees": 38.7706,
+        "avg_duration_min": 38.22,
+        "pnl_per_trade_details": [
+          2.8038,
+          -1.1082,
+          0.1097,
+          -0.2967,
+          -3.3166,
+          10.2006,
+          -8.1977,
+          -5.0217
+        ]
+      }
+    },
+    "exit_type_performance": {
+      "STOP_LOSS": {
+        "count": 9,
+        "total_pnl": -60.5484,
+        "avg_pnl": -6.7276,
+        "win_rate_pct": 33.33
+      },
+      "TAKE_PROFIT": {
+        "count": 1,
+        "total_pnl": 14.3042,
+        "avg_pnl": 14.3042,
+        "win_rate_pct": 100.0
+      },
+      "PARTIAL_TP": {
+        "count": 4,
+        "total_pnl": 32.6897,
+        "avg_pnl": 8.1724,
+        "win_rate_pct": 100.0
+      },
+      "QuantumPosMgr": {
+        "count": 4,
+        "total_pnl": 6.165,
+        "avg_pnl": 1.5413,
+        "win_rate_pct": 50.0
+      }
+    },
+    "direction_analysis": {
+      "long": {
+        "count": 9,
+        "wins": 4,
+        "win_rate_pct": 44.44,
+        "total_pnl": -38.0465,
+        "avg_pnl": -4.2274
+      },
+      "short": {
+        "count": 12,
+        "wins": 3,
+        "win_rate_pct": 25.0,
+        "total_pnl": -8.6741,
+        "avg_pnl": -0.7228
+      }
+    },
+    "position_sizing": {
+      "avg_position_usd": 1352.05,
+      "min_position_usd": 746.86,
+      "max_position_usd": 1501.3,
+      "std_position_usd": 300.78,
+      "position_distribution": [
+        1500.0,
+        1499.38,
+        1501.3,
+        1501.08,
+        1491.89,
+        1493.07,
+        1494.35,
+        1494.34,
+        1494.07,
+        1494.23,
+        747.04,
+        746.95,
+        746.93,
+        746.86,
+        1493.08,
+        1492.8,
+        1492.35,
+        1491.94,
+        1491.75,
+        1489.77,
+        1489.77
+      ]
+    },
+    "timing_analysis": {
+      "avg_gap_between_trades_min": 146.18,
+      "min_gap_min": 0.5,
+      "max_gap_min": 2178.84,
+      "total_time_in_market_min": 1333.49,
+      "total_session_length_min": 4257.03,
+      "time_in_market_pct": 31.32
+    },
+    "ml_state": {
+      "learning_phase": "AUTONOMOUS",
+      "ml_trading_count": 704,
+      "ml_confidence_threshold": 0.6,
+      "ml_performance": {
+        "episodes": 317,
+        "total_reward": 0,
+        "average_reward": 0,
+        "exploration_rate": 0.07282152468433455
+      }
+    },
+    "fee_impact_analysis": {
+      "total_gross_pnl": -0.0967,
+      "total_net_pnl": -46.7207,
+      "total_fees_paid": 75.401,
+      "fees_pct_of_gross_profit": 77948.02,
+      "avg_fee_per_trade": 3.5905,
+      "fee_drag_on_performance_pct": 0.754
+    }
+  },
+  "section_5_advanced_analysis": {
+    "monte_carlo_simulation": {
+      "num_scenarios": 10000,
+      "num_trades_per_scenario": 21,
+      "equity_distribution": {
+        "mean": 9951.97,
+        "median": 9958.91,
+        "std": 65.97,
+        "min": 9590.47,
+        "max": 10116.23,
+        "percentiles": {
+          "p1": 9762.65,
+          "p5": 9831.11,
+          "p10": 9865.09,
+          "p25": 9910.88,
+          "p50": 9958.92,
+          "p75": 10002.32,
+          "p90": 10029.27,
+          "p95": 10042.45,
+          "p99": 10066.45
+        }
+      },
+      "max_drawdown_distribution": {
+        "mean_pct": 0.75,
+        "median_pct": 0.69,
+        "percentiles": {
+          "p1": 0.06,
+          "p5": 0.09,
+          "p10": 0.12,
+          "p25": 0.21,
+          "p50": 0.69,
+          "p75": 1.09,
+          "p90": 1.46,
+          "p95": 1.85,
+          "p99": 2.47
+        }
+      },
+      "probability_of_profit": 26.43,
+      "probability_of_ruin_10pct": 0.0,
+      "probability_of_ruin_20pct": 0.0,
+      "expected_final_equity": 9951.97,
+      "worst_case_5pct": 9831.11,
+      "best_case_95pct": 10042.45
+    },
+    "ab_testing": {
+      "EnsembleVoting_vs_NeuronAI": {
+        "EnsembleVoting": {
+          "count": 13,
+          "win_rate_pct": 30.77,
+          "avg_pnl": -3.2226,
+          "total_pnl": -41.8939,
+          "avg_duration_min": 79.05
+        },
+        "NeuronAI": {
+          "count": 8,
+          "win_rate_pct": 37.5,
+          "avg_pnl": -0.6033,
+          "total_pnl": -4.8267,
+          "avg_duration_min": 38.22
+        },
+        "verdict": "NeuronAI"
+      },
+      "LONG_vs_SHORT": {
+        "LONG": {
+          "count": 9,
+          "win_rate_pct": 44.44,
+          "total_pnl": -38.0465,
+          "avg_pnl": -4.2274
+        },
+        "SHORT": {
+          "count": 12,
+          "win_rate_pct": 25.0,
+          "total_pnl": -8.6741,
+          "avg_pnl": -0.7228
+        },
+        "verdict": "SHORT"
+      },
+      "StopLoss_vs_TakeProfit_exits": {
+        "StopLoss": {
+          "count": 9,
+          "total_pnl": -60.5484,
+          "avg_pnl": -6.7276
+        },
+        "TakeProfit": {
+          "count": 4,
+          "total_pnl": 32.6897,
+          "avg_pnl": 8.1724
+        }
+      },
+      "first_half_vs_second_half": {
+        "first_half": {
+          "count": 10,
+          "win_rate_pct": 40.0,
+          "total_pnl": -39.0471,
+          "avg_pnl": -3.9047
+        },
+        "second_half": {
+          "count": 11,
+          "win_rate_pct": 27.27,
+          "total_pnl": -7.6736,
+          "avg_pnl": -0.6976
+        },
+        "improvement": "YES"
+      },
+      "quantum_exits_vs_standard": {
+        "quantum_managed": {
+          "count": 4,
+          "total_pnl": 32.6897,
+          "avg_pnl": 8.1724,
+          "win_rate_pct": 100.0
+        },
+        "standard_exits": {
+          "count": 17,
+          "total_pnl": -79.4104,
+          "avg_pnl": -4.6712,
+          "win_rate_pct": 17.65
+        }
+      }
+    },
+    "drawdown_decomposition": {
+      "total_drawdown_periods": 2,
+      "drawdown_periods": [
+        {
+          "start_trade": 1,
+          "end_trade": 2,
+          "length_trades": 1,
+          "peak_equity": 10000,
+          "trough_equity": 9997.39,
+          "depth_usd": 2.61,
+          "depth_pct": 0.03,
+          "recovery_trade": 2
+        },
+        {
+          "start_trade": 3,
+          "end_trade": 21,
+          "length_trades": 18,
+          "peak_equity": 10011.69,
+          "trough_equity": 9950.42,
+          "depth_usd": 61.28,
+          "depth_pct": 0.61,
+          "recovery_trade": null
+        }
+      ],
+      "avg_drawdown_depth_pct": 0.32,
+      "avg_drawdown_length_trades": 9.5
+    },
+    "consecutive_patterns": {
+      "win_loss_sequence": "LWLWWLLWLLLLLWLWLLWLL",
+      "total_streaks": 13,
+      "win_streaks": [
+        {
+          "length": 1,
+          "trades": "2-2"
+        },
+        {
+          "length": 2,
+          "trades": "4-5"
+        },
+        {
+          "length": 1,
+          "trades": "8-8"
+        },
+        {
+          "length": 1,
+          "trades": "14-14"
+        },
+        {
+          "length": 1,
+          "trades": "16-16"
+        },
+        {
+          "length": 1,
+          "trades": "19-19"
+        }
+      ],
+      "loss_streaks": [
+        {
+          "length": 1,
+          "trades": "1-1"
+        },
+        {
+          "length": 1,
+          "trades": "3-3"
+        },
+        {
+          "length": 2,
+          "trades": "6-7"
+        },
+        {
+          "length": 5,
+          "trades": "9-13"
+        },
+        {
+          "length": 1,
+          "trades": "15-15"
+        },
+        {
+          "length": 2,
+          "trades": "17-18"
+        },
+        {
+          "length": 2,
+          "trades": "20-21"
+        }
+      ],
+      "longest_win_streak": 2,
+      "longest_loss_streak": 5,
+      "avg_win_streak": 1.17,
+      "avg_loss_streak": 2,
+      "after_loss_win_pct": 46.15,
+      "after_win_win_pct": 14.29,
+      "notes": {
+        "after_loss_analysis": "After a loss, next trade wins 6/13 times",
+        "after_win_analysis": "After a win, next trade wins 1/7 times"
+      }
+    },
+    "trade_clustering": {
+      "by_position_size": {
+        "medium": {
+          "count": 21,
+          "win_rate_pct": 33.33,
+          "total_pnl": -46.7207,
+          "avg_pnl": -2.2248
+        }
+      },
+      "by_duration": {
+        "scalp_<5min": {
+          "count": 10,
+          "win_rate_pct": 20.0,
+          "total_pnl": -11.4881,
+          "avg_pnl": -1.1488
+        },
+        "short_5-30min": {
+          "count": 4,
+          "win_rate_pct": 25.0,
+          "total_pnl": -57.7825,
+          "avg_pnl": -14.4456
+        },
+        "medium_30-120min": {
+          "count": 4,
+          "win_rate_pct": 75.0,
+          "total_pnl": 21.5716,
+          "avg_pnl": 5.3929
+        },
+        "long_>120min": {
+          "count": 3,
+          "win_rate_pct": 33.33,
+          "total_pnl": 0.9783,
+          "avg_pnl": 0.3261
+        }
+      },
+      "avg_position_usd": 1352.05
+    },
+    "equity_curve_analysis": {
+      "equity_curve": [
+        10000,
+        9997.39,
+        10011.69,
+        9950.42,
+        9958.31,
+        9966.81,
+        9966.8,
+        9964.98,
+        9966.98,
+        9962.9,
+        9960.95,
+        9960.55,
+        9959.43,
+        9958.11,
+        9960.91,
+        9959.8,
+        9959.91,
+        9959.61,
+        9956.3,
+        9966.5,
+        9958.3,
+        9953.28
+      ],
+      "cumulative_returns_pct": [
+        0.0,
+        -0.03,
+        0.12,
+        -0.5,
+        -0.42,
+        -0.33,
+        -0.33,
+        -0.35,
+        -0.33,
+        -0.37,
+        -0.39,
+        -0.39,
+        -0.41,
+        -0.42,
+        -0.39,
+        -0.4,
+        -0.4,
+        -0.4,
+        -0.44,
+        -0.34,
+        -0.42,
+        -0.47
+      ],
+      "underwater_pct": [
+        0.0,
+        0.03,
+        0.0,
+        0.61,
+        0.53,
+        0.45,
+        0.45,
+        0.47,
+        0.45,
+        0.49,
+        0.51,
+        0.51,
+        0.52,
+        0.54,
+        0.51,
+        0.52,
+        0.52,
+        0.52,
+        0.55,
+        0.45,
+        0.53,
+        0.58
+      ],
+      "rolling_5trade_win_rate": [
+        60.0,
+        60.0,
+        40.0,
+        60.0,
+        40.0,
+        20.0,
+        20.0,
+        20.0,
+        0.0,
+        20.0,
+        20.0,
+        40.0,
+        40.0,
+        40.0,
+        40.0,
+        40.0,
+        20.0
+      ],
+      "rolling_5trade_avg_pnl": [
+        -6.6384,
+        -6.1177,
+        -9.3421,
+        3.312,
+        0.9192,
+        -1.171,
+        -1.2494,
+        -1.1114,
+        -1.7738,
+        -0.3985,
+        -0.2302,
+        -0.1283,
+        0.0379,
+        -0.3616,
+        1.1178,
+        -0.3001,
+        -1.3264
+      ],
+      "final_equity": 9953.28,
+      "peak_equity": 10011.69,
+      "trough_equity": 9950.42
+    },
+    "risk_metrics": {
+      "var_95_usd": -8.1977,
+      "var_99_usd": -61.2776,
+      "cvar_95_usd": -61.2776,
+      "tail_ratio": 0.3527,
+      "omega_ratio": 0.495,
+      "skewness": -3.0378,
+      "kurtosis_excess": 9.9892,
+      "interpretation": {
+        "skewness": "Negative (left tail longer \u2014 occasional large losses)",
+        "kurtosis": "Leptokurtic (heavy tails \u2014 more extreme events than normal)"
+      }
+    },
+    "recommendations": [
+      {
+        "priority": "HIGH",
+        "category": "Win Rate",
+        "issue": "Win rate is 33.33% \u2014 below 50% threshold",
+        "recommendation": "Consider tightening entry criteria: increase confidence threshold, add confirmation indicators, or filter out low-quality signals"
+      },
+      {
+        "priority": "HIGH",
+        "category": "Fees",
+        "issue": "Fees represent 0.754% of capital \u2014 significant drag",
+        "recommendation": "Reduce trade frequency, increase minimum signal quality threshold, or negotiate lower exchange fees"
+      },
+      {
+        "priority": "MEDIUM",
+        "category": "Strategy",
+        "issue": "Strategy 'EnsembleVoting' has negative PnL ($-41.8939) over 13 trades",
+        "recommendation": "Review EnsembleVoting strategy logic. Consider reducing its ensemble weight or adding additional filters"
+      },
+      {
+        "priority": "HIGH",
+        "category": "Direction",
+        "issue": "LONG trades are losing money: $-38.0465",
+        "recommendation": "LONG entries may be poorly timed. Consider waiting for pullbacks to support levels before entering"
+      },
+      {
+        "priority": "HIGH",
+        "category": "Streak Management",
+        "issue": "Longest loss streak: 5 trades",
+        "recommendation": "Implement adaptive position sizing that reduces size after consecutive losses. Consider a brief trading pause after 3+ consecutive losses"
+      },
+      {
+        "priority": "CRITICAL",
+        "category": "Expected Value",
+        "issue": "Monte Carlo shows only 26.43% chance of profit",
+        "recommendation": "The current strategy has negative expected value. Major changes needed: review entry logic, exit timing, and risk management"
+      },
+      {
+        "priority": "MEDIUM",
+        "category": "Duration",
+        "issue": "Average trade duration is only 0 minutes \u2014 very short",
+        "recommendation": "Extremely short trades may be mostly capturing noise. Consider increasing minimum hold time or using larger timeframes for signal generation"
+      }
+    ]
+  }
+}
