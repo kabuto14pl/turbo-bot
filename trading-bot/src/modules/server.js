@@ -25,6 +25,7 @@ class Server {
         this.httpServer = null;
         this.wss = null;
         this.wsClients = new Set();
+        this._botRef = null; // Set by bot.js for quantum bridge access
     }
 
     async start() {
@@ -83,6 +84,88 @@ class Server {
         app.get('/api/ml/status', (req, res) => {
             if (this.ml) res.json({ enabled: true, phase: this.ml.mlLearningPhase, trades: this.ml.mlTradingCount, threshold: this.ml.mlConfidenceThreshold, performance: this.ml.mlPerformance });
             else res.json({ enabled: false });
+        });
+
+        // ============================================================
+        // PATCH #28: GPU-Accelerated Quantum Trading System - API Endpoints
+        // ============================================================
+        app.get('/api/quantum/status', (req, res) => {
+            try {
+                const qgpu = this._botRef && this._botRef.quantumGPU;
+                if (!qgpu) return res.json({ enabled: false, reason: 'QuantumGPUBridge not initialized' });
+                res.json({ enabled: true, ...qgpu.getStatus() });
+            } catch (e) {
+                res.status(500).json({ error: e.message });
+            }
+        });
+
+        app.get('/api/quantum/signal', (req, res) => {
+            try {
+                const qgpu = this._botRef && this._botRef.quantumGPU;
+                if (!qgpu) return res.json({ signal: null, reason: 'QuantumGPUBridge not initialized' });
+                const signal = qgpu.getSignal();
+                res.json({ signal, timestamp: Date.now() });
+            } catch (e) {
+                res.status(500).json({ error: e.message });
+            }
+        });
+
+        app.get('/api/quantum/risk', (req, res) => {
+            try {
+                const qgpu = this._botRef && this._botRef.quantumGPU;
+                if (!qgpu) return res.json({ risk: null, reason: 'QuantumGPUBridge not initialized' });
+                const risk = qgpu.getQuantumRisk();
+                res.json({ risk, timestamp: Date.now() });
+            } catch (e) {
+                res.status(500).json({ error: e.message });
+            }
+        });
+
+        app.get('/api/quantum/regime', (req, res) => {
+            try {
+                const qgpu = this._botRef && this._botRef.quantumGPU;
+                if (!qgpu) return res.json({ regime: null, reason: 'QuantumGPUBridge not initialized' });
+                const regime = qgpu.getRegime();
+                res.json({ regime, timestamp: Date.now() });
+            } catch (e) {
+                res.status(500).json({ error: e.message });
+            }
+        });
+
+        app.get('/api/quantum/results', (req, res) => {
+            try {
+                const qgpu = this._botRef && this._botRef.quantumGPU;
+                if (!qgpu) return res.json({ results: null, reason: 'QuantumGPUBridge not initialized' });
+                const results = qgpu.getFullResults();
+                res.json({ results, timestamp: Date.now() });
+            } catch (e) {
+                res.status(500).json({ error: e.message });
+            }
+        });
+
+        app.post('/api/quantum/signal', (req, res) => {
+            try {
+                const qgpu = this._botRef && this._botRef.quantumGPU;
+                if (!qgpu) return res.status(503).json({ error: 'QuantumGPUBridge not initialized' });
+                qgpu.receiveSignal(req.body);
+                res.json({ success: true, message: 'Quantum signal received', timestamp: Date.now() });
+            } catch (e) {
+                res.status(500).json({ error: e.message });
+            }
+        });
+
+        app.post('/api/quantum/run', (req, res) => {
+            try {
+                const qgpu = this._botRef && this._botRef.quantumGPU;
+                if (!qgpu) return res.status(503).json({ error: 'QuantumGPUBridge not initialized' });
+                qgpu._runOnDemand().then(result => {
+                    res.json({ success: true, result, timestamp: Date.now() });
+                }).catch(err => {
+                    res.status(500).json({ error: 'Quantum run failed: ' + err.message });
+                });
+            } catch (e) {
+                res.status(500).json({ error: e.message });
+            }
         });
     }
 

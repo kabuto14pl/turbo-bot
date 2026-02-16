@@ -90,6 +90,8 @@ class AutonomousTradingBot {
         this.hybridPipeline = null;
         // PATCH #18: Quantum Position Manager
         this.quantumPosMgr = null;
+        // PATCH #28: GPU-Accelerated Quantum System
+        this.quantumGPU = null;
         // PATCH #24: Neuron AI Manager (Central Brain/Skynet)
         this.neuronManager = null;
     }
@@ -100,6 +102,9 @@ class AutonomousTradingBot {
 
         // HTTP + WS Server
         await this.server.start();
+
+        // Wire bot reference for quantum API endpoints
+        if (this.server) this.server._botRef = this;
 
         // OKX Live Data
         try {
@@ -270,6 +275,22 @@ class AutonomousTradingBot {
             console.warn('[WARN] Quantum Position Manager: ' + e.message);
         }
 
+        // PATCH #28: GPU-Accelerated Quantum Trading System (Init)
+        try {
+            const { QuantumGPUBridge } = require('./quantum-gpu-bridge');
+            this.quantumGPU = new QuantumGPUBridge({
+                quantumDir: require('path').resolve(__dirname, '../../../quantum'),
+                maxAgeMs: 600000,
+                autoRun: false,
+                logger: console,
+            });
+            await this.quantumGPU.initialize();
+            console.log('[OK] Quantum GPU Bridge: Active (v' + require('./quantum-gpu-bridge').BRIDGE_VERSION + ')');
+            this.mon.setComponent('quantumGPU', true);
+        } catch (e) {
+            console.warn('[WARN] Quantum GPU Bridge: ' + e.message);
+        }
+
         // PATCH #16: MEGATRON AI Chat System
         try {
             const { MegatronCore, attachMegatronRoutes } = require('../core/ai/megatron_system');
@@ -341,6 +362,7 @@ class AutonomousTradingBot {
         console.log('Hybrid Pipeline: ' + (this.hybridPipeline ? 'ACTIVE v' + this.hybridPipeline.version + ' (QMC+QAOA+VQC+QFM+QRA+QDV)' : 'disabled'));
         console.log('Quantum Pos Mgr: ' + (this.quantumPosMgr && this.quantumPosMgr.isReady ? 'ACTIVE v' + this.quantumPosMgr.version + ' (4-stage)' : 'disabled'));
         console.log('Megatron: ' + (this.megatron ? 'ONLINE (' + this.megatron.llm.providers.size + ' LLM providers)' : 'disabled'));
+        console.log('Quantum GPU: ' + (this.quantumGPU ? 'ACTIVE (bridge v' + require('./quantum-gpu-bridge').BRIDGE_VERSION + ')' : 'disabled'));
         console.log('Neuron AI: ' + (this.neuronManager ? 'BRAIN ACTIVE v' + this.neuronManager.version + ' (' + this.neuronManager.totalDecisions + ' decisions, PnL: $' + this.neuronManager.totalPnL.toFixed(2) + ')' : 'disabled'));
     }
 
@@ -784,6 +806,7 @@ class AutonomousTradingBot {
                         },
                         recentPrices: recentPrices,
                         quantumRisk: this._lastQuantumRisk || {},
+                quantumGPU: this.quantumGPU ? this.quantumGPU.getSignal() : null,
                     };
 
                     try {
