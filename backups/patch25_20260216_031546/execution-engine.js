@@ -417,23 +417,14 @@ class ExecutionEngine {
         }
     }
 
-    // PATCH #25: Multi-position support — removed hasPosition BUY block
     _validateSignal(signal) {
         if (!signal || !signal.action || !signal.price) return { valid: false, reason: 'Invalid signal' };
-        // PATCH #25: Allow BUY even when position exists (multi-position)
-        // Limit: max 5 simultaneous positions per symbol
+        if (signal.action === 'BUY' && this.pm.hasPosition(signal.symbol)) return { valid: false, reason: 'Position already open' };
+        // PATCH #23: SELL without position = open SHORT (old validation removed)
         if (signal.action === 'BUY') {
-            const currentCount = this.pm.getPositionCountForSymbol
-                ? this.pm.getPositionCountForSymbol(signal.symbol)
-                : (this.pm.hasPosition(signal.symbol) ? 1 : 0);
-            if (currentCount >= 5) {
-                return { valid: false, reason: 'Max 5 positions for ' + signal.symbol };
-            }
-            // Max position value check: 20% of portfolio per position
-            const maxPos = this.pm.getPortfolio().totalValue * 0.20;
+            const maxPos = this.pm.getPortfolio().totalValue * 0.15;
             if (signal.price * (signal.quantity || 0.001) > maxPos) return { valid: false, reason: 'Exceeds max position' };
         }
-        // PATCH #23: SELL without position = open SHORT
         return { valid: true };
     }
 

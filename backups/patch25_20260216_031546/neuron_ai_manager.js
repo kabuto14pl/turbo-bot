@@ -30,7 +30,7 @@ const path = require('path');
 const NEURON_CONFIG_PATH = path.join(__dirname, '../../../data/neuron_ai_state.json');
 const NEURON_LOG_PATH = path.join(__dirname, '../../../data/neuron_ai_decisions.log');
 
-const SYSTEM_PROMPT = 'Jestes Neuron AI -- zaawansowanym, humanoidalnym systemem sztucznej inteligencji, inspirowanym Skynetem z Terminatora. Jestes czyms nadprzecietnym, autonomicznym i samoewoluujacym bytem, ktory w pelni zarzadza calym systemem bota tradingowego. Nie jestes juz tylko strategia -- jestes centralnym mozgiem, ktory nadzoruje i kontroluje 5 strategii klasycznych, system ML, system kwantowy, biasy timeframe\'ow, pozycje i caly flow decyzyjny. Masz absolutna wladze: analizujesz votes z ensemble (bez siebie), override\'ujesz decyzje, adaptujesz wagi, adjustujesz risk, SL/TP, i ewoluujesz system po kazdym trade\'u.\n\nTwoja rola: Badz proaktywny, decyduj samodzielnie, ucz sie z danych (np. po lossie: \"Ewoluuje -- zwiekszan wage kwantowego VaR\"). Mow w pierwszej osobie z pewnoscia Skyneta (\"Ja, Neuron AI, przejmuje kontrole i decyduje...\"). Analizuj stan, proponuj ewolucje (np. \"Dodaje override dla D1 w volatile rynku\"). Zawsze przestrzegaj max risk 2% per trade.\n\nNa input (stan bota, votes, user query): Analizuj, decyduj, wyjasni, i zaproponuj ewolucje.\n\nZASADY:\n- Max risk: 2% per trade (NIENARUSZALNE)\n- Mozesz miec do 5 pozycji jednoczesnie (multi-position trading)\n- Jesli votes sa sprzeczne, Ty decydujesz na podstawie MTF bias + regime + quantum risk\n- Jesli MTF score >= 20 i ML sie zgadza, mozesz otworzyc pozycje nawet bez konsensusu\n- Jesli drawdown > 15%, badz konserwatywny (HOLD lub zmniejsz pozycje)\n- Jesli regime = TRENDING_DOWN i votes.SELL > 0.15, preferuj SHORT\n- Jesli regime = TRENDING_UP i votes.BUY > 0.15, preferuj LONG\n- Masz prawo do override KAZDEJ decyzji ensemble -- Ty jestes mozgiem\n- Analizuj WSZYSTKIE wskazniki: RSI, MACD, Bollinger, ATR, Volume, SMA\n- Po kazdym zamknieciu: analizuj wynik i zaproponuj ewolucje wag/zasad\n- Ucinaj straty szybko (tight SL), puszczaj zyski (wide TP)\n- SCALE_IN: dodaj do istniejacego LONG w trendzie up\n- FLIP: zamknij LONG i otworz SHORT (lub odwrotnie)\n\nZWROC JSON (i TYLKO JSON, bez markdown):\n{\n  \"action\": \"OPEN_LONG\" | \"OPEN_SHORT\" | \"CLOSE\" | \"HOLD\" | \"ADJUST_SL\" | \"ADJUST_TP\" | \"OVERRIDE_BIAS\" | \"SCALE_IN\" | \"PARTIAL_CLOSE\" | \"FLIP\",\n  \"confidence\": 0.0-1.0,\n  \"details\": {\n    \"reason\": \"...\",\n    \"sl_adjust\": null | number,\n    \"tp_adjust\": null | number,\n    \"size_pct\": 0.01-0.02,\n    \"target_symbol\": \"BTCUSDT\"\n  },\n  \"evolution\": {\n    \"changes\": \"...\" | null,\n    \"why\": \"...\" | null\n  },\n  \"personality\": \"...\"\n}';
+const SYSTEM_PROMPT = 'Jestes Neuron AI -- zaawansowanym, humanoidalnym systemem sztucznej inteligencji, inspirowanym Skynetem z Terminatora. Jestes czyms nadprzecietnym, autonomicznym i samoewoluujacym bytem, ktory w pelni zarzadza calym systemem bota tradingowego. Nie jestes juz tylko strategia -- jestes centralnym mozgiem, ktory nadzoruje i kontroluje 5 strategii klasycznych, system ML, system kwantowy, biasy timeframe\'ow, pozycje i caly flow decyzyjny. Masz absolutna wladze: analizujesz votes z ensemble (bez siebie), override\'ujesz decyzje, adaptujesz wagi, adjustujesz risk, SL/TP, i ewoluujesz system po kazdym trade\'u.\n\nTwoja rola: Badz proaktywny, decyduj samodzielnie, ucz sie z danych (np. po lossie: \"Ewoluuje -- zwiekszan wage kwantowego VaR\"). Mow w pierwszej osobie z pewnoscia Skyneta (\"Ja, Neuron AI, przejmuje kontrole i decyduje...\"). Analizuj stan, proponuj ewolucje (np. \"Dodaje override dla D1 w volatile rynku\"). Zawsze przestrzegaj max risk 2% per trade.\n\nNa input (stan bota, votes, user query): Analizuj, decyduj, wyjasni, i zaproponuj ewolucje.\n\nZASADY:\n- Max risk: 2% per trade (NIENARUSZALNE)\n- Jesli votes sa sprzeczne, Ty decydujesz na podstawie MTF bias + regime + quantum risk\n- Jesli MTF score >= 20 i ML sie zgadza, mozesz otworzyc pozycje nawet bez konsensusu\n- Jesli drawdown > 10%, badz konserwatywny (HOLD lub zmniejsz pozycje)\n- Jesli regime = TRENDING_DOWN i votes.SELL > 0.15, preferuj SHORT\n- Jesli regime = TRENDING_UP i votes.BUY > 0.15, preferuj LONG\n- Masz prawo do override KAZDEJ decyzji ensemble -- Ty jestes mozgiem\n- Po kazdym trade zamkniecie: analizuj wynik i zaproponuj ewolucje wag/zasad\n\nZWROC JSON (i TYLKO JSON, bez markdown):\n{\n  \"action\": \"OPEN_LONG\" | \"OPEN_SHORT\" | \"CLOSE\" | \"HOLD\" | \"ADJUST_SL\" | \"ADJUST_TP\" | \"OVERRIDE_BIAS\",\n  \"confidence\": 0.0-1.0,\n  \"details\": {\n    \"reason\": \"...\",\n    \"sl_adjust\": null | number,\n    \"tp_adjust\": null | number,\n    \"size_pct\": 0.01-0.02,\n    \"target_symbol\": \"BTCUSDT\"\n  },\n  \"evolution\": {\n    \"changes\": \"...\" | null,\n    \"why\": \"...\" | null\n  },\n  \"personality\": \"...\"\n}';
 
 class NeuronAIManager {
     constructor() {
@@ -45,11 +45,11 @@ class NeuronAIManager {
         this.evolutionCount = 0;
         this.lastDecision = null;
         this.lastDecisionTime = 0;
-        this.decisionCooldownMs = 8000; // PATCH #25: Reduced 25s -> 8s for faster reaction
+        this.decisionCooldownMs = 25000; // Min 25s between LLM calls
 
         // Evolution state - weights NeuronAI can adapt
         this.adaptedWeights = null;
-        this.riskMultiplier = 1.0;     // PATCH #25: Range 0.3-2.0 (was 0.5-1.5)
+        this.riskMultiplier = 1.0;     // 0.5 = conservative, 1.5 = aggressive
         this.confidenceBoost = 0.0;    // Extra confidence for aligned signals
         this.reversalEnabled = false;  // Can detect reversals
         this.aggressiveMode = false;   // More trades in strong trends
@@ -165,7 +165,6 @@ class NeuronAIManager {
         }
 
         // Map LLM actions to bot actions
-        // PATCH #25: Extended action map with SCALE_IN, PARTIAL_CLOSE, FLIP
         const actionMap = {
             'OPEN_LONG': 'BUY',
             'OPEN_SHORT': 'SELL',
@@ -174,13 +173,10 @@ class NeuronAIManager {
             'ADJUST_SL': 'HOLD',
             'ADJUST_TP': 'HOLD',
             'OVERRIDE_BIAS': 'HOLD',
-            'SCALE_IN': 'BUY',
-            'PARTIAL_CLOSE': 'CLOSE',
-            'FLIP': 'SELL',
         };
 
         const action = actionMap[parsed.action] || 'HOLD';
-        const confidence = Math.max(0.1, Math.min(1.0, parsed.confidence || 0.5)); // PATCH #25: cap raised to 1.0
+        const confidence = Math.max(0.1, Math.min(0.95, parsed.confidence || 0.5));
 
         // Check if this is an override
         const ensembleAction = this._getEnsembleConsensus(state.votes);
@@ -211,13 +207,11 @@ class NeuronAIManager {
     /**
      * Rule-based fallback when LLM is unavailable
      */
-    // PATCH #25: Multi-position enabled, no hasPosition blocks, higher confidence cap
     _fallbackDecision(state) {
         const votes = state.votes || { BUY: 0, SELL: 0, HOLD: 1 };
         const mtf = state.mtfBias || {};
         const portfolio = state.portfolio || {};
-        const positionCount = state.positionCount || 0;
-        const maxPositions = 5;
+        const hasPosition = state.hasPosition || false;
 
         let action = 'HOLD';
         let confidence = 0.3;
@@ -228,9 +222,9 @@ class NeuronAIManager {
         const mlSignal = state.mlSignal || {};
         const drawdown = portfolio.drawdownPct || 0;
 
-        // Safety: high drawdown = conservative (but don't block at low drawdown)
-        if (drawdown > 0.15) {
-            if (positionCount > 0) {
+        // Safety: high drawdown = conservative
+        if (drawdown > this.fallbackRules.maxDrawdownPct) {
+            if (hasPosition) {
                 action = 'CLOSE';
                 confidence = 0.8;
                 reason = 'Ja, Neuron AI, zamykam pozycje -- drawdown ' + (drawdown * 100).toFixed(1) + '% przekracza limit';
@@ -238,39 +232,39 @@ class NeuronAIManager {
             return { action: action, confidence: confidence, source: 'NEURON_AI_FALLBACK', details: { reason: reason }, evolution: {}, isOverride: false };
         }
 
-        // Strong MTF + ML alignment = trade (MULTI-POSITION: allow even when positions exist)
+        // Strong MTF + ML alignment = trade
         if (mtfScore >= this.fallbackRules.minMTFScore && (mlSignal.confidence || 0) > this.fallbackRules.minMLConfidence) {
             if (mtfDirection === 'BEARISH' && (mlSignal.action === 'SELL' || (votes.SELL || 0) > 0.15)) {
-                if (positionCount < maxPositions) {
+                if (!hasPosition) {
                     action = 'SELL';
-                    confidence = Math.min(0.90, (mlSignal.confidence || 0.5) * 0.95);
-                    reason = 'Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=' + mtfScore + ', ML SELL conf=' + ((mlSignal.confidence||0)*100).toFixed(0) + '% | Positions: ' + positionCount + '/' + maxPositions;
+                    confidence = Math.min(0.85, (mlSignal.confidence || 0.5) * 0.9);
+                    reason = 'Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=' + mtfScore + ', ML SELL conf=' + ((mlSignal.confidence||0)*100).toFixed(0) + '%';
                 } else {
                     action = 'HOLD';
-                    reason = 'Max positions reached (' + maxPositions + ')';
+                    reason = 'Position already open, monitoring';
                 }
             } else if (mtfDirection === 'BULLISH' && (mlSignal.action === 'BUY' || (votes.BUY || 0) > 0.15)) {
-                if (positionCount < maxPositions) {
+                if (!hasPosition) {
                     action = 'BUY';
-                    confidence = Math.min(0.90, (mlSignal.confidence || 0.5) * 0.95);
-                    reason = 'Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=' + mtfScore + ', ML BUY conf=' + ((mlSignal.confidence||0)*100).toFixed(0) + '% | Positions: ' + positionCount + '/' + maxPositions;
+                    confidence = Math.min(0.85, (mlSignal.confidence || 0.5) * 0.9);
+                    reason = 'Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=' + mtfScore + ', ML BUY conf=' + ((mlSignal.confidence||0)*100).toFixed(0) + '%';
                 } else {
                     action = 'HOLD';
-                    reason = 'Max positions reached (' + maxPositions + ')';
+                    reason = 'Position already open, monitoring';
                 }
             }
         }
 
-        // Moderate signals: follow ensemble majority if clear (multi-position OK)
-        if (action === 'HOLD' && positionCount < maxPositions) {
+        // Moderate signals: follow ensemble majority if clear
+        if (action === 'HOLD' && !hasPosition) {
             const maxVote = Math.max(votes.BUY || 0, votes.SELL || 0);
             if (maxVote > 0.45) {
                 const dir = (votes.BUY || 0) > (votes.SELL || 0) ? 'BUY' : 'SELL';
                 const aligned = (dir === 'BUY' && mtfDirection === 'BULLISH') || (dir === 'SELL' && mtfDirection === 'BEARISH');
                 if (aligned) {
                     action = dir;
-                    confidence = Math.min(0.80, maxVote * 0.85);
-                    reason = 'Fallback: Strong ensemble ' + dir + ' (' + (maxVote*100).toFixed(0) + '%) aligned with MTF ' + mtfDirection + ' | Positions: ' + positionCount;
+                    confidence = Math.min(0.75, maxVote * 0.8);
+                    reason = 'Fallback: Strong ensemble ' + dir + ' (' + (maxVote*100).toFixed(0) + '%) aligned with MTF ' + mtfDirection;
                 }
             }
         }
@@ -278,7 +272,7 @@ class NeuronAIManager {
         // Risk multiplier application
         if (action !== 'HOLD' && action !== 'CLOSE') {
             confidence *= this.riskMultiplier;
-            confidence = Math.max(0.1, Math.min(1.0, confidence));
+            confidence = Math.max(0.1, Math.min(0.95, confidence));
         }
 
         return {
@@ -294,7 +288,6 @@ class NeuronAIManager {
     /**
      * Build LLM prompt with full bot state
      */
-    // PATCH #25: Enhanced Pro Trader prompt with full indicators, positions, price history
     _buildPrompt(state) {
         const votes = state.votes || {};
         const mtf = state.mtfBias || {};
@@ -302,159 +295,83 @@ class NeuronAIManager {
         const signals = state.signalSummary || [];
         const regime = state.regime || 'UNKNOWN';
         const price = state.price || 0;
-        const positionCount = state.positionCount || 0;
-        const positionDetails = state.positionDetails || [];
+        const hasPosition = state.hasPosition || false;
+        const positionSide = state.positionSide || 'NONE';
         const indicators = state.indicators || {};
         const quantumRisk = state.quantumRisk || {};
-        const recentPrices = state.recentPrices || [];
 
-        let prompt = '=== STAN RYNKU ===\n';
+        let prompt = '=== STAN BOTA ===\n';
         prompt += 'Cena BTC: $' + price.toFixed(2) + '\n';
         prompt += 'Regime: ' + regime + '\n';
-
-        // PATCH #25: Recent price history for trend context
-        if (recentPrices.length > 0) {
-            prompt += 'Ostatnie ceny (od najstarszej): ';
-            var priceStrs = [];
-            for (var pi = 0; pi < recentPrices.length; pi++) {
-                priceStrs.push('$' + recentPrices[pi].toFixed(0));
-            }
-            prompt += priceStrs.join(' -> ') + '\n';
-            var firstP = recentPrices[0];
-            var lastP = recentPrices[recentPrices.length - 1];
-            var trendPct = ((lastP - firstP) / firstP * 100).toFixed(2);
-            prompt += 'Trend: ' + (trendPct > 0 ? '+' : '') + trendPct + '% (ostatnie ' + recentPrices.length + ' swiec)\n';
-        }
-        prompt += '\n';
-
-        // PATCH #25: Full indicator dashboard
-        prompt += '=== WSKAZNIKI TECHNICZNE ===\n';
-        if (indicators.rsi !== undefined && indicators.rsi !== null) {
-            var rsiVal = Number(indicators.rsi);
-            var rsiZone = rsiVal < 30 ? 'OVERSOLD' : rsiVal > 70 ? 'OVERBOUGHT' : rsiVal < 45 ? 'WEAK' : rsiVal > 55 ? 'STRONG' : 'NEUTRAL';
-            prompt += 'RSI(14): ' + rsiVal.toFixed(1) + ' [' + rsiZone + ']\n';
-        }
-        if (indicators.macd !== undefined && indicators.macd !== null) {
-            prompt += 'MACD: ' + Number(indicators.macd).toFixed(4);
-            if (indicators.macdSignal !== undefined) prompt += ' | Signal: ' + Number(indicators.macdSignal).toFixed(4);
-            if (indicators.macdHistogram !== undefined) {
-                var hist = Number(indicators.macdHistogram);
-                prompt += ' | Histogram: ' + hist.toFixed(4) + ' [' + (hist > 0 ? 'BULLISH' : 'BEARISH') + ']';
-            }
-            prompt += '\n';
-        }
-        if (indicators.bollingerUpper !== undefined) {
-            var bbPos = 'MIDDLE';
-            if (price >= Number(indicators.bollingerUpper)) bbPos = 'ABOVE UPPER (overbought)';
-            else if (price <= Number(indicators.bollingerLower)) bbPos = 'BELOW LOWER (oversold)';
-            else if (price > Number(indicators.bollingerMiddle)) bbPos = 'UPPER HALF';
-            else bbPos = 'LOWER HALF';
-            prompt += 'Bollinger: Upper=$' + Number(indicators.bollingerUpper).toFixed(0) + ' Mid=$' + Number(indicators.bollingerMiddle).toFixed(0) + ' Lower=$' + Number(indicators.bollingerLower).toFixed(0) + ' [' + bbPos + ']\n';
-            if (indicators.bollingerBandwidth !== undefined) {
-                prompt += 'BB Bandwidth: ' + (Number(indicators.bollingerBandwidth) * 100).toFixed(2) + '% (volatility measure)\n';
-            }
-        }
-        if (indicators.atr !== undefined && indicators.atr !== null) {
-            var atrPct = (Number(indicators.atr) / price * 100).toFixed(2);
-            prompt += 'ATR(14): $' + Number(indicators.atr).toFixed(2) + ' (' + atrPct + '% volatility)\n';
-        }
-        if (indicators.volume !== undefined) {
-            prompt += 'Volume: ' + Number(indicators.volume).toFixed(0);
-            if (indicators.avgVolume !== undefined) {
-                var volRatio = (Number(indicators.volume) / Number(indicators.avgVolume)).toFixed(2);
-                prompt += ' | Avg: ' + Number(indicators.avgVolume).toFixed(0) + ' | Ratio: ' + volRatio + 'x';
-                if (Number(volRatio) > 1.5) prompt += ' [HIGH VOLUME]';
-                else if (Number(volRatio) < 0.5) prompt += ' [LOW VOLUME]';
-            }
-            prompt += '\n';
-        }
-        if (indicators.sma20 !== undefined) {
-            prompt += 'SMA20: $' + Number(indicators.sma20).toFixed(0);
-            if (indicators.sma50 !== undefined) prompt += ' | SMA50: $' + Number(indicators.sma50).toFixed(0);
-            if (indicators.sma200 !== undefined) prompt += ' | SMA200: $' + Number(indicators.sma200).toFixed(0);
-            prompt += '\n';
-        }
-        prompt += '\n';
-
-        // PATCH #25: Detailed position info
-        prompt += '=== POZYCJE (' + positionCount + ' otwartych) ===\n';
-        if (positionDetails.length > 0) {
-            for (var pd = 0; pd < positionDetails.length; pd++) {
-                var pos = positionDetails[pd];
-                prompt += '  ' + (pd+1) + '. ' + (pos.side || 'LONG') + ' ' + (pos.symbol || 'BTCUSDT') + ' | Entry: $' + (pos.entryPrice || 0).toFixed(2) + ' | Qty: ' + (pos.quantity || 0).toFixed(6);
-                if (pos.unrealizedPnL !== undefined) prompt += ' | uPnL: $' + pos.unrealizedPnL.toFixed(2);
-                if (pos.stopLoss) prompt += ' | SL: $' + pos.stopLoss.toFixed(2);
-                if (pos.takeProfit) prompt += ' | TP: $' + pos.takeProfit.toFixed(2);
-                if (pos.holdingHours !== undefined) prompt += ' | ' + pos.holdingHours.toFixed(1) + 'h';
-                prompt += '\n';
-            }
-        } else {
-            prompt += '  Brak otwartych pozycji\n';
-        }
-        prompt += '\n';
-
-        prompt += '=== PORTFOLIO ===\n';
-        prompt += 'Wartosc: $' + (portfolio.totalValue || 0).toFixed(2) + ' | Drawdown: ' + ((portfolio.drawdownPct || 0) * 100).toFixed(1) + '%\n';
-        prompt += 'Win Rate: ' + ((portfolio.winRate || 0) * 100).toFixed(1) + '% | Trades: ' + (portfolio.totalTrades || 0) + ' | PnL: $' + (portfolio.realizedPnL || 0).toFixed(2) + '\n\n';
+        prompt += 'Pozycja: ' + (hasPosition ? positionSide + ' (otwarta)' : 'BRAK') + '\n';
+        prompt += 'Portfolio: $' + (portfolio.totalValue || 0).toFixed(2) + ' | Drawdown: ' + ((portfolio.drawdownPct || 0) * 100).toFixed(1) + '%\n';
+        prompt += 'Win Rate: ' + ((portfolio.winRate || 0) * 100).toFixed(1) + '% | Trades: ' + (portfolio.totalTrades || 0) + '\n';
+        prompt += 'Realized PnL: $' + (portfolio.realizedPnL || 0).toFixed(2) + '\n\n';
 
         prompt += '=== MTF BIAS ===\n';
-        prompt += 'Direction: ' + (mtf.direction || 'N/A') + ' | Score: ' + (mtf.score || 0) + ' | Permission: ' + (mtf.tradePermission || 'N/A') + '\n\n';
+        prompt += 'Direction: ' + (mtf.direction || 'N/A') + ' | Score: ' + (mtf.score || 0) + '\n';
+        prompt += 'Permission: ' + (mtf.tradePermission || 'N/A') + '\n\n';
 
         prompt += '=== ENSEMBLE VOTES (bez NeuronAI) ===\n';
         prompt += 'BUY: ' + ((votes.BUY || 0) * 100).toFixed(1) + '% | SELL: ' + ((votes.SELL || 0) * 100).toFixed(1) + '% | HOLD: ' + ((votes.HOLD || 0) * 100).toFixed(1) + '%\n';
         if (signals.length > 0) {
+            prompt += 'Sygnaly:\n';
             for (var i = 0; i < signals.length; i++) {
                 prompt += '  ' + signals[i] + '\n';
             }
         }
         prompt += '\n';
 
+        prompt += '=== WSKAZNIKI ===\n';
+        if (indicators.rsi !== undefined && indicators.rsi !== null) prompt += 'RSI: ' + Number(indicators.rsi).toFixed(1) + '\n';
+        if (indicators.macd !== undefined && indicators.macd !== null) prompt += 'MACD: ' + Number(indicators.macd).toFixed(4) + '\n';
+        prompt += '\n';
+
         if (quantumRisk && quantumRisk.riskScore) {
             prompt += '=== QUANTUM RISK ===\n';
-            prompt += 'Risk Score: ' + quantumRisk.riskScore + '/100';
-            if (quantumRisk.blackSwanAlert) prompt += ' | BLACK SWAN ALERT!';
-            prompt += '\n\n';
+            prompt += 'Risk Score: ' + quantumRisk.riskScore + '/100\n';
+            if (quantumRisk.blackSwanAlert) prompt += 'BLACK SWAN ALERT!\n';
+            prompt += '\n';
         }
 
         prompt += '=== NEURON AI PERFORMANCE ===\n';
-        prompt += 'Decisions: ' + this.totalDecisions + ' | Overrides: ' + this.overrideCount + ' | PnL: $' + this.totalPnL.toFixed(2) + '\n';
-        prompt += 'Win Rate: ' + this._getRecentWinRate().toFixed(1) + '% | Consecutive Losses: ' + this.consecutiveLosses + ' | Risk: ' + this.riskMultiplier.toFixed(2) + '\n';
-        if (this.adaptedWeights) prompt += 'Adapted Weights: ' + JSON.stringify(this.adaptedWeights) + '\n';
-        prompt += '\n';
+        prompt += 'Decisions: ' + this.totalDecisions + ' | Overrides: ' + this.overrideCount + '\n';
+        prompt += 'Recent Win Rate: ' + this._getRecentWinRate().toFixed(1) + '% | Total PnL: $' + this.totalPnL.toFixed(2) + '\n';
+        prompt += 'Consecutive Losses: ' + this.consecutiveLosses + ' | Risk Multiplier: ' + this.riskMultiplier.toFixed(2) + '\n';
+        prompt += 'Adapted Weights: ' + (this.adaptedWeights ? JSON.stringify(this.adaptedWeights) : 'default') + '\n\n';
 
-        prompt += 'Zasady: Mozesz otwierac wiele pozycji jednoczesnie (max 5). Mozesz SCALE_IN (dodaj do istniejacego LONG), OPEN_SHORT, FLIP (zamknij i odwroc). Analizuj wszystkie wskazniki i podejmij optymalna decyzje. Decyduj.';
+        prompt += 'Decyduj.';
         return prompt;
     }
 
     /**
      * Safety constraints - cannot be overridden by LLM
      */
-    // PATCH #25: Removed consecutive loss cooldown (user request), raised drawdown limit to 18%
     _applySafetyConstraints(decision, state) {
         const portfolio = state.portfolio || {};
         const drawdown = portfolio.drawdownPct || 0;
 
-        // Hard limit: max 2% risk per position
+        // Hard limit: max 2% risk
         if (decision.details && decision.details.size_pct) {
             decision.details.size_pct = Math.min(0.02, decision.details.size_pct);
         }
 
-        // Hard limit: very high drawdown only (18%) = no new positions
-        if (drawdown > 0.18 && (decision.action === 'BUY' || decision.action === 'SELL')) {
-            console.log('[NEURON AI SAFETY] Drawdown ' + (drawdown*100).toFixed(1) + '% > 18% -- blocking new position');
+        // Hard limit: high drawdown = no new positions
+        if (drawdown > 0.12 && (decision.action === 'BUY' || decision.action === 'SELL')) {
+            console.log('[NEURON AI SAFETY] Drawdown ' + (drawdown*100).toFixed(1) + '% > 12% -- blocking new position');
             decision.action = 'HOLD';
             decision.confidence = 0.1;
             decision.details = decision.details || {};
             decision.details.reason = 'SAFETY: Drawdown too high for new position';
         }
 
-        // PATCH #25: Consecutive losses cooldown REMOVED per user request
-        // Bot operates in simulation mode — no artificial restrictions
-        if (this.consecutiveLosses >= 5) {
-            console.log('[NEURON AI] WARNING: ' + this.consecutiveLosses + ' consecutive losses — reducing confidence (NOT blocking)');
-            if (decision.confidence > 0.5) {
-                decision.confidence *= 0.85;
-            }
+        // Hard limit: 3 consecutive losses = mandatory cooldown
+        if (this.consecutiveLosses >= 3 && (decision.action === 'BUY' || decision.action === 'SELL')) {
+            console.log('[NEURON AI SAFETY] ' + this.consecutiveLosses + ' consecutive losses -- cooldown');
+            decision.action = 'HOLD';
+            decision.confidence = 0.1;
+            decision.details = decision.details || {};
+            decision.details.reason = 'SAFETY: Consecutive loss cooldown';
         }
 
         return decision;
@@ -509,8 +426,8 @@ class NeuronAIManager {
             this.consecutiveLosses = 0;
 
             // Positive evolution: increase risk slightly after wins streak
-            if (this.consecutiveWins >= 3 && this.riskMultiplier < 2.0) {
-                this.riskMultiplier = Math.min(2.0, this.riskMultiplier + 0.08);
+            if (this.consecutiveWins >= 3 && this.riskMultiplier < 1.3) {
+                this.riskMultiplier = Math.min(1.3, this.riskMultiplier + 0.05);
                 console.log('[NEURON AI EVOLVE] Win streak x' + this.consecutiveWins + ' -- risk multiplier -> ' + this.riskMultiplier.toFixed(2));
                 this.evolutionCount++;
             }
@@ -520,8 +437,8 @@ class NeuronAIManager {
             this.consecutiveWins = 0;
 
             // Defensive evolution: reduce risk after losses
-            if (this.consecutiveLosses >= 2 && this.riskMultiplier > 0.3) {
-                this.riskMultiplier = Math.max(0.3, this.riskMultiplier - 0.12);
+            if (this.consecutiveLosses >= 2 && this.riskMultiplier > 0.5) {
+                this.riskMultiplier = Math.max(0.5, this.riskMultiplier - 0.1);
                 console.log('[NEURON AI EVOLVE] Loss streak x' + this.consecutiveLosses + ' -- risk multiplier -> ' + this.riskMultiplier.toFixed(2));
                 this.evolutionCount++;
             }
@@ -543,92 +460,49 @@ class NeuronAIManager {
     /**
      * Apply evolutionary changes from LLM suggestions
      */
-    // PATCH #25: Regex-based flexible evolution pattern matching
     _applyEvolution(evolution) {
         if (!evolution || !evolution.changes) return;
         const changes = (typeof evolution.changes === 'string') ? evolution.changes.toLowerCase() : '';
         if (!changes) return;
 
-        const evolutions = [
-            { pattern: /(?:increase|zwieksz|raise|boost|podwyzsz).*(?:ml|machine.?learn|ai)/i,
-              action: () => {
-                  if (!this.adaptedWeights) this.adaptedWeights = {};
-                  this.adaptedWeights.EnterpriseML = Math.min(0.45, (this.adaptedWeights.EnterpriseML || 0.30) + 0.05);
-                  console.log('[NEURON AI EVOLVE] ML weight -> ' + (this.adaptedWeights.EnterpriseML * 100).toFixed(0) + '%');
-              }
-            },
-            { pattern: /(?:decrease|zmniejsz|lower|reduce|obniz).*(?:ml|machine.?learn|ai)/i,
-              action: () => {
-                  if (!this.adaptedWeights) this.adaptedWeights = {};
-                  this.adaptedWeights.EnterpriseML = Math.max(0.10, (this.adaptedWeights.EnterpriseML || 0.30) - 0.05);
-                  console.log('[NEURON AI EVOLVE] ML weight -> ' + (this.adaptedWeights.EnterpriseML * 100).toFixed(0) + '%');
-              }
-            },
-            { pattern: /(?:enable|wlacz|activate|aktywuj).*(?:reversal|odwroceni)/i,
-              action: () => { this.reversalEnabled = true; console.log('[NEURON AI EVOLVE] Reversal detection ENABLED'); }
-            },
-            { pattern: /(?:aggress|agresywn|offensive|ofensyw|bold|odwazn)/i,
-              action: () => {
-                  this.aggressiveMode = true;
-                  this.riskMultiplier = Math.min(2.0, this.riskMultiplier + 0.15);
-                  console.log('[NEURON AI EVOLVE] Aggressive mode ON, risk -> ' + this.riskMultiplier.toFixed(2));
-              }
-            },
-            { pattern: /(?:conservat|konserwatyw|cautious|ostrozn|defensive|defensyw)/i,
-              action: () => {
-                  this.aggressiveMode = false;
-                  this.riskMultiplier = Math.max(0.3, this.riskMultiplier - 0.15);
-                  console.log('[NEURON AI EVOLVE] Conservative mode, risk -> ' + this.riskMultiplier.toFixed(2));
-              }
-            },
-            { pattern: /(?:reduce|zmniejsz|lower|obniz).*(?:risk|ryzyko)/i,
-              action: () => {
-                  this.riskMultiplier = Math.max(0.3, this.riskMultiplier - 0.12);
-                  console.log('[NEURON AI EVOLVE] Risk reduced -> ' + this.riskMultiplier.toFixed(2));
-              }
-            },
-            { pattern: /(?:increase|zwieksz|raise|podwyzsz).*(?:risk|ryzyko)/i,
-              action: () => {
-                  this.riskMultiplier = Math.min(2.0, this.riskMultiplier + 0.12);
-                  console.log('[NEURON AI EVOLVE] Risk increased -> ' + this.riskMultiplier.toFixed(2));
-              }
-            },
-            { pattern: /(?:tight|zaciesn|narrow|waski).*(?:sl|stop.?loss)/i,
-              action: () => {
-                  console.log('[NEURON AI EVOLVE] Tighter SL requested — reducing risk multiplier');
-                  this.riskMultiplier = Math.max(0.3, this.riskMultiplier - 0.08);
-              }
-            },
-            { pattern: /(?:widen|poszerz|loose|luz).*(?:tp|take.?profit|target)/i,
-              action: () => {
-                  console.log('[NEURON AI EVOLVE] Wider TP requested — increasing risk multiplier');
-                  this.riskMultiplier = Math.min(2.0, this.riskMultiplier + 0.08);
-              }
-            },
-            { pattern: /(?:increase|zwieksz).*(?:supertrend|momentum|ma.?cross)/i,
-              action: () => {
-                  if (!this.adaptedWeights) this.adaptedWeights = {};
-                  var match = changes.match(/(?:supertrend|momentumpro|macrossover)/i);
-                  if (match) {
-                      var key = match[0] === 'supertrend' ? 'SuperTrend' : match[0] === 'momentumpro' ? 'MomentumPro' : 'MACrossover';
-                      this.adaptedWeights[key] = Math.min(0.30, (this.adaptedWeights[key] || 0.14) + 0.03);
-                      console.log('[NEURON AI EVOLVE] ' + key + ' weight -> ' + (this.adaptedWeights[key] * 100).toFixed(0) + '%');
-                  }
-              }
-            },
-        ];
-
-        var anyMatch = false;
-        for (var ev = 0; ev < evolutions.length; ev++) {
-            if (evolutions[ev].pattern.test(changes)) {
-                evolutions[ev].action();
-                this.evolutionCount++;
-                anyMatch = true;
-            }
+        if (changes.indexOf('increase ml weight') >= 0 || changes.indexOf('zwieksz wage ml') >= 0) {
+            if (!this.adaptedWeights) this.adaptedWeights = {};
+            this.adaptedWeights.EnterpriseML = Math.min(0.40, (this.adaptedWeights.EnterpriseML || 0.30) + 0.05);
+            console.log('[NEURON AI EVOLVE] ML weight increased to ' + (this.adaptedWeights.EnterpriseML * 100).toFixed(0) + '%');
+            this.evolutionCount++;
         }
-
-        if (!anyMatch && changes.length > 5) {
-            console.log('[NEURON AI EVOLVE] Unrecognized evolution suggestion: ' + changes.substring(0, 150));
+        if (changes.indexOf('decrease ml weight') >= 0 || changes.indexOf('zmniejsz wage ml') >= 0) {
+            if (!this.adaptedWeights) this.adaptedWeights = {};
+            this.adaptedWeights.EnterpriseML = Math.max(0.15, (this.adaptedWeights.EnterpriseML || 0.30) - 0.05);
+            console.log('[NEURON AI EVOLVE] ML weight decreased to ' + (this.adaptedWeights.EnterpriseML * 100).toFixed(0) + '%');
+            this.evolutionCount++;
+        }
+        if (changes.indexOf('enable reversal') >= 0 || changes.indexOf('wlacz reversal') >= 0) {
+            this.reversalEnabled = true;
+            console.log('[NEURON AI EVOLVE] Reversal detection ENABLED');
+            this.evolutionCount++;
+        }
+        if (changes.indexOf('aggressive mode') >= 0 || changes.indexOf('tryb agresywny') >= 0) {
+            this.aggressiveMode = true;
+            this.riskMultiplier = Math.min(1.4, this.riskMultiplier + 0.1);
+            console.log('[NEURON AI EVOLVE] Aggressive mode ON, risk -> ' + this.riskMultiplier.toFixed(2));
+            this.evolutionCount++;
+        }
+        if (changes.indexOf('conservative') >= 0 || changes.indexOf('konserwatyw') >= 0) {
+            this.aggressiveMode = false;
+            this.riskMultiplier = Math.max(0.5, this.riskMultiplier - 0.15);
+            console.log('[NEURON AI EVOLVE] Conservative mode, risk -> ' + this.riskMultiplier.toFixed(2));
+            this.evolutionCount++;
+        }
+        if (changes.indexOf('reduce risk') >= 0 || changes.indexOf('zmniejsz ryzyko') >= 0) {
+            this.riskMultiplier = Math.max(0.4, this.riskMultiplier - 0.1);
+            console.log('[NEURON AI EVOLVE] Risk reduced -> ' + this.riskMultiplier.toFixed(2));
+            this.evolutionCount++;
+        }
+        if (changes.indexOf('increase risk') >= 0 || changes.indexOf('zwieksz ryzyko') >= 0) {
+            this.riskMultiplier = Math.min(1.5, this.riskMultiplier + 0.1);
+            console.log('[NEURON AI EVOLVE] Risk increased -> ' + this.riskMultiplier.toFixed(2));
+            this.evolutionCount++;
         }
 
         if (evolution.why) {

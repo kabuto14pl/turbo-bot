@@ -24,64 +24,15 @@ class PortfolioManager {
     getPortfolio() { return { ...this.portfolio }; }
     getBalance() { return { ...this.balance }; }
     getPositions() { return this.positions; }
-    // PATCH #25: Multi-position support — check any position key matching symbol
-    hasPosition(symbol) {
-        if (this.positions.has(symbol)) return true;
-        for (const key of this.positions.keys()) {
-            if (key.startsWith(symbol + '_')) return true;
-        }
-        return false;
-    }
-    // PATCH #25: Get first (oldest) position for symbol
-    getPosition(symbol) {
-        if (this.positions.has(symbol)) return this.positions.get(symbol);
-        for (const [key, pos] of this.positions) {
-            if (key.startsWith(symbol + '_')) return pos;
-        }
-        return undefined;
-    }
-    // PATCH #25: Get ALL positions for a symbol (with their keys)
-    getPositionsForSymbol(symbol) {
-        const result = [];
-        for (const [key, pos] of this.positions) {
-            if (key === symbol || key.startsWith(symbol + '_')) {
-                result.push({ key, position: pos });
-            }
-        }
-        return result;
-    }
-    // PATCH #25: Get first position key for a symbol
-    getPositionKey(symbol) {
-        if (this.positions.has(symbol)) return symbol;
-        for (const key of this.positions.keys()) {
-            if (key.startsWith(symbol + '_')) return key;
-        }
-        return null;
-    }
-    // PATCH #25: Count positions for a specific symbol
-    getPositionCountForSymbol(symbol) {
-        let count = 0;
-        for (const key of this.positions.keys()) {
-            if (key === symbol || key.startsWith(symbol + '_')) count++;
-        }
-        return count;
-    }
+    hasPosition(symbol) { return this.positions.has(symbol); }
+    getPosition(symbol) { return this.positions.get(symbol); }
     getTrades() { return this.trades; }
     get positionCount() { return this.positions.size; }
 
-    // PATCH #25: Generate unique position key for multi-position support
-    _nextPositionKey(symbol) {
-        if (!this.positions.has(symbol)) return symbol;
-        let counter = 2;
-        while (this.positions.has(symbol + '_' + counter)) counter++;
-        return symbol + '_' + counter;
-    }
-
     openPosition(symbol, data) {
         const side = data.side || 'LONG';
-        const posKey = this._nextPositionKey(symbol);
         const position = {
-            symbol, posKey, side, entryPrice: data.entryPrice,
+            symbol, side, entryPrice: data.entryPrice,
             quantity: data.quantity, entryTime: Date.now(),
             value: data.entryPrice * data.quantity,
             stopLoss: data.stopLoss, takeProfit: data.takeProfit,
@@ -89,10 +40,7 @@ class PortfolioManager {
             _pyramidLevel: data.pyramidLevel || 0,
             _qpmManaged: false,
         };
-        this.positions.set(posKey, position);
-        if (posKey !== symbol) {
-            console.log('[MULTI-POS] New position ' + posKey + ' (' + side + ') | Total: ' + this.positions.size);
-        }
+        this.positions.set(symbol, position);
         const val = position.entryPrice * position.quantity;
         this.balance.usdtBalance -= val;
         this.balance.btcBalance += position.quantity;
@@ -130,16 +78,12 @@ class PortfolioManager {
         };
         this.trades.push(trade);
         if (this.trades.length > 1000) this.trades = this.trades.slice(-500);
-        if (closeQty >= pos.quantity) {
-            this.positions.delete(symbol);
+        if (closeQty >= pos.quantity) this.positions.delete(symbol);
             // PATCH #21: Clear unrealizedPnL when no more positions
             if (this.positions.size === 0) {
                 this.portfolio.unrealizedPnL = 0;
             }
-        } else {
-            pos.quantity -= closeQty;
-            pos.value = pos.entryPrice * pos.quantity;
-        }
+        else { pos.quantity -= closeQty; pos.value = pos.entryPrice * pos.quantity; }
         return trade;
     }
 

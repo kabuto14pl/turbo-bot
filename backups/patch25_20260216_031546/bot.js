@@ -378,14 +378,11 @@ class AutonomousTradingBot {
                 if (this.megatron) this.megatron.logActivity('SYSTEM', 'Auto-Resume', 'Pauza zakonczona, trading wznowiony');
             }
 
-            // PATCH #25: Circuit breaker check — bypassed in simulation/paper mode
-            const _simMode = (process.env.MODE || 'simulation').toLowerCase();
-            if (_simMode !== 'simulation' && _simMode !== 'paper' && _simMode !== 'paper_trading') {
-                if (this.rm.isCircuitBreakerTripped()) {
-                    console.log('[CB] Circuit breaker tripped - skipping');
-                    if (this.megatron) this.megatron.logActivity('RISK', 'Circuit Breaker', 'Trading wstrzymany -- circuit breaker aktywny', {}, 'critical');
-                    return;
-                }
+            // Circuit breaker check
+            if (this.rm.isCircuitBreakerTripped()) {
+                console.log('[CB] Circuit breaker tripped - skipping');
+                if (this.megatron) this.megatron.logActivity('RISK', 'Circuit Breaker', 'Trading wstrzymany -- circuit breaker aktywny', {}, 'critical');
+                return;
             }
             console.log('[' + this.config.instanceId + '] Trading cycle #' + this._cycleCount + '...');
 
@@ -692,60 +689,26 @@ class AutonomousTradingBot {
                     // Get raw votes from ensemble (without NeuralAI)
                     const rawVotes = this.ensemble.getRawVotes(allSignals, this.rm, mtfBiasForVote);
 
-                    // PATCH #25: Build enriched state for Neuron AI with full indicators
+                    // Build full state for Neuron AI
                     const portfolioState = this.pm.getPortfolio();
-                    const _posCount = this.pm.positionCount;
-                    const _marketHist = this.dp.getMarketDataHistory();
-                    const _ind = require('./indicators');
-
-                    // Compute all indicators
-                    let rsiVal = null, macdData = null, bollingerData = null, atrVal = null;
-                    let volumeCurrent = 0, volumeAvg = 0, sma20 = null, sma50 = null, sma200 = null;
-                    try {
-                        const _prices = _marketHist.slice(-210).map(function(c) { return c.close; });
-                        if (_prices.length >= 14) rsiVal = _ind.calculateRSI(_prices, 14);
-                        if (_prices.length >= 26) macdData = _ind.calculateMACD(_prices);
-                        if (_prices.length >= 20) bollingerData = _ind.calculateBollingerBands(_prices, 20, 2);
-                        if (_prices.length >= 20) sma20 = _ind.calculateSMA(_prices, 20);
-                        if (_prices.length >= 50) sma50 = _ind.calculateSMA(_prices, 50);
-                        if (_prices.length >= 200) sma200 = _ind.calculateSMA(_prices, 200);
-                    } catch(indErr) { console.warn('[NEURON] Indicator calc error:', indErr.message); }
-                    try {
-                        if (_marketHist.length >= 20) {
-                            const candleData = _marketHist.slice(-20).map(function(c) {
-                                return { symbol: 'BTCUSDT', timestamp: Date.now(), open: c.open || c.close, high: c.high, low: c.low, close: c.close, volume: c.volume || 0 };
-                            });
-                            atrVal = _ind.calculateATR(candleData, 14);
+                    const hasPos = this.pm.positionCount > 0;
+                    let positionSide = 'NONE';
+                    if (hasPos) {
+                        const positions = this.pm.getPositions();
+                        if (positions && positions.size > 0) {
+                            for (const [, p] of positions) {
+                                positionSide = p.side === 'SHORT' ? 'SHORT' : 'LONG';
+                                break;
+                            }
                         }
-                        if (_marketHist.length >= 1) volumeCurrent = _marketHist[_marketHist.length - 1].volume || 0;
-                        if (_marketHist.length >= 20) {
-                            var _vols = _marketHist.slice(-20).map(function(c) { return c.volume || 0; });
-                            volumeAvg = _vols.reduce(function(a,b) { return a+b; }, 0) / _vols.length;
-                        }
-                    } catch(indErr2) {}
-
-                    // Build position details array
-                    var positionDetails = [];
-                    var currentPrice = ((_marketHist.slice(-1)[0] || {}).close) || 0;
-                    for (const [posKey, p] of this.pm.getPositions()) {
-                        var uPnL = p.side === 'SHORT'
-                            ? (p.entryPrice - currentPrice) * p.quantity
-                            : (currentPrice - p.entryPrice) * p.quantity;
-                        positionDetails.push({
-                            key: posKey,
-                            symbol: p.symbol || posKey.split('_')[0],
-                            side: p.side || 'LONG',
-                            entryPrice: p.entryPrice,
-                            quantity: p.quantity,
-                            unrealizedPnL: uPnL,
-                            stopLoss: p.stopLoss,
-                            takeProfit: p.takeProfit,
-                            holdingHours: (Date.now() - (p.entryTime || Date.now())) / 3600000,
-                        });
                     }
-
-                    // Recent prices (last 10 candle closes for trend context)
-                    var recentPrices = _marketHist.slice(-10).map(function(c) { return c.close; });
+                    let rsiVal = null;
+                    try {
+                        const prices = this.dp.getMarketDataHistory().slice(-15).map(function(c) { return c.close; });
+                        if (prices.length >= 14) {
+                            rsiVal = require('./indicators').calculateRSI(prices, 14);
+                        }
+                    } catch(e) {}
 
                     const neuronState = {
                         votes: rawVotes.votes,
@@ -758,31 +721,12 @@ class AutonomousTradingBot {
                             realizedPnL: (portfolioState && portfolioState.realizedPnL) || 0,
                             winRate: (portfolioState && portfolioState.winRate) || 0,
                             totalTrades: (portfolioState && portfolioState.totalTrades) || 0,
-                            drawdownPct: (portfolioState && portfolioState.drawdown) || 0,
+                            drawdownPct: (portfolioState && portfolioState.drawdownPct) || 0,
                         },
-                        price: currentPrice,
-                        positionCount: _posCount,
-                        positionDetails: positionDetails,
-                        // PATCH #25: Legacy fields for backward compatibility
-                        hasPosition: _posCount > 0,
-                        positionSide: positionDetails.length > 0 ? positionDetails[0].side : 'NONE',
-                        indicators: {
-                            rsi: rsiVal,
-                            macd: macdData ? macdData.macd : null,
-                            macdSignal: macdData ? macdData.signal : null,
-                            macdHistogram: macdData ? macdData.histogram : null,
-                            bollingerUpper: bollingerData ? bollingerData.upper : null,
-                            bollingerMiddle: bollingerData ? bollingerData.middle : null,
-                            bollingerLower: bollingerData ? bollingerData.lower : null,
-                            bollingerBandwidth: bollingerData ? bollingerData.bandwidth : null,
-                            atr: atrVal,
-                            volume: volumeCurrent,
-                            avgVolume: volumeAvg,
-                            sma20: sma20,
-                            sma50: sma50,
-                            sma200: sma200,
-                        },
-                        recentPrices: recentPrices,
+                        price: ((this.dp.getMarketDataHistory().slice(-1)[0] || {}).close) || 0,
+                        hasPosition: hasPos,
+                        positionSide: positionSide,
+                        indicators: { rsi: rsiVal },
                         quantumRisk: this._lastQuantumRisk || {},
                     };
 

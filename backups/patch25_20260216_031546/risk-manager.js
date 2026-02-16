@@ -18,15 +18,7 @@ class RiskManager {
         this.consecutiveLossesForSoftPause = 0;
     }
 
-    _isSimulation() {
-        const mode = (process.env.MODE || 'simulation').toLowerCase();
-        return mode === 'simulation' || mode === 'paper' || mode === 'paper_trading';
-    }
-
-    // PATCH #25: CB disabled in simulation/paper mode
     isCircuitBreakerTripped() {
-        // PATCH #25: Always false in simulation/paper — user request
-        if (this._isSimulation()) return false;
         if (this.circuitBreaker.emergencyStopTriggered) return true;
         const hours = (Date.now() - this.circuitBreaker.lastResetTime) / 3600000;
         if (this.circuitBreaker.isTripped && hours >= 1) { this.resetCircuitBreaker(); return false; }
@@ -50,23 +42,18 @@ class RiskManager {
     recordTradeResult(pnl) {
         if (pnl < 0) {
             this.circuitBreaker.consecutiveLosses++;
-            // PATCH #25: In simulation/paper mode — track stats but don't trip CB or softPause
-            if (!this._isSimulation()) {
-                this.consecutiveLossesForSoftPause++;
-                if (this.consecutiveLossesForSoftPause >= 2) {
-                    this.softPauseActive = true;
-                    console.log('[SOFT PAUSE] Activated after 2 consecutive losses');
-                }
-                if (this.circuitBreaker.consecutiveLosses >= this.circuitBreaker.maxConsecutiveLosses) {
-                    this.tripCircuitBreaker(this.circuitBreaker.consecutiveLosses + ' consecutive losses');
-                }
-            } else {
-                console.log('[RISK] Loss #' + this.circuitBreaker.consecutiveLosses + ' (CB/SoftPause disabled in simulation)');
+            this.consecutiveLossesForSoftPause++;
+            if (this.consecutiveLossesForSoftPause >= 2) {
+                this.softPauseActive = true;
+                console.log('?????? [SOFT PAUSE] Activated after 2 consecutive losses');
+            }
+            if (this.circuitBreaker.consecutiveLosses >= this.circuitBreaker.maxConsecutiveLosses) {
+                this.tripCircuitBreaker(this.circuitBreaker.consecutiveLosses + ' consecutive losses');
             }
         } else {
             this.circuitBreaker.consecutiveLosses = 0;
             this.consecutiveLossesForSoftPause = 0;
-            if (this.softPauseActive) { this.softPauseActive = false; console.log('[SOFT PAUSE] Deactivated'); }
+            if (this.softPauseActive) { this.softPauseActive = false; console.log('?????? [SOFT PAUSE] Deactivated'); }
         }
         this.dailyTradeCount++;
     }
@@ -90,7 +77,7 @@ class RiskManager {
         const atrMult = Math.max(0.5, Math.min(1.5, 0.02 / atrNorm));
         let risk = baseRisk / atrMult;
         risk = Math.max(0.01, Math.min(0.02, risk));
-        if (!this._isSimulation() && this.circuitBreaker.consecutiveLosses >= this.circuitBreaker.maxConsecutiveLosses) return 0;
+        if (this.circuitBreaker.consecutiveLosses >= this.circuitBreaker.maxConsecutiveLosses) return 0;
         const dd = Math.abs(this.pm.getPortfolio().drawdown);
         if (dd > 0.10) risk *= Math.max(0.5, 1 - (dd - 0.10));
         return risk;
@@ -107,7 +94,7 @@ class RiskManager {
         const maxQty = (portfolio.totalValue * 0.15) / price;
         let qty = Math.min(baseQty, maxQty);
         console.log('???? [POSITION SIZING] Risk: $' + riskAmt.toFixed(2) + ', SL: ' + (slDist * 100).toFixed(2) + '%, Qty: ' + qty.toFixed(6));
-        if (this.softPauseActive && !this._isSimulation()) { qty *= 0.5; console.log('[SOFT PAUSE] Size halved: ' + qty.toFixed(6)); }
+        if (this.softPauseActive) { qty *= 0.5; console.log('?????? [SOFT PAUSE] Size halved: ' + qty.toFixed(6)); }
         return qty;
     }
 
