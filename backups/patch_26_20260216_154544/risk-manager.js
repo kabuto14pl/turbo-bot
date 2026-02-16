@@ -16,10 +16,6 @@ class RiskManager {
         this.lastTradeDayReset = Date.now();
         this.softPauseActive = false;
         this.consecutiveLossesForSoftPause = 0;
-        // PATCH #26: Anti-scalping cooldown — minimum time between trades
-        this._lastTradeTimestamp = 0;
-        this._minTradeCooldownMs = 3 * 60 * 1000; // 3 minutes minimum between new entries
-        this._consecutiveWins = 0;
     }
 
     _isSimulation() {
@@ -52,8 +48,6 @@ class RiskManager {
     }
 
     recordTradeResult(pnl) {
-        // PATCH #26: Track win streak for post-win cooldown
-        this.recordWinStreak(pnl);
         if (pnl < 0) {
             this.circuitBreaker.consecutiveLosses++;
             // PATCH #25: In simulation/paper mode — track stats but don't trip CB or softPause
@@ -107,34 +101,14 @@ class RiskManager {
         if (riskPct === 0) return 0;
         const portfolio = this.pm.getPortfolio();
         const riskAmt = portfolio.totalValue * riskPct;
-        // PATCH #26: Wider SL distance (2.5x ATR vs old 2.0x) to reduce premature SL hits
-        let slDist = (atr && atr > 0) ? Math.max(0.005, Math.min(0.05, (2.5 * atr) / price)) : 0.02;
+        let slDist = (atr && atr > 0) ? Math.max(0.005, Math.min(0.05, (2 * atr) / price)) : 0.02;
         const notional = riskAmt / slDist;
         const baseQty = notional / price;
         const maxQty = (portfolio.totalValue * 0.15) / price;
         let qty = Math.min(baseQty, maxQty);
-        // PATCH #26: Apply loss streak adaptive sizing (EVEN in simulation — this is learning behavior)
-        const lossMultiplier = this.getConsecutiveLossSizeMultiplier();
-        qty *= lossMultiplier;
-        console.log('[POSITION SIZING] Risk: $' + riskAmt.toFixed(2) + ', SL: ' + (slDist * 100).toFixed(2) + '%, Qty: ' + qty.toFixed(6) + (lossMultiplier < 1 ? ' (loss streak x' + lossMultiplier + ')' : ''));
+        console.log('???? [POSITION SIZING] Risk: $' + riskAmt.toFixed(2) + ', SL: ' + (slDist * 100).toFixed(2) + '%, Qty: ' + qty.toFixed(6));
         if (this.softPauseActive && !this._isSimulation()) { qty *= 0.5; console.log('[SOFT PAUSE] Size halved: ' + qty.toFixed(6)); }
         return qty;
-    }
-
-    // PATCH #26: Anti-scalping — check if enough time passed since last trade
-    checkTradeCooldown() {
-        const elapsed = Date.now() - this._lastTradeTimestamp;
-        if (elapsed < this._minTradeCooldownMs) {
-            const remaining = Math.ceil((this._minTradeCooldownMs - elapsed) / 1000);
-            console.log('[RISK P26] Trade cooldown active — ' + remaining + 's remaining');
-            return false;
-        }
-        return true;
-    }
-
-    // PATCH #26: Mark trade execution timestamp
-    markTradeExecuted() {
-        this._lastTradeTimestamp = Date.now();
     }
 
     calculateDynamicRiskLegacy(volatility) {
@@ -153,46 +127,8 @@ class RiskManager {
 
     calculateRiskLevel(confidence) { return Math.max(0.1, Math.min(1.0, 1 - confidence)); }
 
-    // PATCH #26: Loss streak adaptive sizing — reduces position size after consecutive losses
-    // 3 losses → 50% size, 5 losses → 25% size. 2 consecutive wins → restore normal.
-    getConsecutiveLossSizeMultiplier() {
-        const losses = this.circuitBreaker.consecutiveLosses;
-        if (losses >= 5) {
-            console.log('[RISK P26] 5+ consecutive losses — position size 25%');
-            return 0.25;
-        }
-        if (losses >= 3) {
-            console.log('[RISK P26] 3+ consecutive losses — position size 50%');
-            return 0.50;
-        }
-        return 1.0;
-    }
-
-    // PATCH #26: Anti-overtrading after wins — cooldown multiplier
-    // After 2 consecutive wins, next trade gets reduced confidence to prevent euphoria-driven overtrading
-    getPostWinCooldownMultiplier() {
-        if (!this._consecutiveWins) this._consecutiveWins = 0;
-        if (this._consecutiveWins >= 2) {
-            console.log('[RISK P26] Post-win cooldown active (2+ wins) — confidence * 0.80');
-            return 0.80;
-        }
-        return 1.0;
-    }
-
-    // PATCH #26: Track consecutive wins (complement to consecutive losses)
-    recordWinStreak(pnl) {
-        if (pnl >= 0) {
-            this._consecutiveWins = (this._consecutiveWins || 0) + 1;
-        } else {
-            this._consecutiveWins = 0;
-        }
-    }
-
     getCircuitBreakerStatus() {
-        return { ...this.circuitBreaker, softPauseActive: this.softPauseActive, dailyTradeCount: this.dailyTradeCount,
-            consecutiveLossSizeMultiplier: this.getConsecutiveLossSizeMultiplier(),
-            postWinCooldownMultiplier: this.getPostWinCooldownMultiplier(),
-        };
+        return { ...this.circuitBreaker, softPauseActive: this.softPauseActive, dailyTradeCount: this.dailyTradeCount };
     }
 
     exportState() {

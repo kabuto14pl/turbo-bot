@@ -133,14 +133,12 @@ class EnsembleVoting {
             var aligned = (action === 'BUY' && mtfDir === 'BULLISH') || (action === 'SELL' && mtfDir === 'BEARISH');
             var counter = (action === 'BUY' && mtfDir === 'BEARISH') || (action === 'SELL' && mtfDir === 'BULLISH');
 
-            // PATCH #26: Stronger counter-trend blocking — analysis showed 0% WR on counter-trend trades
             if (counter && mtfBias.confluence && mtfBias.confluence.allAligned) {
-                console.log('   [MTF P26] BLOCKED: ' + action + ' against ALL-' + mtfDir + ' HTF confluence');
+                console.log('   [MTF] BLOCKED: ' + action + ' against ALL-' + mtfDir + ' HTF confluence');
                 return null;
             } else if (counter) {
-                // PATCH #26: Increased penalty from 0.6 to 0.35 (65% confidence reduction)
-                weightedConf *= 0.35;
-                console.log('   [MTF P26] STRONG PENALTY: ' + action + ' vs ' + mtfDir + ' bias (conf *0.35 — P26)');
+                weightedConf *= 0.6;
+                console.log('   [MTF] PENALTY: ' + action + ' vs ' + mtfDir + ' bias (conf *0.6)');
             } else if (aligned) {
                 weightedConf *= mtfMul;
                 console.log('   [MTF] BOOST: ' + action + ' aligned with ' + mtfDir + ' MTF (conf *' + mtfMul.toFixed(2) + ')');
@@ -148,27 +146,26 @@ class EnsembleVoting {
         }
 
         let threshold;
-        // PATCH #26: Raised thresholds to reduce trade frequency (fewer trades = less fee drag)
-        // Analysis showed 33% win rate — need higher quality signals only
         if (hasConflict) {
-            threshold = 0.60;
-            console.log('   [THRESHOLD] 60% (conflict — P26 raised from 50%)');
-        } else if (sourcesAgree >= 3 && (
+            threshold = 0.50;
+            console.log('   [THRESHOLD] 50% (conflict)');
+        } else if (sourcesAgree >= 2 && (
             (mlConf > 0.80 && mlAct === action) ||
             (aiConf > 0.80 && aiAct === action) ||
-            (mlConf > 0.70 && aiConf > 0.70 && mlAct === action && aiAct === action)
+            (mlConf > 0.65 && aiConf > 0.65 && mlAct === action && aiAct === action)
         )) {
-            // PATCH #26: Require 3+ sources agreeing (was 2+) + higher ML thresholds
-            threshold = 0.45;
-            console.log('   [THRESHOLD] 45% (strong conviction — P26 raised from 35%)');
+            // PATCH #15: Strong conviction if either AI is highly confident,
+            // or both AI systems agree with moderate-high confidence
+            threshold = 0.35;
+            console.log('   [THRESHOLD] 35% (strong AI conviction)');
         } else {
-            threshold = 0.55;
-            console.log('   [THRESHOLD] 55% (normal — P26 raised from 40%)');
+            threshold = 0.40;
+            console.log('   [THRESHOLD] 40% (normal)');
         }
 
         if (consensusPct < threshold) {
-            // PATCH #23+#26: NEURON AI OVERRIDE - require stronger MTF signal (score >= 20, was 15)
-            if (mtfBias && Math.abs(mtfBias.score) >= 20) {
+            // PATCH #23: NEURON AI OVERRIDE - when market direction is clear
+            if (mtfBias && Math.abs(mtfBias.score) >= 15) {
                 var neuronAction = mtfBias.direction === 'BULLISH' ? 'BUY' : 'SELL';
                 var neuronVote = votes[neuronAction] || 0;
                 var oppositeVote = votes[neuronAction === 'BUY' ? 'SELL' : 'BUY'] || 0;
@@ -214,9 +211,8 @@ class EnsembleVoting {
             if (sig.symbol) { symbol = sig.symbol; break; }
         }
 
-        // PATCH #26: Minimum final confidence 0.30 (was 0.10) — reject weak signals
         const finalConf = (typeof weightedConf === 'number' && !isNaN(weightedConf))
-            ? Math.max(0.30, Math.min(0.95, weightedConf)) : 0.5;
+            ? Math.max(0.1, Math.min(0.95, weightedConf)) : 0.5;
 
         const result = {
             timestamp: Date.now(),
@@ -238,8 +234,8 @@ class EnsembleVoting {
                 dynamicWeights: this.weightProvider ? true : false,
             },
         };
-        // PATCH #23b+#26: NEURON AI HOLD Override — require score >= 25 (was 20)
-        if (action === 'HOLD' && mtfBias && Math.abs(mtfBias.score) >= 25) {
+        // PATCH #23b: NEURON AI Override for HOLD consensus when MTF strongly directional
+        if (action === 'HOLD' && mtfBias && Math.abs(mtfBias.score) >= 20) {
             var mtfDir = mtfBias.direction === 'BULLISH' ? 'BUY' : 'SELL';
             var mlFound = null;
             for (var si = 0; si < Array.from(signals.values()).length; si++) {

@@ -888,43 +888,6 @@ class AutonomousTradingBot {
                         }
                     }
 
-                    // PATCH #26: Signal quality gate — minimum confidence before execution
-                    // Analysis showed low-confidence trades have very low win rate
-                    if (shouldExecute && consensus.confidence < 0.45) {
-                        shouldExecute = false;
-                        console.log('[P26 QUALITY GATE] BLOCKED: ' + consensus.action +
-                            ' confidence ' + (consensus.confidence * 100).toFixed(1) + '% < 45% minimum');
-                        if (this.megatron) {
-                            this.megatron.logActivity('RISK', 'Trade blocked by Quality Gate (P26)',
-                                consensus.action + ' conf=' + (consensus.confidence * 100).toFixed(1) + '% < 45%', {}, 'normal');
-                        }
-                    }
-
-                    // PATCH #26: Anti-scalping cooldown check
-                    if (shouldExecute && this.rm && this.rm.checkTradeCooldown && !this.rm.checkTradeCooldown()) {
-                        shouldExecute = false;
-                        console.log('[P26 COOLDOWN] BLOCKED: ' + consensus.action + ' — minimum 3 min between trades');
-                        if (this.megatron) {
-                            this.megatron.logActivity('RISK', 'Trade blocked by Anti-Scalp Cooldown (P26)',
-                                'Minimum 3 minutes between new entries', {}, 'normal');
-                        }
-                    }
-
-                    // PATCH #26: Post-win cooldown — reduce confidence after 2+ consecutive wins
-                    if (shouldExecute && this.rm && this.rm.getPostWinCooldownMultiplier) {
-                        const winMult = this.rm.getPostWinCooldownMultiplier();
-                        if (winMult < 1.0) {
-                            consensus.confidence *= winMult;
-                            console.log('[P26 WIN COOLDOWN] Confidence reduced: ' +
-                                (consensus.confidence * 100).toFixed(1) + '% (post-win cooldown x' + winMult + ')');
-                            // Re-check quality gate after reduction
-                            if (consensus.confidence < 0.45) {
-                                shouldExecute = false;
-                                console.log('[P26 QUALITY GATE] BLOCKED after win cooldown — conf too low');
-                            }
-                        }
-                    }
-
                     if (shouldExecute) {
                         await this.exec.executeTradeSignal(consensus, this.dp);
 

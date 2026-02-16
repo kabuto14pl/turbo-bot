@@ -149,16 +149,8 @@ class ExecutionEngine {
                         newSL = Math.max(chandelierSL, minChandelier);
                     }
 
-                    // PATCH #26: Minimum hold time — first 15 min, only allow SL if loss > 2.5x ATR
-                // Analysis showed <5min trades have only 20% win rate (noise trading)
-                const holdMinutes = (Date.now() - (pos.entryTime || Date.now())) / 60000;
-                if (holdMinutes < 15 && atrMult < 1.0) {
-                    // During first 15 min, DON'T tighten SL — let position breathe
-                    // Only trail after minimum hold period or if already profitable > 1x ATR
-                }
-
-                // SL can only move UP, never down
-                    if (newSL > pos.stopLoss && (holdMinutes >= 15 || atrMult >= 1.0)) {
+                    // SL can only move UP, never down
+                    if (newSL > pos.stopLoss) {
                         const phase = atrMult >= 3.0 ? 'CHANDELIER' : atrMult >= 2.0 ? 'LOCK_1x' : atrMult >= 1.5 ? 'LOCK_0.5x' : 'BREAKEVEN';
                         console.log(`[TRAILING SL] ${phase} ${atrMult.toFixed(1)}x ATR | SL: $${pos.stopLoss.toFixed(2)} -> $${newSL.toFixed(2)} | High: $${(pos._highestPrice || price).toFixed(2)}`);
                         this.pm.updateStopLoss(sym, newSL);
@@ -230,40 +222,14 @@ class ExecutionEngine {
                 // ============================================
                 // SL / TP / TIME CHECK - execute close (direction-aware)
                 // ============================================
-                // PATCH #26: Minimum hold time gate for SL — during first 10 min, only emergency SL
-                const holdMin = (Date.now() - (pos.entryTime || Date.now())) / 60000;
-                const isEmergencySL = atr > 0 ? Math.abs(profit) > 2.5 * atr : Math.abs(profit / pos.entryPrice) > 0.04;
-
                 let close = false, reason = '';
                 if (timeExit) { close = true; reason = 'TIME_EXIT'; }
                 else if (isShort) {
-                    if (price >= pos.stopLoss) {
-                        // PATCH #26: During first 10 min, only close on emergency SL
-                        if (holdMin >= 10 || isEmergencySL) {
-                            close = true; reason = 'STOP_LOSS';
-                        } else {
-                            console.log('[HOLD GATE] ' + sym + ' SL hit at ' + holdMin.toFixed(1) + 'min — holding (min 10min rule), loss: $' + Math.abs(profit).toFixed(2));
-                        }
-                    }
-                    else if (pos.takeProfit && price <= pos.takeProfit) {
-                        // PATCH #26: During first 15 min, require wider TP margin (let it run more)
-                        if (holdMin >= 15 || Math.abs(profit) > 1.5 * (atr || pos.entryPrice * 0.02)) {
-                            close = true; reason = 'TAKE_PROFIT';
-                        }
-                    }
+                    if (price >= pos.stopLoss) { close = true; reason = 'STOP_LOSS'; }
+                    else if (pos.takeProfit && price <= pos.takeProfit) { close = true; reason = 'TAKE_PROFIT'; }
                 } else {
-                    if (price <= pos.stopLoss) {
-                        if (holdMin >= 10 || isEmergencySL) {
-                            close = true; reason = 'STOP_LOSS';
-                        } else {
-                            console.log('[HOLD GATE] ' + sym + ' SL hit at ' + holdMin.toFixed(1) + 'min — holding (min 10min rule), loss: $' + Math.abs(profit).toFixed(2));
-                        }
-                    }
-                    else if (price >= pos.takeProfit) {
-                        if (holdMin >= 15 || profit > 1.5 * (atr || pos.entryPrice * 0.02)) {
-                            close = true; reason = 'TAKE_PROFIT';
-                        }
-                    }
+                    if (price <= pos.stopLoss) { close = true; reason = 'STOP_LOSS'; }
+                    else if (price >= pos.takeProfit) { close = true; reason = 'TAKE_PROFIT'; }
                 }
 
                 if (close) {
@@ -305,14 +271,7 @@ class ExecutionEngine {
             const valid = this._validateSignal(signal);
             if (!valid.valid) { console.log(`[TRADE REJECTED] ${valid.reason}`); return; }
 
-            // PATCH #26: Anti-scalping cooldown check — minimum 3 min between new entries
-            if ((signal.action === 'BUY' || signal.action === 'SELL') && this.risk && this.risk.checkTradeCooldown) {
-                if (!this.risk.checkTradeCooldown()) {
-                    console.log('[EXEC P26] Trade BLOCKED by anti-scalping cooldown');
-                    return;
-                }
-            }
-            console.log('[EXEC] ' + signal.action + ' ' + signal.symbol + ' (conf: ' + (signal.confidence * 100).toFixed(1) + '%)');
+            console.log(`[EXEC] ${signal.action} ${signal.symbol} (conf: ${(signal.confidence * 100).toFixed(1)}%)`);
 
             // Get ATR for dynamic risk
             let atrValue, dynamicRisk = this.config.riskPerTrade;
@@ -351,11 +310,10 @@ class ExecutionEngine {
             if (signal.action === 'BUY') {
                 let sl, tp;
                 if (atrValue && atrValue > 0) {
-                    // PATCH #26: SL widened to 2.0x ATR to reduce premature SL hits
-                    // (analysis showed 9 SL exits = -$60.55, SL too tight)
-                    // TP widened to 5.0x ATR for better RR (target 1:2.5)
-                    sl = signal.price - 2.0 * atrValue;
-                    tp = signal.price + 5.0 * atrValue;
+                    // SL: 1.5x ATR (tighter than old 2x - better R:R with trailing)
+                    // TP: 4x ATR (wider - let runners run with partial TP levels)
+                    sl = signal.price - 1.5 * atrValue;
+                    tp = signal.price + 4.0 * atrValue;
                 } else {
                     sl = signal.price * 0.985;
                     tp = signal.price * 1.04;
@@ -380,11 +338,11 @@ class ExecutionEngine {
             } else if (signal.action === 'SELL') {
                 const pos = this.pm.getPosition(signal.symbol);
                 if (!pos) {
-                    // PATCH #23+#26: SHORT with wider SL (2.0x ATR) and TP (5.0x ATR)
+                    // PATCH #23: NEURON AI - Open SHORT position
                     let shortSL, shortTP;
                     if (atrValue && atrValue > 0) {
-                        shortSL = signal.price + 2.0 * atrValue;
-                        shortTP = signal.price - 5.0 * atrValue;
+                        shortSL = signal.price + 1.5 * atrValue;
+                        shortTP = signal.price - 4.0 * atrValue;
                     } else {
                         shortSL = signal.price * 1.015;
                         shortTP = signal.price * 0.96;
@@ -453,13 +411,9 @@ class ExecutionEngine {
 
             // PATCH #14: NO duplicate recordTradeResult here (this was the double-count bug)
 
-            // PATCH #26: Mark trade timestamp for anti-scalping cooldown
-            if (this.risk && this.risk.markTradeExecuted) {
-                this.risk.markTradeExecuted();
-            }
-            console.log('[EXEC DONE] ' + trade.action + ' ' + trade.quantity.toFixed(4) + ' ' + trade.symbol + ' @ $' + trade.price.toFixed(2) + ' | PnL: $' + trade.pnl.toFixed(2));
+            console.log(`[EXEC DONE] ${trade.action} ${trade.quantity.toFixed(4)} ${trade.symbol} @ $${trade.price.toFixed(2)} | PnL: $${trade.pnl.toFixed(2)}`);
         } catch (err) {
-            console.error('[EXEC ERROR] ' + err.message);
+            console.error(`[EXEC ERROR] ${err.message}`);
         }
     }
 

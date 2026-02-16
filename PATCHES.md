@@ -653,3 +653,70 @@ Analiza wykazała 15+ problemów blokujących pełną efektywność bota — wsz
 - ✅ Neuron AI FALLBACK working (LLM rate-limited 429)
 - ✅ No new errors from patch changes
 
+
+---
+
+## Patch #26  2026-02-16  Edge Recovery: Anti-Scalping, Quality Gate, Loss Streak Protection
+
+**Typ:** Critical Fix / Trading Edge Recovery
+**Motywacja:** Analiza 21 round-trip trades wykazala:
+- Win rate: 33.33% (7W/14L)  zbyt niski
+- Net PnL: -\.72, fees: \.40  fees sa #1 profit killer
+- Counter-trend trades: 0% win rate
+- Ultra-short scalps (<5 min): 20% win rate
+- Po wygranej: 85.7% nastepny trade przegrywa (over-confidence)
+- Monte Carlo: tylko 26.4% prawdopodobienstwo zysku
+
+**Zaimplementowane zmiany (23 zmiany w 5 plikach):**
+
+### risk-manager.js (6 zmian):
+1. **getConsecutiveLossSizeMultiplier()**  3 losses  50% size, 5+ losses  25% size
+2. **getPostWinCooldownMultiplier()**  2+ consecutive wins  0.80x confidence
+3. **recordWinStreak()**  tracking consecutive wins
+4. **checkTradeCooldown()**  3-minute minimum between trades (anti-scalping)
+5. **markTradeExecuted()**  timestamp tracking for cooldown
+6. **calculateOptimalQuantity()**  SL distance widened from 2.0x to 2.5x ATR
+
+### execution-engine.js (6 zmian):
+1. **BUY SL**  1.5x  2.0x ATR (wider stop)
+2. **BUY TP**  4.0x  5.0x ATR (wider target, RR 1:2.5)
+3. **SHORT SL/TP**  same widening as BUY
+4. **Trailing SL**  15-min minimum hold before tightening
+5. **SL closure**  10-min minimum hold gate (emergency SL at 2.5x ATR still allowed)
+6. **Anti-scalping cooldown**  check before execution + timestamp marking
+
+### ensemble-voting.js (5 zmian):
+1. **Normal threshold**  40%  55% (higher quality bar)
+2. **Conflict threshold**  50%  60%
+3. **Strong conviction**  35%  45%, requires 3+ sources (was 2+)
+4. **Counter-trend penalty**  0.6  0.35 (65% confidence reduction for counter-trend)
+5. **Confidence floor**  0.10  0.30 minimum
+
+### neuron_ai_manager.js (5 zmian):
+1. **System prompt**  anti-scalping, counter-trend, quality rules added
+2. **Fallback thresholds**  MTF 15  20, ML 0.5  0.6
+3. **Loss streak protection**  3+ losses need MTF >= 25 in fallback
+4. **Graduated confidence cap**  3 losses  *0.80, 5 losses  *0.60, 8+  cap 0.40
+5. **LLM prompt footer**  enhanced with anti-scalping rules
+
+### bot.js (1 zmiana):
+1. **Quality gate**  min 45% confidence before execution + post-win cooldown + anti-scalping check
+
+### Dodatkowa naprawa (Patch #26a):
+- **SYSTEM_PROMPT syntax fix**  multiline string broken by patch rejoined with \\n escapes
+- **Em dash/Polish chars**  replaced with ASCII (-- and l) for encoding safety
+- **node -c check**  PASSED after fix
+
+### Backup:
+\/root/turbo-bot/backups/patch_26_20260216_154544/\ (7 plikow)
+
+### Weryfikacja:
+-  23 zmian, 0 bledow (skrypt Python)
+-  Syntax fix: node -c PASSED
+-  Bot online: \pm2 restart turbo-bot\  cycle #1 success
+-  Health: \status: " healthy\\, 13/13 components green
+- P26 thresholds active: \[THRESHOLD] 55% (normal P26 raised from 40%)\
+- Loss streak protection: \[NEURON AI P26] CRITICAL: 12 consecutive losses -- confidence capped at 0.40\
+- Signal correctly REJECTED at 11.5% confidence (below 40% threshold)
+- NeuronAI: initialized, LLM rate-limited rule-based fallback working
+
