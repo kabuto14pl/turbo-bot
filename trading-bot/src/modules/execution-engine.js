@@ -166,16 +166,16 @@ class ExecutionEngine {
 
                     // ============================================
                     // 3-LEVEL PARTIAL TAKE-PROFIT
-                    // Level 1: 25% at 1.5x ATR
-                    // Level 2: 25% at 2.5x ATR
+                    // Level 1: 25% at 2.0x ATR (P27: adjusted for 2.5x SL, ~0.8R)
+                    // Level 2: 25% at 3.75x ATR (P27: 1:1.5 RR with 2.5x SL)
                     // Level 3: 50% runner (full TP or Chandelier exit)
                     // ============================================
 
-                    // PARTIAL TP LEVEL 1: 25% at 1.5x ATR
-                    if (atrMult >= 1.5 && !pos._partialTp1Done && pos.quantity > 0) {
+                    // PARTIAL TP LEVEL 1: 25% at 2.0x ATR — 0.8R with 2.5x ATR SL (P27)
+                    if (atrMult >= 2.0 && !pos._partialTp1Done && pos.quantity > 0) {
                         const closeQty = pos.quantity * 0.25;
                         if (closeQty > 0.000001) {
-                            const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L1_1.5ATR', 'PARTIAL_TP');
+                            const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L1_2.0ATR', 'PARTIAL_TP');
                             if (trade) {
                                 pos._partialTp1Done = true;
                                 // Move SL to breakeven + buffer after first TP
@@ -187,11 +187,11 @@ class ExecutionEngine {
                         }
                     }
 
-                    // PARTIAL TP LEVEL 2: 25% at 2.5x ATR
-                    if (atrMult >= 2.5 && !pos._partialTp2Done && pos.quantity > 0) {
+                    // PARTIAL TP LEVEL 2: 25% at 3.75x ATR — 1:1.5 RR with 2.5x ATR SL (P27)
+                    if (atrMult >= 3.75 && !pos._partialTp2Done && pos.quantity > 0) {
                         const closeQty = pos.quantity * 0.333; // 25% of original = 33% of remaining 75%
                         if (closeQty > 0.000001) {
-                            const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L2_2.5ATR', 'PARTIAL_TP');
+                            const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L2_3.75ATR', 'PARTIAL_TP');
                             if (trade) {
                                 pos._partialTp2Done = true;
                                 // Lock 1x ATR profit on remainder
@@ -354,7 +354,7 @@ class ExecutionEngine {
                     // PATCH #26: SL widened to 2.0x ATR to reduce premature SL hits
                     // (analysis showed 9 SL exits = -$60.55, SL too tight)
                     // TP widened to 5.0x ATR for better RR (target 1:2.5)
-                    sl = signal.price - 2.0 * atrValue;
+                    sl = signal.price - 2.5 * atrValue; // P27: SL widened 2.0->2.5x ATR for fewer premature stops
                     tp = signal.price + 5.0 * atrValue;
                 } else {
                     sl = signal.price * 0.985;
@@ -383,7 +383,7 @@ class ExecutionEngine {
                     // PATCH #23+#26: SHORT with wider SL (2.0x ATR) and TP (5.0x ATR)
                     let shortSL, shortTP;
                     if (atrValue && atrValue > 0) {
-                        shortSL = signal.price + 2.0 * atrValue;
+                        shortSL = signal.price + 2.5 * atrValue; // P27: SL widened 2.0->2.5x ATR
                         shortTP = signal.price - 5.0 * atrValue;
                     } else {
                         shortSL = signal.price * 1.015;

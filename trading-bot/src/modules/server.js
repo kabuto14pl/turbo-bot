@@ -60,7 +60,7 @@ class Server {
             res.json({ signals: sigs, instance: this.config.instanceId, count: sigs.length });
         });
         app.get('/api/trades', (req, res) => {
-            const limit = parseInt(req.query.limit) || 50;
+            const limit = parseInt(req.query.limit) || 500; // PATCH #27: 50->500 for full trade history
             const trades = this.pm.getTrades().slice(-limit);
             res.json({ trades, total: this.pm.getTrades().length, instance: this.config.instanceId });
         });

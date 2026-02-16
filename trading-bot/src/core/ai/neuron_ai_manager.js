@@ -51,7 +51,7 @@ class NeuronAIManager {
         this.adaptedWeights = null;
         this.riskMultiplier = 1.0;     // PATCH #25: Range 0.3-2.0 (was 0.5-1.5)
         this.confidenceBoost = 0.0;    // Extra confidence for aligned signals
-        this.reversalEnabled = false;  // Can detect reversals
+        this.reversalEnabled = true;  // PATCH #27: Enable reversal detection by default  // Can detect reversals
         this.aggressiveMode = false;   // More trades in strong trends
 
         // Performance tracking
@@ -64,7 +64,7 @@ class NeuronAIManager {
 
         // PATCH #26: Raised fallback thresholds for higher quality signals
         this.fallbackRules = {
-            minMTFScore: 20,       // Was 15 -- require stronger MTF confirmation
+            minMTFScore: 22,       // P27: 20->22 for higher quality signals (was 15 pre-P26)
             minMLConfidence: 0.60, // Was 0.5 -- require higher ML confidence
             maxDrawdownPct: 0.10,
             trendFollowBias: 0.7,
@@ -276,7 +276,23 @@ class NeuronAIManager {
             }
         }
 
-        // Moderate signals: follow ensemble majority if clear (multi-position OK)
+                // PATCH #27: RANGING regime filter — reduce confidence in ranging/sideways markets
+        // Analysis: 13 trades <5min in RANGING had only 36.1% WR, scalping kills profits
+        if (action !== 'HOLD' && action !== 'CLOSE') {
+            const regimeStr = ((state.regime || '') + '').toUpperCase();
+            if (regimeStr.includes('RANG') || regimeStr.includes('SIDEWAYS') || regimeStr.includes('CHOPPY')) {
+                confidence *= 0.55; // 45% confidence reduction in ranging markets
+                reason += ' | P27: RANGING regime penalty -45%';
+                // In ranging market with any loss streak, force HOLD
+                if ((this.consecutiveLosses || 0) >= 2) {
+                    action = 'HOLD';
+                    confidence = 0.15;
+                    reason = 'P27: RANGING + ' + (this.consecutiveLosses || 0) + ' losses = FORCED HOLD';
+                }
+            }
+        }
+
+// Moderate signals: follow ensemble majority if clear (multi-position OK)
         if (action === 'HOLD' && positionCount < maxPositions && consecutiveLosses < 3) {
             const maxVote = Math.max(votes.BUY || 0, votes.SELL || 0);
             if (maxVote > 0.50) {
@@ -293,7 +309,7 @@ class NeuronAIManager {
         // Risk multiplier application
         if (action !== 'HOLD' && action !== 'CLOSE') {
             confidence *= this.riskMultiplier;
-            confidence = Math.max(0.1, Math.min(1.0, confidence));
+            confidence = Math.max(0.25, Math.min(1.0, confidence)); // P27: floor 0.1->0.25 for actionable signals
         }
 
         return {

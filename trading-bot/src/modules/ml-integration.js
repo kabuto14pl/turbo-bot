@@ -27,6 +27,10 @@ class MLIntegration {
         try {
             const action = await this.enterpriseML.processStep(price, rsi, volume, hasOpenPosition, priceHistory);
             this.mlPerformance = this.enterpriseML.getPerformance();
+            // PATCH #27: Enforce exploration rate floor at 0.15
+            if (this.mlPerformance.exploration_rate < 0.15) {
+                this.mlPerformance.exploration_rate = 0.15;
+            }
             return action;
         } catch (e) { console.error('[ML] Error:', e.message); return null; }
     }

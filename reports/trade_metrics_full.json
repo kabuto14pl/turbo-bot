@@ -1,0 +1,238 @@
+{
+  "total_trades": 36,
+  "wins": 15,
+  "losses": 21,
+  "break_even": 0,
+  "win_rate_pct": 41.67,
+  "total_net_pnl": -47.2,
+  "total_gross_pnl": 6.93,
+  "total_fees": 64.36,
+  "avg_pnl_per_trade": -1.3111,
+  "avg_win": 2.9627,
+  "avg_loss": -4.3638,
+  "largest_win": 9.3614,
+  "largest_loss": -61.2776,
+  "profit_factor": 0.4849,
+  "expectancy": -1.3111,
+  "risk_reward_ratio": 0.6789,
+  "sharpe_ratio": -2.9167,
+  "sortino_ratio": -2.5285,
+  "max_drawdown_usd": 61.28,
+  "max_drawdown_pct": 0.61,
+  "final_equity": 9952.8,
+  "return_pct": -0.47,
+  "avg_duration_s": 2797.3,
+  "avg_duration_human": "46.6m",
+  "min_duration_s": 31.2,
+  "max_duration_s": 32176.7,
+  "scalp_trades_under_5m": 13,
+  "short_trades_5_15m": 2,
+  "medium_trades_15_60m": 3,
+  "long_trades_over_1h": 3,
+  "max_consecutive_wins": 4,
+  "max_consecutive_losses": 8,
+  "fees_pct_of_capital": 0.64,
+  "avg_fees_per_trade": 1.7879,
+  "long_count": 14,
+  "short_count": 22,
+  "long_win_rate": 64.3,
+  "short_win_rate": 27.3,
+  "long_pnl": -38.51,
+  "short_pnl": -8.69,
+  "strategy_performance": {
+    "EnsembleVoting": {
+      "trades": 13,
+      "wins": 4,
+      "losses": 9,
+      "win_rate": 30.8,
+      "total_pnl": -53.81,
+      "total_fees": 30.63,
+      "avg_pnl": -4.14
+    },
+    "STOP_LOSS": {
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 3.76,
+      "total_fees": 3.75,
+      "avg_pnl": 0.94
+    },
+    "NeuronAI": {
+      "trades": 9,
+      "wins": 3,
+      "losses": 6,
+      "win_rate": 33.3,
+      "total_pnl": -10.5,
+      "total_fees": 25.92,
+      "avg_pnl": -1.17
+    },
+    "TAKE_PROFIT": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 9.36,
+      "total_fees": 1.52,
+      "avg_pnl": 9.36
+    },
+    "QuantumPosMgr": {
+      "trades": 9,
+      "wins": 3,
+      "losses": 6,
+      "win_rate": 33.3,
+      "total_pnl": 3.99,
+      "total_fees": 2.54,
+      "avg_pnl": 0.44
+    }
+  },
+  "exit_reason_performance": {
+    "StopLoss": {
+      "trades": 8,
+      "wins": 4,
+      "win_rate": 50.0,
+      "pnl": -68.34
+    },
+    "TAKE_PROFIT_Close": {
+      "trades": 1,
+      "wins": 1,
+      "win_rate": 100.0,
+      "pnl": 9.36
+    },
+    "TakeProfit": {
+      "trades": 4,
+      "wins": 4,
+      "win_rate": 100.0,
+      "pnl": 19.01
+    },
+    "QuantumPosMgr_Close": {
+      "trades": 9,
+      "wins": 3,
+      "win_rate": 33.3,
+      "pnl": 3.99
+    },
+    "EnsembleVoting_Signal": {
+      "trades": 5,
+      "wins": 0,
+      "win_rate": 0.0,
+      "pnl": -6.17
+    },
+    "NeuronAI_Close": {
+      "trades": 1,
+      "wins": 1,
+      "win_rate": 100.0,
+      "pnl": 5.17
+    },
+    "NeuronAI_Override": {
+      "trades": 6,
+      "wins": 2,
+      "win_rate": 33.3,
+      "pnl": -3.49
+    },
+    "QuantumPosMgr": {
+      "trades": 2,
+      "wins": 0,
+      "win_rate": 0.0,
+      "pnl": -6.74
+    }
+  },
+  "post_win_loss_rate": 42.9,
+  "post_loss_win_rate": 33.3,
+  "first_half_win_rate": 50.0,
+  "second_half_win_rate": 33.3,
+  "first_half_pnl": -38.64,
+  "second_half_pnl": -8.56,
+  "quintile_analysis": [
+    {
+      "period": "Q1 (trades 1-7)",
+      "trades": 7,
+      "wins": 5,
+      "win_rate": 71.4,
+      "pnl": -34.87
+    },
+    {
+      "period": "Q2 (trades 8-14)",
+      "trades": 7,
+      "wins": 3,
+      "win_rate": 42.9,
+      "pnl": -3.63
+    },
+    {
+      "period": "Q3 (trades 15-21)",
+      "trades": 7,
+      "wins": 2,
+      "win_rate": 28.6,
+      "pnl": -1.48
+    },
+    {
+      "period": "Q4 (trades 22-28)",
+      "trades": 7,
+      "wins": 4,
+      "win_rate": 57.1,
+      "pnl": -2.19
+    },
+    {
+      "period": "Q5 (trades 29-35)",
+      "trades": 7,
+      "wins": 0,
+      "win_rate": 0.0,
+      "pnl": -5.02
+    }
+  ],
+  "entry_strategies": {
+    "EnsembleVoting": 13,
+    "TAKE_PROFIT": 1,
+    "STOP_LOSS": 4,
+    "NeuronAI": 9,
+    "QuantumPosMgr": 9
+  },
+  "exit_reasons": {
+    "StopLoss": 8,
+    "TakeProfit": 4,
+    "TAKE_PROFIT_Close": 1,
+    "QuantumPosMgr": 2,
+    "EnsembleVoting_Signal": 5,
+    "NeuronAI_Override": 6,
+    "QuantumPosMgr_Close": 9,
+    "NeuronAI_Close": 1
+  },
+  "equity_curve": [
+    10000,
+    9997.39,
+    10002.33,
+    10011.69,
+    9950.42,
+    9957.17,
+    9958.31,
+    9965.13,
+    9966.81,
+    9966.8,
+    9964.05,
+    9964.98,
+    9965.48,
+    9963.44,
+    9961.49,
+    9961.1,
+    9959.97,
+    9959.31,
+    9961.36,
+    9960.25,
+    9960.31,
+    9960.01,
+    9958.35,
+    9955.82,
+    9956.98,
+    9958.49,
+    9960.85,
+    9966.02,
+    9957.82,
+    9953.83,
+    9953.06,
+    9952.86,
+    9952.81,
+    9952.8,
+    9952.8,
+    9952.8,
+    9952.8
+  ]
+}

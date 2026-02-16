@@ -611,10 +611,13 @@ class MinimalDeepRLAgent {
         return Math.max(0, (1 - winRate) * 0.5); // Simplified drawdown estimate
     }
     calculateExplorationRate() {
-        // Decreasing exploration over time
-        const baseExploration = 0.1;
+        // PATCH #27: Increased base exploration and added floor at 0.15
+        // Analysis: exploration was stuck at 0.089, ML trapped in local minimum
+        // Old: base=0.1, no floor. New: base=0.30, floor=0.15 for continued exploration
+        const baseExploration = 0.30;
         const decayRate = 0.999;
-        return baseExploration * Math.pow(decayRate, this.episodes);
+        const rate = baseExploration * Math.pow(decayRate, this.episodes);
+        return Math.max(0.15, rate); // P27: floor at 15% to prevent over-exploitation
     }
     // 💾 CHECKPOINT METHODS - Save/Load ML state
     /**

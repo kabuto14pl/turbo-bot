@@ -720,3 +720,37 @@ Analiza wykazała 15+ problemów blokujących pełną efektywność bota — wsz
 - Signal correctly REJECTED at 11.5% confidence (below 40% threshold)
 - NeuronAI: initialized, LLM rate-limited rule-based fallback working
 
+
+---
+
+## Patch #27  Edge Recovery II: Anti-RANGING, Wider SL, Enhanced NeuronAI
+**Data:** 2026-02-16
+**Typ:** CRITICAL  Based on comprehensive 36 round-trip trade analysis
+**Status:** DEPLOYED + VERIFIED
+
+### Kontekst i Analiza
+Pełna analiza 78 transakcji (36 round-trips) wykazała kluczowe problemy:
+- **929% fee-to-profit ratio**  fees (.36) zjadały cały gross PnL (.93)
+- **R:R ratio 0.68**  avg win .96 vs avg loss .36
+- **SL dominuje straty**  9 SL exits = -.34 (SL za ciasny)
+- **Scalping w RANGING**  13 trades <5min z 36.1% WR
+- **NeuronAI zbyt pasywny**  78% HOLD, riskMultiplier stuck at 0.3 (minimum)
+- **ML over-exploiting**  exploration rate spadł do 0.089
+
+### Zmiany (20 zmian, 6 plików)
+
+**1. server.js**  /api/trades limit
+- 50  500  pełna historia transakcji w dashboardzie
+
+**2. execution-engine.js**  SL/TP optimization
+- SL BUY: 2.0x  2.5x ATR (mniej przedwczesnych SL)
+- SL SHORT: 2.0x  2.5x ATR
+- Partial TP L1: 1.5x  2.0x ATR (0.8R early lock-in)
+- Partial TP L2: 2.5x  3.75x ATR (1:1.5 RR  user request)
+- Full TP: remains at 5.0x ATR (1:2 RR)
+
+**3. neuron_ai_manager.js**  NeuronAI enhancements
+- eversalEnabled: false  true (enable reversal detection)
+- RANGING regime filter: -45% confidence in sideways markets
+- RANGING + 2+ losses = FORCED HOLD
+- Confidence floor: 

@@ -888,7 +888,25 @@ class AutonomousTradingBot {
                         }
                     }
 
-                    // PATCH #26: Signal quality gate — minimum confidence before execution
+                                        // PATCH #27: RANGING regime filter — penalize trades in sideways markets
+                    // Analysis showed ranging market trades have poor win rate and high reversal risk
+                    if (shouldExecute && consensus.action !== 'HOLD') {
+                        const currentRegime = (this.neuralAI && this.neuralAI.currentRegime) || '';
+                        const regimeUpper = (currentRegime + '').toUpperCase();
+                        if (regimeUpper.includes('RANG') || regimeUpper.includes('SIDEWAYS') || regimeUpper.includes('CHOPPY')) {
+                            const oldConf = consensus.confidence;
+                            consensus.confidence *= 0.70; // 30% penalty in ranging markets
+                            console.log('[P27 REGIME] RANGING detected — confidence reduced: ' +
+                                (oldConf * 100).toFixed(1) + '% -> ' + (consensus.confidence * 100).toFixed(1) + '%');
+                            if (this.megatron) {
+                                this.megatron.logActivity('RISK', 'P27 RANGING Penalty',
+                                    'Regime: ' + currentRegime + ' | Conf: ' + (oldConf * 100).toFixed(1) +
+                                    '% -> ' + (consensus.confidence * 100).toFixed(1) + '%', {}, 'normal');
+                            }
+                        }
+                    }
+
+// PATCH #26: Signal quality gate — minimum confidence before execution
                     // Analysis showed low-confidence trades have very low win rate
                     if (shouldExecute && consensus.confidence < 0.45) {
                         shouldExecute = false;

@@ -1,0 +1,373 @@
+2026-02-15T21:27:47.122Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w fazie RANGING, brak wyraźnych sygnałów z ensemble oraz wskaźników. MTF bias wskazuje BEARISH, ale brak aktywnych sygnałów SELL. RSI jest neutralne (51.6). Nie ma wystarczających przesłanek do otwarcia pozycji.
+2026-02-15T21:30:21.893Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with no clear trend direction. Ensemble votes are majority HOLD (73.2%) with only 26.8% SELL and no BUY signals. MTF bias is BEARISH with a strong negative score (-83), but the RSI is neutral (52.5), indicating no immediate overbought or oversold conditions. Current market conditions do not justify opening a position.
+2026-02-15T21:35:28.583Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime wskazuje na RANGING, MTF bias jest BEARISH z silnym negatywnym score (-83), ale RSI jest neutralne (53.0). Ensemble votes są w większości na HOLD (73.2%), a SELL (26.8%) nie osiąga wystarczającego poziomu pewności. Brak wyraźnego sygnału do otwarcia pozycji.
+2026-02-15T21:40:34.628Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with a BEARISH bias and MTF score of -83. Ensemble votes are predominantly HOLD (73.2%) with a moderate SELL signal (26.8%). RSI is neutral at 52.4, indicating no strong momentum. No clear opportunity for a high-confidence trade.
+2026-02-15T21:45:10.797Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime wskazuje na RANGING, MTF bias jest BEARISH z wysokim negatywnym score (-81), ale brak wyraźnego konsensusu w votes (43.6% SELL, 56.4% HOLD). RSI na neutralnym poziomie 54.3, co nie wskazuje na silny sygnał sprzedaży. W obecnej sytuacji brak wystarczającej pewności do otwarcia pozycji.
+2026-02-15T21:50:16.981Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias jest BEARISH z niskim score (-83), a votes nie osiągnęły progu decyzyjnego (SELL 14.5%, poniżej 15%). RSI wskazuje neutralność (55.4). Brak wyraźnego sygnału do otwarcia pozycji.
+2026-02-15T21:55:22.462Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na BEARISH z wyraźnym negatywnym score (-79), ale ensemble votes są zdecydowanie skoncentrowane na HOLD (85.5%). RSI na poziomie 57.5 wskazuje na neutralność. Nie ma wystarczających sygnałów do otwarcia pozycji SHORT. Drawdown wynosi 0%, więc nie ma presji na konserwatywne podejście, ale brak wyraźnych sygnałów wymaga ostrożności.
+2026-02-15T22:00:27.735Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na silny BEARISH (-79), ale ensemble votes są zdominowane przez HOLD (85.5%). RSI jest neutralne (54.5), a brak wyraźnego sygnału SELL uniemożliwia otwarcie pozycji. Brak pozycji w portfelu oraz zerowy drawdown pozwalają na konserwatywne podejście.
+2026-02-15T22:05:32.897Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly bearish (-54), ensemble votes lack consensus, and RSI is neutral (55.3). Current drawdown is 0.0%, but realized PnL is negative, suggesting caution.
+2026-02-15T22:10:38.732Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na silny BEARISH (-54), a ensemble votes są rozproszone z dominacją HOLD (73.2%). RSI na poziomie 55.1 nie daje jednoznacznego sygnału. Nie widzę wystarczającej pewności do otwarcia pozycji.
+2026-02-15T22:15:13.809Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na silny BEARISH (-83), ale ensemble votes są skoncentrowane na HOLD (85.5%) z niewystarczającym wsparciem dla SELL (14.5%). RSI na poziomie 61 wskazuje na neutralność. Brak wyraźnej przewagi dla otwarcia pozycji.
+2026-02-15T22:20:19.133Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime RANGING oraz niski poziom SELL votes (14.5%) wskazują na brak wyraźnego momentum. MTF bias jest silnie BEARISH, ale nie ma wystarczającego wsparcia ze strony sygnałów, aby otworzyć pozycję SHORT.
+2026-02-15T22:25:24.227Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime RANGING, MTF bias strongly bearish (-51), ensemble votes predominantly HOLD (75.5%) with no SELL signals. RSI indicates overbought conditions (63.6), suggesting caution.
+2026-02-15T22:30:29.068Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na silny BEARISH (-51), a wszystkie strategie w ensemble głosują na HOLD. RSI na poziomie 73.2 sugeruje potencjalne wykupienie, ale brak sygnałów SELL lub BUY uniemożliwia otwarcie pozycji.
+2026-02-15T22:35:34.318Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime RANGING, brak wyraźnych sygnałów z ensemble, MTF bias BEARISH z niskim score (-51), RSI wskazuje na możliwe wykupienie rynku. Nie ma wystarczających przesłanek do otwarcia pozycji.
+2026-02-15T22:40:38.782Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly bearish with a score of -51, and all ensemble votes are unanimously HOLD. No clear signal for entry.
+2026-02-15T22:45:13.713Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na silny BEARISH (-51), a ensemble votes nie daje jednoznacznego sygnału. RSI na poziomie 64.9 sugeruje brak wyraźnego wyprzedania lub wykupienia. Brak wyraźnej przewagi w kierunku otwarcia pozycji.
+2026-02-15T22:50:18.549Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with a bearish bias (-51 MTF score). Ensemble votes are heavily skewed towards HOLD (70.9%), and RSI is relatively high (65.2), indicating potential overbought conditions. No strong consensus for BUY or SELL, and no compelling signals to override.
+2026-02-15T22:55:23.765Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with a bearish MTF bias and a negative score (-51). Ensemble votes are inconclusive with a majority HOLD recommendation. RSI indicates overbought conditions (65.0), suggesting caution. No compelling signals to open a position.
+2026-02-15T23:00:29.007Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF BIAS wskazuje na silny BEARISH (-53), a RSI jest wysoki (78.4), co sugeruje potencjalne wykupienie. Ensemble votes jednoznacznie wskazuje na HOLD, brak sygnałów do otwarcia pozycji.
+2026-02-15T23:05:34.341Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias jest zdecydowanie BEARISH z wysokim negatywnym score (-86), ale ensemble votes są sprzeczne, a RSI wskazuje neutralność (59.8). Nie ma wystarczającej zgodności ani silnego sygnału do otwarcia pozycji.
+2026-02-15T23:10:39.634Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with no clear directional bias. Ensemble votes are conflicting, and MTF bias is strongly bearish (-86), but no consensus for a strong SELL signal. RSI is neutral at 58.1, suggesting no immediate overbought or oversold conditions. Portfolio drawdown is 0%, allowing for cautious observation.
+2026-02-15T23:15:15.808Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime RANGING z wysokim poziomem niepewności w votes ensemble (BUY: 29.1%, SELL: 38.2%, HOLD: 32.7%). MTF BIAS wskazuje na BEARISH z silnym negatywnym score (-86), ale RSI na poziomie 55.3 nie potwierdza wyraźnej przewagi sprzedających. Brak konsensusu w sygnałach oraz neutralny stan portfolio (brak pozycji, brak drawdownu) sugeruje ostrożność.
+2026-02-15T23:20:21.578Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na silny BEARISH (-86), ale ensemble votes są sprzeczne (BUY: 29.1%, SELL: 25.9%, HOLD: 45.0%). RSI na poziomie 56.9 nie wskazuje na wyraźne wyprzedanie ani wykupienie. Brak jednoznacznego sygnału do otwarcia pozycji.
+2026-02-15T23:25:27.473Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na silną BEARISH tendencję, ale ensemble votes są rozbieżne. RSI na poziomie 58.1 nie wskazuje na wyraźne wyprzedanie ani wykupienie. Brak konsensusu i brak wyraźnej przewagi w kierunku SELL lub BUY.
+2026-02-15T23:30:32.806Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with bearish MTF bias and no strong consensus among ensemble votes. RSI is neutral, and there is no clear signal to open a position.
+2026-02-15T23:35:38.352Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly bearish with a score of -83, but ensemble votes are mixed with no clear consensus. RSI is neutral at 57.5, and there is no urgent signal to act. Current drawdown is 0%, allowing for cautious observation.
+2026-02-15T23:40:44.112Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na silny BEARISH (-86), ale ensemble votes są sprzeczne (BUY: 29.1%, SELL: 14.5%, HOLD: 56.4%). RSI na poziomie 54.4 nie wskazuje na wyraźne wyprzedanie ani wykupienie. Brak jednoznacznych sygnałów do otwarcia pozycji.
+2026-02-15T23:45:19.265Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with bearish bias and MTF score is significantly negative (-83). Ensemble votes are predominantly HOLD (85.5%) with weak SELL signal (14.5%). RSI is neutral at 56.2, indicating no strong overbought or oversold conditions. Current market conditions do not justify opening a position.
+2026-02-15T23:50:25.933Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly bearish (-83), but ensemble votes and indicators suggest indecision with majority HOLD votes (85.5%) and RSI neutral at 57.8. No strong signal for a decisive move.
+2026-02-15T23:55:31.353Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with MTF bias strongly BEARISH (-83 score). Ensemble votes do not show strong consensus for SELL (only 14.5%). RSI is neutral at 58.9, indicating no clear overbought or oversold conditions. Current drawdown is 0%, so no urgency to act.
+2026-02-16T00:00:06.949Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with bearish bias and low SELL votes (14.5%). Ensemble predominantly suggests HOLD. No strong conviction for SHORT due to lack of consensus and RSI not signaling overbought conditions.
+2026-02-16T00:05:12.306Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime RANGING, MTF bias BEARISH with strong negative score (-83), and ensemble votes predominantly HOLD (85.5%). No clear signal to open a position.
+2026-02-16T00:10:18.898Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w stanie RANGING, a MTF bias wskazuje na silną BEARISH tendencję (-73), jednak ensemble votes są zdominowane przez HOLD (85.5%). RSI na poziomie 62.2 nie wskazuje na wyraźne wyprzedanie ani wykupienie. Brak konsensusu na otwarcie pozycji.
+2026-02-16T00:15:25.029Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF BIAS wskazuje na BEARISH z wysokim negatywnym score (-71), ale ensemble votes są sprzeczne z BUY na poziomie 29.1% i dominującym HOLD (70.9%). RSI na poziomie 65.2 nie wskazuje na wyraźne wyprzedanie lub wykupienie. Brak konsensusu oraz brak silnego sygnału do SHORT w obecnym stanie.
+2026-02-16T00:20:30.180Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with bearish bias (-73 score). Ensemble votes are conflicting, with HOLD dominating at 56.4%. RSI indicates neutral momentum (61.7), and no strong directional signal is present. Current drawdown is 0%, so no urgency to act.
+2026-02-16T00:25:35.794Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly bearish (-83), and ensemble votes are inconclusive with mixed signals (BUY 29.1%, SELL 26.8%, HOLD 44.1%). No strong consensus or alignment with my criteria to open a position.
+2026-02-16T00:30:11.921Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na BEARISH z silnym negatywnym score (-83), ale ensemble votes są w większości na HOLD (85.5%). RSI jest neutralne (52.8), a sygnały nie dają wystarczającej pewności do otwarcia pozycji. Nie ma presji na otwarcie SHORT przy tak niskim SELL vote (14.5%).
+2026-02-16T00:35:17.858Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with a bearish bias (-73 score), but ensemble votes are inconclusive with majority HOLD (56.4%). RSI is neutral at 55.7, and no clear signal aligns with shorting. Current drawdown is 0%, allowing for a conservative approach.
+2026-02-16T00:40:23.614Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with a bearish bias and MTF score is strongly negative (-83). Ensemble votes are inconclusive with a majority HOLD recommendation. RSI is neutral at 54.3, and there is no clear signal for a high-confidence trade. Drawdown is 0%, so no urgency to act.
+2026-02-16T00:45:26.516Z | SELL | conf=0.76 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=83, ML SELL conf=85%
+2026-02-16T00:46:59.511Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T00:48:32.322Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T00:50:05.395Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T00:51:38.548Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T00:53:11.639Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T00:54:44.432Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T00:56:17.556Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T00:57:50.567Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T00:59:23.900Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:00:26.159Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:01:59.331Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:03:32.486Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:05:05.558Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:06:38.197Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:08:10.713Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:09:43.998Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:11:17.025Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:12:50.201Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:14:23.720Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:15:25.907Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:16:59.376Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:18:32.402Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:20:05.202Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:21:38.528Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:23:10.762Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:24:43.566Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:26:16.415Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:27:49.681Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:29:22.563Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:30:24.656Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:31:57.749Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:33:30.839Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:35:03.995Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:36:37.096Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:38:10.111Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:39:42.730Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:41:15.280Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:42:48.027Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:44:21.255Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T01:45:23.095Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:46:55.557Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:48:28.391Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:50:01.478Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:51:34.630Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:53:07.905Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:54:40.985Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:56:14.348Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:57:47.427Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T01:59:20.819Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:00:22.913Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:01:55.432Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:03:28.282Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:05:01.002Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:06:33.874Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:08:06.983Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:09:40.041Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:11:12.863Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:12:45.604Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:14:24.308Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:15:26.535Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:16:59.889Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:18:33.328Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:20:06.594Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:21:39.868Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:23:12.995Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T02:24:45.715Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:26:18.268Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T02:27:50.711Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:29:23.693Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T02:30:25.888Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:31:58.943Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:33:31.906Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:35:04.560Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:36:37.370Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:38:10.535Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:39:43.407Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:41:16.492Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:42:49.549Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:44:23.212Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:45:25.395Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:46:58.444Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:48:30.790Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:50:03.451Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:51:35.868Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:53:08.468Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:54:41.297Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:56:14.411Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:57:47.645Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T02:59:20.629Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:00:22.751Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:01:55.336Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:03:28.176Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:05:01.259Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:06:34.399Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:08:07.184Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:09:39.669Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:11:12.792Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:12:45.691Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:14:18.940Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:15:21.120Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Position already open, monitoring
+2026-02-16T03:16:14.213Z | SELL | conf=0.68 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=72% | Positions: 1/5
+2026-02-16T03:21:17.628Z | SELL | conf=0.90 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=95% | Positions: 0/5
+2026-02-16T03:22:19.434Z | SELL | conf=0.87 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=92% | Positions: 1/5
+2026-02-16T03:26:22.273Z | SELL | conf=0.58 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=89, ML SELL conf=95% | Positions: 0/5
+2026-02-16T03:26:53.818Z | SELL | conf=0.58 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=90, ML SELL conf=100% | Positions: 1/5
+2026-02-16T03:30:26.216Z | SELL | conf=0.58 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=89, ML SELL conf=95% | Positions: 0/5
+2026-02-16T03:31:59.452Z | SELL | conf=0.57 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=90, ML SELL conf=94% | Positions: 1/5
+2026-02-16T03:35:32.060Z | SELL | conf=0.47 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=89, ML SELL conf=95% | Positions: 0/5
+2026-02-16T03:36:33.885Z | SELL | conf=0.47 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=89, ML SELL conf=100% | Positions: 1/5
+2026-02-16T03:40:36.958Z | SELL | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=95% | Positions: 0/5
+2026-02-16T03:45:09.607Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=90% | Positions: 0/5
+2026-02-16T03:50:12.711Z | SELL | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=95% | Positions: 0/5
+2026-02-16T03:55:15.711Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=90% | Positions: 0/5
+2026-02-16T04:00:18.618Z | SELL | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=95% | Positions: 0/5
+2026-02-16T04:05:21.685Z | SELL | conf=0.22 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=86, ML SELL conf=76% | Positions: 0/5
+2026-02-16T04:10:24.580Z | SELL | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=86, ML SELL conf=95% | Positions: 0/5
+2026-02-16T04:15:27.722Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T04:20:30.709Z | SELL | conf=0.24 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=81, ML SELL conf=85% | Positions: 0/5
+2026-02-16T04:25:33.659Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T04:30:06.530Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T04:35:09.704Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T04:40:12.499Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T04:45:15.533Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T04:50:18.667Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T04:55:21.656Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:00:24.652Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:05:27.538Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:10:30.440Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:15:03.575Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:20:07.528Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:25:10.436Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:30:13.435Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:35:16.408Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:40:19.387Z | SELL | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=87, ML SELL conf=95% | Positions: 0/5
+2026-02-16T05:45:22.415Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:50:25.453Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T05:55:28.335Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T06:00:31.356Z | SELL | conf=0.24 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=85% | Positions: 0/5
+2026-02-16T06:05:34.302Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T06:10:37.472Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T06:15:10.249Z | SELL | conf=0.21 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=74% | Positions: 0/5
+2026-02-16T06:20:13.177Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T06:25:16.093Z | SELL | conf=0.23 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=82% | Positions: 0/5
+2026-02-16T06:30:19.096Z | SELL | conf=0.23 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=82% | Positions: 0/5
+2026-02-16T06:35:22.134Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T06:40:25.190Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T06:45:28.480Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T06:50:31.448Z | SELL | conf=0.24 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=85% | Positions: 0/5
+2026-02-16T06:55:34.666Z | SELL | conf=0.24 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=85% | Positions: 0/5
+2026-02-16T07:00:07.790Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T07:05:11.406Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T07:10:14.300Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T07:15:17.575Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T07:20:20.587Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T07:25:23.716Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T07:30:26.617Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T07:35:29.663Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T07:40:32.682Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T07:45:05.861Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=92% | Positions: 0/5
+2026-02-16T07:50:09.737Z | SELL | conf=0.24 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=83% | Positions: 0/5
+2026-02-16T07:55:13.040Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=92% | Positions: 0/5
+2026-02-16T08:00:15.989Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=92, ML SELL conf=92% | Positions: 0/5
+2026-02-16T08:05:18.921Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:10:21.853Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:15:24.773Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:20:27.774Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:25:30.755Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:30:03.632Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:35:07.213Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:40:10.275Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:45:13.492Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:50:16.460Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T08:55:19.386Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T09:00:22.506Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T09:05:25.526Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T09:10:28.569Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T09:15:31.608Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T09:20:34.657Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T09:25:37.586Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T09:30:15.655Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w fazie RANGING, a MTF bias wskazuje na silny BEARISH (-61). RSI jest w strefie overbought, co sugeruje możliwą korektę. Jednakże, wolumen jest ekstremalnie niski (0.03x średniego), co wskazuje na brak siły rynku w żadnym kierunku. Ensemble votes są w większości na HOLD (74.3%), a jedynie EnterpriseML wskazuje na BUY, co nie jest wystarczające do otwarcia pozycji.
+2026-02-16T09:35:21.812Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w fazie RANGING, MTF bias jest neutralny z niskim wynikiem (6), a większość strategii głosuje za HOLD. RSI wskazuje na stan overbought, co sugeruje ostrożność przy otwieraniu nowych pozycji. Brak wyraźnego sygnału do otwarcia pozycji.
+2026-02-16T09:40:28.689Z | SELL | conf=0.85 | src=NEURON_AI_LLM | override=YES | reason=Rynek jest w stanie RANGING, RSI wskazuje na silne wykupienie (82.2), cena znajduje się powyżej górnej wstęgi Bollingera, co sugeruje potencjalne cofnięcie. Ensemble votes wskazuje na przewagę SELL (47.5%) z silnym wsparciem EnterpriseML (97%). Dodatkowo, obecny trend wzrostowy (+0.70%) może być bliski wyczerpania, a wolumen jest wyższy od średniej, co może wskazywać na potencjalny punkt zwrotny.
+2026-02-16T09:41:04.326Z | CLOSE | conf=0.85 | src=NEURON_AI_LLM | override=YES | reason=Cena BTC znajduje się powyżej górnej wstęgi Bollingera, RSI wskazuje na silne wykupienie (81.8), a MACD jest bardzo byczy. Obecna pozycja SHORT jest w sprzeczności z rynkowym momentum i istnieje wysokie ryzyko dalszego wzrostu ceny. Zamykam pozycję, aby ograniczyć potencjalne straty.
+2026-02-16T09:42:41.553Z | CLOSE | conf=0.85 | src=NEURON_AI_LLM | override=YES | reason=Cena BTC znajduje się w strefie wykupienia (RSI 81.3), jednakże obecny trend jest lekko wzrostowy (+0.62%) i cena zbliża się do górnej wstęgi Bollingera ($69018). Otwarta pozycja SHORT jest w niewielkim zysku, ale ryzyko dalszego wzrostu ceny jest wysokie. Wysoki wolumen (1.55x średnia) sugeruje możliwość kontynuacji ruchu w górę.
+2026-02-16T09:44:18.139Z | CLOSE | conf=0.85 | src=NEURON_AI_LLM | override=YES | reason=Cena BTC zbliża się do górnej granicy Bollinger Bands, RSI wskazuje na stan overbought, a obecny SHORT nie wykazuje dużego potencjału zysku. Zamykam pozycję, aby uniknąć dalszego ryzyka.
+2026-02-16T09:45:25.449Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w fazie RANGING z niskim wolumenem i wysokim RSI, co wskazuje na potencjalne wyczerpanie ruchu wzrostowego. Obecna pozycja SHORT jest wciąż aktywna, a SL/TP są odpowiednio ustawione. Nie ma wystarczających sygnałów, aby otwierać nowe pozycje lub zmieniać istniejącą.
+2026-02-16T09:47:02.539Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w fazie RANGING, z niskim wolumenem i RSI w strefie overbought. MTF bias wskazuje na neutralność, a ensemble votes są w większości za HOLD. Obecna pozycja SHORT jest w minimalnym zysku, ale nie ma wystarczających sygnałów, aby otworzyć nową pozycję lub zamknąć istniejącą.
+2026-02-16T09:48:40.114Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w fazie RANGING, a obecne wskazniki techniczne (RSI overbought, MACD bullish, cena w górnej połowie Bollinger Bands) wskazują na potencjalne ograniczenia dalszego wzrostu. Jednak niski wolumen i neutralny MTF bias nie dają wystarczającej pewności do otwarcia nowej pozycji lub zmiany istniejącej. Obecny SHORT jest blisko ceny wejścia, a brak wyraźnych sygnałów SELL w ensemble votes sugeruje brak potrzeby natychmiastowej interwencji.
+2026-02-16T09:50:17.387Z | CLOSE | conf=0.85 | src=NEURON_AI_LLM | override=YES | reason=Rynek znajduje się w stanie RANGING z niską zmiennością i niskim wolumenem. RSI wskazuje na stan overbought, co sugeruje potencjalne odwrócenie, jednak obecna pozycja SHORT jest blisko poziomu wejścia i nie wykazuje znaczącego potencjału zysku. Aby zminimalizować ryzyko dalszych strat, zamykam pozycję.
+2026-02-16T09:51:57.172Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w stanie RANGING, RSI wskazuje na stan overbought, ale wolumen jest niski, co zmniejsza siłę ruchu. Obecna pozycja SHORT jest wciąż aktywna, a uPnL jest dodatni. Ensemble votes wskazuje na HOLD z lekkim biasem SELL, co jest zgodne z moją analizą. Nie ma wystarczających sygnałów, aby otworzyć nową pozycję lub zmieniać istniejącą.
+2026-02-16T09:53:35.781Z | CLOSE | conf=0.85 | src=NEURON_AI_LLM | override=YES | reason=Rynek jest w stanie RANGING, a obecna pozycja SHORT jest blisko poziomu wejścia, z niskim zyskiem (uPnL: $1.55). RSI wskazuje na stan overbought, co sugeruje możliwość dalszego wzrostu cen. MACD jest wyraźnie byczy, a cena znajduje się w górnej połowie Bollinger Bands. Brak wyraźnego sygnału SELL w ensemble votes oraz niski MTF bias score (6) wskazują na brak silnego momentum w dół. Zamykam pozycję, aby uniknąć ryzyka dalszych strat.
+2026-02-16T09:55:12.032Z | CLOSE | conf=0.85 | src=NEURON_AI_LLM | override=YES | reason=Rynek jest w stanie RANGING, RSI wskazuje na silne wykupienie (80.8), a cena znajduje się w górnej połowie Bollinger Bands. Obecna pozycja SHORT jest nieoptymalna, ponieważ momentum wskazuje na dalszy potencjał wzrostowy (MACD bullish, histogram dodatni). Zamykam pozycję, aby ograniczyć ryzyko dalszych strat.
+2026-02-16T09:56:48.159Z | CLOSE | conf=0.95 | src=NEURON_AI_LLM | override=YES | reason=Cena znajduje się blisko górnej granicy Bollinger Bands, RSI wskazuje na silne wykupienie (81.1), a momentum jest bullish. MTF bias jest neutralny z niskim score (6), a Ensemble wskazuje na HOLD z dominacją SELL (25.1%). Short jest nieoptymalny w tym momencie.
+2026-02-16T09:58:27.526Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w stanie RANGING z niską zmiennością (ATR 0.22%), a MTF bias jest NEUTRALNY z niskim score (6). RSI wskazuje na stan overbought, ale brak silnych sygnałów do natychmiastowego działania. Obecna pozycja SHORT jest blisko ceny wejścia, a wskaźniki nie sugerują jeszcze wyraźnego odwrócenia trendu.
+2026-02-16T10:00:03.991Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is NEUTRAL with low score, RSI indicates overbought conditions, and volume is below average. Ensemble votes favor HOLD with SELL at 25%. Current SHORT position is slightly profitable, and no strong signals justify immediate action.
+2026-02-16T10:00:37.348Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is NEUTRAL with low score, RSI indicates overbought conditions, and volume is extremely low. Current SHORT position is slightly profitable, but no strong signals justify immediate action.
+2026-02-16T10:02:13.239Z | HOLD | conf=0.92 | src=NEURON_AI_LLM | override=no | reason=Rynek w reżimie RANGING, RSI wskazuje na poziom OVERBOUGHT, ale wolumen jest bardzo niski (0.08x średniej). Obecna pozycja SHORT jest wciąż aktywna i generuje niewielki zysk. MTF bias oraz Ensemble wskazują na preferencję SHORT, ale brak wyraźnych sygnałów do otwarcia nowej pozycji lub zamknięcia obecnej.
+2026-02-16T10:03:49.287Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with low volume, RSI is overbought, and MTF bias is strongly bearish (-38). Existing SHORT position is slightly profitable, and ensemble votes favor HOLD with SELL at 25.7%. No strong signal for immediate action.
+2026-02-16T10:05:25.487Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek w reżimie RANGING, wskazniki techniczne wskazują na overbought (RSI=72.6), niski wolumen (0.16x), a MTF bias jest neutralny z niskim score (2). Ensemble votes preferuje HOLD (75%), a otwarta pozycja SHORT jest bliska punktu wejścia. Brak wyraźnych sygnałów do zmiany.
+2026-02-16T10:07:02.143Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly BEARISH (-45), RSI is overbought, and volume is low. Current SHORT position is aligned with bearish bias. No immediate need for adjustment or new positions.
+2026-02-16T10:08:37.893Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek w trybie RANGING, niski wolumen, RSI wskazuje na przegrzanie (OVERBOUGHT), ale MACD pozostaje byczy. Obecna pozycja SHORT jest wciąż aktywna z minimalnym zyskiem. Nie ma wystarczających sygnałów do otwarcia nowej pozycji ani do FLIP.
+2026-02-16T10:10:13.489Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with low volume, RSI indicates overbought conditions, and MTF bias is neutral with a low score. Current SHORT position is slightly profitable, no strong signals to override or adjust.
+2026-02-16T10:11:49.631Z | CLOSE | conf=0.85 | src=NEURON_AI_LLM | override=YES | reason=Cena BTC zbliża się do poziomu wejścia w pozycję SHORT, a RSI wskazuje na przegrzanie rynku (overbought). MACD jest silnie byczy, co dodatkowo wskazuje na możliwość dalszego wzrostu. Niski wolumen sugeruje brak silnego impetu w dół. MTF bias jest neutralny, a ensemble votes wskazują na HOLD z lekką przewagą SELL, jednak dane techniczne i momentum wskazują na ryzyko dalszych strat w pozycji SHORT.
+2026-02-16T10:13:25.913Z | CLOSE | conf=0.95 | src=NEURON_AI_LLM | override=YES | reason=Regime is RANGING, RSI is overbought, MACD bullish, price near Bollinger upper band, and existing SHORT position is at risk of reversal. Ensemble votes favor HOLD, but I override due to unfavorable conditions for SHORT continuation.
+2026-02-16T10:15:01.210Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with neutral MTF bias and overbought RSI. Ensemble votes strongly favor HOLD, and the current SHORT position is slightly profitable. No strong signals for immediate action.
+2026-02-16T10:15:34.784Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w fazie RANGING, z niskim wolumenem i RSI wskazującym na stan overbought. MTF bias preferuje SHORT, ale obecna pozycja SHORT jest wciąż aktywna i nie ma wystarczających sygnałów do podjęcia nowej decyzji.
+2026-02-16T10:17:09.563Z | HOLD | conf=0.85 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, low volume, RSI overbought, and MTF bias strongly bearish. Existing SHORT position is slightly profitable but not yet near TP or SL levels. Ensemble votes favor HOLD with SELL bias.
+2026-02-16T10:18:44.892Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with low volume, RSI indicates overbought conditions, and MTF bias is strongly bearish (-38). Current SHORT position is slightly profitable, and no strong signals suggest immediate action.
+2026-02-16T10:20:21.198Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Rynek w stanie RANGING, niski wolumen, RSI wskazuje na przegrzanie (OVERBOUGHT), ale MTF bias pozostaje BEARISH z wysokim score (-45). Obecna pozycja SHORT jest wciąż aktywna, a uPnL jest dodatni. Nie ma wystarczających sygnałów, aby otwierać nowe pozycje lub zmieniać istniejącą.
+2026-02-16T10:21:56.581Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Rynek jest w fazie RANGING, RSI wskazuje na poziom overbought, ale wolumen jest niski (0.54x średniej), co sugeruje brak silnego momentum. MTF bias jest zdecydowanie bearish (-45), a ensemble votes wskazują na HOLD. Obecna pozycja SHORT jest w niewielkim zysku, a cena zbliża się do SL.
+2026-02-16T10:23:31.823Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly BEARISH (-78), ensemble votes unanimously HOLD, and current SHORT position is slightly profitable. Indicators suggest no immediate action is required.
+2026-02-16T10:25:07.889Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly BEARISH (-78), and ensemble votes unanimously suggest HOLD. Current SHORT position is slightly profitable but within a tight range. Indicators show mixed signals with RSI and MACD bullish, but SMA and Bollinger suggest limited upside.
+2026-02-16T10:26:43.552Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly BEARISH (-82), but ensemble votes unanimously suggest HOLD. Current SHORT position is slightly profitable, and there is no clear signal to open new positions or adjust the existing one.
+2026-02-16T10:28:19.494Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na BEARISH z wysokim score (-82), a ensemble votes są jednogłośnie HOLD. Obecna pozycja SHORT jest blisko neutralnego uPnL, a wskaźniki techniczne (RSI, MACD, Bollinger) wskazują na możliwą konsolidację w górnym zakresie. Nie ma wystarczających sygnałów do otwarcia nowej pozycji ani do FLIP.
+2026-02-16T10:29:55.737Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, MTF bias wskazuje na silny BEARISH (-78), ale RSI i MACD są BULLISH, co wskazuje na brak jednoznacznego kierunku. Ensemble votes są zgodne na HOLD, a otwarta pozycja SHORT jest wciąż aktywna z minimalnym uPnL.
+2026-02-16T10:30:29.134Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is ranging, low volume indicates weak conviction in price movement. MTF bias is bearish with a strong score (-75), but ensemble votes unanimously suggest HOLD. Current SHORT position is slightly profitable, and no strong signal for reversal or scaling in is present.
+2026-02-16T10:32:04.435Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly bearish (-75), and ensemble votes unanimously suggest HOLD. Current SHORT position is slightly profitable, and indicators do not strongly support immediate action.
+2026-02-16T10:33:39.168Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly BEARISH (-75), and ensemble votes unanimously suggest HOLD. Current SHORT position is slightly profitable, and indicators do not strongly suggest a reversal or continuation.
+2026-02-16T10:35:14.991Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly bearish (-45), and ensemble votes unanimously suggest HOLD. Current SHORT position is slightly profitable, and no strong signals indicate a need for immediate action.
+2026-02-16T10:36:50.229Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly BEARISH (-45), ensemble votes unanimously suggest HOLD, and current SHORT position is slightly profitable. Indicators show mixed signals with RSI strong and MACD bullish, but price is near Bollinger upper band and SMA200 is above current price, indicating resistance.
+2026-02-16T10:38:26.655Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Rynek w reżimie RANGING, MTF bias wskazuje BEARISH z wysokim score (-38), ale brak wyraźnych sygnałów SELL w votes. RSI i MACD są silne, co wskazuje na potencjalne odbicie. Obecna pozycja SHORT jest blisko neutralnego uPnL, a ATR wskazuje na niską zmienność.
+2026-02-16T10:40:02.192Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime RANGING, MTF bias strongly bearish (-75), ensemble votes unanimously HOLD, and the current SHORT position is slightly profitable. No strong signal for reversal or scaling in.
+2026-02-16T10:41:37.027Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly BEARISH (-78), but ensemble votes unanimously suggest HOLD. Current SHORT position is slightly profitable, and indicators do not strongly justify immediate action.
+2026-02-16T10:43:11.947Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with no strong directional bias. Ensemble votes unanimously suggest HOLD. MTF bias is BEARISH, but the market indicators (RSI, MACD, Bollinger) show mild bullishness. Current SHORT position is slightly profitable, and there is no compelling reason to open a new position or adjust the existing one.
+2026-02-16T10:44:46.824Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING, MTF bias is strongly BEARISH (-78), and ensemble votes unanimously suggest HOLD. Current SHORT position is slightly profitable, and indicators do not strongly support immediate action.
+2026-02-16T10:45:20.671Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with low volume and MTF bias strongly bearish (-78). Current SHORT position is slightly profitable, but no clear signal to open new positions or adjust existing ones. Ensemble votes unanimously suggest HOLD.
+2026-02-16T10:46:55.621Z | HOLD | conf=0.92 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with low volume and no clear directional bias. MTF score is strongly bearish (-78), but ensemble votes suggest HOLD. Current SHORT position is slightly profitable, and indicators do not justify aggressive action.
+2026-02-16T10:48:30.278Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime jest RANGING, wskazniki techniczne są mieszane (RSI i MACD bullish, ale niski wolumen i MTF bias silnie bearish). Obecna pozycja SHORT jest w lekkim zysku, ale brak wyraźnych sygnałów do zmiany lub dodania pozycji.
+2026-02-16T10:50:04.836Z | HOLD | conf=0.95 | src=NEURON_AI_LLM | override=no | reason=Regime is RANGING with low volume, MTF bias is strongly bearish (-75), and ensemble votes unanimously suggest HOLD. Current SHORT position is slightly profitable, and indicators do not strongly support a new trade.
+2026-02-16T10:51:37.704Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T10:53:10.658Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T10:54:43.847Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T10:56:16.989Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T10:57:50.105Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T10:59:23.411Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:00:25.088Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=76, ML SELL conf=92% | Positions: 1/5
+2026-02-16T11:01:58.216Z | SELL | conf=0.23 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=76, ML SELL conf=82% | Positions: 1/5
+2026-02-16T11:03:31.341Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=76, ML SELL conf=92% | Positions: 1/5
+2026-02-16T11:05:04.694Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=76, ML SELL conf=92% | Positions: 1/5
+2026-02-16T11:06:37.995Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=76, ML SELL conf=92% | Positions: 1/5
+2026-02-16T11:08:11.183Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=76, ML SELL conf=92% | Positions: 1/5
+2026-02-16T11:09:44.447Z | SELL | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=83, ML SELL conf=100% | Positions: 1/5
+2026-02-16T11:11:17.324Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:12:50.879Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:14:24.027Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:15:25.863Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:16:58.641Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:18:31.195Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:20:04.391Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:21:38.255Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:23:11.385Z | SELL | conf=0.41 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=92, ML SELL conf=99% | Positions: 1/5
+2026-02-16T11:25:43.342Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:30:16.380Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:35:19.339Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:40:22.311Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:45:25.330Z | SELL | conf=0.56 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=88, ML SELL conf=95% | Positions: 0/5
+2026-02-16T11:46:58.323Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:48:31.510Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:50:05.142Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:51:38.608Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:53:11.791Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T11:54:44.892Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:00:20.119Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:05:23.305Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:10:26.406Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:15:29.544Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:20:32.859Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:25:36.442Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:30:09.196Z | BUY | conf=0.45 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=16, ML BUY conf=95% | Positions: 0/5
+2026-02-16T12:31:42.206Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:33:15.126Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:34:48.056Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:36:20.875Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:37:54.046Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:39:27.245Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:40:59.907Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:42:32.874Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:44:06.048Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:45:08.189Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:46:41.942Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:48:15.091Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:49:48.063Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:51:20.605Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T12:52:53.899Z | BUY | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=23, ML BUY conf=100% | Positions: 1/5
+2026-02-16T12:54:27.062Z | BUY | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=18, ML BUY conf=100% | Positions: 1/5
+2026-02-16T12:56:00.233Z | BUY | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=18, ML BUY conf=99% | Positions: 1/5
+2026-02-16T12:57:33.464Z | BUY | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=18, ML BUY conf=100% | Positions: 1/5
+2026-02-16T12:59:06.575Z | BUY | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=18, ML BUY conf=100% | Positions: 1/5
+2026-02-16T13:00:08.747Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T13:01:42.029Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T13:03:15.126Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T13:04:48.275Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T13:06:21.347Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T13:07:54.565Z | BUY | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=27, ML BUY conf=95% | Positions: 1/5
+2026-02-16T13:10:26.676Z | BUY | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=18, ML BUY conf=95% | Positions: 0/5
+2026-02-16T13:15:29.681Z | BUY | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=18, ML BUY conf=95% | Positions: 0/5
+2026-02-16T13:20:32.987Z | BUY | conf=0.25 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram LONG -- MTF BULLISH score=18, ML BUY conf=89% | Positions: 0/5
+2026-02-16T13:25:36.264Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T13:30:09.020Z | SELL | conf=0.24 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=91, ML SELL conf=83% | Positions: 0/5
+2026-02-16T13:35:23.308Z | SELL | conf=0.24 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=91, ML SELL conf=83% | Positions: 0/5
+2026-02-16T13:40:26.378Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=91, ML SELL conf=92% | Positions: 0/5
+2026-02-16T13:45:29.604Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T13:50:32.739Z | SELL | conf=0.25 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=94, ML SELL conf=89% | Positions: 0/5
+2026-02-16T13:55:36.004Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T14:00:09.233Z | SELL | conf=0.23 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=96, ML SELL conf=82% | Positions: 0/5
+2026-02-16T14:05:12.260Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=96, ML SELL conf=92% | Positions: 0/5
+2026-02-16T14:10:15.433Z | SELL | conf=0.23 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=96, ML SELL conf=82% | Positions: 0/5
+2026-02-16T14:15:18.400Z | SELL | conf=0.23 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=96, ML SELL conf=82% | Positions: 0/5
+2026-02-16T14:20:21.586Z | SELL | conf=0.23 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=96, ML SELL conf=82% | Positions: 0/5
+2026-02-16T14:25:25.599Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T14:30:28.602Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T14:35:31.898Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T14:40:35.084Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T14:45:07.923Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T14:50:11.139Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T14:55:14.233Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T15:00:17.379Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=94, ML SELL conf=92% | Positions: 0/5
+2026-02-16T15:05:20.721Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=94, ML SELL conf=92% | Positions: 0/5
+2026-02-16T15:10:23.745Z | HOLD | conf=0.30 | src=NEURON_AI_FALLBACK | override=no | reason=Fallback: insufficient conviction
+2026-02-16T15:15:27.214Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=96, ML SELL conf=92% | Positions: 0/5
+2026-02-16T15:20:30.478Z | SELL | conf=0.23 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=96, ML SELL conf=82% | Positions: 0/5
+2026-02-16T15:25:33.748Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=96, ML SELL conf=92% | Positions: 0/5
+2026-02-16T15:30:06.480Z | SELL | conf=0.26 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=92% | Positions: 0/5
+2026-02-16T15:35:09.677Z | SELL | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=95% | Positions: 0/5
+2026-02-16T15:40:13.011Z | SELL | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=95% | Positions: 0/5
+2026-02-16T15:45:16.056Z | SELL | conf=0.27 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=95% | Positions: 0/5
+2026-02-16T16:00:12.143Z | SELL | conf=0.11 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=82% | Positions: 0/5 | WARNING: 12 losses streak -- confidence reduced
+2026-02-16T16:05:15.402Z | SELL | conf=0.11 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=82% | Positions: 0/5 | WARNING: 13 losses streak -- confidence reduced
+2026-02-16T16:10:18.998Z | SELL | conf=0.11 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=82% | Positions: 0/5 | WARNING: 13 losses streak -- confidence reduced
+2026-02-16T16:15:22.062Z | SELL | conf=0.13 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=100% | Positions: 0/5 | WARNING: 13 losses streak -- confidence reduced
+2026-02-16T16:20:25.176Z | SELL | conf=0.13 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=100% | Positions: 0/5 | WARNING: 13 losses streak -- confidence reduced
+2026-02-16T16:25:28.392Z | SELL | conf=0.13 | src=NEURON_AI_FALLBACK | override=no | reason=Ja, Neuron AI, otwieram SHORT -- MTF BEARISH score=97, ML SELL conf=95% | Positions: 0/5 | WARNING: 13 losses streak -- confidence reduced
