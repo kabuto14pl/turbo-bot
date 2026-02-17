@@ -59,6 +59,7 @@ try:
     from quantum.gpu_accelerator import (
         GPUAccelerator, GPUMonteCarloEngine, GPUQuantumKernel,
         GPUFeatureProcessor, GPUQuantumGAN, GPUStatevectorSimulator,
+        GPUQAOAOptimizer, GPUVQCClassifier,
         gpu_available, gpu_info
     )
     if USE_GPU:
@@ -204,6 +205,7 @@ class QAOAPortfolioOptimizer:
     def optimize(self, returns, cov_matrix, risk_aversion=0.5):
         """
         Run QAOA portfolio optimization.
+        Priority: GPU PyTorch autograd -> Qiskit QAOA -> Classical fallback
         
         Args:
             returns: np.ndarray (n_assets,) — expected returns per asset
@@ -216,7 +218,14 @@ class QAOAPortfolioOptimizer:
         t0 = time.time()
         n = min(len(returns), self.n_assets)
 
-        # Fallback: classical optimization if QAOA not available
+        # Priority 1: GPU-accelerated QAOA (PyTorch autograd, 20 qubits)
+        if GPU_ACCEL is not None:
+            try:
+                return self._gpu_qaoa(returns[:n], cov_matrix[:n, :n], risk_aversion, t0)
+            except Exception as e:
+                logger.warning(f'[QAOA] GPU QAOA failed, falling back to Qiskit: {e}')
+
+        # Priority 2: Qiskit QAOA (CPU)
         if not OPTIMIZATION_AVAILABLE or not ALGORITHMS_AVAILABLE:
             return self._classical_fallback(returns[:n], cov_matrix[:n, :n], risk_aversion)
 
@@ -343,6 +352,26 @@ class QAOAPortfolioOptimizer:
         logger.info(f'[QAOA-FALLBACK] Sharpe={sharpe:.4f}, Time={elapsed:.2f}s')
         return self.last_result
 
+    def _gpu_qaoa(self, returns, cov_matrix, risk_aversion, t0):
+        """GPU-accelerated QAOA using PyTorch autograd (20-qubit variational circuit)."""
+        logger.info('[QAOA] [GPU] Running GPU-accelerated QAOA '
+                    f'({GPU_ACCEL.qaoa.n_qubits}q, {GPU_ACCEL.qaoa.p_layers} layers, '
+                    f'{GPU_ACCEL.qaoa.n_iterations} iter x {GPU_ACCEL.qaoa.n_restarts} restarts)')
+
+        result = GPU_ACCEL.qaoa.optimize(returns, cov_matrix, risk_aversion)
+
+        elapsed = time.time() - t0
+        result['elapsed_sec'] = round(elapsed, 3)
+        result['timestamp'] = datetime.utcnow().isoformat()
+        self.last_result = result
+
+        logger.info(f'[QAOA_GPU] Sharpe={result["sharpe_ratio"]:.4f}, '
+                    f'Energy={result.get("qaoa_energy", 0):.4f}, '
+                    f'{result["n_qubits"]}q ({result.get("hilbert_dim", 0)}-dim), '
+                    f'GPU peak={result.get("gpu_mem_peak_mb", 0):.0f}MB, '
+                    f'Time={elapsed:.2f}s')
+        return result
+
 
 # ============================================================================
 # 2. VQC — Market Regime Classification
@@ -442,7 +471,13 @@ class VQCRegimeClassifier:
             y_test = labels[max_train:]
             X_latest = X[-1:] if len(X) > 0 else X_train[-1:]
 
-            # Qiskit VQC
+            # Priority: GPU VQC -> Qiskit VQC -> Classical fallback
+            if GPU_ACCEL is not None:
+                try:
+                    return self._gpu_vqc(X_train, y_train, X_test, y_test, X_latest, t0)
+                except Exception as e:
+                    logger.warning(f'[VQC] GPU VQC failed, falling back to Qiskit: {e}')
+
             if ML_AVAILABLE and AER_AVAILABLE and SKLEARN_AVAILABLE:
                 return self._qiskit_vqc(X_train, y_train, X_test, y_test, X_latest, n_features, t0)
             else:
@@ -562,6 +597,30 @@ class VQCRegimeClassifier:
         logger.info(f'[VQC-FALLBACK] Regime={regime_names.get(regime_pred)}, Acc={acc:.3f}')
         return self.last_result
 
+    def _gpu_vqc(self, X_train, y_train, X_test, y_test, X_latest, t0):
+        """GPU-accelerated VQC using PyTorch autograd (8-qubit batched circuit)."""
+        logger.info('[VQC] [GPU] Running GPU-accelerated VQC '
+                    f'(8q, {GPU_ACCEL.vqc.n_layers} layers, '
+                    f'{GPU_ACCEL.vqc.n_epochs} epochs, batch={len(X_train)})')
+
+        result = GPU_ACCEL.vqc.train_and_predict(
+            X_train, y_train, X_test, y_test, X_latest
+        )
+
+        elapsed = time.time() - t0
+        result['elapsed_sec'] = round(elapsed, 3)
+        result['timestamp'] = datetime.utcnow().isoformat()
+        self.accuracy = result.get('accuracy', 0)
+        self.is_trained = True
+        self.last_result = result
+
+        logger.info(f'[VQC_GPU] Regime={result.get("regime")}, '
+                    f'Accuracy={result.get("accuracy", 0):.3f}, '
+                    f'{result.get("n_qubits", 0)}q ({result.get("hilbert_dim", 0)}-dim), '
+                    f'GPU peak={result.get("gpu_mem_peak_mb", 0):.0f}MB, '
+                    f'Time={elapsed:.2f}s')
+        return result
+
     def _error_result(self, error_msg):
         return {
             'algorithm': 'VQC',
@@ -657,14 +716,14 @@ class QSVMPredictor:
         logger.info('[QSVM] [GPU] Running GPU-accelerated quantum kernel (PyTorch CUDA)')
 
         # Limit samples for kernel computation
-        max_samples = 100  # GPU can handle much more than CPU Qiskit (was 30 on CPU)
+        max_samples = 300  # GPU 300x300 kernel matrix — heavy GPU compute
         if len(X_train) > max_samples:
             idx = np.random.choice(len(X_train), max_samples, replace=False)
             X_train = X_train[idx]
             y_train = y_train[idx]
 
-        n_qubits_qsvm = min(n_features, 5)
-        gpu_kernel = GPUQuantumKernel(n_qubits=n_qubits_qsvm, reps=2)
+        n_qubits_qsvm = min(n_features, 6)
+        gpu_kernel = GPUQuantumKernel(n_qubits=n_qubits_qsvm, reps=3)
 
         # Compute kernel matrices on GPU
         predictions, probas, svc = gpu_kernel.predict_with_kernel(X_train, y_train, X_test)
@@ -859,7 +918,7 @@ class QGANDataAugmenter:
 
         # Use column 0 (returns/price) for main generation — generate 500 samples on GPU
         real_1d = real_data[:, 0] if real_data.ndim > 1 else real_data
-        gpu_n_synthetic = max(n_synthetic, 500)  # Minimum 500 on GPU for visible utilization
+        gpu_n_synthetic = max(n_synthetic, 2000)  # Minimum 2000 on GPU for visible utilization
         gpu_result = GPU_ACCEL.qgan.generate_samples(real_1d, n_synthetic=gpu_n_synthetic)
 
         # Expand synthetic 1D samples to multi-dim using GPU correlation structure
@@ -1244,8 +1303,8 @@ class QMCRiskSimulator:
             }
 
     def _gpu_monte_carlo(self, returns, holding_period, portfolio_value, t0):
-        """GPU-accelerated Monte Carlo VaR using PyTorch CUDA — 200,000 scenarios."""
-        logger.info('[QMC] [GPU] Running GPU Monte Carlo (200,000 scenarios on CUDA)')
+        """GPU-accelerated Monte Carlo VaR using PyTorch CUDA — 2,000,000 scenarios."""
+        logger.info('[QMC] [GPU] Running GPU Monte Carlo (2,000,000 scenarios on CUDA)')
 
         # Seed with quantum random numbers from GPU statevector
         GPU_ACCEL.monte_carlo.quantum_random_seed(n_qubits=8)
@@ -1488,7 +1547,7 @@ class QuantumTradingEngine:
             gpu_mem_peak = torch.cuda.max_memory_allocated() / (1024 ** 2)
 
         results['metadata'] = {
-            'engine_version': '1.1.0-GPU',
+            'engine_version': '2.0.0-GPU',
             'run_count': self.run_count,
             'total_elapsed_sec': round(elapsed, 3),
             'gpu_used': USE_GPU,
@@ -1649,7 +1708,7 @@ class QuantumTradingEngine:
         """Return engine status."""
         status = {
             'engine': 'QuantumTradingEngine',
-            'version': '1.1.0-GPU',
+            'version': '2.0.0-GPU',
             'gpu': USE_GPU,
             'gpu_device': GPU_DEVICE or 'CPU',
             'gpu_accelerator': GPU_ACCEL is not None,
@@ -1678,7 +1737,7 @@ if __name__ == '__main__':
     )
 
     print('=' * 70)
-    print('  GPU-Accelerated Quantum Trading Engine v1.1.0-GPU')
+    print('  GPU-Accelerated Quantum Trading Engine v2.0.0-GPU')
     print(f'  GPU: {GPU_DEVICE or "CPU mode"}')
     print(f'  GPU Accelerator: {"✅ ACTIVE" if GPU_ACCEL is not None else "❌ DISABLED"}')
     print(f'  cuQuantum: {CUQUANTUM_AVAILABLE}')
