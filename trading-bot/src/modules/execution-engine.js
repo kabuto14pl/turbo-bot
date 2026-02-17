@@ -412,7 +412,7 @@ class ExecutionEngine {
                         } catch(eApmShort) { /* APM non-critical */ }
                     }
                     this.pm.trades.push(trade);
-                    if (this.pm.trades.length > 1000) this.pm.trades = this.pm.trades.slice(-1000);
+                    if (this.pm.trades.length > 5000) this.pm.trades = this.pm.trades.slice(-5000); // PATCH 31b: raised from 1000
                     this.pm.balance.totalValue = this.pm.balance.usdtBalance + Math.abs(this.pm.balance.btcBalance) * signal.price;
                     this.pm.portfolio.totalValue = this.pm.balance.totalValue;
                     // PATCH #31: SHORT path - add missing tracking calls
@@ -455,7 +455,7 @@ class ExecutionEngine {
             // Push trade + update portfolio
             this.pm.trades.push(trade);
             this.pm.portfolio.totalTrades++;
-            if (this.pm.trades.length > 1000) this.pm.trades = this.pm.trades.slice(-1000);
+            if (this.pm.trades.length > 5000) this.pm.trades = this.pm.trades.slice(-5000); // PATCH 31b: raised from 1000
             this.pm.balance.totalValue = this.pm.balance.usdtBalance + this.pm.balance.btcBalance * signal.price;
             this.pm.portfolio.totalValue = this.pm.balance.totalValue;
             this.pm.portfolio.realizedPnL += trade.pnl;

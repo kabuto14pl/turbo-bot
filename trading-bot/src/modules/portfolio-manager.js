@@ -129,7 +129,7 @@ class PortfolioManager {
             instanceId: this.config.instanceId, entryPrice: pos.entryPrice, fees,
         };
         this.trades.push(trade);
-        if (this.trades.length > 1000) this.trades = this.trades.slice(-500);
+        if (this.trades.length > 5000) this.trades = this.trades.slice(-5000); // PATCH 31b: raised from 1000/500
         if (closeQty >= pos.quantity) {
             this.positions.delete(symbol);
             // PATCH #21: Clear unrealizedPnL when no more positions
@@ -219,7 +219,7 @@ class PortfolioManager {
     exportState() {
         return {
             portfolio: this.portfolio, portfolioBalance: this.balance,
-            positions: Array.from(this.positions.entries()), trades: this.trades.slice(-100),
+            positions: Array.from(this.positions.entries()), trades: this.trades, // PATCH 31b: export ALL trades (was slice(-100))
         };
     }
 }
