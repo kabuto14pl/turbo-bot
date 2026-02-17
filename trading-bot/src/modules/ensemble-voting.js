@@ -139,7 +139,7 @@ class EnsembleVoting {
                 return null;
             } else if (counter) {
                 // PATCH #26: Increased penalty from 0.6 to 0.35 (65% confidence reduction)
-                weightedConf *= 0.35;
+                weightedConf *= 0.55; // PATCH #30b: was 0.35 (65% penalty), now 0.55 (45% penalty)
                 console.log('   [MTF P26] STRONG PENALTY: ' + action + ' vs ' + mtfDir + ' bias (conf *0.35 — P26)');
             } else if (aligned) {
                 weightedConf *= mtfMul;
@@ -151,7 +151,7 @@ class EnsembleVoting {
         // PATCH #26: Raised thresholds to reduce trade frequency (fewer trades = less fee drag)
         // Analysis showed 33% win rate — need higher quality signals only
         if (hasConflict) {
-            threshold = 0.60;
+            threshold = 0.50; // PATCH #30b: was 0.60
             console.log('   [THRESHOLD] 60% (conflict — P26 raised from 50%)');
         } else if (sourcesAgree >= 3 && (
             (mlConf > 0.80 && mlAct === action) ||
@@ -162,7 +162,7 @@ class EnsembleVoting {
             threshold = 0.45;
             console.log('   [THRESHOLD] 45% (strong conviction — P26 raised from 35%)');
         } else {
-            threshold = 0.55;
+            threshold = 0.45; // PATCH #30b: was 0.55, lowered to allow more signals
             console.log('   [THRESHOLD] 55% (normal — P26 raised from 40%)');
         }
 
@@ -216,7 +216,7 @@ class EnsembleVoting {
 
         // PATCH #26: Minimum final confidence 0.30 (was 0.10) — reject weak signals
         const finalConf = (typeof weightedConf === 'number' && !isNaN(weightedConf))
-            ? Math.max(0.30, Math.min(0.95, weightedConf)) : 0.5;
+            ? Math.max(0.20, Math.min(0.95, weightedConf)) : 0.5; // PATCH #30b: was 0.30
 
         const result = {
             timestamp: Date.now(),

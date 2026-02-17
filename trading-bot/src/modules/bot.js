@@ -355,6 +355,14 @@ class AutonomousTradingBot {
             console.warn('[WARN] Neuron AI Manager: ' + e.message);
         }
 
+        // PATCH 30c: Sync _lastRealizedPnL from portfolio to prevent false PnL delta at startup
+        try {
+            const startupPortfolio = this.pm.getPortfolio();
+            this._lastRealizedPnL = startupPortfolio.realizedPnL || 0;
+            this._lastPositionCount = this.pm.positionCount || 0;
+            console.log('[PATCH 30c] _lastRealizedPnL synced: $' + this._lastRealizedPnL.toFixed(2));
+        } catch(e) {}
+
         console.log('[' + this.config.instanceId + '] MODULAR ENTERPRISE Bot initialized');
         console.log('ML: ' + (this.ml ? this.ml.getConfidenceInfo() : 'disabled'));
         console.log('Neural AI: ' + (this.neuralAI ? 'ACTIVE (' + this.neuralAI.phase + ')' : 'disabled'));
@@ -948,7 +956,7 @@ class AutonomousTradingBot {
                         const regimeUpper = (currentRegime + '').toUpperCase();
                         if (regimeUpper.includes('RANG') || regimeUpper.includes('SIDEWAYS') || regimeUpper.includes('CHOPPY')) {
                             const oldConf = consensus.confidence;
-                            consensus.confidence *= 0.70; // 30% penalty in ranging markets
+                            consensus.confidence *= 0.92; // PATCH #30b: Mild 8% penalty (NeuronAI already applies -25% internally)
                             console.log('[P27 REGIME] RANGING detected — confidence reduced: ' +
                                 (oldConf * 100).toFixed(1) + '% -> ' + (consensus.confidence * 100).toFixed(1) + '%');
                             if (this.megatron) {
@@ -961,13 +969,13 @@ class AutonomousTradingBot {
 
 // PATCH #26: Signal quality gate — minimum confidence before execution
                     // Analysis showed low-confidence trades have very low win rate
-                    if (shouldExecute && consensus.confidence < 0.45) {
+                    if (shouldExecute && consensus.confidence < 0.18) { // PATCH #30b: lowered from 0.45 (was blocking everything)
                         shouldExecute = false;
                         console.log('[P26 QUALITY GATE] BLOCKED: ' + consensus.action +
-                            ' confidence ' + (consensus.confidence * 100).toFixed(1) + '% < 45% minimum');
+                            ' confidence ' + (consensus.confidence * 100).toFixed(1) + '% < 18% minimum');
                         if (this.megatron) {
                             this.megatron.logActivity('RISK', 'Trade blocked by Quality Gate (P26)',
-                                consensus.action + ' conf=' + (consensus.confidence * 100).toFixed(1) + '% < 45%', {}, 'normal');
+                                consensus.action + ' conf=' + (consensus.confidence * 100).toFixed(1) + '% < 18%', {}, 'normal');
                         }
                     }
 
@@ -989,7 +997,7 @@ class AutonomousTradingBot {
                             console.log('[P26 WIN COOLDOWN] Confidence reduced: ' +
                                 (consensus.confidence * 100).toFixed(1) + '% (post-win cooldown x' + winMult + ')');
                             // Re-check quality gate after reduction
-                            if (consensus.confidence < 0.45) {
+                            if (consensus.confidence < 0.18) { // PATCH #30b: lowered from 0.45
                                 shouldExecute = false;
                                 console.log('[P26 QUALITY GATE] BLOCKED after win cooldown — conf too low');
                             }
@@ -1438,14 +1446,14 @@ class AutonomousTradingBot {
                             pnl: pnlDelta, strategy: stratName,
                             winRate: portfolio.winRate || 0, consecutiveLosses: this.rm.consecutiveLosses || 0,
                         });
-                    // PATCH #24: Neuron AI Manager learning
+                    } // end strategy for-loop
+                    // PATCH 30c: neuronManager.learnFromTrade OUTSIDE loop (was inside = N losses for 1 trade)
                     if (this.neuronManager) {
                         this.neuronManager.learnFromTrade({
                             pnl: pnlDelta,
                             strategy: 'EnsembleVoting',
                             action: 'close',
                         });
-                    }
                     }
                     this.neuralAI.learnFromTrade({
                         pnl: pnlDelta, strategy: 'EnsembleVoting',

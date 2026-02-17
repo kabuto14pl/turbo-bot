@@ -924,3 +924,84 @@ Bot generował spójne sygnały SELL (8/8 cykli z sygnałem), ale QuantumDecisio
 - Bot powinien zacząć handlować zamiast być 100% zablokowany
 
 **Wynik:** Deployed, bot healthy 14/14 components, oczekiwanie na pierwszy non-HOLD consensus do weryfikacji
+
+---
+
+## Patch #30b — Triple-Gate Over-Protection Fix
+**Data:** 2026-02-17
+**Typ:** CRITICAL FIX — Bot nie handlował przez 15+ godzin
+**Pliki:** bot.js, neuron_ai_manager.js, ensemble-voting.js
+
+### Problem
+Po Patch #30 Quantum Verifier prawidłowo ZATWIERDZAŁ sygnały (SELL 25.7%), ale DWA KOLEJNE gate'y blokowały 100% transakcji:
+1. **P27 REGIME double penalty**: Najpierw NeuronAI (×0.55 = -45%), potem bot.js (×0.70 = -30%), łącznie ×0.385 = -61.5% redukcji
+2. **P26 QUALITY GATE at 45%**: Niemożliwy do przejścia po podwójnej karze za RANGING
+
+### Zmiany (12 zmian w 3 plikach)
+
+#### bot.js (5 zmian):
+- P27 RANGING penalty: 0.70 → 0.92 (8% mild penalty, NeuronAI penalizuje wewnętrznie)
+- P26 Quality Gate threshold: 0.45 → 0.18 (alignacja z quantum verifier)
+- P26 log messages zaktualizowane do 18%
+- Second P26 gate (post-win cooldown): 0.45 → 0.18
+
+#### neuron_ai_manager.js (3 zmiany):
+- P27 RANGING penalty: 0.55 → 0.78 (22% zamiast 45%)
+- RANGING forced HOLD threshold: 2 losses → 4 losses
+- P27 reason text zaktualizowany
+
+#### ensemble-voting.js (4 zmiany):
+- MTF counter-trend penalty: 0.35 → 0.55
+- Normal consensus threshold: 0.55 → 0.45
+- Conflict consensus threshold: 0.60 → 0.50
+- Minimum final confidence floor: 0.30 → 0.20
+
+### Wynik
+Bot natychmiast wykonał transakcję: SHORT 0.0218 BTC-USDT @ $68429.90, conf 37.6% (przeszedł P26 gate 37.6% > 18%)
+
+---
+
+## Patch #30c — BLACK_SWAN False Positive + Risk Multiplier Cascade Fix
+**Data:** 2026-02-17
+**Typ:** CRITICAL FIX — Pozycje natychmiast zamykane + paraliż riskMultiplier
+**Pliki:** hybrid_quantum_pipeline.js, quantum_position_manager.js, bot.js, neuron_ai_manager.js
+
+### Problem #1: BLACK_SWAN False Positive
+Quantum Position Manager zamykał 75% pozycji natychmiast po otwarciu (emergency close) mimo niskiego ryzyka (46/100 = ELEVATED, nie BLACK_SWAN). Powód: `_detectBlackSwan()` miał zbyt liberalne progi — wystarczyły 2/3 wskaźników z niskimi thresholdami.
+
+### Problem #2: Triple PnL Learning
+`neuronManager.learnFromTrade()` wywoływany WEWNĄTRZ for-loopa strategii w `_detectAndLearnFromCloses()` → 1 realna strata liczona N razy (raz per strategia) → consecutiveLosses skakało 3× szybciej
+
+### Problem #3: Risk Multiplier Cascade
+riskMultiplier spadał zbyt szybko: -0.12 per loss, brak cooldownu → 0.48→0.36→0.30 (floor) po 2-3 eventach → bot sparaliżowany (confidence ×0.30)
+
+### Problem #4: Startup PnL Phantom Loss
+`_lastRealizedPnL` inicjalizowany jako 0 zamiast z portfolio → pierwszy PnL delta = cały skumulowany realizedPnL ($-59.77) traktowany jako jedna olbrzymia strata
+
+### Zmiany (10 zmian w 4 plikach)
+
+#### hybrid_quantum_pipeline.js (4 zmiany):
+- `extremeMove` threshold: avgAbsReturn × 4 → × 6 (wymaga prawdziwego 6σ)
+- `volAccelerating` threshold: 2.5 → 3.5
+- `qmcBlackSwanProb` threshold: 5% → 15%
+- Alert wymaga ALL 3/3 wskaźników (było 2/3)
+
+#### quantum_position_manager.js (2 zmiany):
+- `_generateAction`: blackSwanAlert wymaga riskScore>70 + pozycja >5min + closePct 1.0→0.50
+- `partialCloseAdvisor`: blackSwanAlert wymaga riskScore>70 + age>5min + closePct 0.75→0.50
+
+#### bot.js (2 zmiany):
+- `neuronManager.learnFromTrade` przeniesiony POZA for-loop (1 call zamiast N)
+- `_lastRealizedPnL` syncowany z portfolio przy starcie (eliminuje phantom loss)
+
+#### neuron_ai_manager.js (2 zmiany):
+- Loss decay: -0.12 → -0.06 (2× wolniejszy spadek) + 60s cooldown między spadkami
+- Win recovery: threshold 3→2 wins, increment +0.08→+0.12 (szybszy powrót)
+
+### Wynik
+- ✅ Brak BLACK_SWAN false positive (pozycje nie zamykane natychmiast)
+- ✅ PnL sync działa ($-0.99 zamiast phantom $-59.77)
+- ✅ Risk multiplier: prawidłowy decay (0.85→0.79 = -0.06, nie -0.12)
+- ✅ Tylko 1 EVOLVE per trade (zamiast 3)
+- ✅ Bot handluje: SELL 52% → APPROVED → EXEC @ $68382.10
+- ✅ Bot healthy 14/14 components

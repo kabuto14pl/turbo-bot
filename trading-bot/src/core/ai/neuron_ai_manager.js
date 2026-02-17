@@ -281,10 +281,10 @@ class NeuronAIManager {
         if (action !== 'HOLD' && action !== 'CLOSE') {
             const regimeStr = ((state.regime || '') + '').toUpperCase();
             if (regimeStr.includes('RANG') || regimeStr.includes('SIDEWAYS') || regimeStr.includes('CHOPPY')) {
-                confidence *= 0.55; // 45% confidence reduction in ranging markets
-                reason += ' | P27: RANGING regime penalty -45%';
+                confidence *= 0.78; // PATCH #30b: Reduced from 0.55 to 0.78 (22% penalty, was 45%)
+                reason += ' | P27: RANGING regime penalty -22%';
                 // In ranging market with any loss streak, force HOLD
-                if ((this.consecutiveLosses || 0) >= 2) {
+                if ((this.consecutiveLosses || 0) >= 4) { // PATCH #30b: raised from 2 to 4 (was too aggressive)
                     action = 'HOLD';
                     confidence = 0.15;
                     reason = 'P27: RANGING + ' + (this.consecutiveLosses || 0) + ' losses = FORCED HOLD';
@@ -547,8 +547,8 @@ class NeuronAIManager {
             this.consecutiveLosses = 0;
 
             // Positive evolution: increase risk slightly after wins streak
-            if (this.consecutiveWins >= 3 && this.riskMultiplier < 2.0) {
-                this.riskMultiplier = Math.min(2.0, this.riskMultiplier + 0.08);
+            if (this.consecutiveWins >= 2 && this.riskMultiplier < 2.0) { // PATCH 30c: was >= 3
+                this.riskMultiplier = Math.min(2.0, this.riskMultiplier + 0.12); // PATCH 30c: was 0.08
                 console.log('[NEURON AI EVOLVE] Win streak x' + this.consecutiveWins + ' -- risk multiplier -> ' + this.riskMultiplier.toFixed(2));
                 this.evolutionCount++;
             }
@@ -558,8 +558,11 @@ class NeuronAIManager {
             this.consecutiveWins = 0;
 
             // Defensive evolution: reduce risk after losses
-            if (this.consecutiveLosses >= 2 && this.riskMultiplier > 0.3) {
-                this.riskMultiplier = Math.max(0.3, this.riskMultiplier - 0.12);
+            // PATCH 30c: slower decay (-0.06, was -0.12) + 60s cooldown between decreases
+            const timeSinceDecay = Date.now() - (this._lastRiskDecayTs || 0);
+            if (this.consecutiveLosses >= 2 && this.riskMultiplier > 0.30 && timeSinceDecay > 60000) {
+                this.riskMultiplier = Math.max(0.30, this.riskMultiplier - 0.06);
+                this._lastRiskDecayTs = Date.now();
                 console.log('[NEURON AI EVOLVE] Loss streak x' + this.consecutiveLosses + ' -- risk multiplier -> ' + this.riskMultiplier.toFixed(2));
                 this.evolutionCount++;
             }

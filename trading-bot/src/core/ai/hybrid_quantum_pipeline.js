@@ -1211,12 +1211,12 @@ class QuantumRiskAnalyzer {
 
         // 3. Black swan indicators
         const indicators = {
-            extremeMove: maxReturn > avgAbsReturn * 4, // 4σ event
-            volAccelerating: volAcceleration > 2.5,    // Vol increasing rapidly
-            qmcBlackSwanHigh: qmcResult && qmcResult.riskMetrics && parseFloat(qmcResult.riskMetrics.blackSwanProb) > 5,
+            extremeMove: maxReturn > avgAbsReturn * 6, // PATCH 30c: was 4, // 4σ event
+            volAccelerating: volAcceleration > 3.5,    // Vol increasing rapidly
+            qmcBlackSwanHigh: qmcResult && qmcResult.riskMetrics && parseFloat(qmcResult.riskMetrics.blackSwanProb) > 15,
         };
 
-        const isAlert = Object.values(indicators).filter(Boolean).length >= 2;
+        const isAlert = Object.values(indicators).filter(Boolean).length >= 3; // PATCH 30c: require ALL 3 (was 2)
 
         if (isAlert) {
             this.blackSwanHistory.push({

@@ -900,8 +900,9 @@ class ContinuousReEvaluator {
         const atrMult = profit / atr;
         const hoursHeld = (Date.now() - (position.entryTime || Date.now())) / 3600000;
 
-        if (qraRisk && qraRisk.blackSwanAlert) {
-            return { action: 'EMERGENCY_CLOSE', reason: 'Black swan detected', severity: 'CRITICAL', params: { closePct: 1.0 } };
+        // PATCH 30c: require riskScore>70 + position >5min for emergency close
+        if (qraRisk && qraRisk.blackSwanAlert && (qraRisk.riskScore || 0) > 70 && hoursHeld > 0.083) {
+            return { action: 'EMERGENCY_CLOSE', reason: 'Black swan (risk=' + (qraRisk.riskScore||0) + ')', severity: 'CRITICAL', params: { closePct: 0.50 } };
         }
         if (qraRisk && (qraRisk.riskScore || 0) > 85 && atrMult < 0) {
             return { action: 'TIGHTEN_SL_AGGRESSIVE', reason: 'Extreme risk + underwater', severity: 'HIGH', params: { slMultiplier: 0.5 } };
@@ -993,8 +994,10 @@ class PartialCloseAdvisor {
         const atrMult = atr > 0 ? profit / atr : 0;
 
         // Priority 1: Black swan emergency
-        if (qraRisk && qraRisk.blackSwanAlert) {
-            return { shouldClose: true, closePct: 0.75, reason: 'BLACK_SWAN emergency', label: 'QUANTUM_EMERGENCY', urgency: 'CRITICAL' };
+        // PATCH 30c: require riskScore>70 + position >5min for partial emergency close
+        const posAgeMin = position.entryTime ? (Date.now() - position.entryTime) / 60000 : 999;
+        if (qraRisk && qraRisk.blackSwanAlert && (qraRisk.riskScore || 0) > 70 && posAgeMin > 5) {
+            return { shouldClose: true, closePct: 0.50, reason: 'BLACK_SWAN emergency (risk=' + (qraRisk.riskScore||0) + ')', label: 'QUANTUM_EMERGENCY', urgency: 'CRITICAL' };
         }
         // Priority 1b: Health emergency
         if (healthScore && healthScore.status === 'EMERGENCY') {
