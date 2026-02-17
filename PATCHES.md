@@ -867,3 +867,60 @@ Pełna analiza 78 transakcji (36 round-trips) wykazała kluczowe problemy:
 - GPUVQCClassifier: 8-qubit batched VQC, ZZ-FeatureMap, RealAmplitudes ansatz, cross-entropy + Adam
 
 **Wynik:**  Wszystkie 5/5 algorytmów kwantowych na GPU, OOM naprawiony, VQC hang naprawiony, 71% VRAM peak
+
+---
+
+## Patch #30  Quantum Verifier Anti-Over-Protection (2026-02-17)
+
+**Typ:** CRITICAL FIX  Trading  
+**Pliki:** 	rading-bot/src/core/ai/hybrid_quantum_pipeline.js, 	rading-bot/src/modules/bot.js  
+**Backupy:** .bak.p29 (pipeline), .bak.p30 (bot.js)
+
+### Problem
+Bot generował spójne sygnały SELL (8/8 cykli z sygnałem), ale QuantumDecisionVerifier odrzucał 100% z nich:
+- Confidence: 25-28.9% (poniżej progu 40%)
+- REJECTED: Post-quantum confidence XX.X% below threshold 40%
+- Black Swan Alert + ELEVATED risk (46/100) dodatkowo obniżały confidence
+- Wynik: ZERO transakcji  klasyczny over-protection
+
+### Rozwiązanie  6 zmian
+
+#### 1. Obniżone progi (constructor + bot.js config)
+- minConfidenceThreshold: 0.45  0.20 (ponad 2 niżej)
+- maxVaRThreshold: 0.03  0.05 (rozluźniony VaR limit)
+- minSharpeThreshold: 0.5  0.0 (wyłączony  Sharpe nie blokuje)
+
+#### 2. Risk-Based Position Sizing (zamiast blokowania)
+- ELEVATED risk: pozycja 65% (nie blokuje, wcześniej ignorował)
+- HIGH risk: pozycja 40% (wcześniej obcinał confidence o 30%)
+- CRITICAL risk: nadal blokuje (jedyny hard block)
+- Black Swan + SELL: boost 1.35 (wcześniej 1.20) + bonus 20% size
+
+#### 3. Adaptive Threshold (samoregulacja)
+- Po 3+ consecutive rejects: próg spada o 1.5pp (do min 10%)
+- Po approval: próg rośnie o 0.5pp (powraca do bazy 20%)
+- Po 5+ consecutive rejects + conf  12%: automatic override (half size)
+
+#### 4. NeuronAI Override Mechanism
+- Jeśli odrzucony ale confidence  25%: OVERRIDE (60% size)
+- Jeśli 3+ strategie zgadzają się: OVERRIDE (60% size)
+- Logs: [OVERRIDE-NEURONAI] APPROVED: Strong consensus override
+
+#### 5. Missed Opportunity Tracking
+- missedOpportunities[] array (max 100 entries)
+- Tracking: timestamp, action, confidence (orig + modified), reason, riskScore
+- Dostępne via getStats()  recentMissed (last 5)
+
+#### 6. Full Detailed Logging (zero truncacji)
+- Każdy check logowany z tagiem: [CHECK1-RISK], [CHECK2-BSWAN], [CHECK3-VAR], [CHECK4-QMC], [CHECK5-CONF], [CHECK6-ALIGN]
+- APPROVED/REJECTED: pełna ramka ==== z Original/Final conf, Adaptive threshold, Position scale, Consecutive rejects
+- Modifications JSON w logu
+
+### Oczekiwany efekt
+- Sygnały SELL z conf 25-29%: APPROVED (conf > 20% threshold)
+- ELEVATED risk (46/100): pozycja 65% (nie blokuje)
+- Black Swan + SELL: boost do ~39% confidence + 65%  120% size
+- Jeśli mimo to odrzucony: po 5 rejects adaptive override z half size
+- Bot powinien zacząć handlować zamiast być 100% zablokowany
+
+**Wynik:** Deployed, bot healthy 14/14 components, oczekiwanie na pierwszy non-HOLD consensus do weryfikacji

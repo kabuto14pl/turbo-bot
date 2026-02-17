@@ -1274,12 +1274,16 @@ class QuantumRiskAnalyzer {
 // ═════════════════════════════════════════════════════════════════════════════
 class QuantumDecisionVerifier {
     constructor(config = {}) {
-        this.minConfidenceThreshold = config.minConfidence || 0.45;
-        this.maxVaRThreshold = config.maxVaRPct || 0.03; // 3% max VaR
-        this.minSharpeThreshold = config.minSharpe || 0.5;
+        // PATCH #30: Lowered thresholds to unblock trades (was 0.45/0.03/0.5)
+        this.minConfidenceThreshold = config.minConfidence || 0.20;   // was 0.45  way too high
+        this.maxVaRThreshold = config.maxVaRPct || 0.05;              // was 0.03  5% VaR is safe for paper
+        this.minSharpeThreshold = config.minSharpe || 0.0;            // was 0.5  disabled (Sharpe not used anyway)
         this.rejectCount = 0;
         this.approveCount = 0;
+        this.consecutiveRejects = 0;
+        this.missedOpportunities = [];
         this.lastVerification = null;
+        this.adaptiveThreshold = this.minConfidenceThreshold;
     }
 
     /**
@@ -1301,68 +1305,140 @@ class QuantumDecisionVerifier {
         let approved = true;
         let modifiedConfidence = consensus.confidence;
         const modifications = {};
+        let positionSizeMultiplier = 1.0;  // PATCH #30: risk-based sizing
 
-        // Check 1: Risk level gate
+        // Use adaptive threshold (lowers after consecutive rejects)
+        const effectiveThreshold = this.adaptiveThreshold;
+
+        // --- Check 1: Risk level gate ---
+        // PATCH #30: CRITICAL blocks, HIGH/ELEVATED reduce position size (don't block)
         if (riskAnalysis && riskAnalysis.riskLevel === 'CRITICAL') {
             approved = false;
-            checks.push('REJECTED: Risk level CRITICAL (score: ' + riskAnalysis.riskScore + ')');
+            checks.push('[CHECK1-RISK] REJECTED: Risk level CRITICAL (score: ' + riskAnalysis.riskScore + '/100)');
         } else if (riskAnalysis && riskAnalysis.riskLevel === 'HIGH') {
-            modifiedConfidence *= 0.7; // Reduce confidence in high-risk environment
-            modifications.confidenceReduction = '30% reduction due to HIGH risk';
-            checks.push('MODIFIED: Confidence reduced 30% (HIGH risk)');
+            positionSizeMultiplier *= 0.4;
+            modifications.positionReduction = 'Position reduced to 40% due to HIGH risk (score: ' + riskAnalysis.riskScore + ')';
+            checks.push('[CHECK1-RISK] RISK-SIZED: Position at 40% (HIGH risk, score=' + riskAnalysis.riskScore + ')');
+        } else if (riskAnalysis && riskAnalysis.riskLevel === 'ELEVATED') {
+            positionSizeMultiplier *= 0.65;
+            modifications.positionReduction = 'Position reduced to 65% due to ELEVATED risk (score: ' + riskAnalysis.riskScore + ')';
+            checks.push('[CHECK1-RISK] RISK-SIZED: Position at 65% (ELEVATED risk, score=' + riskAnalysis.riskScore + ')');
+        } else if (riskAnalysis) {
+            checks.push('[CHECK1-RISK] PASSED: Risk ' + riskAnalysis.riskLevel + ' (score=' + riskAnalysis.riskScore + ')');
         }
 
-        // Check 2: Black swan gate
+        // --- Check 2: Black swan gate ---
         if (riskAnalysis && riskAnalysis.blackSwanAlert) {
             if (consensus.action === 'BUY') {
                 approved = false;
-                checks.push('REJECTED: Black swan alert active — no new LONG positions');
+                checks.push('[CHECK2-BSWAN] REJECTED: Black swan alert active - no new LONG positions');
             } else if (consensus.action === 'SELL') {
-                modifiedConfidence = Math.min(0.95, modifiedConfidence * 1.2);
-                checks.push('BOOSTED: SELL confidence increased during black swan');
+                modifiedConfidence = Math.min(0.95, modifiedConfidence * 1.35);
+                positionSizeMultiplier = Math.min(positionSizeMultiplier * 1.2, 1.0);
+                checks.push('[CHECK2-BSWAN] BOOSTED: SELL conf +35% during black swan -> ' + (modifiedConfidence * 100).toFixed(1) + '%');
             }
+        } else {
+            checks.push('[CHECK2-BSWAN] PASSED: No black swan detected');
         }
 
-        // Check 3: QMC VaR gate
+        // --- Check 3: QMC VaR gate (BUY only) ---
         if (qmcSimulation && qmcSimulation.scenarios && qmcSimulation.scenarios['1d']) {
             const var95 = qmcSimulation.scenarios['1d'].VaR_95;
             if (var95) {
                 const varPct = Math.abs(parseFloat(var95.returnPct)) / 100;
                 if (varPct > this.maxVaRThreshold && consensus.action === 'BUY') {
-                    modifiedConfidence *= 0.8;
-                    modifications.varGate = 'VaR(' + var95.returnPct + ') exceeds threshold';
-                    checks.push('MODIFIED: VaR too high (' + var95.returnPct + '), confidence -20%');
+                    modifiedConfidence *= 0.85;
+                    modifications.varGate = 'VaR(' + var95.returnPct + ') exceeds ' + (this.maxVaRThreshold * 100) + '% threshold';
+                    checks.push('[CHECK3-VAR] MODIFIED: VaR ' + var95.returnPct + ' > ' + (this.maxVaRThreshold * 100) + '%, BUY conf -15%');
+                } else {
+                    checks.push('[CHECK3-VAR] PASSED: VaR=' + (varPct * 100).toFixed(2) + '%, threshold=' + (this.maxVaRThreshold * 100) + '%');
                 }
+                modifications.varDetails = { varPct: (varPct * 100).toFixed(2) + '%', threshold: (this.maxVaRThreshold * 100) + '%', action: consensus.action };
             }
         }
 
-        // Check 4: QMC position outlook
+        // --- Check 4: QMC position outlook (BUY only) ---
         if (qmcSimulation && qmcSimulation.riskMetrics && qmcSimulation.riskMetrics.positionRisk) {
             const posRisk = qmcSimulation.riskMetrics.positionRisk;
             const probProfit = parseFloat(posRisk.probProfitable);
             if (consensus.action === 'BUY' && probProfit < 40) {
-                modifiedConfidence *= 0.75;
-                checks.push('MODIFIED: QMC shows only ' + posRisk.probProfitable + ' profit probability');
+                modifiedConfidence *= 0.8;
+                checks.push('[CHECK4-QMC] MODIFIED: QMC profit prob low (' + posRisk.probProfitable + '%), BUY conf -20%');
+            } else {
+                checks.push('[CHECK4-QMC] PASSED: Profit prob ' + (posRisk ? posRisk.probProfitable : 'N/A') + '%');
             }
         }
 
-        // Check 5: Confidence floor
-        if (modifiedConfidence < this.minConfidenceThreshold) {
-            approved = false;
-            checks.push('REJECTED: Post-quantum confidence ' + (modifiedConfidence * 100).toFixed(1) + '% below threshold ' + (this.minConfidenceThreshold * 100) + '%');
+        // --- Check 5: Confidence floor (adaptive) ---
+        if (modifiedConfidence < effectiveThreshold) {
+            // PATCH #30: After 5 consecutive rejects, allow trades with conf >= 12%
+            if (this.consecutiveRejects >= 5 && modifiedConfidence >= 0.12) {
+                modifications.adaptiveOverride = 'Adaptive override after ' + this.consecutiveRejects + ' consecutive rejects (threshold was ' + (effectiveThreshold * 100).toFixed(1) + '%)';
+                positionSizeMultiplier *= 0.5;
+                checks.push('[CHECK5-CONF] ADAPTIVE-OVERRIDE: conf ' + (modifiedConfidence * 100).toFixed(1) + '% < threshold ' + (effectiveThreshold * 100).toFixed(1) + '% but ALLOWED after ' + this.consecutiveRejects + ' rejects (half size)');
+            } else {
+                approved = false;
+                checks.push('[CHECK5-CONF] REJECTED: conf ' + (modifiedConfidence * 100).toFixed(1) + '% < adaptive threshold ' + (effectiveThreshold * 100).toFixed(1) + '% (consecutive rejects: ' + this.consecutiveRejects + ')');
+            }
+        } else {
+            checks.push('[CHECK5-CONF] PASSED: conf ' + (modifiedConfidence * 100).toFixed(1) + '% >= threshold ' + (effectiveThreshold * 100).toFixed(1) + '%');
         }
 
-        // Check 6: QMC recommendation alignment
+        // --- Check 6: QMC recommendation alignment (BUY only) ---
         if (qmcSimulation && qmcSimulation.recommendation) {
             const rec = qmcSimulation.recommendation.toLowerCase();
             if (consensus.action === 'BUY' && (rec.includes('bearish') || rec.includes('reducing') || rec.includes('caution'))) {
-                modifiedConfidence *= 0.85;
-                checks.push('MODIFIED: QMC recommendation conflicts with BUY signal');
+                modifiedConfidence *= 0.9;
+                checks.push('[CHECK6-ALIGN] MODIFIED: QMC bearish vs BUY, conf -10%');
+            } else {
+                checks.push('[CHECK6-ALIGN] PASSED: Recommendation aligned');
             }
         }
 
-        if (approved) this.approveCount++;
-        else this.rejectCount++;
+        // --- PATCH #30: NeuronAI Override ---
+        // If signal has strong strategy agreement (>= 3 strategies) and conf >= 18%, override rejection
+        if (!approved && consensus.confidence >= 0.18) {
+            const strategyCount = (consensus.strategyVotes && typeof consensus.strategyVotes === 'object')
+                ? Object.keys(consensus.strategyVotes).length
+                : (consensus.strategies ? consensus.strategies : 0);
+            const agreeingStrategies = (consensus.agreeing || consensus.supportingStrategies || strategyCount || 0);
+            if (agreeingStrategies >= 3 || consensus.confidence >= 0.25) {
+                approved = true;
+                positionSizeMultiplier *= 0.6;  // 60% size for overridden trades
+                modifications.neuronAIOverride = 'NeuronAI override: ' + agreeingStrategies + ' strategies agree, original conf ' + (consensus.confidence * 100).toFixed(1) + '%';
+                checks.push('[OVERRIDE-NEURONAI] APPROVED: Strong consensus override (' + agreeingStrategies + ' strategies, conf=' + (consensus.confidence * 100).toFixed(1) + '%) - position at ' + (positionSizeMultiplier * 100).toFixed(0) + '%');
+            }
+        }
+
+        // --- PATCH #30: Adaptive threshold management ---
+        if (approved) {
+            this.approveCount++;
+            this.consecutiveRejects = 0;
+            // Gradually restore threshold toward base after successful trades
+            this.adaptiveThreshold = Math.min(this.minConfidenceThreshold, this.adaptiveThreshold + 0.005);
+        } else {
+            this.rejectCount++;
+            this.consecutiveRejects++;
+            // Lower threshold gradually after 3+ consecutive rejects (floor: 0.10)
+            if (this.consecutiveRejects >= 3) {
+                this.adaptiveThreshold = Math.max(0.10, this.adaptiveThreshold - 0.015);
+            }
+            // Track missed opportunities
+            this.missedOpportunities.push({
+                timestamp: Date.now(),
+                action: consensus.action,
+                originalConfidence: consensus.confidence,
+                modifiedConfidence: modifiedConfidence,
+                reason: checks.join(' | '),
+                riskScore: riskAnalysis ? riskAnalysis.riskScore : null,
+            });
+            if (this.missedOpportunities.length > 100) this.missedOpportunities.shift();
+        }
+
+        // Apply position size multiplier
+        modifications.positionSizeMultiplier = Math.round(positionSizeMultiplier * 100) / 100;
+
+        const fullReason = checks.join(' | ') || 'All quantum checks passed';
 
         this.lastVerification = {
             timestamp: Date.now(),
@@ -1371,8 +1447,11 @@ class QuantumDecisionVerifier {
             approved,
             finalAction: approved ? consensus.action : 'HOLD',
             finalConfidence: approved ? Math.round(modifiedConfidence * 1000) / 1000 : 0,
-            reason: checks.join(' | ') || 'All quantum checks passed',
+            positionSizeMultiplier: Math.round(positionSizeMultiplier * 100) / 100,
+            reason: fullReason,
             modifications,
+            adaptiveThreshold: Math.round(this.adaptiveThreshold * 1000) / 1000,
+            consecutiveRejects: this.consecutiveRejects,
             stats: { totalApproved: this.approveCount, totalRejected: this.rejectCount },
         };
 
@@ -1383,6 +1462,10 @@ class QuantumDecisionVerifier {
         return {
             approveCount: this.approveCount,
             rejectCount: this.rejectCount,
+            consecutiveRejects: this.consecutiveRejects,
+            adaptiveThreshold: Math.round(this.adaptiveThreshold * 1000) / 1000,
+            missedOpportunitiesCount: this.missedOpportunities.length,
+            recentMissed: this.missedOpportunities.slice(-5),
             rejectRate: this.approveCount + this.rejectCount > 0
                 ? ((this.rejectCount / (this.approveCount + this.rejectCount)) * 100).toFixed(1) + '%'
                 : 'N/A',

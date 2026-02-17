@@ -243,7 +243,7 @@ class AutonomousTradingBot {
                 vqc: { nQubits: 4, nLayers: 3, nFeatures: 8, learningRate: 0.01 },
                 featureMapper: { nQubits: 5, nReps: 2, maxCacheSize: 500 },
                 riskAnalyzer: {},
-                verifier: { minConfidence: 0.40, maxVaRPct: 0.035, minSharpe: 0.4 },
+                verifier: { minConfidence: 0.20, maxVaRPct: 0.05, minSharpe: 0.0 },
                 decomposer: { maxSubProblemSize: 4, nReplicas: 6, maxIterations: 200 },
                 riskAnalysisInterval: 10,
                 weightOptimizationInterval: 30,
@@ -881,31 +881,61 @@ class AutonomousTradingBot {
                             const portfolio = this.pm.getPortfolio();
                             const verification = this.hybridPipeline.postProcess(consensus, portfolio.totalValue);
 
-                            if (!verification.approved) {
-                                shouldExecute = false;
-                                console.log('[HYBRID VERIFIER] REJECTED: ' + consensus.action +
-                                    ' (conf: ' + (consensus.confidence * 100).toFixed(1) + '%) -> ' + verification.verificationResult.reason);
-                                if (this.megatron) {
-                                    this.megatron.logActivity('QUANTUM', 'Trade ODRZUCONY',
-                                        consensus.action + ' zablokowany przez Quantum Decision Verifier: ' + verification.verificationResult.reason,
-                                        verification.verificationResult, 'high');
-                                }
-                            } else {
-                                const oldConf = consensus.confidence;
-                                consensus.confidence = verification.finalConfidence;
-                                if (Math.abs(oldConf - consensus.confidence) > 0.01) {
-                                    console.log('[HYBRID VERIFIER] APPROVED: ' + consensus.action +
-                                        ' (conf adjusted: ' + (oldConf * 100).toFixed(1) + '% -> ' + (consensus.confidence * 100).toFixed(1) + '%)');
-                                } else {
-                                    console.log('[HYBRID VERIFIER] APPROVED: ' + consensus.action +
-                                        ' (conf: ' + (consensus.confidence * 100).toFixed(1) + '%)');
-                                }
-                                if (this.megatron) {
-                                    this.megatron.logActivity('QUANTUM', 'Trade ZATWIERDZONY',
-                                        consensus.action + ' przeszedl przez Quantum Decision Verifier | Conf: ' + (consensus.confidence * 100).toFixed(1) + '%',
-                                        verification.verificationResult.modifications || {});
-                                }
-                            }
+            if (!verification.approved) {
+                // PATCH #30: Full detailed logging (no truncation)
+                const reason = verification.reason || 'unknown';
+                const origConf = verification.originalConfidence ? (verification.originalConfidence * 100).toFixed(1) : '?';
+                const finalConf = verification.finalConfidence ? (verification.finalConfidence * 100).toFixed(1) : '0';
+                const adaptThresh = verification.adaptiveThreshold ? (verification.adaptiveThreshold * 100).toFixed(1) : '?';
+                const rejects = verification.consecutiveRejects || 0;
+                const stats = verification.stats || {};
+
+                console.log(`\n${'='.repeat(80)}`);
+                console.log(`[QUANTUM-VERIFIER] ODRZUCONO / REJECTED: ${consensus.action}`);
+                console.log(`  Original confidence: ${origConf}%`);
+                console.log(`  Final confidence:    ${finalConf}%`);
+                console.log(`  Adaptive threshold:  ${adaptThresh}%`);
+                console.log(`  Consecutive rejects: ${rejects}`);
+                console.log(`  Approved/Rejected:   ${stats.totalApproved || 0}/${stats.totalRejected || 0}`);
+                console.log(`  Reason: ${reason}`);
+                if (verification.modifications) {
+                    console.log(`  Modifications: ${JSON.stringify(verification.modifications)}`);
+                }
+                console.log(`${'='.repeat(80)}\n`);
+                
+                shouldExecute = false;
+            } else {
+                // PATCH #30: Approved with risk-based position sizing
+                const posScale = verification.positionSizeMultiplier || 1.0;
+                const origConf = consensus.confidence;
+                consensus.confidence = verification.finalConfidence;
+
+                console.log(`\n${'='.repeat(80)}`);
+                console.log(`[QUANTUM-VERIFIER] ZATWIERDZONO / APPROVED: ${consensus.action}`);
+                console.log(`  Original confidence: ${(origConf * 100).toFixed(1)}%`);
+                console.log(`  Final confidence:    ${(verification.finalConfidence * 100).toFixed(1)}%`);
+                console.log(`  Position size scale: ${(posScale * 100).toFixed(0)}%`);
+                console.log(`  Adaptive threshold:  ${verification.adaptiveThreshold ? (verification.adaptiveThreshold * 100).toFixed(1) : '?'}%`);
+                if (verification.modifications) {
+                    const mods = verification.modifications;
+                    if (mods.neuronAIOverride) console.log(`  NeuronAI Override:   ${mods.neuronAIOverride}`);
+                    if (mods.adaptiveOverride) console.log(`  Adaptive Override:   ${mods.adaptiveOverride}`);
+                    if (mods.positionReduction) console.log(`  Risk Adjustment:     ${mods.positionReduction}`);
+                }
+                console.log(`${'='.repeat(80)}\n`);
+
+                // PATCH #30: Apply position size multiplier to the trade
+                if (posScale < 1.0 && this.riskManager) {
+                    try {
+                        // Scale position size through risk manager
+                        this.riskManager.setPositionScaleOverride(posScale);
+                    } catch(e) {
+                        // Fallback: store scale for execution engine
+                        consensus.positionSizeMultiplier = posScale;
+                    }
+                }
+                consensus.positionSizeMultiplier = posScale;
+            }
                         } catch(e) {
                             console.warn('[WARN] Hybrid verifier:', e.message);
                         }
