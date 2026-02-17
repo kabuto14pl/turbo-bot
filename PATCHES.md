@@ -750,7 +750,8 @@ Pełna analiza 78 transakcji (36 round-trips) wykazała kluczowe problemy:
 - Full TP: remains at 5.0x ATR (1:2 RR)
 
 **3. neuron_ai_manager.js**  NeuronAI enhancements
-- eversalEnabled: false  true (enable reversal detection)
+- 
+eversalEnabled: false  true (enable reversal detection)
 - RANGING regime filter: -45% confidence in sideways markets
 - RANGING + 2+ losses = FORCED HOLD
 - Confidence floor: 
@@ -802,7 +803,8 @@ Pełna analiza 78 transakcji (36 round-trips) wykazała kluczowe problemy:
 
 ### Inne Zmiany
 - **ecosystem.config.js**: Usunięto quantum-scheduler (obliczenia kwantowe na lokalnym PC)
-- **JSON fix**: egime_dist numpy.int64 keys  int (fix serialization error)
+- **JSON fix**: 
+egime_dist numpy.int64 keys  int (fix serialization error)
 - **Logging fix**: Emoji characters replaced with ASCII in logger.info (cp1250 encoding compat)
 - **Engine version**: 1.0.0  1.1.0-GPU
 
@@ -1005,3 +1007,58 @@ riskMultiplier spadał zbyt szybko: -0.12 per loss, brak cooldownu → 0.48→0.
 - ✅ Tylko 1 EVOLVE per trade (zamiast 3)
 - ✅ Bot handluje: SELL 52% → APPROVED → EXEC @ $68382.10
 - ✅ Bot healthy 14/14 components
+
+---
+
+## PATCH #31: Skynet Unleashed  Defense Mode Fix, Execution Dedup, QDV Symmetry
+**Data**: 2026-02-17
+**Typ**: CRITICAL FIX  Structural diagnosis & fix (5 root causes)
+**Commit**: b3d5c28
+**Pliki**: neuron_ai_manager.js, execution-engine.js, hybrid_quantum_pipeline.js
+
+### Diagnoza (5 przyczyn strukturalnych)
+1. **Permanentny tryb obronny**  riskMultiplier spadal do 0.30 i nie mogl sie odbudowac
+2. **Kaskada over-protection**  5 warstw ochronnych multiplikowalych confidence do zera
+3. **Duplikacja trade**  brak dedup guard, SHORT path pomijal tracking calls
+4. **Brak zarzadzania pozycjami**  SHORT trades nie liczyly totalTrades/realizedPnL
+5. **Slaba ewolucja**  floor 0.3 zbyt niski, decay zbyt szybki
+
+### Zmiany neuron_ai_manager.js (12 zmian):
+- riskMultiplier floor: 0.30 -> 0.50 (learnFromTrade + _applyEvolution)
+- Decay rate: -0.06 -> -0.04, cooldown 60s -> 90s
+- Recovery: +0.12 -> +0.18 po 2 wygranych
+- NOWEE: Defense exit  3 consecutive wins -> riskMultiplier = 0.75
+- NOWE: confidenceBoost tracking (+0.08 per win, -0.04 per loss)
+- riskMultiplier application: sqrt(max(0.50, rM)) zamiast liniowego rM
+- Confidence floor: 0.25 -> 0.28
+- RANGING penalty: 22% -> 12% (0.78 -> 0.88)
+- RANGING forced HOLD: 4 -> 6 losses
+- Loss streak block: 3 -> 5 consecutive losses, MTF 25 -> 22
+- Safety 5-loss cap: 0.40 -> 0.55
+- Safety 3-loss -> 4-loss penalty: 0.80 -> 0.85
+
+### Zmiany execution-engine.js (2 zmiany):
+- NOWE: Dedup guard (5s window, symbol+action key)
+- FIX: SHORT path early return  dodano brakujace totalTrades++, realizedPnL += pnl, markTradeExecuted()
+
+### Zmiany hybrid_quantum_pipeline.js (6 zmian):
+- minConfidenceThreshold: 0.20 -> 0.15
+- Check 3 (VaR): teraz dotyczy BUY i SELL (bylo tylko BUY)
+- Check 4 (QMC outlook): teraz dotyczy BUY i SELL
+- Check 6 (Alignment): bidirectional  SELL vs bullish QMC = misaligned
+- NeuronAI Override: CRITICAL risk blokuje override (isCriticalRisk guard)
+- Adaptive threshold: restoration rate 0.005 -> 0.008
+
+### Reset stanu:
+- riskMultiplier: 0.85 (zdrowy poziom operacyjny)
+- consecutiveLosses: 0 (czysty start)
+- confidenceBoost: 0
+
+### Wynik
+- Bot healthy 14/14 components
+- Syntax validation: 3/3 files OK
+- riskMultiplier at 0.85 (was stuck at 0.30 floor)
+- Confidence generation significantly improved (sqrt dampening vs linear kill)
+- SHORT trades now properly tracked (totalTrades, realizedPnL, cooldown)
+- QDV checks symmetric for BUY and SELL directions
+- Backups in /root/turbo-bot/backups/patch31/
