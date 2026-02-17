@@ -312,7 +312,13 @@ class ExecutionEngine {
                     return;
                 }
             }
-            console.log('[EXEC] ' + signal.action + ' ' + signal.symbol + ' (conf: ' + (signal.confidence * 100).toFixed(1) + '%)');
+            // PATCH #31: Dedup guard - same symbol+action within 5s window
+            const tradeKey = signal.symbol + ':' + signal.action + ':' + Math.floor(Date.now() / 5000);
+            if (this._lastTradeKey === tradeKey) {
+                console.log('[EXEC P31] DEDUP: Identical signal blocked within 5s window');
+                return;
+            }
+
 
             // Get ATR for dynamic risk
             let atrValue, dynamicRisk = this.config.riskPerTrade;
@@ -409,6 +415,13 @@ class ExecutionEngine {
                     if (this.pm.trades.length > 1000) this.pm.trades = this.pm.trades.slice(-1000);
                     this.pm.balance.totalValue = this.pm.balance.usdtBalance + Math.abs(this.pm.balance.btcBalance) * signal.price;
                     this.pm.portfolio.totalValue = this.pm.balance.totalValue;
+                    // PATCH #31: SHORT path - add missing tracking calls
+                    this.pm.portfolio.totalTrades++;
+                    this.pm.portfolio.realizedPnL += trade.pnl;
+                    if (this.risk && this.risk.markTradeExecuted) {
+                        this.risk.markTradeExecuted();
+                    }
+                    this._lastTradeKey = tradeKey;
                     console.log('[EXEC DONE] SHORT ' + trade.quantity.toFixed(4) + ' ' + trade.symbol + ' @ $' + trade.price.toFixed(2) + ' | Fees: $' + fees.toFixed(2));
                     return;
                 }
@@ -457,6 +470,7 @@ class ExecutionEngine {
             if (this.risk && this.risk.markTradeExecuted) {
                 this.risk.markTradeExecuted();
             }
+            this._lastTradeKey = tradeKey; // PATCH #31: mark dedup key
             console.log('[EXEC DONE] ' + trade.action + ' ' + trade.quantity.toFixed(4) + ' ' + trade.symbol + ' @ $' + trade.price.toFixed(2) + ' | PnL: $' + trade.pnl.toFixed(2));
         } catch (err) {
             console.error('[EXEC ERROR] ' + err.message);

@@ -264,9 +264,9 @@ class NeuronAIManager {
 
         // PATCH #26: Loss streak protection in fallback -- after 3+ losses, require stronger signals
         const consecutiveLosses = this.consecutiveLosses || 0;
-        if (consecutiveLosses >= 3 && action !== 'HOLD' && action !== 'CLOSE') {
+        if (consecutiveLosses >= 5 && action !== 'HOLD' && action !== 'CLOSE') {
             // After 3 losses, require even higher MTF score
-            if (mtfScore < 25) {
+            if (mtfScore < 22) { // PATCH 31: lowered from 25
                 action = 'HOLD';
                 confidence = 0.2;
                 reason = 'Ja, Neuron AI, WSTRZYMUJE sie -- ' + consecutiveLosses + ' strat z rzedu, czekam na silniejszy sygnal (MTF<25)';
@@ -281,10 +281,10 @@ class NeuronAIManager {
         if (action !== 'HOLD' && action !== 'CLOSE') {
             const regimeStr = ((state.regime || '') + '').toUpperCase();
             if (regimeStr.includes('RANG') || regimeStr.includes('SIDEWAYS') || regimeStr.includes('CHOPPY')) {
-                confidence *= 0.78; // PATCH #30b: Reduced from 0.55 to 0.78 (22% penalty, was 45%)
+                confidence *= 0.88; // PATCH 31: RANGING penalty reduced to 12%
                 reason += ' | P27: RANGING regime penalty -22%';
                 // In ranging market with any loss streak, force HOLD
-                if ((this.consecutiveLosses || 0) >= 4) { // PATCH #30b: raised from 2 to 4 (was too aggressive)
+                if ((this.consecutiveLosses || 0) >= 6) { // PATCH 31: raised to 6 (was too aggressive)
                     action = 'HOLD';
                     confidence = 0.15;
                     reason = 'P27: RANGING + ' + (this.consecutiveLosses || 0) + ' losses = FORCED HOLD';
@@ -308,8 +308,12 @@ class NeuronAIManager {
 
         // Risk multiplier application
         if (action !== 'HOLD' && action !== 'CLOSE') {
-            confidence *= this.riskMultiplier;
-            confidence = Math.max(0.25, Math.min(1.0, confidence)); // P27: floor 0.1->0.25 for actionable signals
+            confidence *= Math.sqrt(Math.max(0.50, this.riskMultiplier)); // PATCH 31: sqrt dampening
+            // PATCH #31: Apply confidence boost from win/loss streak
+            if (this.confidenceBoost && this.confidenceBoost > 0) {
+                confidence += this.confidenceBoost;
+            }
+            confidence = Math.max(0.28, Math.min(1.0, confidence)); // PATCH 31: floor raised: floor 0.1->0.25 for actionable signals
         }
 
         return {
@@ -488,11 +492,11 @@ class NeuronAIManager {
 
         // PATCH #26: Graduated loss streak response (not blocking, but progressively reducing confidence)
         if (this.consecutiveLosses >= 5) {
-            console.log('[NEURON AI P26] CRITICAL: ' + this.consecutiveLosses + ' consecutive losses -- confidence capped at 0.40');
-            decision.confidence = Math.min(decision.confidence * 0.70, 0.40);
-        } else if (this.consecutiveLosses >= 3) {
-            console.log('[NEURON AI P26] WARNING: ' + this.consecutiveLosses + ' consecutive losses -- confidence * 0.80');
-            decision.confidence *= 0.80;
+            console.log('[NEURON AI P26] CRITICAL: ' + this.consecutiveLosses + ' consecutive losses -- confidence capped at 0.55');
+            decision.confidence = Math.min(decision.confidence * 0.80, 0.55); // PATCH 31;
+        } else if (this.consecutiveLosses >= 4) { // PATCH 31: raised from 3
+            console.log('[NEURON AI P26] WARNING: ' + this.consecutiveLosses + ' consecutive losses -- confidence * 0.85');
+            decision.confidence *= 0.85; // PATCH 31: softer penalty
         }
 
         return decision;
@@ -548,7 +552,7 @@ class NeuronAIManager {
 
             // Positive evolution: increase risk slightly after wins streak
             if (this.consecutiveWins >= 2 && this.riskMultiplier < 2.0) { // PATCH 30c: was >= 3
-                this.riskMultiplier = Math.min(2.0, this.riskMultiplier + 0.12); // PATCH 30c: was 0.08
+                this.riskMultiplier = Math.min(2.0, this.riskMultiplier + 0.18); // PATCH 31: faster recovery
                 console.log('[NEURON AI EVOLVE] Win streak x' + this.consecutiveWins + ' -- risk multiplier -> ' + this.riskMultiplier.toFixed(2));
                 this.evolutionCount++;
             }
@@ -560,12 +564,25 @@ class NeuronAIManager {
             // Defensive evolution: reduce risk after losses
             // PATCH 30c: slower decay (-0.06, was -0.12) + 60s cooldown between decreases
             const timeSinceDecay = Date.now() - (this._lastRiskDecayTs || 0);
-            if (this.consecutiveLosses >= 2 && this.riskMultiplier > 0.30 && timeSinceDecay > 60000) {
-                this.riskMultiplier = Math.max(0.30, this.riskMultiplier - 0.06);
+            if (this.consecutiveLosses >= 2 && this.riskMultiplier > 0.50 && timeSinceDecay > 90000) {
+                this.riskMultiplier = Math.max(0.50, this.riskMultiplier - 0.04);
                 this._lastRiskDecayTs = Date.now();
                 console.log('[NEURON AI EVOLVE] Loss streak x' + this.consecutiveLosses + ' -- risk multiplier -> ' + this.riskMultiplier.toFixed(2));
                 this.evolutionCount++;
             }
+        }
+
+        // PATCH #31: Defense exit - 3 consecutive wins = boost out of defense mode
+        if (this.consecutiveWins >= 3 && this.riskMultiplier < 0.75) {
+            this.riskMultiplier = 0.75;
+            console.log('[NEURON AI P31] Defense exit! 3 wins -> riskMultiplier reset to 0.75');
+        }
+        // PATCH #31: Confidence boost tracking
+        if (!this.confidenceBoost) this.confidenceBoost = 0;
+        if (pnl >= 0) {
+            this.confidenceBoost = Math.min(0.20, this.confidenceBoost + 0.08);
+        } else {
+            this.confidenceBoost = Math.max(-0.10, this.confidenceBoost - 0.04);
         }
 
         if (this.megatron && this.megatron.logActivity) {
@@ -618,13 +635,13 @@ class NeuronAIManager {
             { pattern: /(?:conservat|konserwatyw|cautious|ostrozn|defensive|defensyw)/i,
               action: () => {
                   this.aggressiveMode = false;
-                  this.riskMultiplier = Math.max(0.3, this.riskMultiplier - 0.15);
+                  this.riskMultiplier = Math.max(0.5, this.riskMultiplier - 0.15);
                   console.log('[NEURON AI EVOLVE] Conservative mode, risk -> ' + this.riskMultiplier.toFixed(2));
               }
             },
             { pattern: /(?:reduce|zmniejsz|lower|obniz).*(?:risk|ryzyko)/i,
               action: () => {
-                  this.riskMultiplier = Math.max(0.3, this.riskMultiplier - 0.12);
+                  this.riskMultiplier = Math.max(0.5, this.riskMultiplier - 0.12);
                   console.log('[NEURON AI EVOLVE] Risk reduced -> ' + this.riskMultiplier.toFixed(2));
               }
             },
@@ -637,7 +654,7 @@ class NeuronAIManager {
             { pattern: /(?:tight|zaciesn|narrow|waski).*(?:sl|stop.?loss)/i,
               action: () => {
                   console.log('[NEURON AI EVOLVE] Tighter SL requested -- reducing risk multiplier');
-                  this.riskMultiplier = Math.max(0.3, this.riskMultiplier - 0.08);
+                  this.riskMultiplier = Math.max(0.5, this.riskMultiplier - 0.08);
               }
             },
             { pattern: /(?:widen|poszerz|loose|luz).*(?:tp|take.?profit|target)/i,

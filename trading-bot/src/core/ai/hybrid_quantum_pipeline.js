@@ -1275,7 +1275,7 @@ class QuantumRiskAnalyzer {
 class QuantumDecisionVerifier {
     constructor(config = {}) {
         // PATCH #30: Lowered thresholds to unblock trades (was 0.45/0.03/0.5)
-        this.minConfidenceThreshold = config.minConfidence || 0.20;   // was 0.45  way too high
+        this.minConfidenceThreshold = config.minConfidence || 0.15; // PATCH 31: lowered from 0.20   // was 0.45  way too high
         this.maxVaRThreshold = config.maxVaRPct || 0.05;              // was 0.03  5% VaR is safe for paper
         this.minSharpeThreshold = config.minSharpe || 0.0;            // was 0.5  disabled (Sharpe not used anyway)
         this.rejectCount = 0;
@@ -1346,7 +1346,7 @@ class QuantumDecisionVerifier {
             const var95 = qmcSimulation.scenarios['1d'].VaR_95;
             if (var95) {
                 const varPct = Math.abs(parseFloat(var95.returnPct)) / 100;
-                if (varPct > this.maxVaRThreshold && consensus.action === 'BUY') {
+                if (varPct > this.maxVaRThreshold && (consensus.action === 'BUY' || consensus.action === 'SELL')) { // PATCH 31: apply to SELL too
                     modifiedConfidence *= 0.85;
                     modifications.varGate = 'VaR(' + var95.returnPct + ') exceeds ' + (this.maxVaRThreshold * 100) + '% threshold';
                     checks.push('[CHECK3-VAR] MODIFIED: VaR ' + var95.returnPct + ' > ' + (this.maxVaRThreshold * 100) + '%, BUY conf -15%');
@@ -1361,7 +1361,7 @@ class QuantumDecisionVerifier {
         if (qmcSimulation && qmcSimulation.riskMetrics && qmcSimulation.riskMetrics.positionRisk) {
             const posRisk = qmcSimulation.riskMetrics.positionRisk;
             const probProfit = parseFloat(posRisk.probProfitable);
-            if (consensus.action === 'BUY' && probProfit < 40) {
+            if ((consensus.action === 'BUY' || consensus.action === 'SELL') && probProfit < 40) { // PATCH 31: apply to SELL too
                 modifiedConfidence *= 0.8;
                 checks.push('[CHECK4-QMC] MODIFIED: QMC profit prob low (' + posRisk.probProfitable + '%), BUY conf -20%');
             } else {
@@ -1387,7 +1387,7 @@ class QuantumDecisionVerifier {
         // --- Check 6: QMC recommendation alignment (BUY only) ---
         if (qmcSimulation && qmcSimulation.recommendation) {
             const rec = qmcSimulation.recommendation.toLowerCase();
-            if (consensus.action === 'BUY' && (rec.includes('bearish') || rec.includes('reducing') || rec.includes('caution'))) {
+            if ((consensus.action === 'BUY' && (rec.includes('bearish') || rec.includes('reducing') || rec.includes('caution'))) || (consensus.action === 'SELL' && (rec.includes('bullish') || rec.includes('upside') || rec.includes('optimistic')))) { // PATCH 31: bidirectional
                 modifiedConfidence *= 0.9;
                 checks.push('[CHECK6-ALIGN] MODIFIED: QMC bearish vs BUY, conf -10%');
             } else {
@@ -1397,7 +1397,8 @@ class QuantumDecisionVerifier {
 
         // --- PATCH #30: NeuronAI Override ---
         // If signal has strong strategy agreement (>= 3 strategies) and conf >= 18%, override rejection
-        if (!approved && consensus.confidence >= 0.18) {
+        const isCriticalRisk = riskAnalysis && riskAnalysis.riskLevel === 'CRITICAL'; // PATCH 31
+        if (!approved && consensus.confidence >= 0.18 && !isCriticalRisk) { // PATCH 31: CRITICAL risk cannot be overridden
             const strategyCount = (consensus.strategyVotes && typeof consensus.strategyVotes === 'object')
                 ? Object.keys(consensus.strategyVotes).length
                 : (consensus.strategies ? consensus.strategies : 0);
@@ -1415,7 +1416,7 @@ class QuantumDecisionVerifier {
             this.approveCount++;
             this.consecutiveRejects = 0;
             // Gradually restore threshold toward base after successful trades
-            this.adaptiveThreshold = Math.min(this.minConfidenceThreshold, this.adaptiveThreshold + 0.005);
+            this.adaptiveThreshold = Math.min(this.minConfidenceThreshold, this.adaptiveThreshold + 0.008); // PATCH 31: faster restoration
         } else {
             this.rejectCount++;
             this.consecutiveRejects++;
