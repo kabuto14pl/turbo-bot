@@ -813,3 +813,57 @@ Pełna analiza 78 transakcji (36 round-trips) wykazała kluczowe problemy:
 - NVIDIA Driver 591.86+
 
 **Wynik:**  GPU akceleracja działa, 4/5 algorytmów na CUDA, 1166MB peak VRAM, bot healthy 14/14 komponentów
+
+---
+
+## Patch #29  2026-02-17  FIX: OOM + VQC hang, 5/5 GPU, O(2^n) gate application
+
+**Typ:** BUGFIX + PERFORMANCE
+**Commit:** 23ccedd
+**Pliki:** quantum/gpu_accelerator.py, quantum/quantum_engine_gpu.py
+
+### Problem
+1. GPUStatevectorSimulator.run()/get_statevector() used _expand_gate_to_nqubits() which builds FULL 2^n x 2^n unitary matrix  O(4^n) memory. For 18 qubits: 32 GiB per gate  CUDA OOM crash during warmup.
+2. VQC _apply_cnot_batch() for non-adjacent qubits used same O(4^n) function with 65K Python loop iterations. Called 7200 times during training  infinite hang.
+3. QAOA 20q/10layers/500iter/5restarts took 398s  appeared frozen.
+
+### Rozwiązanie
+
+**A) Efficient O(2^n) gate application (StatevectorSimulator):**
+- New _apply_gate_efficient(): single-qubit gates via reshape(dim0, 2, dim2) + einsum
+- New _apply_gate_2q_efficient(): two-qubit gates via reshape(dim0, 4, dim2) + SWAP decomposition for non-adjacent
+- New _execute_gates(): unified dispatcher (1-qubit vs 2-qubit)
+- Supports up to ~26 qubits (was max ~14 before OOM)
+
+**B) Efficient batched CNOT (VQC):**
+- New _apply_swap_batch(): adjacent SWAP via reshape + einsum
+- Rewrote _apply_cnot_batch(): adjacent = direct, reversed = swap trick, non-adjacent = SWAP chain
+- Eliminated ALL calls to _expand_gate_to_nqubits (now only definition remains, zero callsites)
+
+**C) QAOA parameter tuning:**
+- 20q/10L/500i/5r  16q/6L/200i/3r (still heavy: 65536-dim Hilbert space, ~47s GPU)
+
+**D) Memory management:**
+- torch.cuda.empty_cache() between warmup phases
+- del sim after Phase 2
+
+### Wyniki Testów (RTX 5070 Ti, 16GB)
+
+| Algorytm | Backend | Czas | GPU VRAM | Status |
+|----------|---------|------|----------|--------|
+| Warmup | GPU (3 phases) | 3.8s | 2902MB |  SUCCESS |
+| **QAOA** | **GPU (PyTorch autograd)** | **47.01s** | 76MB |  SUCCESS (16q, 65536-dim) |
+| **VQC** | **GPU (PyTorch autograd)** | **13.93s** | 27MB |  SUCCESS (8q, accuracy=1.000) |
+| **QSVM** | **GPU (PyTorch CUDA)** | **0.06s** | 27MB |  SUCCESS (6q, 3 reps) |
+| **QGAN** | **GPU (PyTorch CUDA)** | **0.04s** | 27MB |  SUCCESS (2000 samples) |
+| **QMC** | **GPU (PyTorch CUDA)** | **0.26s** | **11592MB** |  SUCCESS (2M scenarios) |
+
+- **5/5 algorytmów na GPU** (z 4/5 w Patch #28)
+- **Total: 61.3s, GPU peak VRAM: 11592MB (71% z 16GB)**
+- **Engine version: 2.0.0-GPU**
+
+### Nowe klasy (dodane w sesji przed tym patchem)
+- GPUQAOAOptimizer: 16-qubit variational QAOA, PyTorch autograd, Adam optimizer
+- GPUVQCClassifier: 8-qubit batched VQC, ZZ-FeatureMap, RealAmplitudes ansatz, cross-entropy + Adam
+
+**Wynik:**  Wszystkie 5/5 algorytmów kwantowych na GPU, OOM naprawiony, VQC hang naprawiony, 71% VRAM peak
