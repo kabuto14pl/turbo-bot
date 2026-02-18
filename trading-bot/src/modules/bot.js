@@ -329,6 +329,7 @@ class AutonomousTradingBot {
         try {
             const { NeuronAIManager } = require('../core/ai/neuron_ai_manager');
             this.neuronManager = new NeuronAIManager();
+            global._neuronAIInstance = this.neuronManager; // PATCH #32: global ref for exec-engine partial TP learning
             this.neuronManager.initialize(this.megatron);
             // Apply NeuronAI adapted weights to ensemble if any
             const adaptedW = this.neuronManager.getAdaptedWeights();

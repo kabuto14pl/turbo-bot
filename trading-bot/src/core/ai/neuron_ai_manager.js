@@ -214,6 +214,7 @@ class NeuronAIManager {
      */
     // PATCH #25: Multi-position enabled, no hasPosition blocks, higher confidence cap
     _fallbackDecision(state) {
+        this._lastState = state; // PATCH #32: store for learnFromTrade MTF access
         const votes = state.votes || { BUY: 0, SELL: 0, HOLD: 1 };
         const mtf = state.mtfBias || {};
         const portfolio = state.portfolio || {};
@@ -313,7 +314,15 @@ class NeuronAIManager {
             if (this.confidenceBoost && this.confidenceBoost > 0) {
                 confidence += this.confidenceBoost;
             }
-            confidence = Math.max(0.28, Math.min(1.0, confidence)); // PATCH 31: floor raised: floor 0.1->0.25 for actionable signals
+            confidence = Math.max(0.18, Math.min(1.0, confidence)); // PATCH #32: lowered from 0.28 // PATCH 31: floor raised: floor 0.1->0.25 for actionable signals
+        }
+
+        // PATCH #32: OVERRIDE HOLD -> SELL w silnym trendzie spadkowym
+        if (action === 'HOLD' && mtfDirection === 'BEARISH' && mtfScore >= 18 && (mlSignal.confidence || 0) > 0.22) {
+            action = 'SELL';
+            confidence = Math.min(0.75, (mlSignal.confidence || 0.5) * 0.95);
+            reason = 'Ja, Neuron AI, OVERRIDE HOLD -> SELL -- silny MTF BEARISH + ML signal';
+            console.log('[NEURON AI OVERRIDE] Niski confidence ale silny MTF BEARISH -> SELL');
         }
 
         return {
@@ -464,7 +473,7 @@ class NeuronAIManager {
         prompt += 'COUNTER-TREND: NIGDY nie idz przeciw MTF bias. Counter-trend = 0% win rate w danych.\n';
         prompt += 'PO WYGRANEJ: Nie otwieraj od razu nowej -- 85% szans na strate po wygranej (over-confidence).\n';
         prompt += 'Consecutive losses: ' + this.consecutiveLosses + ' | Risk multiplier: ' + this.riskMultiplier.toFixed(2) + '\n';
-        prompt += 'Analizuj WSZYSTKIE wskazniki i podejmij optymalna decyzje. Decyduj.';
+        prompt += 'Analizuj WSZYSTKIE wskazniki i podejmij optymalna decyzje. Decyduj.\n\n- Jesli sygnal SELL powtarza sie >3 razy w ciagu 15 minut i MTF BEARISH score >=18, otworz pozycje nawet przy confidence 18-25% (override low confidence).\n- Po serii 3+ strat: obniz size do 50%, ale po 2+ wygranych z rzedu: wroc do 100% size i boost confidence +0.20.\n- Zawsze proponuj ewolucje po kazdym trade (np. \"Zwiekszan wage ML o 0.05 po serii strat\" lub \"Wlaczam aggressiveMode po silnym trendzie\").\n- Zarzadzaj aktywnymi pozycjami: jesli profit >1.5x ATR -- partial close 25%, jesli >3x -- trailing SL (Chandelier).\n- Po wygranej nie otwieraj od razu nowej pozycji -- poczekaj na potwierdzenie nowego setupu.';
         return prompt;
     }
 
@@ -537,12 +546,8 @@ class NeuronAIManager {
     learnFromTrade(tradeResult) {
         const pnl = tradeResult.pnl || 0;
         this.totalPnL += pnl;
-        this.recentTrades.push({
-            pnl: pnl,
-            timestamp: Date.now(),
-            strategy: tradeResult.strategy || 'unknown',
-            action: tradeResult.action || 'unknown',
-        });
+        this.recentTrades.push({ pnl, timestamp: Date.now(), strategy: tradeResult.strategy || 'unknown' });
+
         if (this.recentTrades.length > 50) this.recentTrades = this.recentTrades.slice(-50);
 
         if (pnl >= 0) {
@@ -550,39 +555,30 @@ class NeuronAIManager {
             this.consecutiveWins++;
             this.consecutiveLosses = 0;
 
-            // Positive evolution: increase risk slightly after wins streak
-            if (this.consecutiveWins >= 2 && this.riskMultiplier < 2.0) { // PATCH 30c: was >= 3
-                this.riskMultiplier = Math.min(2.0, this.riskMultiplier + 0.18); // PATCH 31: faster recovery
-                console.log('[NEURON AI EVOLVE] Win streak x' + this.consecutiveWins + ' -- risk multiplier -> ' + this.riskMultiplier.toFixed(2));
-                this.evolutionCount++;
+            // PATCH #32: SZYBSZE WYJSCIE Z DEFENSE MODE
+            if (this.consecutiveWins >= 2 && this.riskMultiplier < 1.2) {
+                this.riskMultiplier = Math.min(1.2, this.riskMultiplier + 0.18);
+                console.log('[NEURON EVOLVE] Win streak x' + this.consecutiveWins + ' -> riskMultiplier UP ' + this.riskMultiplier.toFixed(2));
             }
+            this.confidenceBoost = Math.min(0.25, (this.confidenceBoost || 0) + 0.08);
         } else {
             this.lossCount++;
             this.consecutiveLosses++;
             this.consecutiveWins = 0;
+            this.confidenceBoost = Math.max(-0.15, (this.confidenceBoost || 0) - 0.04);
 
-            // Defensive evolution: reduce risk after losses
-            // PATCH 30c: slower decay (-0.06, was -0.12) + 60s cooldown between decreases
-            const timeSinceDecay = Date.now() - (this._lastRiskDecayTs || 0);
-            if (this.consecutiveLosses >= 2 && this.riskMultiplier > 0.50 && timeSinceDecay > 90000) {
-                this.riskMultiplier = Math.max(0.50, this.riskMultiplier - 0.04);
-                this._lastRiskDecayTs = Date.now();
-                console.log('[NEURON AI EVOLVE] Loss streak x' + this.consecutiveLosses + ' -- risk multiplier -> ' + this.riskMultiplier.toFixed(2));
-                this.evolutionCount++;
+            if (this.consecutiveLosses >= 2 && this.riskMultiplier > 0.5) {
+                this.riskMultiplier = Math.max(0.5, this.riskMultiplier - 0.04);
+                console.log('[NEURON EVOLVE] Loss streak x' + this.consecutiveLosses + ' -> riskMultiplier DOWN ' + this.riskMultiplier.toFixed(2));
             }
         }
 
-        // PATCH #31: Defense exit - 3 consecutive wins = boost out of defense mode
-        if (this.consecutiveWins >= 3 && this.riskMultiplier < 0.75) {
-            this.riskMultiplier = 0.75;
-            console.log('[NEURON AI P31] Defense exit! 3 wins -> riskMultiplier reset to 0.75');
-        }
-        // PATCH #31: Confidence boost tracking
-        if (!this.confidenceBoost) this.confidenceBoost = 0;
-        if (pnl >= 0) {
-            this.confidenceBoost = Math.min(0.20, this.confidenceBoost + 0.08);
-        } else {
-            this.confidenceBoost = Math.max(-0.10, this.confidenceBoost - 0.04);
+        // PATCH #32: AUTOMATYCZNE WYJSCIE Z DEFENSE MODE
+        const mtfScore = (this._lastState && this._lastState.mtfBias && this._lastState.mtfBias.score) || 0;
+        if (this.consecutiveWins >= 3 || (this.consecutiveLosses === 0 && mtfScore > 30)) {
+            this.riskMultiplier = Math.min(1.5, this.riskMultiplier + 0.25);
+            this.confidenceBoost = 0.20;
+            console.log('[NEURON EVOLVE] DEFENSE EXIT -- riskMultiplier UP to ' + this.riskMultiplier.toFixed(2));
         }
 
         if (this.megatron && this.megatron.logActivity) {

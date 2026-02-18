@@ -1275,7 +1275,7 @@ class QuantumRiskAnalyzer {
 class QuantumDecisionVerifier {
     constructor(config = {}) {
         // PATCH #30: Lowered thresholds to unblock trades (was 0.45/0.03/0.5)
-        this.minConfidenceThreshold = config.minConfidence || 0.15; // PATCH 31: lowered from 0.20   // was 0.45  way too high
+        this.minConfidenceThreshold = config.minConfidence || 0.18; // PATCH #32: raised from 0.15 (user request)   // was 0.45  way too high
         this.maxVaRThreshold = config.maxVaRPct || 0.05;              // was 0.03  5% VaR is safe for paper
         this.minSharpeThreshold = config.minSharpe || 0.0;            // was 0.5  disabled (Sharpe not used anyway)
         this.rejectCount = 0;
@@ -1369,10 +1369,14 @@ class QuantumDecisionVerifier {
             }
         }
 
-        // --- Check 5: Confidence floor (adaptive) ---
+        // --- Check 5: Confidence floor + NeuronAI Override (PATCH #32) ---
         if (modifiedConfidence < effectiveThreshold) {
-            // PATCH #30: After 5 consecutive rejects, allow trades with conf >= 12%
-            if (this.consecutiveRejects >= 5 && modifiedConfidence >= 0.12) {
+            if (consensus.source === 'NEURON_AI_LLM' && consensus.confidence >= 0.25
+                && ((consensus.mtfScore || 0) >= 18 && (consensus.mtfBias && (consensus.mtfBias.score || 0) >= 18))) {
+                approved = true;
+                positionSizeMultiplier *= 0.7;
+                checks.push('[NEURON-OVERRIDE] APPROVED: LLM conf ' + (consensus.confidence * 100).toFixed(1) + '% + MTF >= 18 -> bypass threshold');
+            } else if (this.consecutiveRejects >= 5 && modifiedConfidence >= 0.12) {
                 modifications.adaptiveOverride = 'Adaptive override after ' + this.consecutiveRejects + ' consecutive rejects (threshold was ' + (effectiveThreshold * 100).toFixed(1) + '%)';
                 positionSizeMultiplier *= 0.5;
                 checks.push('[CHECK5-CONF] ADAPTIVE-OVERRIDE: conf ' + (modifiedConfidence * 100).toFixed(1) + '% < threshold ' + (effectiveThreshold * 100).toFixed(1) + '% but ALLOWED after ' + this.consecutiveRejects + ' rejects (half size)');

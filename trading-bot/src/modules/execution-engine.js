@@ -94,6 +94,8 @@ class ExecutionEngine {
                             var tradeS1 = this.pm.closePosition(sym, price, closeQtyS1, 'SHORT_TP_L1', 'PARTIAL_TP');
                             if (tradeS1) {
                                 pos._partialTp1Done = true;
+                                // PATCH #32: NeuronAI learns from SHORT partial TP
+                                try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: tradeS1.pnl, strategy: 'SHORT_PARTIAL_TP_L1', reason: 'Short partial profit locked' }); } catch(eN3) {}
                                 console.log('[SHORT TP L1] 25% @ ' + shortAtrMult.toFixed(1) + 'x ATR | PnL: $' + tradeS1.pnl.toFixed(2));
                                 if (this.ml) this.ml.learnFromTrade(tradeS1.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
                             }
@@ -105,6 +107,8 @@ class ExecutionEngine {
                             var tradeS2 = this.pm.closePosition(sym, price, closeQtyS2, 'SHORT_TP_L2', 'PARTIAL_TP');
                             if (tradeS2) {
                                 pos._partialTp2Done = true;
+                                // PATCH #32: NeuronAI learns from SHORT partial TP L2
+                                try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: tradeS2.pnl, strategy: 'SHORT_PARTIAL_TP_L2', reason: 'Short partial 2 locked' }); } catch(eN4) {}
                                 console.log('[SHORT TP L2] 25% @ ' + shortAtrMult.toFixed(1) + 'x ATR | PnL: $' + tradeS2.pnl.toFixed(2));
                                 if (this.ml) this.ml.learnFromTrade(tradeS2.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
                             }
@@ -178,6 +182,8 @@ class ExecutionEngine {
                             const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L1_2.0ATR', 'PARTIAL_TP');
                             if (trade) {
                                 pos._partialTp1Done = true;
+                                  // PATCH #32: NeuronAI learns from LONG partial TP L1
+                                  try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: trade.pnl, strategy: 'PARTIAL_TP_L1', reason: 'Partial profit locked' }); } catch(eN1) {}
                                 // Move SL to breakeven + buffer after first TP
                                 const beSL = pos.entryPrice + pos.entryPrice * 0.003;
                                 if (beSL > pos.stopLoss) this.pm.updateStopLoss(sym, beSL);
@@ -194,6 +200,8 @@ class ExecutionEngine {
                             const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L2_3.75ATR', 'PARTIAL_TP');
                             if (trade) {
                                 pos._partialTp2Done = true;
+                                  // PATCH #32: NeuronAI learns from LONG partial TP L2
+                                  try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: trade.pnl, strategy: 'PARTIAL_TP_L2', reason: 'Second partial profit locked' }); } catch(eN2) {}
                                 // Lock 1x ATR profit on remainder
                                 const lockSL = pos.entryPrice + 1.0 * atr;
                                 if (lockSL > pos.stopLoss) this.pm.updateStopLoss(sym, lockSL);
@@ -273,6 +281,8 @@ class ExecutionEngine {
                         console.log(`${e} ${sym}: $${pos.entryPrice.toFixed(2)} -> $${price.toFixed(2)} | PnL: ${trade.pnl >= 0 ? '+' : ''}$${trade.pnl.toFixed(2)}`);
                         this.risk.recordTradeResult(trade.pnl);
                         if (this.ml) this.ml.learnFromTrade(trade.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
+                          // PATCH #32: NeuronAI learns from all position closes
+                          try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: trade.pnl, strategy: reason, reason: reason }); } catch(eNClose) {}
                         // Sync APM
                         if (this.advancedPositionManager) {
                             try {
