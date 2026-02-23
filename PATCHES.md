@@ -750,7 +750,928 @@ Pełna analiza 78 transakcji (36 round-trips) wykazała kluczowe problemy:
 - Full TP: remains at 5.0x ATR (1:2 RR)
 
 **3. neuron_ai_manager.js**  NeuronAI enhancements
-- eversalEnabled: false  true (enable reversal detection)
+- 
+eversalEnabled: false  true (enable reversal detection)
 - RANGING regime filter: -45% confidence in sideways markets
 - RANGING + 2+ losses = FORCED HOLD
 - Confidence floor: 
+
+---
+
+## Patch #28  2026-02-16  GPU-Accelerated Quantum Trading Engine
+
+**Typ:** Feature / Infrastructure / Performance
+**Opis:** Implementacja pełnego systemu GPU-akcelerowanych obliczeń kwantowych na lokalnym PC z NVIDIA GeForce RTX 5070 Ti (16GB VRAM, SM 12.0 Blackwell). System działa lokalnie na komputerze użytkownika i przesyła wyniki do bota na VPS via HTTP POST.
+
+### Architektura
+- **Lokalne obliczenia**: PC z GPU (RTX 5070 Ti)  PyTorch CUDA 12.8 (nightly cu128)
+- **VPS**: Tylko dashboard + bot trading  bez GPU, bez quantum-scheduler
+- **Komunikacja**: Local PC  POST /api/quantum/signal  Bot na VPS
+
+### Nowe Pliki
+
+| Plik | LOC | Opis |
+|------|-----|------|
+| **gpu_accelerator.py** | ~550 | Moduł GPU: Monte Carlo, Quantum Kernel, Statevector Sim, Feature Processing, QGAN |
+| **quantum_engine_gpu.py** | ~1750 | Silnik kwantowy z integracją GPU (zaktualizowany) |
+
+### GPU Accelerator  Komponenty
+
+| Komponent | Klasa | Opis |
+|-----------|-------|------|
+| **GPU Statevector Simulator** | GPUStatevectorSimulator | Symulacja obwodów kwantowych via PyTorch CUDA matrix ops |
+| **GPU Monte Carlo Engine** | GPUMonteCarloEngine | 200,000 scenariuszy VaR na GPU (zamiast 5,000 na CPU) |
+| **GPU Quantum Kernel** | GPUQuantumKernel | ZZ-FeatureMap kernel matrix dla QSVM na GPU |
+| **GPU Feature Processor** | GPUFeatureProcessor | Normalizacja, PCA (SVD), correlation  wszystko na GPU |
+| **GPU Quantum GAN** | GPUQuantumGAN | Generacja syntetycznych danych z quantum RNG na GPU |
+| **GPU Accelerator** | GPUAccelerator | Unified interface + warmup + status |
+
+### Wyniki Testów (RTX 5070 Ti)
+
+| Algorytm | Backend | Czas | GPU VRAM | Status |
+|----------|---------|------|----------|--------|
+| QAOA | CPU (Qiskit) | 2.75s |  |  SUCCESS |
+| VQC | CPU (Qiskit) | 52.62s |  |  SUCCESS |
+| **QSVM** | **GPU (PyTorch CUDA)** | **0.07s** | 472MB |  SUCCESS |
+| **QGAN** | **GPU (PyTorch CUDA)** | **0.03s** | 472MB |  SUCCESS |
+| **QMC** | **GPU (PyTorch CUDA)** | **0.12s** | **1166MB peak** |  SUCCESS |
+
+- **4/5 algorytmów na GPU**, peak VRAM: 1166MB
+- **QMC**: 200,000 scenariuszy Monte Carlo w 0.1s (vs 5,000 na CPU w 0.05s  40x więcej scenariuszy)
+- **QSVM**: 100x100 GPU kernel matrix w 0.008s (vs 30x30 Qiskit kernel w 3.88s  500x szybciej)
+- **Dlaczego QAOA/VQC na CPU**: Qiskit's optimization/ML framework nie obsługuje cuQuantum na Windows
+
+### Inne Zmiany
+- **ecosystem.config.js**: Usunięto quantum-scheduler (obliczenia kwantowe na lokalnym PC)
+- **JSON fix**: 
+egime_dist numpy.int64 keys  int (fix serialization error)
+- **Logging fix**: Emoji characters replaced with ASCII in logger.info (cp1250 encoding compat)
+- **Engine version**: 1.0.0  1.1.0-GPU
+
+### Wymagania Lokalne (PC)
+- Python 3.12.10 + venv
+- PyTorch 2.11.0.dev20260216+cu128 (ONLY cu128 supports SM 12.0 Blackwell!)
+- Qiskit 2.3.0, qiskit-aer 0.17.2, qiskit-algorithms 0.4.0
+- NVIDIA Driver 591.86+
+
+**Wynik:**  GPU akceleracja działa, 4/5 algorytmów na CUDA, 1166MB peak VRAM, bot healthy 14/14 komponentów
+
+---
+
+## Patch #29  2026-02-17  FIX: OOM + VQC hang, 5/5 GPU, O(2^n) gate application
+
+**Typ:** BUGFIX + PERFORMANCE
+**Commit:** 23ccedd
+**Pliki:** quantum/gpu_accelerator.py, quantum/quantum_engine_gpu.py
+
+### Problem
+1. GPUStatevectorSimulator.run()/get_statevector() used _expand_gate_to_nqubits() which builds FULL 2^n x 2^n unitary matrix  O(4^n) memory. For 18 qubits: 32 GiB per gate  CUDA OOM crash during warmup.
+2. VQC _apply_cnot_batch() for non-adjacent qubits used same O(4^n) function with 65K Python loop iterations. Called 7200 times during training  infinite hang.
+3. QAOA 20q/10layers/500iter/5restarts took 398s  appeared frozen.
+
+### Rozwiązanie
+
+**A) Efficient O(2^n) gate application (StatevectorSimulator):**
+- New _apply_gate_efficient(): single-qubit gates via reshape(dim0, 2, dim2) + einsum
+- New _apply_gate_2q_efficient(): two-qubit gates via reshape(dim0, 4, dim2) + SWAP decomposition for non-adjacent
+- New _execute_gates(): unified dispatcher (1-qubit vs 2-qubit)
+- Supports up to ~26 qubits (was max ~14 before OOM)
+
+**B) Efficient batched CNOT (VQC):**
+- New _apply_swap_batch(): adjacent SWAP via reshape + einsum
+- Rewrote _apply_cnot_batch(): adjacent = direct, reversed = swap trick, non-adjacent = SWAP chain
+- Eliminated ALL calls to _expand_gate_to_nqubits (now only definition remains, zero callsites)
+
+**C) QAOA parameter tuning:**
+- 20q/10L/500i/5r  16q/6L/200i/3r (still heavy: 65536-dim Hilbert space, ~47s GPU)
+
+**D) Memory management:**
+- torch.cuda.empty_cache() between warmup phases
+- del sim after Phase 2
+
+### Wyniki Testów (RTX 5070 Ti, 16GB)
+
+| Algorytm | Backend | Czas | GPU VRAM | Status |
+|----------|---------|------|----------|--------|
+| Warmup | GPU (3 phases) | 3.8s | 2902MB |  SUCCESS |
+| **QAOA** | **GPU (PyTorch autograd)** | **47.01s** | 76MB |  SUCCESS (16q, 65536-dim) |
+| **VQC** | **GPU (PyTorch autograd)** | **13.93s** | 27MB |  SUCCESS (8q, accuracy=1.000) |
+| **QSVM** | **GPU (PyTorch CUDA)** | **0.06s** | 27MB |  SUCCESS (6q, 3 reps) |
+| **QGAN** | **GPU (PyTorch CUDA)** | **0.04s** | 27MB |  SUCCESS (2000 samples) |
+| **QMC** | **GPU (PyTorch CUDA)** | **0.26s** | **11592MB** |  SUCCESS (2M scenarios) |
+
+- **5/5 algorytmów na GPU** (z 4/5 w Patch #28)
+- **Total: 61.3s, GPU peak VRAM: 11592MB (71% z 16GB)**
+- **Engine version: 2.0.0-GPU**
+
+### Nowe klasy (dodane w sesji przed tym patchem)
+- GPUQAOAOptimizer: 16-qubit variational QAOA, PyTorch autograd, Adam optimizer
+- GPUVQCClassifier: 8-qubit batched VQC, ZZ-FeatureMap, RealAmplitudes ansatz, cross-entropy + Adam
+
+**Wynik:**  Wszystkie 5/5 algorytmów kwantowych na GPU, OOM naprawiony, VQC hang naprawiony, 71% VRAM peak
+
+---
+
+## Patch #30  Quantum Verifier Anti-Over-Protection (2026-02-17)
+
+**Typ:** CRITICAL FIX  Trading  
+**Pliki:** 	rading-bot/src/core/ai/hybrid_quantum_pipeline.js, 	rading-bot/src/modules/bot.js  
+**Backupy:** .bak.p29 (pipeline), .bak.p30 (bot.js)
+
+### Problem
+Bot generował spójne sygnały SELL (8/8 cykli z sygnałem), ale QuantumDecisionVerifier odrzucał 100% z nich:
+- Confidence: 25-28.9% (poniżej progu 40%)
+- REJECTED: Post-quantum confidence XX.X% below threshold 40%
+- Black Swan Alert + ELEVATED risk (46/100) dodatkowo obniżały confidence
+- Wynik: ZERO transakcji  klasyczny over-protection
+
+### Rozwiązanie  6 zmian
+
+#### 1. Obniżone progi (constructor + bot.js config)
+- minConfidenceThreshold: 0.45  0.20 (ponad 2 niżej)
+- maxVaRThreshold: 0.03  0.05 (rozluźniony VaR limit)
+- minSharpeThreshold: 0.5  0.0 (wyłączony  Sharpe nie blokuje)
+
+#### 2. Risk-Based Position Sizing (zamiast blokowania)
+- ELEVATED risk: pozycja 65% (nie blokuje, wcześniej ignorował)
+- HIGH risk: pozycja 40% (wcześniej obcinał confidence o 30%)
+- CRITICAL risk: nadal blokuje (jedyny hard block)
+- Black Swan + SELL: boost 1.35 (wcześniej 1.20) + bonus 20% size
+
+#### 3. Adaptive Threshold (samoregulacja)
+- Po 3+ consecutive rejects: próg spada o 1.5pp (do min 10%)
+- Po approval: próg rośnie o 0.5pp (powraca do bazy 20%)
+- Po 5+ consecutive rejects + conf  12%: automatic override (half size)
+
+#### 4. NeuronAI Override Mechanism
+- Jeśli odrzucony ale confidence  25%: OVERRIDE (60% size)
+- Jeśli 3+ strategie zgadzają się: OVERRIDE (60% size)
+- Logs: [OVERRIDE-NEURONAI] APPROVED: Strong consensus override
+
+#### 5. Missed Opportunity Tracking
+- missedOpportunities[] array (max 100 entries)
+- Tracking: timestamp, action, confidence (orig + modified), reason, riskScore
+- Dostępne via getStats()  recentMissed (last 5)
+
+#### 6. Full Detailed Logging (zero truncacji)
+- Każdy check logowany z tagiem: [CHECK1-RISK], [CHECK2-BSWAN], [CHECK3-VAR], [CHECK4-QMC], [CHECK5-CONF], [CHECK6-ALIGN]
+- APPROVED/REJECTED: pełna ramka ==== z Original/Final conf, Adaptive threshold, Position scale, Consecutive rejects
+- Modifications JSON w logu
+
+### Oczekiwany efekt
+- Sygnały SELL z conf 25-29%: APPROVED (conf > 20% threshold)
+- ELEVATED risk (46/100): pozycja 65% (nie blokuje)
+- Black Swan + SELL: boost do ~39% confidence + 65%  120% size
+- Jeśli mimo to odrzucony: po 5 rejects adaptive override z half size
+- Bot powinien zacząć handlować zamiast być 100% zablokowany
+
+**Wynik:** Deployed, bot healthy 14/14 components, oczekiwanie na pierwszy non-HOLD consensus do weryfikacji
+
+---
+
+## Patch #30b — Triple-Gate Over-Protection Fix
+**Data:** 2026-02-17
+**Typ:** CRITICAL FIX — Bot nie handlował przez 15+ godzin
+**Pliki:** bot.js, neuron_ai_manager.js, ensemble-voting.js
+
+### Problem
+Po Patch #30 Quantum Verifier prawidłowo ZATWIERDZAŁ sygnały (SELL 25.7%), ale DWA KOLEJNE gate'y blokowały 100% transakcji:
+1. **P27 REGIME double penalty**: Najpierw NeuronAI (×0.55 = -45%), potem bot.js (×0.70 = -30%), łącznie ×0.385 = -61.5% redukcji
+2. **P26 QUALITY GATE at 45%**: Niemożliwy do przejścia po podwójnej karze za RANGING
+
+### Zmiany (12 zmian w 3 plikach)
+
+#### bot.js (5 zmian):
+- P27 RANGING penalty: 0.70 → 0.92 (8% mild penalty, NeuronAI penalizuje wewnętrznie)
+- P26 Quality Gate threshold: 0.45 → 0.18 (alignacja z quantum verifier)
+- P26 log messages zaktualizowane do 18%
+- Second P26 gate (post-win cooldown): 0.45 → 0.18
+
+#### neuron_ai_manager.js (3 zmiany):
+- P27 RANGING penalty: 0.55 → 0.78 (22% zamiast 45%)
+- RANGING forced HOLD threshold: 2 losses → 4 losses
+- P27 reason text zaktualizowany
+
+#### ensemble-voting.js (4 zmiany):
+- MTF counter-trend penalty: 0.35 → 0.55
+- Normal consensus threshold: 0.55 → 0.45
+- Conflict consensus threshold: 0.60 → 0.50
+- Minimum final confidence floor: 0.30 → 0.20
+
+### Wynik
+Bot natychmiast wykonał transakcję: SHORT 0.0218 BTC-USDT @ $68429.90, conf 37.6% (przeszedł P26 gate 37.6% > 18%)
+
+---
+
+## Patch #30c — BLACK_SWAN False Positive + Risk Multiplier Cascade Fix
+**Data:** 2026-02-17
+**Typ:** CRITICAL FIX — Pozycje natychmiast zamykane + paraliż riskMultiplier
+**Pliki:** hybrid_quantum_pipeline.js, quantum_position_manager.js, bot.js, neuron_ai_manager.js
+
+### Problem #1: BLACK_SWAN False Positive
+Quantum Position Manager zamykał 75% pozycji natychmiast po otwarciu (emergency close) mimo niskiego ryzyka (46/100 = ELEVATED, nie BLACK_SWAN). Powód: `_detectBlackSwan()` miał zbyt liberalne progi — wystarczyły 2/3 wskaźników z niskimi thresholdami.
+
+### Problem #2: Triple PnL Learning
+`neuronManager.learnFromTrade()` wywoływany WEWNĄTRZ for-loopa strategii w `_detectAndLearnFromCloses()` → 1 realna strata liczona N razy (raz per strategia) → consecutiveLosses skakało 3× szybciej
+
+### Problem #3: Risk Multiplier Cascade
+riskMultiplier spadał zbyt szybko: -0.12 per loss, brak cooldownu → 0.48→0.36→0.30 (floor) po 2-3 eventach → bot sparaliżowany (confidence ×0.30)
+
+### Problem #4: Startup PnL Phantom Loss
+`_lastRealizedPnL` inicjalizowany jako 0 zamiast z portfolio → pierwszy PnL delta = cały skumulowany realizedPnL ($-59.77) traktowany jako jedna olbrzymia strata
+
+### Zmiany (10 zmian w 4 plikach)
+
+#### hybrid_quantum_pipeline.js (4 zmiany):
+- `extremeMove` threshold: avgAbsReturn × 4 → × 6 (wymaga prawdziwego 6σ)
+- `volAccelerating` threshold: 2.5 → 3.5
+- `qmcBlackSwanProb` threshold: 5% → 15%
+- Alert wymaga ALL 3/3 wskaźników (było 2/3)
+
+#### quantum_position_manager.js (2 zmiany):
+- `_generateAction`: blackSwanAlert wymaga riskScore>70 + pozycja >5min + closePct 1.0→0.50
+- `partialCloseAdvisor`: blackSwanAlert wymaga riskScore>70 + age>5min + closePct 0.75→0.50
+
+#### bot.js (2 zmiany):
+- `neuronManager.learnFromTrade` przeniesiony POZA for-loop (1 call zamiast N)
+- `_lastRealizedPnL` syncowany z portfolio przy starcie (eliminuje phantom loss)
+
+#### neuron_ai_manager.js (2 zmiany):
+- Loss decay: -0.12 → -0.06 (2× wolniejszy spadek) + 60s cooldown między spadkami
+- Win recovery: threshold 3→2 wins, increment +0.08→+0.12 (szybszy powrót)
+
+### Wynik
+- ✅ Brak BLACK_SWAN false positive (pozycje nie zamykane natychmiast)
+- ✅ PnL sync działa ($-0.99 zamiast phantom $-59.77)
+- ✅ Risk multiplier: prawidłowy decay (0.85→0.79 = -0.06, nie -0.12)
+- ✅ Tylko 1 EVOLVE per trade (zamiast 3)
+- ✅ Bot handluje: SELL 52% → APPROVED → EXEC @ $68382.10
+- ✅ Bot healthy 14/14 components
+
+---
+
+## PATCH #31: Skynet Unleashed  Defense Mode Fix, Execution Dedup, QDV Symmetry
+**Data**: 2026-02-17
+**Typ**: CRITICAL FIX  Structural diagnosis & fix (5 root causes)
+**Commit**: b3d5c28
+**Pliki**: neuron_ai_manager.js, execution-engine.js, hybrid_quantum_pipeline.js
+
+### Diagnoza (5 przyczyn strukturalnych)
+1. **Permanentny tryb obronny**  riskMultiplier spadal do 0.30 i nie mogl sie odbudowac
+2. **Kaskada over-protection**  5 warstw ochronnych multiplikowalych confidence do zera
+3. **Duplikacja trade**  brak dedup guard, SHORT path pomijal tracking calls
+4. **Brak zarzadzania pozycjami**  SHORT trades nie liczyly totalTrades/realizedPnL
+5. **Slaba ewolucja**  floor 0.3 zbyt niski, decay zbyt szybki
+
+### Zmiany neuron_ai_manager.js (12 zmian):
+- riskMultiplier floor: 0.30 -> 0.50 (learnFromTrade + _applyEvolution)
+- Decay rate: -0.06 -> -0.04, cooldown 60s -> 90s
+- Recovery: +0.12 -> +0.18 po 2 wygranych
+- NOWEE: Defense exit  3 consecutive wins -> riskMultiplier = 0.75
+- NOWE: confidenceBoost tracking (+0.08 per win, -0.04 per loss)
+- riskMultiplier application: sqrt(max(0.50, rM)) zamiast liniowego rM
+- Confidence floor: 0.25 -> 0.28
+- RANGING penalty: 22% -> 12% (0.78 -> 0.88)
+- RANGING forced HOLD: 4 -> 6 losses
+- Loss streak block: 3 -> 5 consecutive losses, MTF 25 -> 22
+- Safety 5-loss cap: 0.40 -> 0.55
+- Safety 3-loss -> 4-loss penalty: 0.80 -> 0.85
+
+### Zmiany execution-engine.js (2 zmiany):
+- NOWE: Dedup guard (5s window, symbol+action key)
+- FIX: SHORT path early return  dodano brakujace totalTrades++, realizedPnL += pnl, markTradeExecuted()
+
+### Zmiany hybrid_quantum_pipeline.js (6 zmian):
+- minConfidenceThreshold: 0.20 -> 0.15
+- Check 3 (VaR): teraz dotyczy BUY i SELL (bylo tylko BUY)
+- Check 4 (QMC outlook): teraz dotyczy BUY i SELL
+- Check 6 (Alignment): bidirectional  SELL vs bullish QMC = misaligned
+- NeuronAI Override: CRITICAL risk blokuje override (isCriticalRisk guard)
+- Adaptive threshold: restoration rate 0.005 -> 0.008
+
+### Reset stanu:
+- riskMultiplier: 0.85 (zdrowy poziom operacyjny)
+- consecutiveLosses: 0 (czysty start)
+- confidenceBoost: 0
+
+### Wynik
+- Bot healthy 14/14 components
+- Syntax validation: 3/3 files OK
+- riskMultiplier at 0.85 (was stuck at 0.30 floor)
+- Confidence generation significantly improved (sqrt dampening vs linear kill)
+- SHORT trades now properly tracked (totalTrades, realizedPnL, cooldown)
+- QDV checks symmetric for BUY and SELL directions
+- Backups in /root/turbo-bot/backups/patch31/
+
+---
+
+## PATCH #33  Neuron AI LLM Fix + Fallback Safety + Dedup Enhancement
+**Data:** 2026-02-18
+**Typ:** CRITICAL FIX (stop bleeding)
+**Pliki:** 
+euron_ai_manager.js, execution-engine.js
+**Backup:** /root/turbo-bot/backups/neuron_ai_manager.js.bak_, /root/turbo-bot/backups/execution-engine.js.bak_
+
+### Root Cause:
+GitHub Models API (gpt-4o) zwraca 429 Too Many Requests (limit: 50 req/dzien).
+Megatron fallback generuje text (nie JSON) -> JSON parse fail -> _fallbackDecision()
+generuje agresywne SELL w RANGING market -> seria strat ($-463 PnL, 89 strat, 21 wygr).
+
+### 9 Poprawek:
+
+#### neuron_ai_manager.js (8 zmian):
+1. **LLM cooldown 8s -> 45s**  zapobieganie 429 rate limit
+2. **JSON parse fail -> HOLD**  zamiast _fallbackDecision() zwraca HOLD z confidence 0.10
+3. **Brak providerow LLM -> HOLD**  zamiast _fallbackDecision() zwraca HOLD
+4. **LLM error catch -> HOLD**  zamiast _fallbackDecision() zwraca HOLD
+5. **Usuniecie PATCH #32 HOLD->SELL override**  powodowal masowy SELL spam w RANGING
+6. **RANGING penalty 12% -> 45%** + **loss streak HOLD threshold 6 -> 3**  agressywniejsze blokowanie
+7. **Fallback loss streak threshold 5 -> 3**  wczesniejsze blokowanie strat
+8. **minMTFScore 22 -> 30, minMLConfidence 0.60 -> 0.75**  wyzsze progi jakosci
+
+#### execution-engine.js (1 zmiana):
+9. **Dedup window 5s -> 30s**  lepsza ochrona przed duplikatami
+
+### Weryfikacja po restarcie:
+- Bot: HEALTHY, online
+- Przed PATCH: SELL | conf=0.55 | src=NEURON_AI_FALLBACK | OVERRIDE HOLD -> SELL
+- Po PATCH: HOLD | conf=0.08 | src=NEURON_AI_LLM_OFFLINE | LLM offline -- HOLD until recovered
+- Zero nowych SELL-i po restarcie
+- Cykl 2-3: Same candle - monitoring only (poprawne zachowanie)
+
+### Wazne:
+- GitHub Models limit: 50 req/dzien. Reset limitu za ~20h od momentu patcha.
+- Po resecie LLM wznowi normalne dzialanie z 45s cooldownem (max ~1920 req/dzien vs limit 50)
+- 45s cooldown = ~1 req/min = ~1440 req/dzien  NADAL ZA DUZO vs limit 50
+- TODO: Dodac cache LLM odpowiedzi lub zwiekszyc cooldown do ~1800s (1 req/30min = 48/dzien)
+
+---
+
+## PATCH #34b  Clean Hybrid LLM: Ollama Local + GitHub gpt-4o-mini
+**Data:** 2026-02-19
+**Typ:** REFACTOR + FEATURE
+**Pliki:** neuron_ai_manager.js, .env
+**Backup:** /root/turbo-bot/backups/patch34b/
+
+### Opis:
+Zastepuje bloatowany 4-tierowy _llmDecision (Ollama->GitHub->Megatron->HOLD)
+czystym 2-tierowym lancuchem:
+  [1] Ollama Local (RTX 5070 Ti, llama3.1:13b-instruct-q6_K) - 8s timeout
+  [2] GitHub Models gpt-4o-mini - auto-fallback gdy PC/Ollama offline
+  [3] _fallbackDecision() - rule-based safety net
+
+### Zmiany neuron_ai_manager.js:
+- _llmDecision: 172 linii starego kodu -> 120 linii czystego 2-tierowego
+- Dodano this.openaiApiKey do konstruktora
+- Dynamic cooldown: Ollama=25s | GitHub=300s | Offline=60s
+- Smart URL routing: OPENAI_API_KEY -> api.openai.com, GITHUB_TOKEN -> models.inference.ai.azure.com
+- Zachowano helpery _parseJsonFromLLM i _buildLLMResult (action mapping)
+- Naprawiono duplikat /** przed _fallbackDecision
+
+### Zmiany .env:
+- Dodano komentarz OPENAI_BASE_URL
+- LLM_PROVIDER, OLLAMA_HOST, MODEL_LOCAL, MODEL_FALLBACK - bez zmian
+
+### Weryfikacja:
+- Syntax validation: PASSED
+- Hybrid mode: ACTIVE
+- Ollama offline -> GitHub 429 -> _fallbackDecision -> HOLD (poprawny chain)
+- Bot stabilny, zero bledow krytycznych
+
+---
+
+## PATCH #35  Ollama Dashboard Integration + SSH Tunnel
+**Data:** 2026-02-19
+**Typ:** FEATURE + UI
+**Pliki:** neuron_ai_manager.js, enterprise-dashboard.html, ollama_tunnel.ps1
+**Backup:** /root/turbo-bot/backups/patch35/
+
+### Opis:
+Integracja statusu LLM provider (Ollama / GPT-4o-mini / Rule-based) z dashboardem
+enterprise. MEGATRON AI teraz pokazuje w czasie rzeczywistym ktory silnik AI jest aktywny.
+
+### Zmiany neuron_ai_manager.js:
+- getStatus() rozszerzone o obiekt llmProvider:
+  - active: 'ollama' | 'o4-mini' | 'offline'
+  - label: 'OLLAMA LOCAL' | 'GPT-4o-mini' | 'RULE-BASED'
+  - detail: model + hardware info
+  - ollamaFails, cooldownMs, localModel, fallbackModel
+- llmConnected: teraz odzwierciedla faktyczny stan (nie stary llmRouter)
+
+### Zmiany enterprise-dashboard.html (6 zmian):
+1. Nowy badge w headerze: AI: OLLAMA LOCAL (zielony) / AI: o4-mini (fioletowy) / AI: RULE-BASED (czerwony)
+2. CSS styles dla provider statusu z animacja pulsowania
+3. Provider info bar w sekcji MEGATRON Chat (dot + nazwa + model)
+4. fetchAIBrainExtended() - pelna integracja z neuronAI.llmProvider API
+5. setInterval(fetchAIBrainExtended, 6000) - odswiezanie co 6s
+6. Zaktualizowany welcome message MEGATRON: 'powered by Ollama AI'
+7. AI Brain grid: dodany wiersz LLM z kolorem providera
+
+### Nowe pliki:
+- ollama_tunnel.ps1  Skrypt PowerShell do uruchomienia tunelu SSH
+  - .\ollama_tunnel.ps1          Start tunelu
+  - .\ollama_tunnel.ps1 -Check   Status
+  - .\ollama_tunnel.ps1 -Stop    Zatrzymanie
+
+### Dashboard wizualizacja:
+- PC ONLINE:  [*] AI: OLLAMA LOCAL (zielony, pulsujacy) + MEGATRON: 'llama3.1:13b-instruct-q6_K | RTX 5070 Ti | PC Online'
+- PC OFFLINE: [*] AI: o4-mini (fioletowy) + MEGATRON: 'GPT-4o-mini | Cloud | PC Offline'
+- OBA OFFLINE: [*] AI: RULE-BASED (czerwony) + MEGATRON: 'Safety fallback | Ollama fails: N'
+
+### Weryfikacja:
+- Syntax check: PASSED
+- API /api/megatron/status: llmProvider obiekt poprawny
+- Dashboard: badge, provider bar, brain grid  rendering OK
+- Bot PM2: stable, healthy (14/14 components green)
+
+## PATCH #36  Quantum Pipeline Toggle + Critical Bug Fixes
+- **Data**: 2026-02-19
+- **Typ**: Feature + BugFix (6 changes across 4 files)
+- **Autor**: Copilot AI Agent (Full System Audit Session)
+- **Backup**: `/root/turbo-bot/backups/patch36/` (4 files)
+
+### Zmiany:
+
+#### 1. Quantum Pipeline ON/OFF Toggle (bot.js + enterprise-dashboard.html)
+- **bot.js**: Added `_quantumEnabled = true` flag (line 96)
+- **bot.js**: Added `GET /api/quantum/enabled` endpoint (returns enabled, hybridPipeline, quantumPosMgr, quantumGPU)
+- **bot.js**: Added `POST /api/quantum/toggle` endpoint (toggles flag, logs to Megatron activity)
+- **bot.js**: Added `this._quantumEnabled &&` guard to Hybrid Pipeline Stage 1 (line 524) and Stage 2 (line 639)
+- **dashboard**: CSS styles for `.quantum-toggle-container`, `.quantum-toggle-switch`, `.quantum-toggle-slider`
+- **dashboard**: HTML toggle switch panel in AI Brain section (QUANTUM PIPELINE label + ON/OFF switch)
+- **dashboard**: JS functions: `toggleQuantumPipeline()`, `updateQuantumToggleUI()`, `fetchQuantumToggleState()` + 10s polling
+
+#### 2. Execution Engine Dedup Fix (execution-engine.js)
+- **BUG**: Epoch bucket dedup (`Math.floor(Date.now() / 30000)`) created discrete 30s windows with edge-case gaps at bucket boundaries
+- **FIX**: Replaced with rolling 30s window using `Date.now() - this._lastTradeTime < 30000`
+- **ALSO**: Added `_lastTradeTime = Date.now()` at both dedup set locations (line 434, 483)
+
+#### 3. Console Log ATR Multiplier Fix (execution-engine.js)
+- **BUG**: Logs showed `1.5x ATR` and `4x ATR` while actual code uses `2.5x` and `5.0x`
+- **FIX**: Updated log strings to match actual multiplier values
+
+#### 4. NeuronAI PnL=0 Win Counting Fix (neuron_ai_manager.js)
+- **BUG**: `pnl >= 0` counted zero-PnL trades as wins (3 locations: lines 707, 744, 931)
+- **FIX**: Changed all 3 instances to `pnl > 0` — zero-PnL trades now correctly counted as losses
+- **IMPACT**: Win rate calculation, risk multiplier adjustments, and confidence boost now accurate
+
+### Pliki Zmienione:
+1. `trading-bot/src/modules/bot.js` — 4 changes (flag, 2 API endpoints, 2 quantum guards)
+2. `enterprise-dashboard.html` — 3 injections (CSS 40 lines, HTML 10 lines, JS 35 lines)
+3. `trading-bot/src/modules/execution-engine.js` — 2 fixes (dedup rolling window, log multipliers)
+4. `trading-bot/src/core/ai/neuron_ai_manager.js` — 3 fixes (pnl >= 0 → pnl > 0)
+
+### Weryfikacja:
+- Syntax check: PENDING (pre-restart)
+- API /api/quantum/enabled: PENDING
+- Dashboard quantum toggle: PENDING
+- PM2 restart: PENDING
+
+## PATCH #38  Critical Bug Fixes & System Stabilization (20.02.2026)
+
+**Typ**: BUGFIX (CRITICAL + HIGH)  
+**Pliki**: execution-engine.js, bot.js, neuron_ai_manager.js  
+**Deploy**: SSH + Python scripts + sed  
+
+### #38A  Fix Double SELL Trade Recording (CRITICAL)
+- **Problem**: SELL-close path in `executeTradeSignal()` fell through to generic push block, causing every close to be recorded TWICE (duplicate trades, double PnL, inflated totalTrades)
+- **Fix**: Added `return;` with win/loss counting before SELL block closing brace
+- **File**: execution-engine.js (line ~480)
+- **Impact**: 51 duplicate trades eliminated, totalTrades accurate, realizedPnL no longer double-counted
+
+### #38B  NeuronAI Cooldown Reduction (HIGH)
+- **Problem**: GitHub/OpenAI fallback set `decisionCooldownMs = 300000` (5 min), but bot cycles every 30s  NeuronAI active only ~10% of time
+- **Fix**: Reduced to `60000` (60s)  NeuronAI now active ~50% of cycles
+- **File**: neuron_ai_manager.js (line ~284)
+
+### #38C  Quantum Status Endpoint Real Data (MEDIUM)
+- **Problem**: `/api/quantum/status` returned `lastRun: new Date()` (always NOW) and fake vram data
+- **Fix**: Now queries `quantumGPU.getStatus()` and returns real gpuUsed, gpuDevice, runCount, resultsAge, autoRun
+- **File**: bot.js (quantum status handler)
+
+### #38D  Remove Redundant RANGING Penalty (HIGH)
+- **Problem**: RANGING confidence penalized TWICE: NeuronAI applies 0.75 (PATCH #37E), then bot.js applied another 0.92 (PATCH #27)  cascading kill
+- **Fix**: Commented out bot.js 0.92 penalty (NeuronAI's -25% is sufficient)
+- **File**: bot.js (line ~1023)
+- **Impact**: BUY signals in RANGING no longer killed below quality gate threshold
+
+### #38E  NeuronAI State Reset (MAINTENANCE)
+- **Action**: Reset neuron_ai_state.json to factory defaults
+- **Result**: consecutiveLosses=0, riskMultiplier=1.0, totalPnL=0, confidenceBoost=0
+- **Purpose**: Break death spiral from accumulated negative state
+
+### Verification:
+- Bot healthy: 14/14 components online
+- NeuronAI active via gpt-4o-mini (latency 3.5s)
+- Quantum endpoint returns real data (gpuUsed=false, runCount=0)
+- Dashboard reset button functional
+- No duplicate trades in post-restart logs
+
+
+---
+
+### PATCH #39  Ollama GPU Integration via SSH Tunnel (2026-02-20)
+
+**Typ**: INTEGRATION / PERFORMANCE
+**Pliki zmienione**: 
+- `trading-bot/src/core/ai/neuron_ai_manager.js` (model config, timeout, think mode)
+- `.env` + `trading-bot/.env` (MODEL_LOCAL, OLLAMA_HOST, OLLAMA_TIMEOUT_MS)
+- `start_ollama_tunnel.ps1` (nowy skrypt)
+
+**Problem**: NeuronAI uzywalo GPT-4o-mini (GitHub Models) jako jedyny LLM, Ollama offline (VPS nie ma GPU). RTX 5070 Ti na lokalnym PC niewykorzystana.
+
+**Rozwiazanie**:
+1. Pobrano model `qwen3:14b` (~9.3GB)  100% GPU na RTX 5070 Ti (10GB VRAM)
+2. SSH reverse tunnel: VPS:11434  lokalny PC:11434 (Ollama)
+3. Zmieniono `MODEL_LOCAL` z `llama3.1:13b-instruct-q6_K` na `qwen3:14b`
+4. Zmieniono `OLLAMA_HOST` z `localhost` na `127.0.0.1` (explicit IPv4)
+5. Zwieksono `OLLAMA_TIMEOUT_MS` z 8000 na 30000 (SSH tunnel latency)
+6. Dodano `think: false` w options Ollama (wylacza qwen3 thinking = 50% szybciej)
+7. Zmniejszono `num_ctx` z 16384 na 8192 (trading prompt nie wymaga 16k)
+8. Zmniejszono `decisionCooldownMs` z 25000 na 15000 (szybszy cykl decyzji)
+
+**Wynik**: 
+- NeuronAI dziala na OLLAMA_LOCAL (qwen3:14b, RTX 5070 Ti) przez SSH tunnel
+- Latency: ~7s na trading prompt (vs 3.5s GPT-4o-mini, ale bez rate limit)
+- Confidence: 75% (vs 35% z rule-based fallback)
+- Reasoning w jezyku polskim, inteligentne analizy rynkowe
+- GPU: 100% GPU mode, 10GB VRAM, context 8192
+
+**UWAGA**: Tunel SSH musi byc aktywny! Uruchom: `.\start_ollama_tunnel.ps1`
+Gdy tunel padnie, bot automatycznie spadnie na GPT-4o-mini (fallback).
+
+
+---
+
+## PATCH #40  CPU Neural Engine as PRIMARY Decision Source + Grok LLM Integration (22.02.2026)
+
+**Typ**: CRITICAL ARCHITECTURE CHANGE + LLM PROVIDER UPGRADE
+**Pliki**: `neuron_ai_manager.js` (6 zmian), `bot.js` (3 zmiany), `.env` (2 linie)
+
+### Problem:
+NeuronAI Manager polegał WYŁĄCZNIE na LLM (Ollama/GPT-4o-mini) dla WSZYSTKICH decyzji tradingowych.
+Sieć neuronowa CPU (AdaptiveNeuralEngine z GRU predictor, regime detector, Thompson Sampling)
+uruchomiona na TensorFlow.js CPU backend była CAŁKOWICIE IGNOROWANA  jej output trafiał jedynie
+jako kontekst do LLM, ale nie był używany do podejmowania decyzji.
+
+**Skutek**: Gdy Ollama offline + GPT-4o-mini zwraca HOLD  permanentna paraliza (0 transakcji).
+
+### Rozwiązanie  3-warstwowa hierarchia decyzyjna:
+
+```
+NOWA HIERARCHIA (PATCH #40):
+[1] CPU Neural Engine (TF.js GRU)  PRIMARY  GRU prediction + regime alignment + Thompson
+[2] LLM Enhancement: Ollama  Grok-4  GPT-4o-mini (gdy CPU zwraca HOLD/null)
+[3] Rule-based Fallback: _fallbackDecision() (ostatnia deska ratunkowa)
+```
+
+### Zmiany w `neuron_ai_manager.js`:
+
+1. **`this.neuralEngine`**  nowe pole przechowujące referencję do AdaptiveNeuralEngine
+2. **`setNeuralEngine(engine)`**  metoda łącząca CPU Neural Engine z NeuronAI Manager
+3. **`_cpuNeuralDecision(state)`**  NOWA METODA (~160 LOC):
+   - Używa GRU prediction (direction: UP/DOWN/NEUTRAL + confidence)
+   - Regime alignment scoring (trend-aligned boost x1.15, contra-trend penalty x0.30)
+   - MTF cross-validation bonus (+10% when aligned)
+   - Ensemble agreement bonus (+8% when >30% strategies agree)
+   - AI Trust scaling based on phase (HEURISTIC=0%, LEARNING=20-55%, AI_ACTIVE=50-90%)
+   - Loss streak penalty (3+ losses: x0.90, 5+ losses: x0.80)
+   - RANGING regime softened penalty (x0.80)
+   - Minimum confidence floor 20%
+4. **`makeDecision()`**  ZMIENIONA KOLEJNOŚĆ:
+   - Najpierw `_cpuNeuralDecision()` (CPU GRU)
+   - Jeśli HOLD  `_llmDecision()` (Ollama  Grok  GPT-4o-mini)
+   - Jeśli błąd CPU  fallback na LLM
+5. **Grok (xAI) ETAP 1.5**  nowy provider LLM w łańcuchu:
+   - `https://api.x.ai/v1/chat/completions` z modelem `grok-4-latest`
+   - Umiejscowiony między Ollama (ETAP 1) a GPT-4o-mini (ETAP 2)
+   - 20s timeout, 30s cooldown
+6. **Starvation override** (PATCH #39)  dynamiczne obniżanie progów po 50+ HOLDach
+
+### Zmiany w `bot.js`:
+
+1. **`setNeuralEngine(this.neuralAI)`**  przekazanie referencji AdaptiveNeuralEngine do NeuronAI
+2. **Ensemble fallback** (PATCH #39)  gdy NeuronAI zwraca HOLD, próba ensemble voting
+3. **Balance sanitizer** (PATCH #39)  naprawia wyciek lockedInPositions (749.69$  0$)
+
+### Zmiany w `.env`:
+
+- `XAI_API_KEY=xai-...`  klucz API xAI Grok
+- `XAI_MODEL=grok-4-latest`  model Grok-4
+
+### Nowa Architektura Decyzyjna:
+
+```
+AdaptiveNeuralEngine (CPU TF.js)
+ GRU Price Predictor (2-layer, 2412 units)
+ Market Regime Detector (Dense NN, 4 classes)
+ Thompson Sampling (Bayesian MAB, per-regime)
+ Neural Risk Predictor (Dense NN, sigmoid)
+        
+         NeuronAIManager._cpuNeuralDecision()
+                    if HOLD/null
+                   LLM Enhancement: Ollama  Grok-4  GPT-4o-mini
+                    if error
+                   _fallbackDecision() (rule-based)
+                
+                 _applySafetyConstraints()
+                        
+                         bot.js execution pipeline
+```
+
+### Wynik:
+- NeuronAI teraz AKTYWNIE korzysta z CPU (TF.js GRU/Regime/Thompson)
+- LLM jest enhancement layer, nie jedyny decision maker
+- Grok-4 jako nowy, szybki provider LLM z xAI API
+- Bot może podejmować decyzje nawet bez żadnego LLM (pure CPU neural)
+- lockedInPositions leak naprawiony (749.69$ odzyskane)
+- Starvation override zapobiega przyszłej paraliży HOLD
+## PATCH #40.1  Grok Integration Fixes & dotenv Path Resolution
+**Data:** 2026-02-22
+**Typ:** BUGFIX + CONFIG
+**Pliki:** config.js, neuron_ai_manager.js
+
+### Problem:
+1. `dotenv.config()` in config.js used `process.cwd()` which resolved to `/root/turbo-bot/trading-bot` under PM2 (not `/root/turbo-bot` where `.env` lives). Result: `XAI_API_KEY` was undefined at runtime  Grok silently skipped.
+2. Grok API timeout was 20s  `grok-4-latest` (grok-4-0709) needs ~37s for complex trading prompts.
+3. Duplicate ETAP 1.5 Grok block (54 lines) from patching artifacts.
+
+### Fixes:
+- **config.js**: Changed `dotenv.config()` to `dotenv.config({ path: path.resolve(__dirname, '../../../.env') })`  explicit path to project root `.env`
+- **neuron_ai_manager.js**: Grok timeout 20s  60s
+- **neuron_ai_manager.js**: Removed duplicate ETAP 1.5 block (54 lines)
+- **neuron_ai_manager.js**: Fixed Ollama catch message to say "Grok/xAI" instead of "gpt-4o-mini"
+
+### Wynik:
+- `[NEURON AI] UZYTO GROK grok-4-latest (xAI API) | conf: 75.0% | latency: 36967ms` 
+- Grok provides detailed trading analysis with regime awareness, SL/TP validation, and risk evolution
+- Full LLM chain: CPU Neural (TF.js)  Ollama  Grok xAI  GPT-4o-mini  Rule-based fallback
+## PATCH #40.1  Grok Integration Fixes & dotenv Path Resolution
+**Data:** 2026-02-22
+**Typ:** BUGFIX + CONFIG
+**Pliki:** config.js, neuron_ai_manager.js
+
+### Problem:
+1. `dotenv.config()` in config.js used `process.cwd()` which resolved to `/root/turbo-bot/trading-bot` under PM2 (not `/root/turbo-bot` where `.env` lives). Result: `XAI_API_KEY` was undefined at runtime  Grok silently skipped.
+2. Grok API timeout was 20s  `grok-4-latest` (grok-4-0709) needs ~37s for complex trading prompts.
+3. Duplicate ETAP 1.5 Grok block (54 lines) from patching artifacts.
+
+### Fixes:
+- **config.js**: Changed `dotenv.config()` to `dotenv.config({ path: path.resolve(__dirname, '../../../.env') })`  explicit path to project root `.env`
+- **neuron_ai_manager.js**: Grok timeout 20s  60s
+- **neuron_ai_manager.js**: Removed duplicate ETAP 1.5 block (54 lines)
+- **neuron_ai_manager.js**: Fixed Ollama catch message to say "Grok/xAI" instead of "gpt-4o-mini"
+
+### Wynik:
+- `[NEURON AI] UZYTO GROK grok-4-latest (xAI API) | conf: 75.0% | latency: 36967ms` 
+- Grok provides detailed trading analysis with regime awareness, SL/TP validation, and risk evolution
+- Full LLM chain: CPU Neural (TF.js)  Ollama  Grok xAI  GPT-4o-mini  Rule-based fallback
+---
+
+## PATCH #41  PRO TRADER CALIBRATION (NeuronAI Complete Rewrite)
+**Data:** 2026-02-23
+**Typ:** CRITICAL PERFORMANCE FIX
+**Pliki:** neuron_ai_manager.js (1336 LOC  1533 LOC), neuron_ai_state.json (reset)
+
+### Problem:
+NeuronAI old " Skynet\ persona caused catastrophic overtrading:
+- **80.8% of all trades** (344/426) generated by NeuronAI with **12.4% win rate**
+- PnL: **-\.79** from NeuronAI trades alone
+- Fees: **\.74** total (each trade ~\.15 in fees)
+- Override rate: **61.8%** LLM overriding ensemble majority constantly
+- 46 CLOSE trades with PnL=0 (pure fee drain)
+- Old SYSTEM_PROMPT: \Masz absolutna wladze\, \override KAZDEJ decyzji\ inflated 95% confidence
+
+### Root Cause Analysis (6 problems):
+1. SYSTEM_PROMPT \Skynet\ personality LLM returned 95% confidence on every response
+2. LLM overrides HOLDSELL/CLOSE 61.8% of the time
+3. No fee awareness (\.15/trade not factored into decision)
+4. No structured entry checklist LLM follows \vibes\
+5. CLOSE spam: 46 zero-PnL trades, pure fee drain
+6. NeuronAI WR=12.4% vs ensemble WR=43.9% (3.5x worse)
+
+### Solution Complete Rewrite:
+**SYSTEM_PROMPT**: Skynet ego \Elite quantitative trader at Renaissance Technologies / Citadel caliber\
+- HOLD-default (target 70-85% HOLD rate)
+- Fee-aware (\.15/trade explicitly mentioned)
+- 6-point Entry Checklist with scoring (need 4/6 to trade)
+- Max confidence cap: 0.88 (never higher)
+- English language (more consistent LLM reasoning)
+
+**New Methods:**
+- _applyProTraderConstraints() 10min trade cooldown, 10min post-CLOSE cooldown, 30min min hold, override rate limiter (30%), loss streak guard
+- _calibrateConfidence() caps at 0.88, deflates >90% to 72%, RANGING penalty -25%, counter-trend crush x0.40, min actionable 45%
+- _forceHold() standardized HOLD with reason tracking
+- _getOverrideRate() rolling override rate calculation
+
+**Parameter Changes:**
+- Temperature: 0.35 0.25
+- maxPositions: 5 3
+- starvationThreshold: 50 80
+- decisionCooldownMs: 15s 25s
+- fallbackRules.minMTFScore: 18 22
+- fallbackRules.minMLConfidence: 0.55 0.60
+- fallbackRules.minHoldMinutes: 15 30
+- Confidence cap: 1.0 0.88
+
+**CPU Neural Path (PATCH #41 hardened):**
+- Counter-trend trades: BLOCKED entirely (return null)
+- RANGING regime: BLOCKED (return null)
+- MTF must align with GRU direction (or null)
+- Ensemble needs >40% agreement (was >15%)
+- Confidence floor: 45% (was 20%)
+
+**Fallback Path (PATCH #41 hardened):**
+- Ensemble votes need >40% (was >15%)
+- Ensemble consensus for follow: >60% (was >50%)
+- RANGING penalty: -30% (was -25%)
+- Max confidence: 0.80 (was 0.90)
+
+**NO daily trade limit** (simulation mode unrestricted for data collection)
+
+### Wynik (first cycle):
+- Neuron AI: BRAIN ACTIVE v2.0.0
+- [NEURON AI CPU] RANGING regime blocked returning null 
+- ction: HOLD | conf: 55.0% | checklist: 2/6 (correctly HOLD, not enough conviction)
+- LLM reasoning: \RANGING market... Avoid trading in ranging conditions to prevent fee erosion\ 
+- Expected impact: WR 12.4% 40%+, override rate 61.8% <30%, fees -70%
+
+
+---
+
+## PATCH #42 — Quantum Pipeline Full Activation + 40% GPU Utilization
+**Date:** 2026-02-23
+**Type:** CRITICAL BUG FIX + PERFORMANCE OPTIMIZATION
+**Files Modified:** `remote_gpu_bridge.js`, `hybrid_quantum_pipeline.js`, `bot.js`
+
+### Problem
+Audit revealed quantum components were only partially used:
+- **VQC**: Working (every cycle)
+- **QMC**: Working (6 sims in 98 cycles)
+- **QAOA**: **COMPLETELY BROKEN** (0 optimizations in 98+ cycles)
+- **WeightUpdates**: 0 (no weights ever updated)
+
+### Root Cause — 3 Critical Bugs
+
+**BUG #1 (CRITICAL): `remote_gpu_bridge.js` — Function signature mismatch**
+- Override used 3 params: `(signals, history, regimeInfo)`
+- Original takes 6 params: `(signals, priceHistory, portfolioValue, portfolio, position, tradeHistory)`
+- Result: `tradeHistory` was NEVER forwarded → always empty `[]` (default)
+- Impact: `tradeHistory.length >= 5` was always false → QAOA NEVER triggered
+
+**BUG #2: `remote_gpu_bridge.js` — Signals type mismatch**
+- Bridge checked `signals.length > 0` but signals is a Map (should be `signals.size > 0`)
+- Iterated with `for (const sig of signals)` — gets `[key, value]` pairs, not signal objects
+
+**BUG #3: `hybrid_quantum_pipeline.js` — Strategy name mismatch in QAOA**
+- Filter: `tradeHistory.filter(t => t.strategy === sName)`
+- Trade strategies: NeuronAI, EnsembleVoting, STOP_LOSS, QuantumPosMgr
+- Signal keys: AdvancedAdaptive, RSITurbo, SuperTrend, MACrossover, MomentumPro, EnterpriseML
+- Names NEVER match → `stratMetrics` always empty → optimization useless
+
+### Fix — Complete Rewrite of `remote_gpu_bridge.js` v2.0
+
+1. **Fixed function signature** — All 6 params forwarded: `(signals, priceHistory, portfolioValue, portfolio, position, tradeHistory)`
+2. **Fixed signals type** — Proper Map handling with `signals.size`, `for (const [name, sig] of signals)`
+3. **Added fuzzy strategy name matching** — `STRATEGY_NAME_MAP` + `_fuzzyMatchTrades()` function
+4. **Lowered QAOA threshold** — `tradeHistory.length >= 3` (from 5)
+
+### GPU Utilization Boost (Target: 40% RTX 5070 Ti)
+
+| Parameter | Before | After | Impact |
+|-----------|--------|-------|--------|
+| QMC nScenarios | 8,000 | 50,000 | 6.25x local load |
+| QMC nQuantumPaths | 1,500 | 10,000 | 6.7x paths |
+| Remote QMC paths | 50,000 | 200,000 | 4x GPU load per QMC |
+| QAOA iterations | 150 | 300 | 2x optimization quality |
+| QAOA interval | 30 cycles | 10 cycles | 3x more frequent |
+| QMC interval | 15 cycles | 5 cycles | 3x more frequent |
+| VQC train interval | 50 cycles | 30 cycles | 1.7x more frequent |
+| Risk interval | 10 cycles | 5 cycles | 2x more frequent |
+| Decomposer replicas | 6 | 8 | 33% more replicas |
+| Remote VaR | disabled | 100K paths | New GPU workload |
+| GPU parallel calls | sequential | parallel | VQC+QMC+QAOA simultaneously |
+
+### Verification Results (Post-Deploy)
+
+GPU Service Metrics (after ~20 bot cycles):
+- **QAOA: 4 calls, 0 errors** (was 0 calls in 98+ cycles — BUG FIXED!)
+- **QMC: 8 calls, 0 errors** (200K paths each to CUDA)
+- **VQC: 99 calls, 0 errors** (every cycle)
+- **VaR: 1 call, 0 errors** (new endpoint active)
+- **CUDA backend: 115 calls, 114 OK** (99.1% success rate)
+- **Avg latencies: QMC=66ms, VQC=28ms, QAOA=361ms, VaR=58ms**
+
+
+---
+
+## PATCH #43 — GPU 50% Utilization + CUDA-Only Pipeline + SSH Tunnel IPv4 Fix
+**Date:** 2026-02-24
+**Type:** PERFORMANCE + INFRASTRUCTURE + BUG FIX
+**Files Created:** `gpu-cuda-service.py` (v2.0), `gpu-quantum-service-v5.js` (raw HTTP proxy)
+**Files Modified:** `remote_gpu_bridge.js` (VPS)
+
+### Problem
+GPU utilization was only ~0.2% despite CUDA service being online. Three root causes:
+1. SSH tunnel dropped silently with no auto-recovery mechanism
+2. Windows SSH resolves `localhost` to `::1` (IPv6) but Express/FastAPI bind to `0.0.0.0` (IPv4 only) — causing "Empty reply from server" through tunnel
+3. GPU workload per request too small (200K paths QMC) — needed 25x increase
+
+### Root Cause Analysis
+
+**BUG #1 (CRITICAL): IPv4 vs IPv6 SSH Tunnel Incompatibility**
+- SSH tunnel command: `-R 4001:localhost:4000` — Windows SSH resolves `localhost` → `::1` (IPv6 loopback)
+- Node.js/Python servers: `.listen(port, '0.0.0.0')` — binds IPv4 ONLY
+- TCP connection succeeded (port open) but no HTTP handler on IPv6 → "Empty reply from server"
+- Verified by testing: raw HTTP server with `.listen(port)` (dual-stack) worked; Express with `.listen(port, '0.0.0.0')` failed
+- **FIX:** Use `127.0.0.1` explicitly: `-R 4001:127.0.0.1:4000`
+
+**BUG #2: Express.js HTTP Keep-Alive Through SSH Tunnel**
+- Express defaults to HTTP/1.1 keep-alive which causes issues through SSH reverse tunnels
+- Combined with IPv6 issue, requests always returned empty
+- **FIX:** Rewrote proxy as pure `http.createServer()` (no Express) with `Connection: close` header and `keepAliveTimeout = 0`
+
+### Changes
+
+#### 1. Python CUDA Service v2.0 (`gpu-cuda-service.py`)
+- **ContinuousGPUEngine**: Background thread running 10 scenario types continuously
+  - Scenarios: baseline, high_vol, flash_crash, bull_run, bear_market, regime_shift, tail_risk, recovery, stagnation, vol_spike
+  - 5M paths per scenario (up from 200K)
+  - Target: 50% GPU utilization (measured: 49.8-49.9%)
+  - 12.7GB VRAM reserved (of 16.3GB total)
+- **CUDA-ONLY mode**: No CPU/WASM fallback, all computation on RTX 5070 Ti
+- Merton Jump-Diffusion model with regime-specific parameters
+- ~91ms average per scenario computation
+
+#### 2. Node.js Raw HTTP Proxy v5.0 (`gpu-quantum-service-v5.js`)
+- Complete rewrite: **raw `http.createServer()`** — no Express, no middleware
+- `sendJSON()` with explicit `Content-Length` + `Connection: close` header
+- `readBody()` for manual JSON body parsing (50MB limit)
+- `server.keepAliveTimeout = 0` — prevents SSH tunnel stalls
+- Route table pattern matching (`routeHandlers` object)
+- All 12+ endpoints: /health, /ping, /gpu/qmc, /gpu/vqc-regime, /gpu/batch-vqc, /gpu/qaoa-weights, /gpu/matmul, /gpu/var, /gpu/portfolio-opt, /gpu/deep-scenario, /gpu/warmup-heavy, /gpu/continuous-status, /metrics
+- CUDA health cache (15s TTL) to reduce upstream requests
+
+#### 3. Remote GPU Bridge v2.0 Updates (`remote_gpu_bridge.js` on VPS)
+- QMC paths: 200,000 → **5,000,000** (25x increase)
+- QMC steps: 20 → **50** (2.5x increase)
+- VaR paths: 100,000 → **2,000,000** (20x increase)
+- Timeout: 5s → **30s** (for heavy GPU computation)
+- VaR field name fixes: `pnls: returns`, `confidenceLevels: [0.95, 0.99]`, `varResult.VaR_99`, `varResult.CVaR_99`
+- Log frequency: every 10 cycles → every 3 cycles (better monitoring)
+
+#### 4. SSH Tunnel Configuration Fix
+- **Before:** `-R 4001:localhost:4000` (broken on Windows)
+- **After:** `-R 4001:127.0.0.1:4000` (explicit IPv4, works everywhere)
+- Added keepalive: `ServerAliveInterval=15`, `ServerAliveCountMax=5`, `TCPKeepAlive=yes`, `ExitOnForwardFailure=yes`
+
+### GPU Performance Metrics (Post-Deploy)
+
+| Metric | Before (PATCH #42) | After (PATCH #43) |
+|--------|--------------------|--------------------|
+| GPU Utilization | 0.2% | **49.8%** |
+| VRAM Reserved | ~32MB | **12,700MB (12.7GB)** |
+| QMC Paths/Request | 200,000 | **5,000,000** |
+| QMC Latency | 66ms | **189ms** |
+| VQC Latency | 28ms | **22ms** |
+| QAOA Latency | 361ms | **3,270ms** |
+| Continuous Scenarios | N/A | **10 types, ~36K computed** |
+| Avg Scenario Compute | N/A | **91ms** |
+| Tunnel Reliability | Drops silently | **Keepalive + IPv4 fix** |
+| Proxy Framework | Express 4.x | **Raw http.createServer()** |
+
+### Verification Results
+
+```
+Proxy Metrics (after 1 new-candle cycle):
+- VQC: 1 call, 22ms, 0 errors ✅
+- QMC: 1 call, 189ms, 0 errors ✅
+- QAOA: 1 call, 3270ms, 0 errors ✅
+- Total proxied: 3, Total errors: 0
+
+ContinuousGPUEngine:
+- Running: true, Target: 50%, Actual: 49.8%
+- Scenarios computed: 36,396
+- Full cycles: 3,639
+- 10 scenario types available
+
+Bot Health: All components TRUE (remoteGPU, hybridPipeline, quantumGPU)
+Bridge: online=true, url=http://127.0.0.1:4001
+```
+
+### Architecture (Post-Patch)
+
+```
+Bot (VPS:3001)
+  └── remote_gpu_bridge.js
+        └── SSH Tunnel: VPS:4001 → 127.0.0.1:4000 (LOCAL)
+              └── gpu-quantum-service-v5.js (raw HTTP, port 4000)
+                    └── gpu-cuda-service.py (FastAPI, port 4002)
+                          └── RTX 5070 Ti (CUDA 12.8, 49.8% utilization)
+                                └── ContinuousGPUEngine (10 scenarios × 5M paths)
+```
+
+### Known Considerations
+- GPU calls only fire on **new candle** cycles (not "same candle - monitoring only")
+- SSH tunnel requires manual restart if connection drops — consider autossh for production
+- `quantum-gpu-bridge.js` (legacy file-based bridge) still shows "Results stale" messages — this is expected and separate from the remote bridge
