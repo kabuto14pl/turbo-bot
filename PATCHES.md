@@ -5,6 +5,54 @@
 
 ---
 
+## PATCH #46: CPU 100% FIX — GPU-Only Computation (2026-02-24)
+
+**Typ:** CRITICAL FIX — System Freeze Prevention  
+**Pliki:** `gpu-cuda-service.py`  
+**Zależności:** psutil (nowy pakiet)
+
+### Problem:
+Gdy Quantum GPU jest włączone, **CPU wzrastał do 100%** powodując zawieszanie systemu.
+Użytkownik wymaga: GPU-only computation, max 40% GPU, minimalne użycie CPU.
+
+### Root Causes (5):
+1. **Background loop sleep = 50ms** → 15 iteracji/sekundę, ciągłe alokacje tensorów i GIL contention
+2. **VQC `_simulate_circuit()` — Python for-loops** → zagnieżdżone pętle over 16 states × 4 qubits × 3 layers z `.item()` per-element → 100% CPU
+3. **QMC `simulate()` — 15× `.item()` calls per run** → każde `.item()` wymusza CPU-GPU synchronizację
+4. **Brak priorytetu procesu** → Python proces domyślnie NORMAL_PRIORITY = rywalizacja z systemem
+5. **Ciągła alokacja/dealokacja tensorów** → 15× na sekundę GC pressure
+
+### Fixes (5):
+| Fix | Opis | Impact |
+|-----|------|--------|
+| #1 | **Process priority → BELOW_NORMAL** (psutil) | Zapobiega zamrożeniu systemu |
+| #2 | **Background sleep: 50ms → 500ms minimum** | Loop rate: 15/s → 1-2/s → ~0% CPU idle |
+| #3 | **VQC circuit: vectorized GPU ops** — pre-computed index arrays, no Python for-loops over states | VQC: 131ms → 6ms (21× faster), 0% CPU |
+| #4 | **QMC stats: batched CPU transfer** — ONE `torch.cat().cpu()` instead of 15× `.item()` | Eliminates 15 CPU-GPU sync points per call |
+| #5 | **Version: v2.0 → v2.2** with CPU monitoring in health endpoint | Monitoring & visibility |
+
+### Wynik:
+```
+BEFORE (v2.0/v2.1):  CPU = 100%, system freezes
+AFTER  (v2.2):       CPU = 0.0% idle, <2% under load
+                     GPU = 1-24% (background), target 40%
+                     VQC = 6ms (was 131ms)
+                     QMC = 624ms/5M paths (correct)
+                     QAOA = 19.4s (correct)
+                     Temperature = 48-55°C
+```
+
+### Verification (5 samples, 3s apart):
+```
+Sample 1: CPU=0.0% | GPU=2%
+Sample 2: CPU=0.0% | GPU=1%
+Sample 3: CPU=0.0% | GPU=24%
+Sample 4: CPU=0.0% | GPU=2%
+Sample 5: CPU=0.0% | GPU=1%
+```
+
+---
+
 ## PATCH #45: GPU UTILIZATION FIX — 100% → 40% Target (2026-02-25)
 
 **Typ:** Critical Fix — GPU Resource Management  
