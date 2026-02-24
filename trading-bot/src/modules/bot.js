@@ -92,6 +92,8 @@ class AutonomousTradingBot {
         this.quantumPosMgr = null;
         // PATCH #28: GPU-Accelerated Quantum System
         this.quantumGPU = null;
+        // PATCH #36: Quantum toggle
+        this._quantumEnabled = true;
         // PATCH #24: Neuron AI Manager (Central Brain/Skynet)
         this.neuronManager = null;
     }
@@ -238,19 +240,29 @@ class AutonomousTradingBot {
         try {
             const { HybridQuantumClassicalPipeline } = require('../core/ai/hybrid_quantum_pipeline');
             this.hybridPipeline = new HybridQuantumClassicalPipeline({
-                qmc: { nScenarios: 8000, nQuantumPaths: 1500, confidenceLevels: [0.95, 0.99], timeHorizons: [1, 5, 10] },
-                qaoa: { nLayers: 4, nIterations: 150, learningRate: 0.05 },
+                // PATCH #42: Boosted config for 40% GPU utilization
+                qmc: { nScenarios: 50000, nQuantumPaths: 10000, confidenceLevels: [0.95, 0.99], timeHorizons: [1, 5, 10] },
+                qaoa: { nLayers: 4, nIterations: 300, learningRate: 0.03 },
                 vqc: { nQubits: 4, nLayers: 3, nFeatures: 8, learningRate: 0.01 },
-                featureMapper: { nQubits: 5, nReps: 2, maxCacheSize: 500 },
+                featureMapper: { nQubits: 5, nReps: 3, maxCacheSize: 1000 },
                 riskAnalyzer: {},
                 verifier: { minConfidence: 0.20, maxVaRPct: 0.05, minSharpe: 0.0 },
-                decomposer: { maxSubProblemSize: 4, nReplicas: 6, maxIterations: 200 },
-                riskAnalysisInterval: 10,
-                weightOptimizationInterval: 30,
-                vqcTrainInterval: 50,
-                qmcSimulationInterval: 15,
+                decomposer: { maxSubProblemSize: 4, nReplicas: 8, maxIterations: 300 },
+                riskAnalysisInterval: 5,
+                weightOptimizationInterval: 10,
+                vqcTrainInterval: 30,
+                qmcSimulationInterval: 5,
             });
             this.hybridPipeline.initialize();
+            // PATCH #38: Remote GPU Bridge (Local PC RTX 5070 Ti via SSH tunnel)
+            try {
+                const gpuBridge = require('../core/ai/remote_gpu_bridge');
+                const gpuUrl = process.env.GPU_REMOTE_URL || 'http://127.0.0.1:4001';
+                this.remoteGPUClient = gpuBridge.attach(this.hybridPipeline, { gpuRemoteUrl: gpuUrl });
+                this.mon.setComponent('remoteGPU', true);
+            } catch (e) {
+                console.warn('[WARN] Remote GPU Bridge: ' + e.message);
+            }
             console.log('[OK] Hybrid Quantum Pipeline v' + this.hybridPipeline.version + ': QMC + QAOA(p=4) + VQC(4q,3L) + QFM(5q) + QRA + QDV + Decomposer');
             this.mon.setComponent('hybridPipeline', true);
         } catch (e) {
@@ -313,6 +325,70 @@ class AutonomousTradingBot {
                     res.json({ error: 'Neuron AI Manager not initialized' });
                 }
             });
+            // PATCH #36: Quantum Pipeline Toggle API
+            this.server.app.get('/api/quantum/enabled', (req, res) => {
+                res.json({
+                    enabled: this._quantumEnabled,
+                    hybridPipeline: !!(this.hybridPipeline),
+                    quantumPosMgr: !!(this.quantumPosMgr),
+                    quantumGPU: !!(this.quantumGPU),
+                });
+            });
+            this.server.app.post('/api/quantum/toggle', (req, res) => {
+                this._quantumEnabled = !this._quantumEnabled;
+                const state = this._quantumEnabled ? 'ON' : 'OFF';
+                console.log('[PATCH #36] Quantum Pipeline toggled: ' + state);
+                if (this.megatron) {
+                    this.megatron.logActivity('QUANTUM', 'Pipeline ' + state,
+                        'Quantum computation ' + (this._quantumEnabled ? 'enabled' : 'disabled') + ' by user');
+                }
+                res.json({ enabled: this._quantumEnabled, message: 'Quantum Pipeline ' + state });
+            });
+            // PATCH #37: Quantum GPU status endpoint
+            this.server.app.get('/api/quantum/status', (req, res) => {
+                const qStatus = (this.quantumGPU && typeof this.quantumGPU.getStatus === 'function') ? this.quantumGPU.getStatus() : {};
+                res.json({
+                    enabled: this._quantumEnabled !== false,
+                    hybridPipeline: !!(this.hybridPipeline),
+                    quantumPosMgr: !!(this.quantumPosMgr),
+                    quantumGPU: !!(this.quantumGPU),
+                    gpuUsed: (qStatus && qStatus.gpuUsed) || false,
+                    gpuDevice: (qStatus && qStatus.gpuDevice) || 'N/A',
+                    runCount: (qStatus && qStatus.runCount) || 0,
+                    resultsAge: (qStatus && qStatus.resultsAge) || 'unknown',
+                    autoRun: (qStatus && qStatus.autoRun) || false,
+                    vram: 'N/A',
+                    lastRun: (qStatus && qStatus.lastRun) || 'never' // PATCH #38C: real data
+                });
+            });
+
+            // PATCH #37: NeuronAI state reset endpoint
+            this.server.app.post('/api/neuron-ai/reset', (req, res) => {
+                try {
+                    if (this.neuronManager) {
+                        this.neuronManager.totalDecisions = 0;
+                        this.neuronManager.overrideCount = 0;
+                        this.neuronManager.evolutionCount = 0;
+                        this.neuronManager.totalPnL = 0;
+                        this.neuronManager.winCount = 0;
+                        this.neuronManager.lossCount = 0;
+                        this.neuronManager.consecutiveLosses = 0;
+                        this.neuronManager.consecutiveWins = 0;
+                        this.neuronManager.riskMultiplier = 1.0;
+                        this.neuronManager.recentTrades = [];
+                        if (this.neuronManager._saveState) this.neuronManager._saveState();
+                        console.log('[PATCH #37] NeuronAI state reset by API');
+                        if (this.megatron) this.megatron.logActivity('SYSTEM', 'NeuronAI Reset', 'State reset to factory defaults by dashboard user');
+                        res.json({ success: true, message: 'NeuronAI state reset to factory defaults', timestamp: new Date().toISOString() });
+                    } else {
+                        res.status(500).json({ success: false, error: 'NeuronManager not initialized' });
+                    }
+                } catch (err) {
+                    console.error('[PATCH #37] NeuronAI reset error:', err.message);
+                    res.status(500).json({ success: false, error: err.message });
+                }
+            });
+
             }
             console.log('[OK] MEGATRON AI: Online | LLM Providers: ' + this.megatron.llm.providers.size);
             this.mon.setComponent('megatron', true);
@@ -331,6 +407,10 @@ class AutonomousTradingBot {
             this.neuronManager = new NeuronAIManager();
             global._neuronAIInstance = this.neuronManager; // PATCH #32: global ref for exec-engine partial TP learning
             this.neuronManager.initialize(this.megatron);
+            // PATCH #40: Connect CPU Neural Engine (AdaptiveNeuralEngine) to NeuronAI
+            if (this.neuralAI) {
+                this.neuronManager.setNeuralEngine(this.neuralAI);
+            }
             // Apply NeuronAI adapted weights to ensemble if any
             const adaptedW = this.neuronManager.getAdaptedWeights();
             if (adaptedW && this.ensemble) {
@@ -409,14 +489,11 @@ class AutonomousTradingBot {
                 if (this.megatron) this.megatron.logActivity('SYSTEM', 'Auto-Resume', 'Pauza zakonczona, trading wznowiony');
             }
 
-            // PATCH #25: Circuit breaker check — bypassed in simulation/paper mode
-            const _simMode = (process.env.MODE || 'simulation').toLowerCase();
-            if (_simMode !== 'simulation' && _simMode !== 'paper' && _simMode !== 'paper_trading') {
-                if (this.rm.isCircuitBreakerTripped()) {
-                    console.log('[CB] Circuit breaker tripped - skipping');
-                    if (this.megatron) this.megatron.logActivity('RISK', 'Circuit Breaker', 'Trading wstrzymany -- circuit breaker aktywny', {}, 'critical');
-                    return;
-                }
+                        // PATCH #37C: Circuit breaker active in ALL modes (was bypassed in sim/paper)
+            if (this.rm && this.rm.isCircuitBreakerTripped()) {
+                console.log('[CB] \ud83d\udd34 Circuit breaker TRIPPED - skipping cycle (PATCH37C)');
+                if (this.megatron) this.megatron.logActivity('RISK', 'Circuit Breaker', 'Trading wstrzymany -- circuit breaker aktywny (ALL MODES)', {}, 'critical');
+                return;
             }
             console.log('[' + this.config.instanceId + '] Trading cycle #' + this._cycleCount + '...');
 
@@ -432,7 +509,7 @@ class AutonomousTradingBot {
                 const hasPos = this.pm.positionCount > 0;
                 // PATCH #21: Allow periodic re-analysis every 10th cycle even without position
                 // Without this fix, bot sits idle 97% of the time between candles
-                const shouldRunPos = hasPos && (this._sameCandleCycleCount % 3 === 0);
+                const shouldRunPos = hasPos && (this._sameCandleCycleCount % 10 === 0); // PATCH #44: 3→10 (5min vs 1.5min) to reduce overtrading
                 const shouldReAnalyze = !hasPos && (this._sameCandleCycleCount % 10 === 0);
                 const shouldRun = shouldRunPos || shouldReAnalyze;
                 if (!shouldRun) {
@@ -500,7 +577,7 @@ class AutonomousTradingBot {
             }
 
             // PATCH #17: Hybrid Pipeline -- STAGE 1: PRE-PROCESSING (Quantum Feature Enhancement)
-            if (this.hybridPipeline && this.hybridPipeline.isReady && this.neuralAI && history.length > 20) {
+            if (this._quantumEnabled && this.hybridPipeline && this.hybridPipeline.isReady && this.neuralAI && history.length > 20) {
                 try {
                     let classicalFeatures = null;
                     try {
@@ -615,7 +692,7 @@ class AutonomousTradingBot {
 
             // PATCH #17: Hybrid Pipeline -- STAGE 2: QUANTUM BOOST
             let hybridBoostResult = null;
-            if (this.hybridPipeline && this.hybridPipeline.isReady && history.length > 30) {
+            if (this._quantumEnabled && this.hybridPipeline && this.hybridPipeline.isReady && history.length > 30) {
                 try {
                     const priceArr = history.map(c => c.close);
                     const portfolio = this.pm.getPortfolio();
@@ -623,7 +700,7 @@ class AutonomousTradingBot {
                     const positions = this.pm.getPositions();
                     const currentPosition = positions.size > 0 ? Array.from(positions.values())[0] : null;
 
-                    hybridBoostResult = this.hybridPipeline.quantumBoost(
+                    hybridBoostResult = await this.hybridPipeline.quantumBoost(
                         allSignals, priceArr, portfolio.totalValue,
                         portfolio, currentPosition, trades
                     );
@@ -852,7 +929,18 @@ class AutonomousTradingBot {
                                     neuronDecision, 'high');
                             }
                         } else {
-                            consensus = null;
+                            // PATCH #39: When NeuronAI returns HOLD, try ensemble as fallback
+                            // Previously: consensus = null -> permanent HOLD paralysis
+                            consensus = this.ensemble.vote(allSignals, this.rm, mtfBiasForVote);
+                            if (consensus && consensus.action !== 'HOLD') {
+                                console.log('[PATCH39] NeuronAI HOLD -> Ensemble fallback: ' + consensus.action + ' (conf: ' + (consensus.confidence*100).toFixed(1) + '%)');
+                                if (this.megatron && this.megatron.logActivity) {
+                                    this.megatron.logActivity('ENSEMBLE', 'FALLBACK from NeuronAI HOLD',
+                                        consensus.action + ' conf=' + (consensus.confidence*100).toFixed(1) + '%', {}, 'normal');
+                                }
+                            } else {
+                                consensus = null; // Both NeuronAI and Ensemble say HOLD
+                            }
                         }
                     } catch (neuronErr) {
                         console.warn('[WARN] Neuron AI decision failed, falling back to ensemble:', neuronErr.message);
@@ -957,7 +1045,8 @@ class AutonomousTradingBot {
                         const regimeUpper = (currentRegime + '').toUpperCase();
                         if (regimeUpper.includes('RANG') || regimeUpper.includes('SIDEWAYS') || regimeUpper.includes('CHOPPY')) {
                             const oldConf = consensus.confidence;
-                            consensus.confidence *= 0.92; // PATCH #30b: Mild 8% penalty (NeuronAI already applies -25% internally)
+                            // PATCH #38D: Disabled redundant RANGING penalty (NeuronAI already applies -25%)
+                            // consensus.confidence *= 0.92; // PATCH #30b: Mild 8% penalty (NeuronAI already applies -25% internally)
                             console.log('[P27 REGIME] RANGING detected — confidence reduced: ' +
                                 (oldConf * 100).toFixed(1) + '% -> ' + (consensus.confidence * 100).toFixed(1) + '%');
                             if (this.megatron) {
@@ -970,10 +1059,10 @@ class AutonomousTradingBot {
 
 // PATCH #26: Signal quality gate — minimum confidence before execution
                     // Analysis showed low-confidence trades have very low win rate
-                    if (shouldExecute && consensus.confidence < 0.18) { // PATCH #30b: lowered from 0.45 (was blocking everything)
+                    if (shouldExecute && consensus.confidence < 0.35) { // PATCH #37C: raised from 0.18 to 0.35
                         shouldExecute = false;
                         console.log('[P26 QUALITY GATE] BLOCKED: ' + consensus.action +
-                            ' confidence ' + (consensus.confidence * 100).toFixed(1) + '% < 18% minimum');
+                            ' confidence ' + (consensus.confidence * 100).toFixed(1) + '% < 35% minimum (PATCH37C)');
                         if (this.megatron) {
                             this.megatron.logActivity('RISK', 'Trade blocked by Quality Gate (P26)',
                                 consensus.action + ' conf=' + (consensus.confidence * 100).toFixed(1) + '% < 18%', {}, 'normal');
@@ -998,7 +1087,7 @@ class AutonomousTradingBot {
                             console.log('[P26 WIN COOLDOWN] Confidence reduced: ' +
                                 (consensus.confidence * 100).toFixed(1) + '% (post-win cooldown x' + winMult + ')');
                             // Re-check quality gate after reduction
-                            if (consensus.confidence < 0.18) { // PATCH #30b: lowered from 0.45
+                            if (consensus.confidence < 0.35) { // PATCH #37C: raised floor
                                 shouldExecute = false;
                                 console.log('[P26 QUALITY GATE] BLOCKED after win cooldown — conf too low');
                             }
@@ -1131,6 +1220,17 @@ class AutonomousTradingBot {
                             }
                         }
                     } catch(e) { /* APM sync non-critical */ }
+                }
+
+                // PATCH #39: Balance sanitizer - fix lockedInPositions leak
+                if (this.pm.positionCount === 0 && this.pm.balance && this.pm.balance.lockedInPositions > 0) {
+                    const leaked = this.pm.balance.lockedInPositions;
+                    this.pm.balance.usdtBalance += leaked;
+                    this.pm.balance.lockedInPositions = 0;
+                    console.log('[PATCH39 BALANCE] Recovered leaked lockedInPositions: $' + leaked.toFixed(2) + ' -> usdtBalance');
+                    if (this.megatron && this.megatron.logActivity) {
+                        this.megatron.logActivity('SYSTEM', 'Balance Leak Fix', 'Recovered $' + leaked.toFixed(2) + ' from lockedInPositions (0 positions)', {}, 'normal');
+                    }
                 }
             }
 

@@ -38,7 +38,19 @@ const {
     QUANTUM_VERSION,
 } = require('./quantum_optimizer');
 
-const PIPELINE_VERSION = '3.0.0';
+const PIPELINE_VERSION = '3.3.0-CPU-SAFE';
+
+// PATCH #47: CPU SAFETY CAPS -- reduce computation scale when no GPU available
+// When remote GPU (RTX 5070 Ti via SSH tunnel) is offline, these caps prevent
+// CPU 100% spikes from heavy quantum computations (QAOA, QMC, SQA).
+const CPU_SAFETY = {
+    QMC_MAX_CLASSICAL_PATHS: 1500,   // vs 8000-10000 default (5-7x reduction)
+    QMC_MAX_QUANTUM_PATHS:   500,    // vs 2000 default (4x reduction)
+    QAOA_MAX_ITERATIONS:     30,     // vs 200 default (6.7x reduction)
+    QAOA_YIELD_EVERY_N:      5,      // async yield every N iterations
+    SQA_MAX_ITERATIONS:      100,    // vs 200 default (2x reduction)
+    SQA_MAX_REPLICAS:        4,      // vs 6 default (1.5x reduction)
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILITY: Quantum random generators
@@ -70,6 +82,7 @@ class QuantumMonteCarloEngine {
         this.timeHorizons = config.timeHorizons || [1, 5, 10]; // days
         this.lastSimulation = null;
         this.simulationCount = 0;
+        this.useGPU = true;  // PATCH #37G: force GPU acceleration
     }
 
     /**
@@ -82,6 +95,7 @@ class QuantumMonteCarloEngine {
      * @returns {{ scenarios: object, riskMetrics: object, blackSwanProb: number, recommendation: string }}
      */
     simulate(priceHistory, portfolioValue, position = null) {
+        console.log('[QUANTUM] Uruchamiam symulacje ' + (this.useGPU ? 'GPU (RTX 5070 Ti)' : 'CPU') + ' | nScenarios=' + this.nScenarios + ' nQuantumPaths=' + this.nQuantumPaths);
         if (!priceHistory || priceHistory.length < 60) {
             return this._defaultResult(portfolioValue);
         }
@@ -133,7 +147,9 @@ class QuantumMonteCarloEngine {
             const pathReturns = [];
 
             // Quantum-amplified paths (focus on tail events)
-            for (let p = 0; p < this.nQuantumPaths; p++) {
+            // PATCH #47: Cap quantum paths on CPU
+            const effectiveQuantumPaths = Math.min(this.nQuantumPaths, CPU_SAFETY.QMC_MAX_QUANTUM_PATHS);
+            for (let p = 0; p < effectiveQuantumPaths; p++) {
                 let pathReturn = 0;
                 for (let d = 0; d < horizon; d++) {
                     // Sample from quantum distribution
@@ -154,7 +170,9 @@ class QuantumMonteCarloEngine {
             }
 
             // Classical paths (normal distribution + fat tails)
-            for (let p = 0; p < this.nScenarios - this.nQuantumPaths; p++) {
+            // PATCH #47: Cap classical paths on CPU
+            const nClassicalPaths = Math.min(this.nScenarios - this.nQuantumPaths, CPU_SAFETY.QMC_MAX_CLASSICAL_PATHS);
+            for (let p = 0; p < nClassicalPaths; p++) {
                 let pathReturn = 0;
                 for (let d = 0; d < horizon; d++) {
                     const baseReturn = gaussianRandom(mu, sigma);
@@ -353,7 +371,7 @@ class QAOAStrategyOptimizer {
      * @param {number} maxStrategies - max number of strategies to activate
      * @returns {{ selectedStrategies: string[], weights: Object, expectedUtility: number, convergence: object }}
      */
-    optimize(strategyMetrics, maxStrategies = 5) {
+    async optimize(strategyMetrics, maxStrategies = 5) {
         const strategies = Object.keys(strategyMetrics);
         const n = strategies.length;
         if (n === 0) return { selectedStrategies: [], weights: {}, expectedUtility: 0 };
@@ -401,7 +419,13 @@ class QAOAStrategyOptimizer {
         let bestBetas = betas.slice();
         const convergenceHistory = [];
 
-        for (let iter = 0; iter < this.nIterations; iter++) {
+        // PATCH #47: Cap iterations on CPU + async yielding to prevent event-loop block
+        const effectiveIterations = Math.min(this.nIterations, CPU_SAFETY.QAOA_MAX_ITERATIONS);
+        for (let iter = 0; iter < effectiveIterations; iter++) {
+            // Yield event loop every N iterations to prevent blocking
+            if (iter > 0 && iter % CPU_SAFETY.QAOA_YIELD_EVERY_N === 0) {
+                await new Promise(r => setImmediate(r));
+            }
             // Evaluate QAOA circuit
             const result = this._evaluateQAOACircuit(nQubits, gammas, betas, h, J, constraintPenalty, maxStrategies);
 
@@ -475,7 +499,7 @@ class QAOAStrategyOptimizer {
             weights,
             expectedUtility: bestEnergy,
             convergence: {
-                iterations: this.nIterations,
+                iterations: effectiveIterations,
                 layers: this.nLayers,
                 initialEnergy: convergenceHistory[0] || 0,
                 finalEnergy: bestEnergy,
@@ -1487,9 +1511,10 @@ class QuantumDecisionVerifier {
 class DecompositionPipeline {
     constructor(config = {}) {
         this.maxSubProblemSize = config.maxSubProblemSize || 4; // Max qubits per sub-problem
+        // PATCH #47: CPU safety caps for SQA
         this.annealer = new SimulatedQuantumAnnealer({
-            nReplicas: config.nReplicas || 6,
-            maxIterations: config.maxIterations || 200,
+            nReplicas: Math.min(config.nReplicas || 6, CPU_SAFETY.SQA_MAX_REPLICAS),
+            maxIterations: Math.min(config.maxIterations || 200, CPU_SAFETY.SQA_MAX_ITERATIONS),
         });
         this.decompositionCount = 0;
     }
@@ -1634,6 +1659,37 @@ class DecompositionPipeline {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// PATCH #42: Strategy name fuzzy matching map for QAOA
+// Signal keys → trade strategy name aliases
+const STRATEGY_NAME_MAP_PIPELINE = {
+    'NeuralAI': ['neuralai', 'neuronai', 'neuron'],
+    'EnterpriseML': ['enterpriseml', 'ml', 'deeprl'],
+    'AdvancedAdaptive': ['advancedadaptive', 'adaptive', 'ensemblevoting'],
+    'RSITurbo': ['rsiturbo', 'rsi'],
+    'SuperTrend': ['supertrend'],
+    'MACrossover': ['macrossover', 'ma_crossover', 'ma'],
+    'MomentumPro': ['momentumpro', 'momentum'],
+};
+
+function _fuzzyMatchTrades(sName, tradeHistory) {
+    const aliases = STRATEGY_NAME_MAP_PIPELINE[sName] || [sName.toLowerCase()];
+    return tradeHistory.filter(t => {
+        if (!t.strategy) return false;
+        const ts = t.strategy.toLowerCase();
+        for (const alias of aliases) {
+            if (ts.includes(alias)) return true;
+        }
+        if (t.reason) {
+            const tr = t.reason.toLowerCase();
+            for (const alias of aliases) {
+                if (tr.includes(alias)) return true;
+            }
+        }
+        return false;
+    });
+}
+
+
 // 8. HYBRID QUANTUM-CLASSICAL PIPELINE — Main Orchestrator
 //    Full enterprise-grade pipeline:
 //    Pre-processing (Classical AI) → Quantum Boost → Post-processing (Hybrid)
@@ -1739,7 +1795,7 @@ class HybridQuantumClassicalPipeline {
      * @param {object} tradeHistory - completed trades
      * @returns {{ enhancedSignals: Map, regimeClassification: object, riskAnalysis: object, weightRecommendation: object }}
      */
-    quantumBoost(signals, priceHistory, portfolioValue, portfolio = {}, position = null, tradeHistory = []) {
+    async quantumBoost(signals, priceHistory, portfolioValue, portfolio = {}, position = null, tradeHistory = []) {
         if (!this.isReady || !priceHistory || priceHistory.length < 30) {
             return { enhancedSignals: signals, regimeClassification: null, riskAnalysis: null, weightRecommendation: null };
         }
@@ -1810,12 +1866,12 @@ class HybridQuantumClassicalPipeline {
         }
 
         // 2d. QAOA + Decomposition Weight Optimization (periodic)
-        if (this.cycleCount % this.weightOptimizationInterval === 0 && tradeHistory.length >= 5) {
+        if (this.cycleCount % this.weightOptimizationInterval === 0 && tradeHistory.length >= 3 /* PATCH #42: lowered from 5 */) {
             try {
                 const strategyNames = signals ? Array.from(signals.keys()) : [];
                 const stratMetrics = {};
                 for (const sName of strategyNames) {
-                    const sTrades = tradeHistory.filter(t => t.strategy === sName || (t.reason && t.reason.includes(sName)));
+                    const sTrades = _fuzzyMatchTrades(sName, tradeHistory); // PATCH #42: fuzzy name matching
                     const sReturns = sTrades.map(t => t.pnl || 0);
                     const avgRet = sReturns.length > 0 ? sReturns.reduce((s, v) => s + v, 0) / sReturns.length : 0;
                     const stdRet = sReturns.length > 1 ? Math.sqrt(sReturns.reduce((s, v) => s + (v - avgRet) ** 2, 0) / (sReturns.length - 1)) : 1;
@@ -1839,7 +1895,7 @@ class HybridQuantumClassicalPipeline {
                 const decompResult = this.decomposer.decomposeAndOptimize(stratMetrics, corrMatrix);
 
                 // Also run QAOA for comparison
-                const qaoaResult = this.qaoa.optimize(stratMetrics, Math.min(5, strategyNames.length));
+                const qaoaResult = await this.qaoa.optimize(stratMetrics, Math.min(5, strategyNames.length));
 
                 // Blend QAOA + Decomposition weights (50/50)
                 const blendedWeights = {};
