@@ -1675,3 +1675,86 @@ Bot (VPS:3001)
 - GPU calls only fire on **new candle** cycles (not "same candle - monitoring only")
 - SSH tunnel requires manual restart if connection drops — consider autossh for production
 - `quantum-gpu-bridge.js` (legacy file-based bridge) still shows "Results stale" messages — this is expected and separate from the remote bridge
+
+
+---
+
+## PATCH #44 — Anti-Overtrading & Side-Direction Validation
+**Date:** 2026-02-24
+**Type:** CRITICAL BUG FIX + TRADE QUALITY
+**Files Modified:** `execution-engine.js`, `bot.js`
+
+### Problem — Deep Trade Analysis Revealed 5 Systematic Failures
+
+Full audit of 168 trade rounds (495 individual trades) revealed:
+- **Win Rate: 26.6%** (37/139 closed rounds)
+- **Gross PnL: +$183.17** — bot CAN pick direction
+- **Fees: $426.65** — 232.9% of gross, eating ALL profits
+- **Net PnL: -$243.48** — pure fee drain
+- **Median hold time: 4.1 minutes** — too short for any meaningful price move
+- **SHORT WR: 17.9%** (24/134) vs BUY WR: 38.2% (13/34)
+- **Max consecutive losses: 13**
+- **80 consecutive same-direction losses** (SHORT→SELL→SHORT→SELL loop)
+
+### Root Cause Analysis
+
+**BUG #1 (CRITICAL): SELL closes SHORT (wrong direction)**
+`execution-engine.js`: When SELL signal arrives and a position exists, `closePosition()` is called WITHOUT checking `pos.side`. A SHORT should only be closed by BUY (cover), not by another SELL. Result: Ensemble generates continuous SELL signals (bearish bias) → each SELL immediately closes the freshly-opened SHORT → open/close/open/close loop.
+
+**BUG #2: No minimum hold time in execution engine**
+Positions could be closed on the very next 30-second cycle. With same-candle strategy re-eval every 3 cycles (90s), positions were being opened and closed within 1-5 minutes consistently.
+
+**BUG #3: Fee drain exceeds gross profit**
+At 0.1% maker/taker fees, round-trip cost ~$2.98. With 4-minute median hold, expected price move ~0.03-0.08% on BTC — structurally impossible to profit.
+
+**BUG #4: Same-candle re-eval too frequent**
+Every 3 cycles (90 seconds) with position open → strategies run and can close position immediately. Should be at least 5 minutes between strategy evaluations.
+
+### Fixes Implemented
+
+#### FIX #1: Side-Direction Validation (`execution-engine.js`)
+```
+SELL signal + SHORT position → IGNORED (need BUY to cover)
+BUY signal + LONG position  → IGNORED (already long)
+BUY signal + SHORT position → COVER (close SHORT, proper direction)
+```
+Added explicit `pos.side === 'SHORT'` checks before closing. BUY now properly covers SHORT positions with correct PnL calculation.
+
+#### FIX #2: 15-Minute Minimum Hold Time (`execution-engine.js`)
+```
+const MIN_HOLD_MS = 15 * 60 * 1000; // 15 minutes
+```
+Hard gate in SELL path: if position held < 15 minutes, signal is BLOCKED. Only exception: SL/TP/emergency exits (which have their own separate monitoring path). Prevents the 22-second to 4-minute close pattern.
+
+#### FIX #3: Fee-Awareness Gate (`execution-engine.js`)
+Before opening any new position:
+```
+estimatedFees = 2 × 0.001 × price × quantity  (round-trip)
+expectedMove = confidence × ATR
+if (expectedMove < 2.0 × estimatedFees / quantity) → SKIP
+```
+Blocks trades where expected profit (confidence × ATR) doesn't cover at least 2x the fees. This prevents the structural unprofitability of high-frequency low-confidence trades.
+
+#### FIX #4: Same-Candle Interval 3→10 (`bot.js`)
+```
+shouldRunPos = hasPos && (sameCandleCycleCount % 10 === 0)  // was % 3
+shouldReAnalyze = !hasPos && (sameCandleCycleCount % 10 === 0)  // was % 10 already
+```
+Strategy re-evaluation with open position now every 10 cycles (5 minutes) instead of 3 cycles (90 seconds). Gives positions time to develop before the bot reconsiders.
+
+### Expected Impact
+
+| Metric | Before | Expected After |
+|--------|--------|----------------|
+| Median hold time | 4.1 min | 15+ min (hard gate) |
+| Fee drag | 232.9% of gross | <80% (fewer trades, larger moves) |
+| SHORT close by SELL (wrong) | ~60% of exits | 0% (blocked) |
+| Same-candle re-eval | every 90s | every 5 min |
+| Win Rate | 26.6% | 35-45% (fewer bad trades) |
+| Trades per hour | 4-6 (overtrading) | 1-2 (quality) |
+
+### Verification
+- All 4 PATCH #44 markers confirmed in production code
+- Bot running (cycle #848+), HOLD decisions properly respected
+- Quality gate blocking low-confidence SELL (31.9% < 35% threshold)
+- No positions opened during RANGING regime (correct)

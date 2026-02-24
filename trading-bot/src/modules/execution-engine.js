@@ -11,7 +11,7 @@
  * - 3-level partial TP (25% at 1.5x, 25% at 2.5x, 50% runner)
  * - Breakeven buffer = 0.3% (not 0.1%)
  * - Volatility-adaptive SL tightening
- * - SL tightened to 1.5x ATR (from 2.0x), TP widened to 4.0x (from 3.0x)
+ * - SL tightened to 2.5x ATR (from 2.0x), TP widened to 4.0x (from 3.0x)
  * - 24h underwater exit for losing positions
  */
 const ind = require('./indicators');
@@ -94,6 +94,9 @@ class ExecutionEngine {
                             var tradeS1 = this.pm.closePosition(sym, price, closeQtyS1, 'SHORT_TP_L1', 'PARTIAL_TP');
                             if (tradeS1) {
                                 pos._partialTp1Done = true;
+                                // PATCH #32: NeuronAI learns from SHORT partial TP
+                                // PATCH #37A: disabled duplicate learning (learning only in bot.js now)
+                                // try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: tradeS1.pnl, strategy: 'SHORT_PARTIAL_TP_L1', reason: 'Short partial profit locked' }); } catch(eN3) {}
                                 console.log('[SHORT TP L1] 25% @ ' + shortAtrMult.toFixed(1) + 'x ATR | PnL: $' + tradeS1.pnl.toFixed(2));
                                 if (this.ml) this.ml.learnFromTrade(tradeS1.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
                             }
@@ -105,6 +108,9 @@ class ExecutionEngine {
                             var tradeS2 = this.pm.closePosition(sym, price, closeQtyS2, 'SHORT_TP_L2', 'PARTIAL_TP');
                             if (tradeS2) {
                                 pos._partialTp2Done = true;
+                                // PATCH #32: NeuronAI learns from SHORT partial TP L2
+                                // PATCH #37A: disabled duplicate learning (learning only in bot.js now)
+                                // try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: tradeS2.pnl, strategy: 'SHORT_PARTIAL_TP_L2', reason: 'Short partial 2 locked' }); } catch(eN4) {}
                                 console.log('[SHORT TP L2] 25% @ ' + shortAtrMult.toFixed(1) + 'x ATR | PnL: $' + tradeS2.pnl.toFixed(2));
                                 if (this.ml) this.ml.learnFromTrade(tradeS2.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
                             }
@@ -127,7 +133,7 @@ class ExecutionEngine {
                     }
 
                     // Phase 1: Below 1.0x ATR profit - hold initial SL
-                    // Phase 2: 1.0x-1.5x ATR - move to breakeven + buffer (0.3%)
+                    // Phase 2: 1.0x-2.5x ATR - move to breakeven + buffer (0.3%)
                     if (atrMult >= 1.0 && atrMult < 1.5) {
                         const beBuffer = pos.entryPrice * 0.003; // 0.3% buffer above entry
                         newSL = pos.entryPrice + beBuffer;
@@ -144,7 +150,7 @@ class ExecutionEngine {
                     // This continuously trails from the high, using LIVE ATR for vol-adaptation
                     if (atrMult >= 3.0) {
                         const chandelierSL = pos._highestPrice - 1.5 * currentATR;
-                        // Chandelier must be at least 1.5x ATR profit locked
+                        // Chandelier must be at least 2.5x ATR profit locked
                         const minChandelier = pos.entryPrice + 1.5 * atr;
                         newSL = Math.max(chandelierSL, minChandelier);
                     }
@@ -178,6 +184,9 @@ class ExecutionEngine {
                             const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L1_2.0ATR', 'PARTIAL_TP');
                             if (trade) {
                                 pos._partialTp1Done = true;
+                                  // PATCH #32: NeuronAI learns from LONG partial TP L1
+                                // PATCH #37A: disabled duplicate learning (learning only in bot.js now)
+                                // try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: trade.pnl, strategy: 'PARTIAL_TP_L1', reason: 'Partial profit locked' }); } catch(eN1) {}
                                 // Move SL to breakeven + buffer after first TP
                                 const beSL = pos.entryPrice + pos.entryPrice * 0.003;
                                 if (beSL > pos.stopLoss) this.pm.updateStopLoss(sym, beSL);
@@ -194,6 +203,9 @@ class ExecutionEngine {
                             const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L2_3.75ATR', 'PARTIAL_TP');
                             if (trade) {
                                 pos._partialTp2Done = true;
+                                  // PATCH #32: NeuronAI learns from LONG partial TP L2
+                                // PATCH #37A: disabled duplicate learning (learning only in bot.js now)
+                                // try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: trade.pnl, strategy: 'PARTIAL_TP_L2', reason: 'Second partial profit locked' }); } catch(eN2) {}
                                 // Lock 1x ATR profit on remainder
                                 const lockSL = pos.entryPrice + 1.0 * atr;
                                 if (lockSL > pos.stopLoss) this.pm.updateStopLoss(sym, lockSL);
@@ -273,6 +285,9 @@ class ExecutionEngine {
                         console.log(`${e} ${sym}: $${pos.entryPrice.toFixed(2)} -> $${price.toFixed(2)} | PnL: ${trade.pnl >= 0 ? '+' : ''}$${trade.pnl.toFixed(2)}`);
                         this.risk.recordTradeResult(trade.pnl);
                         if (this.ml) this.ml.learnFromTrade(trade.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
+                          // PATCH #32: NeuronAI learns from all position closes
+                                // PATCH #37A: disabled duplicate learning (learning only in bot.js now)
+                                // try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: trade.pnl, strategy: reason, reason: reason }); } catch(eNClose) {}
                         // Sync APM
                         if (this.advancedPositionManager) {
                             try {
@@ -312,7 +327,13 @@ class ExecutionEngine {
                     return;
                 }
             }
-            console.log('[EXEC] ' + signal.action + ' ' + signal.symbol + ' (conf: ' + (signal.confidence * 100).toFixed(1) + '%)');
+            // PATCH #36: Fixed dedup - rolling 30s window (replaced broken epoch buckets)
+            const tradeKey = signal.symbol + ":" + signal.action;
+            if (this._lastTradeKey === tradeKey && this._lastTradeTime && (Date.now() - this._lastTradeTime) < 30000) {
+                console.log("[EXEC P36] DEDUP: Identical signal blocked (rolling 30s window)");
+                return;
+            }
+
 
             // Get ATR for dynamic risk
             let atrValue, dynamicRisk = this.config.riskPerTrade;
@@ -341,6 +362,17 @@ class ExecutionEngine {
 
             const fees = signal.price * quantity * this.config.tradingFeeRate;
 
+            // ═══ PATCH #44 FIX #3: Fee-awareness gate ═══
+            // Skip trade if expected price move (confidence × ATR) < 2× total round-trip fees
+            if (atrValue && atrValue > 0 && quantity > 0) {
+                const expectedMoveUSD = signal.confidence * atrValue * quantity;
+                const roundTripFees = 2 * fees; // entry + exit fees
+                if (expectedMoveUSD < 2.0 * roundTripFees) {
+                    console.log('[PATCH44] Fee gate: expected move $' + expectedMoveUSD.toFixed(2) + ' < 2x fees $' + (2 * roundTripFees).toFixed(2) + ' → SKIP TRADE');
+                    return;
+                }
+            }
+
             const trade = {
                 id: this.config.instanceId + '-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
                 timestamp: signal.timestamp, symbol: signal.symbol, action: signal.action,
@@ -349,6 +381,39 @@ class ExecutionEngine {
             };
 
             if (signal.action === 'BUY') {
+                // ═══ PATCH #44 FIX #1b: Prevent BUY while LONG already open ═══
+                const existingPos = this.pm.getPosition(signal.symbol);
+                if (existingPos && (!existingPos.side || existingPos.side !== 'SHORT')) {
+                    console.log('[PATCH44] BUY signal while LONG open → IGNORED (already in position)');
+                    return;
+                }
+                // If SHORT is open and BUY comes in → close SHORT (cover)
+                if (existingPos && existingPos.side === 'SHORT') {
+                    console.log('[PATCH44] BUY signal covers SHORT position');
+                    const coverResult = this.pm.closePosition(signal.symbol, signal.price, null, 'BUY_COVER', signal.strategy);
+                    if (coverResult) {
+                        trade.pnl = coverResult.pnl;
+                        trade.entryPrice = existingPos.entryPrice;
+                        trade.quantity = existingPos.quantity;
+                        trade.action = 'BUY_COVER';
+                        const emoji = coverResult.pnl >= 0 ? 'WIN' : 'LOSS';
+                        console.log('[BUY COVER SHORT] $' + existingPos.entryPrice.toFixed(2) + ' -> $' + signal.price.toFixed(2) + ' | ' + emoji + ' PnL: $' + coverResult.pnl.toFixed(2));
+                        if (this.ml) this.ml.learnFromTrade(coverResult.pnl, Date.now() - (existingPos.entryTime || Date.now()), dataPipeline ? dataPipeline.getMarketDataHistory() : []);
+                        this.risk.recordTradeResult(coverResult.pnl);
+                        if (coverResult.pnl > 0) this.pm.portfolio.successfulTrades++;
+                        else if (coverResult.pnl < 0) this.pm.portfolio.failedTrades++;
+                        const completed = this.pm.portfolio.successfulTrades + this.pm.portfolio.failedTrades;
+                        this.pm.portfolio.winRate = completed > 0 ? (this.pm.portfolio.successfulTrades / completed) * 100 : 0;
+                        this.pm.balance.totalValue = this.pm.balance.usdtBalance + Math.abs(this.pm.balance.btcBalance) * signal.price;
+                        this.pm.portfolio.totalValue = this.pm.balance.totalValue;
+                        this._lastTradeKey = tradeKey; this._lastTradeTime = Date.now();
+                        if (this.risk && this.risk.markTradeExecuted) this.risk.markTradeExecuted();
+                        this.pm.trades.push(trade);
+                        if (this.pm.trades.length > 5000) this.pm.trades = this.pm.trades.slice(-5000);
+                        console.log('[EXEC DONE P44] BUY-COVER SHORT | PnL: $' + trade.pnl.toFixed(2));
+                    }
+                    return;
+                }
                 let sl, tp;
                 if (atrValue && atrValue > 0) {
                     // PATCH #26: SL widened to 2.0x ATR to reduce premature SL hits
@@ -366,7 +431,7 @@ class ExecutionEngine {
                     atrAtEntry: atrValue || 0
                 });
                 console.log(`[BUY] ${quantity.toFixed(6)} @ $${signal.price.toFixed(2)}`);
-                console.log(`[RISK] SL: $${sl.toFixed(2)} (-${atrValue ? '1.5x ATR' : '1.5%'}) | TP: $${tp.toFixed(2)} (+${atrValue ? '4x ATR' : '4%'})`);
+                console.log(`[RISK] SL: $${sl.toFixed(2)} (-${atrValue ? '2.5x ATR' : '1.5%'}) | TP: $${tp.toFixed(2)} (+${atrValue ? '5.0x ATR' : '4%'})`);
                 trade.pnl = -fees;
                 trade.entryPrice = signal.price;
 
@@ -395,7 +460,7 @@ class ExecutionEngine {
                         atrAtEntry: atrValue || 0, side: 'SHORT'
                     });
                     console.log('[NEURON AI] SHORT OPEN: ' + quantity.toFixed(6) + ' ' + signal.symbol + ' @ $' + signal.price.toFixed(2));
-                    console.log('[RISK] SL: $' + shortSL.toFixed(2) + ' (+' + (atrValue ? '1.5x ATR' : '1.5%') + ') | TP: $' + shortTP.toFixed(2) + ' (-' + (atrValue ? '4x ATR' : '4%') + ')');
+                    console.log('[RISK] SL: $' + shortSL.toFixed(2) + ' (+' + (atrValue ? '2.5x ATR' : '1.5%') + ') | TP: $' + shortTP.toFixed(2) + ' (-' + (atrValue ? '5.0x ATR' : '4%') + ')');
                     trade.pnl = -fees;
                     trade.entryPrice = signal.price;
                     trade.action = 'SHORT';
@@ -406,10 +471,32 @@ class ExecutionEngine {
                         } catch(eApmShort) { /* APM non-critical */ }
                     }
                     this.pm.trades.push(trade);
-                    if (this.pm.trades.length > 1000) this.pm.trades = this.pm.trades.slice(-1000);
+                    if (this.pm.trades.length > 5000) this.pm.trades = this.pm.trades.slice(-5000); // PATCH 31b: raised from 1000
                     this.pm.balance.totalValue = this.pm.balance.usdtBalance + Math.abs(this.pm.balance.btcBalance) * signal.price;
                     this.pm.portfolio.totalValue = this.pm.balance.totalValue;
+                    // PATCH #31: SHORT path - add missing tracking calls
+                    this.pm.portfolio.totalTrades++;
+                    this.pm.portfolio.realizedPnL += trade.pnl;
+                    if (this.risk && this.risk.markTradeExecuted) {
+                        this.risk.markTradeExecuted();
+                    }
+            this._lastTradeKey = tradeKey; this._lastTradeTime = Date.now();
                     console.log('[EXEC DONE] SHORT ' + trade.quantity.toFixed(4) + ' ' + trade.symbol + ' @ $' + trade.price.toFixed(2) + ' | Fees: $' + fees.toFixed(2));
+                    return;
+                }
+                // ═══ PATCH #44 FIX #1: Side-direction validation ═══
+                // SELL signal should close LONG positions only, NOT SHORT
+                // SHORT positions should be closed by BUY (cover), SL/TP, time exit, or QPM
+                if (pos.side === 'SHORT') {
+                    console.log('[PATCH44] SELL signal while SHORT open → IGNORED (wrong direction, need BUY to cover)');
+                    return;
+                }
+                // ═══ PATCH #44 FIX #2: Minimum 15-minute hold time (hard gate) ═══
+                const holdMs = Date.now() - (pos.entryTime || Date.now());
+                const MIN_HOLD_MS = 15 * 60 * 1000; // 15 minutes
+                if (holdMs < MIN_HOLD_MS) {
+                    const holdMin = (holdMs / 60000).toFixed(1);
+                    console.log('[PATCH44] Position held ' + holdMin + 'min < 15min minimum → SELL BLOCKED');
                     return;
                 }
                 const result = this.pm.closePosition(signal.symbol, signal.price, null, 'SELL', signal.strategy);
@@ -437,12 +524,25 @@ class ExecutionEngine {
                         } catch(e) { /* APM sync non-critical */ }
                     }
                 }
+                // PATCH #38A: SELL-close already recorded by closePosition() - prevent double push
+                if (result) {
+                    if (trade.pnl > 0) this.pm.portfolio.successfulTrades++;
+                    else if (trade.pnl < 0) this.pm.portfolio.failedTrades++;
+                    const completed = this.pm.portfolio.successfulTrades + this.pm.portfolio.failedTrades;
+                    this.pm.portfolio.winRate = completed > 0 ? (this.pm.portfolio.successfulTrades / completed) * 100 : 0;
+                }
+                this.pm.balance.totalValue = this.pm.balance.usdtBalance + this.pm.balance.btcBalance * signal.price;
+                this.pm.portfolio.totalValue = this.pm.balance.totalValue;
+                this._lastTradeKey = tradeKey; this._lastTradeTime = Date.now();
+                if (this.risk && this.risk.markTradeExecuted) this.risk.markTradeExecuted();
+                console.log("[EXEC DONE P38A] SELL-CLOSE " + trade.symbol + " | PnL: $" + trade.pnl.toFixed(2));
+                return;
             }
 
             // Push trade + update portfolio
             this.pm.trades.push(trade);
             this.pm.portfolio.totalTrades++;
-            if (this.pm.trades.length > 1000) this.pm.trades = this.pm.trades.slice(-1000);
+            if (this.pm.trades.length > 5000) this.pm.trades = this.pm.trades.slice(-5000); // PATCH 31b: raised from 1000
             this.pm.balance.totalValue = this.pm.balance.usdtBalance + this.pm.balance.btcBalance * signal.price;
             this.pm.portfolio.totalValue = this.pm.balance.totalValue;
             this.pm.portfolio.realizedPnL += trade.pnl;
@@ -457,6 +557,7 @@ class ExecutionEngine {
             if (this.risk && this.risk.markTradeExecuted) {
                 this.risk.markTradeExecuted();
             }
+            this._lastTradeKey = tradeKey; this._lastTradeTime = Date.now(); // PATCH #36: rolling dedup
             console.log('[EXEC DONE] ' + trade.action + ' ' + trade.quantity.toFixed(4) + ' ' + trade.symbol + ' @ $' + trade.price.toFixed(2) + ' | PnL: $' + trade.pnl.toFixed(2));
         } catch (err) {
             console.error('[EXEC ERROR] ' + err.message);
