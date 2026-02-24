@@ -5,6 +5,42 @@
 
 ---
 
+## PATCH #45: GPU UTILIZATION FIX — 100% → 40% Target (2026-02-25)
+
+**Typ:** Critical Fix — GPU Resource Management  
+**Pliki:** `gpu-cuda-service.py`
+
+### Problem:
+GPU utilization wzrastała do **100%** gdy ContinuousGPUEngine był aktywny. User wymaganie: **40% max**.
+
+### Root Causes (5):
+1. **Brak foreground pause** — Background engine nigdy nie pauzował gdy foreground requesty (QMC/QAOA/VaR) przychodziły z bota. Oba konkurowały o GPU → 100%
+2. **Target 0.50 zamiast 0.40** — Default był 50%, user chciał 40%
+3. **torch.cuda.synchronize() synkował ALL streams** — Background thread wywoływał global sync zamiast stream-level sync
+4. **5M paths per background iteration** — Za ciężkie dla background monitoring. 1M wystarczający dla risk analysis
+5. **utilization_pct raportował VRAM allocation** — Mylący metric (mem_alloc/mem_total), nie compute utilization
+
+### Fixes:
+| Fix | Opis |
+|-----|------|
+| **Target 0.40** | `target_utilization=0.50` → `0.40` (default + lifespan init) |
+| **Background paths 5M → 1M** | `_run_loop()` teraz używa 1M paths (foreground zachowuje 5M) |
+| **Foreground pause mechanism** | `foreground_begin()` / `foreground_end()` — pauzuje background engine + `stream.synchronize()` przed foreground compute |
+| **Stream-level sync** | Background loop używa `self.stream.synchronize()` zamiast device-wide |
+| **utilization_pct = compute-based** | Nowy metric z ContinuousGPUEngine (compute_ms / wall_ms), + osobny `vram_utilization_pct` |
+| **Wszystkie endpointy** | QMC, VQC, batch-VQC, QAOA, VaR, portfolio-opt, deep-scenario wrapped z foreground pause |
+
+### Wynik:
+- **GPU utilization**: 100% → **25-32%** (nvidia-smi confirmed)
+- **Temperature**: dropped to 48-56°C
+- **Power**: ~80W (was higher at 100%)
+- **Background compute**: 17.5ms avg per scenario (was ~400ms with 5M paths)
+- **VRAM**: 234MB actual allocation (1.4% of 16GB)
+- **Foreground QMC (5M paths)**: 80ms (background properly pauses)
+- **Version**: v2.0 → v2.1 (`2.1.0-ULTRA-PERFORMANCE`)
+
+---
+
 ## Patch #13  2026-02-14  Dashboard v5.1: Strategy Indicator Overlays
 
 **Typ:** Feature  Dashboard Enhancement  

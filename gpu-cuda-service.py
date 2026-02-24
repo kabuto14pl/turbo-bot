@@ -1,13 +1,13 @@
 """
-GPU CUDA Quantum Service v2.0 — ULTRA-PERFORMANCE
-PATCH #43: 50% GPU Utilization Target — RTX 5070 Ti Blackwell
+GPU CUDA Quantum Service v2.1 — ULTRA-PERFORMANCE
+PATCH #45: 40% GPU Utilization Target — RTX 5070 Ti Blackwell (was 50%)
 
 ═══════════════════════════════════════════════════════════════════════
  ARCHITECTURE:
    FastAPI (port 4002) → PyTorch CUDA → RTX 5070 Ti (16GB, 70 SMs)
    
  CHANGES FROM v1.0:
-   - ContinuousGPUEngine: background Monte Carlo thread → sustained 50% GPU utilization
+   - ContinuousGPUEngine: background Monte Carlo thread → sustained 40% GPU utilization
    - QMC default: 100K → 5M paths, 10 → 50 steps  (25-50× heavier per call)
    - QAOA default: 200 → 1500 iterations with population-based optimization
    - Portfolio opt: 10K → 200K portfolios
@@ -108,13 +108,23 @@ def init_gpu():
 
 
 def get_gpu_status() -> dict:
-    """Get current GPU status with memory and utilization info."""
+    """Get current GPU status with memory and utilization info.
+    PATCH #45: utilization_pct now shows compute-based utilization (from ContinuousGPUEngine),
+    not VRAM allocation percentage. Added vram_utilization_pct for memory tracking.
+    """
     if DEVICE is None or DEVICE.type != 'cuda':
         return {'enabled': False, 'backend': 'cpu', 'device': 'CPU'}
     
     mem_alloc = torch.cuda.memory_allocated(0)
     mem_reserved = torch.cuda.memory_reserved(0)
     mem_total = torch.cuda.get_device_properties(0).total_memory
+    
+    # PATCH #45: Compute-based utilization from ContinuousGPUEngine (actual compute/wall ratio)
+    compute_util = 0.0
+    if continuous_engine:
+        uptime_ms = (time.time() - continuous_engine.start_time) * 1000
+        if uptime_ms > 0:
+            compute_util = round(continuous_engine.total_compute_ms / uptime_ms * 100, 1)
     
     return {
         'enabled': True,
@@ -126,7 +136,8 @@ def get_gpu_status() -> dict:
         'vram_used_mb': round(mem_alloc / 1048576, 1),
         'vram_reserved_mb': round(mem_reserved / 1048576, 1),
         'vram_free_mb': round((mem_total - mem_alloc) / 1048576, 1),
-        'utilization_pct': round(mem_alloc / max(1, mem_total) * 100, 1),
+        'utilization_pct': compute_util,  # PATCH #45: compute-based, not VRAM
+        'vram_utilization_pct': round(mem_alloc / max(1, mem_total) * 100, 1),  # PATCH #45: explicit VRAM metric
     }
 
 
@@ -185,20 +196,21 @@ class ContinuousGPUEngine:
     """
     Background thread that continuously runs GPU Monte Carlo scenarios.
     
-    Purpose: Maintain sustained ~50% GPU utilization so the GPU fans spin
+    Purpose: Maintain sustained ~40% GPU utilization so the GPU fans spin
     and the hardware investment yields continuous risk analysis value.
     
     Architecture:
       - Runs on a dedicated CUDA stream (doesn't block foreground requests)
-      - Cycles through 5 market scenarios (baseline, high-vol, crash, bull, bear)
-      - Each scenario: 5M paths × 50 steps (~400ms GPU compute)
+      - Cycles through 10 market scenarios (baseline, high-vol, crash, bull, bear, etc.)
+      - Each scenario: 1M paths × 50 steps (~80ms GPU compute) — PATCH #45: reduced from 5M
       - Adaptive sleep to hit target utilization percentage
       - Results cached for instant retrieval by /gpu/continuous-status
     
     Utilization Control:
-      - target_utilization=0.50 → compute 400ms, sleep 400ms → 50% GPU
+      - target_utilization=0.40 → compute 80ms, sleep 120ms → 40% GPU
       - Automatically adjusts sleep based on actual compute time
-      - Pauses during heavy foreground requests (prevents competition)
+      - PAUSES during foreground requests (context manager) — PATCH #45: implemented
+      - Stream-level synchronization for accurate timing — PATCH #45
     """
     
     SCENARIOS = [
@@ -214,11 +226,13 @@ class ContinuousGPUEngine:
         {'name': 'vol_spike',    'mu': -0.05, 'sigma': 2.0, 'jump_intensity': 0.60, 'jump_mean': -0.04, 'jump_std': 0.12, 'desc': 'Extreme volatility spike'},
     ]
     
-    def __init__(self, device: torch.device, target_utilization: float = 0.50):
+    def __init__(self, device: torch.device, target_utilization: float = 0.40):
         self.device = device
         self.target_util = max(0.10, min(0.90, target_utilization))
         self.running = True
         self.paused = False
+        self._foreground_active = 0  # PATCH #45: foreground request counter
+        self._fg_lock = threading.Lock()  # PATCH #45: thread-safe foreground tracking
         
         # Market state (updated from incoming QMC requests)
         self.latest_price = 97000.0
@@ -253,14 +267,30 @@ class ContinuousGPUEngine:
         if sigma and sigma > 0:
             self.latest_sigma = sigma
     
+    def foreground_begin(self):
+        """PATCH #45: Signal that a foreground GPU request is starting. Pauses background engine."""
+        with self._fg_lock:
+            self._foreground_active += 1
+            self.paused = True
+        # Wait for any in-progress background GPU work to finish
+        if self.stream:
+            self.stream.synchronize()
+    
+    def foreground_end(self):
+        """PATCH #45: Signal that a foreground GPU request completed. Resumes background if no more foreground."""
+        with self._fg_lock:
+            self._foreground_active = max(0, self._foreground_active - 1)
+            if self._foreground_active == 0:
+                self.paused = False
+    
     def _run_loop(self):
         """Main background computation loop."""
         scenario_idx = 0
         
         while self.running:
-            # Pause check
+            # Pause check — PATCH #45: yields GPU to foreground requests
             if self.paused:
-                time.sleep(0.05)
+                time.sleep(0.1)
                 continue
             
             # Select scenario
@@ -272,12 +302,16 @@ class ContinuousGPUEngine:
             wall_start = time.perf_counter()
             
             try:
+                # PATCH #45: Reduced from 5M to 1M paths for background (saves GPU for foreground)
+                # Background is for continuous risk monitoring, not high-precision — 1M is sufficient
+                bg_paths = 1_000_000
+                
                 # Run on dedicated CUDA stream to not block foreground
                 if self.stream:
                     with torch.cuda.stream(self.stream):
                         result = self._qmc_engine.simulate(
                             current_price=self.latest_price,
-                            n_paths=5_000_000,
+                            n_paths=bg_paths,
                             n_steps=50,
                             mu=scen['mu'],
                             sigma=max(0.1, min(3.0, adj_sigma)),
@@ -288,10 +322,12 @@ class ContinuousGPUEngine:
                             confidence_levels=[0.95, 0.99],
                             skip_cleanup=True,  # Don't empty cache in background
                         )
+                    # PATCH #45: Stream-level sync (not device-wide) for accurate timing
+                    self.stream.synchronize()
                 else:
                     result = self._qmc_engine.simulate(
                         current_price=self.latest_price,
-                        n_paths=5_000_000,
+                        n_paths=bg_paths,
                         n_steps=50,
                         mu=scen['mu'],
                         sigma=max(0.1, min(3.0, adj_sigma)),
@@ -1123,9 +1159,9 @@ async def lifespan(app: FastAPI):
         print("[BENCH] === Benchmarks complete ===\n")
         
         # START CONTINUOUS GPU ENGINE — This is what makes fans spin!
-        continuous_engine = ContinuousGPUEngine(DEVICE, target_utilization=0.50)
-        print("[CONTINUOUS] Background GPU engine ACTIVE — target 50% utilization")
-        print("[CONTINUOUS] Running 10 market scenarios × 5M paths each (continuous loop)")
+        continuous_engine = ContinuousGPUEngine(DEVICE, target_utilization=0.40)
+        print("[CONTINUOUS] Background GPU engine ACTIVE — target 40% utilization")
+        print("[CONTINUOUS] Running 10 market scenarios × 1M paths each (continuous loop)")
     
     yield
     
@@ -1137,9 +1173,9 @@ async def lifespan(app: FastAPI):
         print("[GPU] CUDA cleanup complete")
 
 app = FastAPI(
-    title="GPU CUDA Quantum Service v2.0",
-    version="2.0.0-ULTRA-PERFORMANCE",
-    description="PATCH #43: RTX 5070 Ti CUDA — 50% GPU utilization with continuous Monte Carlo engine",
+    title="GPU CUDA Quantum Service v2.1",
+    version="2.1.0-ULTRA-PERFORMANCE",
+    description="PATCH #45: RTX 5070 Ti CUDA — 40% GPU utilization with continuous Monte Carlo engine",
     lifespan=lifespan,
 )
 
@@ -1192,8 +1228,9 @@ async def health():
 async def qmc_endpoint(req: QMCRequest):
     engines = get_engines()
     try:
-        # Update continuous engine with latest price
+        # PATCH #45: Pause background engine during foreground request
         if continuous_engine:
+            continuous_engine.foreground_begin()
             continuous_engine.update_market(req.currentPrice, req.sigma)
         
         result = engines[0].simulate(
@@ -1214,12 +1251,17 @@ async def qmc_endpoint(req: QMCRequest):
     except Exception as e:
         metrics.record_error('qmc')
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if continuous_engine:
+            continuous_engine.foreground_end()
 
 
 @app.post("/gpu/vqc-regime")
 async def vqc_endpoint(req: VQCRequest):
     engines = get_engines()
     try:
+        if continuous_engine:
+            continuous_engine.foreground_begin()
         result = engines[1].classify(req.features)
         metrics.record('vqc', result['computeTimeMs'])
         result['offloadLatencyMs'] = result['computeTimeMs']
@@ -1227,6 +1269,9 @@ async def vqc_endpoint(req: VQCRequest):
     except Exception as e:
         metrics.record_error('vqc')
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if continuous_engine:
+            continuous_engine.foreground_end()
 
 
 @app.post("/gpu/batch-vqc")
@@ -1234,6 +1279,8 @@ async def batch_vqc_endpoint(req: BatchVQCRequest):
     """PATCH #43: Batch VQC — classify multiple feature sets in one call."""
     engines = get_engines()
     try:
+        if continuous_engine:
+            continuous_engine.foreground_begin()
         result = engines[1].batch_classify(req.featureSets)
         metrics.record('batch_vqc', result['computeTimeMs'], len(req.featureSets))
         result['offloadLatencyMs'] = result['computeTimeMs']
@@ -1241,12 +1288,17 @@ async def batch_vqc_endpoint(req: BatchVQCRequest):
     except Exception as e:
         metrics.record_error('batch_vqc')
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if continuous_engine:
+            continuous_engine.foreground_end()
 
 
 @app.post("/gpu/qaoa-weights")
 async def qaoa_endpoint(req: QAOARequest):
     engines = get_engines()
     try:
+        if continuous_engine:
+            continuous_engine.foreground_begin()
         result = engines[2].optimize(req.strategyMetrics, req.maxStrategies, req.nIterations)
         metrics.record('qaoa', result['computeTimeMs'])
         result['offloadLatencyMs'] = result['computeTimeMs']
@@ -1254,6 +1306,9 @@ async def qaoa_endpoint(req: QAOARequest):
     except Exception as e:
         metrics.record_error('qaoa')
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if continuous_engine:
+            continuous_engine.foreground_end()
 
 
 @app.post("/gpu/matmul")
@@ -1272,6 +1327,8 @@ async def matmul_endpoint(req: MatMulRequest):
 @app.post("/gpu/var")
 async def var_endpoint(req: VaRRequest):
     try:
+        if continuous_engine:
+            continuous_engine.foreground_begin()
         t0 = time.perf_counter()
         result = gpu_var_calculation(req.pnls, req.confidenceLevels)
         latency = round((time.perf_counter() - t0) * 1000, 3)
@@ -1281,11 +1338,16 @@ async def var_endpoint(req: VaRRequest):
     except Exception as e:
         metrics.record_error('var')
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if continuous_engine:
+            continuous_engine.foreground_end()
 
 
 @app.post("/gpu/portfolio-opt")
 async def portfolio_opt_endpoint(req: PortfolioOptRequest):
     try:
+        if continuous_engine:
+            continuous_engine.foreground_begin()
         result = gpu_portfolio_optimization(
             req.returnsMatrix,
             req.riskFreeRate,
@@ -1298,6 +1360,9 @@ async def portfolio_opt_endpoint(req: PortfolioOptRequest):
     except Exception as e:
         metrics.record_error('portfolio_opt')
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if continuous_engine:
+            continuous_engine.foreground_end()
 
 
 @app.post("/gpu/deep-scenario")
@@ -1308,6 +1373,8 @@ async def deep_scenario_endpoint(req: DeepScenarioRequest):
     ~50M total paths = 3-5 seconds of pure GPU compute.
     """
     try:
+        if continuous_engine:
+            continuous_engine.foreground_begin()
         result = deep_scenario_analysis(
             current_price=req.currentPrice,
             n_paths_per_scenario=req.nPathsPerScenario,
@@ -1319,6 +1386,9 @@ async def deep_scenario_endpoint(req: DeepScenarioRequest):
     except Exception as e:
         metrics.record_error('deep_scenario')
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if continuous_engine:
+            continuous_engine.foreground_end()
 
 
 @app.get("/gpu/continuous-status")
@@ -1419,17 +1489,16 @@ if __name__ == '__main__':
     
     print("")
     print("╔══════════════════════════════════════════════════════════════════╗")
-    print("║  GPU CUDA QUANTUM SERVICE v2.0 — ULTRA-PERFORMANCE            ║")
-    print("║  PATCH #43: 50% GPU Utilization — RTX 5070 Ti Blackwell       ║")
+    print("║  GPU CUDA QUANTUM SERVICE v2.1 — ULTRA-PERFORMANCE            ║")
+    print("║  PATCH #45: 40% GPU Utilization — RTX 5070 Ti Blackwell       ║")
     print("║                                                                ║")
-    print("║  Changes from v1.0:                                            ║")
-    print("║    • ContinuousGPUEngine: background Monte Carlo (50% target) ║")
-    print("║    • QMC default: 5M paths × 50 steps (was 100K × 10)        ║")
-    print("║    • QAOA: 1500 iterations, population-based (50 candidates)  ║")
-    print("║    • Portfolio: 200K portfolios (was 10K)                      ║")
-    print("║    • New: /gpu/deep-scenario, /gpu/batch-vqc, /gpu/warmup     ║")
-    print("║    • No more empty_cache() — GPU memory stays warm            ║")
-    print("║    • CUDA stream separation (background/foreground)           ║")
+    print("║  Changes from v2.0:                                            ║")
+    print("║    • Target utilization: 50% → 40% (user requirement)         ║")
+    print("║    • Background paths: 5M → 1M (foreground keeps 5M)          ║")
+    print("║    • Foreground pause: bg engine pauses during requests        ║")
+    print("║    • Stream-level sync: accurate compute time measurement     ║")
+    print("║    • utilization_pct: now compute-based, not VRAM             ║")
+    print("║    • Fixes GPU competing for resources (was hitting 100%)     ║")
     print("╚══════════════════════════════════════════════════════════════════╝")
     print("")
     
