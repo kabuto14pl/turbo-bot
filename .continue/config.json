@@ -1,0 +1,56 @@
+{
+  "models": [
+    {
+      "title": "Claude Opus 4.6",
+      "provider": "anthropic",
+      "model": "claude-4-opus-20260225",
+      "apiKey": "sk-ant-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "apiBase": "https://api.anthropic.com/v1"
+    },
+    {
+      "title": "Claude 3.5 Sonnet (fallback)",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-latest",
+      "apiKey": "sk-ant-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    },
+    {
+      "title": "Lokalny fallback (Ollama)",
+      "provider": "ollama",
+      "model": "qwen3:14b-instruct-q6_K",
+      "apiBase": "http://localhost:11434"
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "DeepSeek-Coder-V2 Lite (szybki autocomplete)",
+    "provider": "ollama",
+    "model": "deepseek-coder-v2:lite-instruct-q4_K_M"
+  },
+  "embeddingsProvider": {
+    "provider": "ollama",
+    "model": "nomic-embed-text"
+  },
+  "contextProviders": [
+    {
+      "name": "file",
+      "params": {
+        "include": [
+          "CLAUDE-SKYNET.md",
+          "skills/**",
+          "TASKS/**",
+          "PATCHES.md"
+        ]
+      }
+    }
+  ],
+  "customCommands": [
+    {
+      "name": "skynet",
+      "description": "Pełna analiza z frameworkiem CLAUDE-SKYNET",
+      "prompt": "Aktywuj CLAUDE-SKYNET v1.0 i SKILL ROUTER z folderu skills/. Użyj Meta-Orchestrator i odpowiednich skilli. Zawsze zaczynaj od META-ORCHESTRATOR."
+    }
+  ],
+  "chatContext": {
+    "useWholeConversation": true,
+    "maxTokens": 128000
+  }
+}
