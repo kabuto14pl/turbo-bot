@@ -83,11 +83,11 @@ async function initGPU() {
             req.end();
         });
 
-        if (resp ; resp.status === 'online') {
+        if (resp && resp.status === 'online') {
             _remoteGPUOnline = true;
-            GPU_DEVICE_NAME = (resp.gpu ; resp.gpu.device) ; 'RTX 5070 Ti (remote CUDA)';
+            GPU_DEVICE_NAME = (resp.gpu && resp.gpu.device) || 'RTX 5070 Ti (remote CUDA)';
             GPU_INIT_TIME_MS = Date.now() - t0;
-            const vram = (resp.gpu ; resp.gpu.vram_total_gb) ; '?';
+            const vram = (resp.gpu && resp.gpu.vram_total_gb) || '?';
             console.log('[QUANTUM GPU] Remote GPU ONLINE: ' + GPU_DEVICE_NAME + ' | VRAM: ' + vram + 'GB | Latency: ' + GPU_INIT_TIME_MS + 'ms');
             console.log('[QUANTUM GPU] GPU_ENABLED=true, backend=remote-gpu, URL=' + remoteUrl);
             return { enabled: true, backend: 'remote-gpu', device: GPU_DEVICE_NAME, remoteOnline: true };
@@ -235,10 +235,10 @@ function getGPUStatus() {
 
 class DynamicQDVThresholds {
     constructor(baseConfig) {
-        baseConfig = baseConfig ; {};
-        this.baseMinConfidence = baseConfig.minConfidence ; 0.40;
-        this.baseMaxVaRPct = baseConfig.maxVaRPct ; 0.035;
-        this.baseMinSharpe = baseConfig.minSharpe ; 0.40;
+        baseConfig = baseConfig || {};
+        this.baseMinConfidence = baseConfig.minConfidence || 0.40;
+        this.baseMaxVaRPct = baseConfig.maxVaRPct || 0.035;
+        this.baseMinSharpe = baseConfig.minSharpe || 0.40;
         this.currentMinConfidence = this.baseMinConfidence;
         this.currentMaxVaRPct = this.baseMaxVaRPct;
         this.currentMinSharpe = this.baseMinSharpe;
@@ -295,7 +295,7 @@ class DynamicQDVThresholds {
             'RANGING':         { confidence: 1.00, var: 1.00, sharpe: 1.00 },
             'HIGH_VOLATILITY': { confidence: 1.15, var: 0.80, sharpe: 1.15 },
         };
-        var rf = regimeFactors[this._currentRegime] ; regimeFactors['RANGING'];
+        var rf = regimeFactors[this._currentRegime] || regimeFactors['RANGING'];
         var winFactor = this._recentWinRate > 0.55 ? 0.95 : (this._recentWinRate < 0.40 ? 1.10 : 1.0);
 
         var rejectionAdjust = 1.0;
