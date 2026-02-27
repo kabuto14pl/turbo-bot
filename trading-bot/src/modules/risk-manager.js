@@ -18,7 +18,7 @@ class RiskManager {
         this.consecutiveLossesForSoftPause = 0;
         // PATCH #26: Anti-scalping cooldown — minimum time between trades
         this._lastTradeTimestamp = 0;
-        this._minTradeCooldownMs = 3 * 60 * 1000; // 3 minutes minimum between new entries
+        this._minTradeCooldownMs = 10 * 60 * 1000; // PATCH #40: 10 minutes minimum between new entries (was 3min)
         this._consecutiveWins = 0;
     }
 
