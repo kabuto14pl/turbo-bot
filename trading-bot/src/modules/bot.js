@@ -22,12 +22,12 @@
  *   - QRA risk scoring per position with black swan emergency exits
  *   - Position health scoring (0-100) with 6 weighted factors
  * PATCH #20: SKYNET AUTONOMOUS BRAIN (Audyt Skynet)
- *   [P0] NeuronAI → Skynet Brain: executeOverride, emergencyHalt, globalParamEvolution,
+ *   [P0] NeuronAI â†’ Skynet Brain: executeOverride, emergencyHalt, globalParamEvolution,
  *        positionCommander, defenseMode, phaseRecovery, configEvolution
- *   [P0] QDV Starvation Fallback: cyclesWithoutTrade → force trade if >300 idle cycles
+ *   [P0] QDV Starvation Fallback: cyclesWithoutTrade â†’ force trade if >300 idle cycles
  *   [P0] Skynet Override Gate: veto/force consensus before QDV verification
  *   [P1] Position Sync Mutex: _withPositionLock() prevents APM/QPM/PM race conditions
- *   [P1] ML↔Quantum Cross-System Feedback: learnFromQuantumVerification()
+ *   [P1] MLâ†”Quantum Cross-System Feedback: learnFromQuantumVerification()
  *   [P1] Ensemble Volatility-Adjusted Thresholds: regime-aware dynamic thresholds
  *   [P2] Execution Engine: Fixed dead _validateSignal(), proper balance-based validation
  *   [P2] Experience Buffer: Priority replay with 70% recency / 30% high-priority split
@@ -101,7 +101,7 @@ class AutonomousTradingBot {
         this.hybridPipeline = null;
         // PATCH #18: Quantum Position Manager
         this.quantumPosMgr = null;
-        // PATCH #20: Position sync mutex — prevent concurrent PM/APM/QPM modifications
+        // PATCH #20: Position sync mutex â€” prevent concurrent PM/APM/QPM modifications
         this._positionMutex = Promise.resolve();
     }
 
@@ -235,7 +235,7 @@ class AutonomousTradingBot {
             console.warn('[WARN] Neural AI: ' + e.message);
         }
 
-        // PATCH #16: Quantum-Hybrid Engine (legacy — still used for per-signal enhancement)
+        // PATCH #16: Quantum-Hybrid Engine (legacy â€” still used for per-signal enhancement)
         try {
             const { QuantumHybridEngine } = require('../core/ai/quantum_optimizer');
             this.quantumEngine = new QuantumHybridEngine({
@@ -293,7 +293,7 @@ class AutonomousTradingBot {
             console.warn('[WARN] Hybrid Pipeline: ' + e.message);
         }
 
-        // PATCH #18: Quantum Position Manager (Stage 4 — Continuous Monitoring)
+        // PATCH #18: Quantum Position Manager (Stage 4 â€” Continuous Monitoring)
         try {
             const { QuantumPositionManager } = require('../core/ai/quantum_position_manager');
             const ind = require('./indicators');
@@ -668,26 +668,26 @@ class AutonomousTradingBot {
                         if (sig.action === consensus.action) this._lastConsensusStrategies.push(name);
                     }
 
-                    // ═══════════════════════════════════════════════════════════════
-                    // PATCH #20: SKYNET OVERRIDE GATE — before quantum verification
+                    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+                    // PATCH #20: SKYNET OVERRIDE GATE â€” before quantum verification
                     // If Skynet has an active override, it takes precedence.
                     // If Skynet is in defense mode, it may VETO BUY signals.
-                    // ═══════════════════════════════════════════════════════════════
+                    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                     if (this.neuralAI && this.neuralAI.isReady) {
                         // Check Skynet override
                         if (this.neuralAI._activeOverride && this.neuralAI._activeOverride.expiresAt > Date.now()) {
                             const ovr = this.neuralAI._activeOverride;
                             if (ovr.action === 'HOLD') {
-                                // Skynet VETO — block all trades
+                                // Skynet VETO â€” block all trades
                                 console.log('[SKYNET VETO] Trade blocked: ' + ovr.reason);
                                 if (this.megatron) this.megatron.logActivity('SKYNET', 'VETO',
                                     consensus.action + ' blocked: ' + ovr.reason, {}, 'critical');
                                 consensus = null;
                             } else if (ovr.action !== consensus.action) {
-                                // Skynet wants a different action — override if confidence is high
+                                // Skynet wants a different action â€” override if confidence is high
                                 if (ovr.confidence > this.neuralAI.evolvedConfig.ensembleOverrideThreshold) {
                                     console.log('[SKYNET OVERRIDE] ' + consensus.action + ' -> ' + ovr.action +
-                                        ' (conf: ' + (ovr.confidence * 100).toFixed(1) + '%) — ' + ovr.reason);
+                                        ' (conf: ' + (ovr.confidence * 100).toFixed(1) + '%) â€” ' + ovr.reason);
                                     consensus.action = ovr.action;
                                     consensus.confidence = ovr.confidence;
                                     consensus.strategy = 'SkynetOverride';
@@ -698,11 +698,11 @@ class AutonomousTradingBot {
                             }
                         }
 
-                        // Defense mode — block BUY signals
+                        // Defense mode â€” block BUY signals
                         // PATCH #39E: Allow BUY if starvation is extreme (>400 cycles)
                         if (consensus && this.neuralAI.defenseMode && consensus.action === 'BUY') {
                             if (this.neuralAI.cyclesWithoutTrade > 400) {
-                                console.log('[SKYNET DEFENSE] BUY ALLOWED despite defense mode — EXTREME starvation (' + this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
+                                console.log('[SKYNET DEFENSE] BUY ALLOWED despite defense mode â€” EXTREME starvation (' + this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
                                 if (this.megatron) this.megatron.logActivity('SKYNET', 'Defense Override',
                                     'BUY allowed after ' + this.neuralAI.cyclesWithoutTrade + ' idle cycles (starvation break)', {}, 'critical');
                                 // Reduce position size as safety measure
@@ -710,7 +710,7 @@ class AutonomousTradingBot {
                             } else {
                                 console.log('[SKYNET DEFENSE] BUY blocked by defense mode (losses: ' + this.neuralAI.consecutiveLosses + ')');
                                 if (this.megatron) this.megatron.logActivity('SKYNET', 'Defense Block',
-                                    'BUY blocked — ' + this.neuralAI.consecutiveLosses + ' consecutive losses', {}, 'high');
+                                    'BUY blocked â€” ' + this.neuralAI.consecutiveLosses + ' consecutive losses', {}, 'high');
                                 consensus = null;
                             }
                         }
@@ -718,10 +718,10 @@ class AutonomousTradingBot {
                 }
             }
 
-            // ═══════════════════════════════════════════════════════════════
-            // PATCH #20: SKYNET STARVATION OVERRIDE — if no trade for too long
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            // PATCH #20: SKYNET STARVATION OVERRIDE â€” if no trade for too long
             // Force lower thresholds to prevent the bot from starving
-            // ═══════════════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             if (!consensus && this.neuralAI && this.neuralAI.isReady) {
                 const starvation = this.neuralAI.checkStarvationOverride();
                 if (starvation && allSignals.size > 0) {
@@ -736,7 +736,7 @@ class AutonomousTradingBot {
                     consensus = this.ensemble.vote(allSignals, this.rm);
                     this.ensemble.weights = origWeights; // Restore weights
                     if (consensus && consensus.action !== 'HOLD') {
-                        console.log('[SKYNET STARVATION] Trade forced: ' + consensus.action + ' — ' + starvation.reason);
+                        console.log('[SKYNET STARVATION] Trade forced: ' + consensus.action + ' â€” ' + starvation.reason);
                         consensus.reasoning = starvation.reason;
                         if (this.megatron) this.megatron.logActivity('SKYNET', 'Starvation Override',
                             consensus.action + ': ' + starvation.reason, {}, 'high');
@@ -744,9 +744,9 @@ class AutonomousTradingBot {
                 }
             }
 
-            // ═══════════════════════════════════════════════════════════════
-            // PATCH #20: SKYNET POSITION COMMANDS — execute AI-driven commands
-            // ═══════════════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            // PATCH #20: SKYNET POSITION COMMANDS â€” execute AI-driven commands
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             if (this.neuralAI && this.neuralAI.isReady) {
                 const commands = this.neuralAI.consumePositionCommands();
                 for (const cmd of commands) {
@@ -792,7 +792,7 @@ class AutonomousTradingBot {
                 }
 
                 // PATCH #17: Hybrid Pipeline -- STAGE 3: POST-PROCESSING (Quantum Decision Verification)
-                // PATCH #20: With starvation fallback — if QDV rejects but bot is starved, override
+                // PATCH #20: With starvation fallback â€” if QDV rejects but bot is starved, override
                 let shouldExecute = true;
                 let qdvRejected = false;
                 if (this.hybridPipeline && this.hybridPipeline.isReady) {
@@ -811,16 +811,16 @@ class AutonomousTradingBot {
                                     verification.verificationResult, 'high');
                             }
 
-                            // PATCH #20: Cross-system feedback — inform Skynet about rejection
+                            // PATCH #20: Cross-system feedback â€” inform Skynet about rejection
                             if (this.neuralAI && this.neuralAI.isReady) {
                                 this.neuralAI.learnFromQuantumVerification(
                                     consensus.strategy || 'EnsembleVoting', false,
                                     verification.verificationResult.reason, consensus);
                             }
 
-                            // PATCH #20: Starvation override — if QDV rejects but bot is starved, force through
+                            // PATCH #20: Starvation override â€” if QDV rejects but bot is starved, force through
                             if (this.neuralAI && this.neuralAI.cyclesWithoutTrade > 300) {
-                                console.log('[SKYNET] QDV rejection overridden — STARVATION (' +
+                                console.log('[SKYNET] QDV rejection overridden â€” STARVATION (' +
                                     this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
                                 shouldExecute = true;
                                 qdvRejected = false;
@@ -843,7 +843,7 @@ class AutonomousTradingBot {
                                     verification.verificationResult.modifications || {});
                             }
 
-                            // PATCH #20: Cross-system feedback — inform Skynet about approval
+                            // PATCH #20: Cross-system feedback â€” inform Skynet about approval
                             if (this.neuralAI && this.neuralAI.isReady) {
                                 this.neuralAI.learnFromQuantumVerification(
                                     consensus.strategy || 'EnsembleVoting', true, null, consensus);
@@ -859,11 +859,11 @@ class AutonomousTradingBot {
                         // PATCH #36: Track trade open time for ML learning duration (P0-1)
                         if (consensus.action === 'BUY') this._lastTradeOpenTime = Date.now();
 
-                        // ═══════════════════════════════════════════════════════════
-                        // PATCH #19: Quantum Initial SL/TP — replace static 1.5x/4.0x
+                        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+                        // PATCH #19: Quantum Initial SL/TP â€” replace static 1.5x/4.0x
                         // ATR with VQC regime + QRA risk + QMC scenario-adjusted levels
                         // immediately after position open for optimal risk management.
-                        // ═══════════════════════════════════════════════════════════
+                        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                         if (consensus.action === 'BUY' && this.quantumPosMgr && this.quantumPosMgr.isReady
                             && this.pm.hasPosition(consensus.symbol)) {
                             try {
@@ -953,8 +953,6 @@ class AutonomousTradingBot {
                         }
                     }
                 }
-            }
-
             // 7. SL/TP monitoring
             if (this.pm.positionCount > 0) {
                 const getPriceFn = async (sym) => this._getCurrentPrice(sym);
@@ -988,11 +986,11 @@ class AutonomousTradingBot {
                     });
                 }
 
-                // ═══════════════════════════════════════════════════════════════
-                // PATCH #19: APM-PM State Sync — prevent divergence
+                // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+                // PATCH #19: APM-PM State Sync â€” prevent divergence
                 // Periodically verify APM's active positions match PM's positions.
                 // Remove orphaned APM positions that no longer exist in PM.
-                // ═══════════════════════════════════════════════════════════════
+                // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                 if (this.advancedPositionManager && this._cycleCount % 10 === 0) {
                     try {
                         const pmPositions = this.pm.getPositions();
@@ -1133,7 +1131,7 @@ class AutonomousTradingBot {
      * PATCH #18: Apply quantum position management actions.
      * Executes SL/TP adjustments, partial closes, and logs to Megatron.
      */
-    _applyQuantumPositionActions(qpmResult, marketDataHistory) {
+    async _applyQuantumPositionActions(qpmResult, marketDataHistory) {
         try {
             // Apply SL/TP adjustments
             for (const adj of qpmResult.adjustments) {
@@ -1214,11 +1212,11 @@ class AutonomousTradingBot {
                     ' | Consolidate: ' + (opt.consolidations || []).length);
             }
 
-            // ═══════════════════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             // PATCH #19: Execute pyramid recommendations from QAOA optimizer
-            // Previously pyramid recs were only logged — now they are executed
+            // Previously pyramid recs were only logged â€” now they are executed
             // as additional position layers with proper risk validation.
-            // ═══════════════════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             if (qpmResult.portfolioOpt && qpmResult.portfolioOpt.pyramidRecommendations) {
                 for (const pyrRec of qpmResult.portfolioOpt.pyramidRecommendations) {
                     const pos = this.pm.getPosition(pyrRec.symbol);
@@ -1307,10 +1305,10 @@ class AutonomousTradingBot {
                 }
             }
 
-            // ═══════════════════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             // PATCH #19: Execute consolidation recommendations
             // Close tiny or very unhealthy positions as recommended by QAOA.
-            // ═══════════════════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             if (qpmResult.portfolioOpt && qpmResult.portfolioOpt.consolidations) {
                 for (const cons of qpmResult.portfolioOpt.consolidations) {
                     if (cons.action !== 'CLOSE') continue;
