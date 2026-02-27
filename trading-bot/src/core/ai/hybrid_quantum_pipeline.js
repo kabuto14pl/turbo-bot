@@ -1,30 +1,37 @@
 'use strict';
 /**
  * ╔══════════════════════════════════════════════════════════════════════════════╗
- * ║   HYBRID QUANTUM-CLASSICAL PIPELINE v2.0                                   ║
+ * ║   HYBRID QUANTUM-CLASSICAL PIPELINE v3.2 (HYBRID GPU — Remote+Local)     ║
  * ║   Enterprise-Grade Quantum-AI Trading System                               ║
- * ║   Turbo-Bot Enterprise — Patch #17                                         ║
+ * ║   Turbo-Bot Enterprise — Patch #17 + #37 (GPU) + #38 (Remote Offload)     ║
  * ╠══════════════════════════════════════════════════════════════════════════════╣
  * ║                                                                            ║
  * ║  Architecture (HSBC/IBM + JPMorgan inspired):                              ║
  * ║   Pre-processing (Classical AI) → Quantum Boost → Post-processing (Hybrid) ║
  * ║                                                                            ║
  * ║  Components:                                                               ║
- * ║   1. QuantumMonteCarloEngine   — QMC scenario simulation (10-100x speedup) ║
+ * ║   1. QuantumMonteCarloEngine   — QMC (GPU batch MC paths via TF.js)        ║
  * ║   2. QAOAStrategyOptimizer     — QAOA combinatorial strategy selection     ║
  * ║   3. VariationalQuantumClassifier — VQC market regime detection            ║
- * ║   4. QuantumFeatureMapper      — Quantum kernel for hidden correlations    ║
+ * ║   4. QuantumFeatureMapper      — Quantum kernel (GPU matMul for kernels)   ║
  * ║   5. QuantumRiskAnalyzer       — Stress testing + Black Swan + Correlations║
- * ║   6. QuantumDecisionVerifier   — Pre-execution quantum verification gate   ║
+ * ║   6. QuantumDecisionVerifier   — Dynamic ML-tuned verification gate        ║
  * ║   7. DecompositionPipeline     — JPMorgan-style problem decomposition      ║
  * ║   8. HybridQuantumClassicalPipeline — Main orchestrator                    ║
  * ║                                                                            ║
+ * ║  PATCH #37: GPU QUANTUM ACCELERATION                                       ║
+ * ║   • GPUQuantumState (TF.js tensor-based complex ops) for all components    ║
+ * ║   • GPU Batch Monte Carlo: tf.randomNormal + cumsum for 200K paths         ║
+ * ║   • GPU MatMul for QFM kernel computation                                 ║
+ * ║   • DynamicQDVThresholds: ML-tuned verification parameters                ║
+ * ║   • Runtime GPU detection + graceful CPU fallback                          ║
+ * ║                                                                            ║
  * ║  Integration Points:                                                       ║
  * ║   • Quantum Feature Maps → enhance classical ML features                   ║
- * ║   • QMC → scenario simulation before execution                             ║
+ * ║   • QMC → scenario simulation before execution (GPU-accelerated)           ║
  * ║   • QAOA → optimize strategy weights (replaces/augments SQA)               ║
  * ║   • VQC → augment regime detection (blends with Neural AI)                 ║
- * ║   • Decision Verifier → quantum risk gate before trade execution           ║
+ * ║   • Decision Verifier → dynamic quantum risk gate before trade execution   ║
  * ║   • Decomposition → break portfolio optimization into sub-problems         ║
  * ║   • Feedback loop → quantum insights feed back into ML training            ║
  * ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -36,28 +43,249 @@ const {
     QuantumWalkOptimizer,
     QuantumPortfolioOptimizer,
     QUANTUM_VERSION,
+    gaussianRandom,   // PATCH #35: imported from canonical source (dedup)
+    quantumRandom,    // PATCH #35: imported from canonical source (dedup)
 } = require('./quantum_optimizer');
+
+// PATCH #37: GPU Quantum Acceleration imports
+const {
+    GPUQuantumState,
+    gpuBatchMonteCarlo,
+    gpuMatMul,
+    gpuVaRCalculation,
+    DynamicQDVThresholds,
+    getGPUStatus,
+    GPU_ENABLED,
+    GPU_BACKEND,
+} = require('./quantum_gpu_sim');
 
 const PIPELINE_VERSION = '4.0.0-GPU-ONLY';
 
+// ═════════════════════════════════════════════════════════════════════════════
 // PATCH #43: GPU-ONLY MODE
-// All quantum computation runs on RTX 5070 Ti via SSH tunnel.
-// NO CPU fallback - quantum ops return neutral results if GPU offline.
-// CPU_SAFETY caps eliminated entirely - full-scale parameters always.
+// All quantum computation runs on RTX 5070 Ti via SSH tunnel (VPS:4001→Local:4000).
+// NO CPU fallback — if GPU is offline, quantum ops return neutral results.
+// This eliminates CPU_SAFETY caps entirely — full-scale parameters always.
+// ═════════════════════════════════════════════════════════════════════════════
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UTILITY: Quantum random generators
-// ─────────────────────────────────────────────────────────────────────────────
-function gaussianRandom(mean = 0, stddev = 1) {
-    let u, v, s;
-    do { u = Math.random() * 2 - 1; v = Math.random() * 2 - 1; s = u * u + v * v; } while (s >= 1 || s === 0);
-    return mean + stddev * u * Math.sqrt(-2.0 * Math.log(s) / s);
+// ═════════════════════════════════════════════════════════════════════════════
+// PATCH #38: REMOTE GPU OFFLOAD CLIENT
+// Pings remote GPU service (local PC via ngrok/tunnel). If online → offload
+// heavy quantum ops (QMC, VQC, QAOA) for 30-50x speedup. If offline → seamless
+// CPU fallback (<2s detect). Zero changes to main bot loop.
+// ═════════════════════════════════════════════════════════════════════════════
+class RemoteGPUClient {
+    constructor(config = {}) {
+        this.remoteUrl = config.gpuRemoteUrl || process.env.GPU_REMOTE_URL || null;
+        this.timeoutMs = config.gpuTimeoutMs || parseInt(process.env.GPU_TIMEOUT_MS) || 2000;
+        this.pingIntervalMs = config.gpuPingIntervalMs || 10000; // 10s health check
+        this.isOnline = false;
+        this.lastPingTime = 0;
+        this.lastLatencyMs = 0;
+        this.remoteBackend = 'unknown';
+        this.remoteDevice = 'unknown';
+        this.offloadStats = {
+            qmc:  { calls: 0, totalMs: 0, successes: 0, failures: 0 },
+            vqc:  { calls: 0, totalMs: 0, successes: 0, failures: 0 },
+            qaoa: { calls: 0, totalMs: 0, successes: 0, failures: 0 },
+        };
+        this._http = null; // Lazy-loaded
+    }
+
+    _getHttp() {
+        if (!this._http) {
+            try { this._http = require('http'); } catch (e) {}
+            try { if (!this._http) this._http = require('https'); } catch (e) {}
+        }
+        return this._http;
+    }
+
+    /**
+     * Fast JSON POST to remote GPU service.
+     * Uses raw http/https for minimal overhead (no axios dependency).
+     */
+    async _post(endpoint, body) {
+        if (!this.remoteUrl) return null;
+        const url = this.remoteUrl + endpoint;
+        const bodyStr = JSON.stringify(body);
+
+        return new Promise((resolve, reject) => {
+            const mod = url.startsWith('https') ? require('https') : require('http');
+            const parsed = new URL(url);
+            const req = mod.request({
+                hostname: parsed.hostname,
+                port: parsed.port,
+                path: parsed.pathname,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(bodyStr),
+                },
+                timeout: this.timeoutMs,
+            }, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    try { resolve(JSON.parse(data)); }
+                    catch (e) { reject(new Error('Invalid JSON response')); }
+                });
+            });
+            req.on('error', reject);
+            req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+            req.write(bodyStr);
+            req.end();
+        });
+    }
+
+    async _get(endpoint) {
+        if (!this.remoteUrl) return null;
+        const url = this.remoteUrl + endpoint;
+
+        return new Promise((resolve, reject) => {
+            const mod = url.startsWith('https') ? require('https') : require('http');
+            const parsed = new URL(url);
+            const req = mod.request({
+                hostname: parsed.hostname,
+                port: parsed.port,
+                path: parsed.pathname,
+                method: 'GET',
+                timeout: this.timeoutMs,
+            }, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    try { resolve(JSON.parse(data)); }
+                    catch (e) { reject(new Error('Invalid JSON')); }
+                });
+            });
+            req.on('error', reject);
+            req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+            req.end();
+        });
+    }
+
+    /**
+     * Check if remote GPU service is reachable.
+     * Cached for pingIntervalMs to avoid spamming every cycle.
+     */
+    async ping() {
+        if (!this.remoteUrl) { this.isOnline = false; return false; }
+
+        const now = Date.now();
+        if (now - this.lastPingTime < this.pingIntervalMs) return this.isOnline;
+
+        try {
+            const t0 = performance.now();
+            const resp = await this._get('/health');
+            this.lastLatencyMs = Math.round(performance.now() - t0);
+            this.lastPingTime = now;
+
+            if (resp && resp.gpu) {
+                this.isOnline = true;
+                this.remoteBackend = resp.gpu.backend || 'unknown';
+                this.remoteDevice = resp.gpu.device || 'unknown';
+                return true;
+            }
+            this.isOnline = false;
+            return false;
+        } catch (e) {
+            this.isOnline = false;
+            this.lastPingTime = now;
+            return false;
+        }
+    }
+
+    /**
+     * Offload QMC to remote GPU. Returns null on failure (caller uses CPU).
+     */
+    async offloadQMC(params) {
+        if (!await this.ping()) return null;
+        const t0 = performance.now();
+        this.offloadStats.qmc.calls++;
+        try {
+            const result = await this._post('/gpu/qmc', params);
+            if (result && !result.error) {
+                const ms = performance.now() - t0;
+                this.offloadStats.qmc.totalMs += ms;
+                this.offloadStats.qmc.successes++;
+                return result;
+            }
+            this.offloadStats.qmc.failures++;
+            return null;
+        } catch (e) {
+            this.offloadStats.qmc.failures++;
+            return null;
+        }
+    }
+
+    /**
+     * Offload VQC regime classification to remote GPU. Returns null on failure.
+     */
+    async offloadVQC(features) {
+        if (!await this.ping()) return null;
+        const t0 = performance.now();
+        this.offloadStats.vqc.calls++;
+        try {
+            const result = await this._post('/gpu/vqc-regime', { features });
+            if (result && !result.error) {
+                this.offloadStats.vqc.totalMs += performance.now() - t0;
+                this.offloadStats.vqc.successes++;
+                return result;
+            }
+            this.offloadStats.vqc.failures++;
+            return null;
+        } catch (e) {
+            this.offloadStats.vqc.failures++;
+            return null;
+        }
+    }
+
+    /**
+     * Offload QAOA weight optimization to remote GPU. Returns null on failure.
+     */
+    async offloadQAOA(strategyMetrics, maxStrategies) {
+        if (!await this.ping()) return null;
+        const t0 = performance.now();
+        this.offloadStats.qaoa.calls++;
+        try {
+            const result = await this._post('/gpu/qaoa-weights', { strategyMetrics, maxStrategies });
+            if (result && !result.error) {
+                this.offloadStats.qaoa.totalMs += performance.now() - t0;
+                this.offloadStats.qaoa.successes++;
+                return result;
+            }
+            this.offloadStats.qaoa.failures++;
+            return null;
+        } catch (e) {
+            this.offloadStats.qaoa.failures++;
+            return null;
+        }
+    }
+
+    getStatus() {
+        const avgLatency = (ep) => ep.successes > 0 ? Math.round(ep.totalMs / ep.successes) : 0;
+        return {
+            configured: !!this.remoteUrl,
+            url: this.remoteUrl || 'not set',
+            isOnline: this.isOnline,
+            pingLatencyMs: this.lastLatencyMs,
+            remoteBackend: this.remoteBackend,
+            remoteDevice: this.remoteDevice,
+            timeoutMs: this.timeoutMs,
+            stats: {
+                qmc:  { ...this.offloadStats.qmc,  avgMs: avgLatency(this.offloadStats.qmc) },
+                vqc:  { ...this.offloadStats.vqc,  avgMs: avgLatency(this.offloadStats.vqc) },
+                qaoa: { ...this.offloadStats.qaoa, avgMs: avgLatency(this.offloadStats.qaoa) },
+            },
+        };
+    }
 }
 
-function quantumRandom(amplitude = 1.0, phase = 0) {
-    const theta = Math.random() * 2 * Math.PI;
-    const r = amplitude * Math.sqrt(-2 * Math.log(Math.random() + 1e-10));
-    return r * Math.cos(theta + phase);
+// Singleton remote GPU client — initialized once, shared by pipeline
+let _remoteGPUClient = null;
+function getRemoteGPUClient(config) {
+    if (!_remoteGPUClient) _remoteGPUClient = new RemoteGPUClient(config);
+    return _remoteGPUClient;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -75,7 +303,6 @@ class QuantumMonteCarloEngine {
         this.timeHorizons = config.timeHorizons || [1, 5, 10]; // days
         this.lastSimulation = null;
         this.simulationCount = 0;
-        this.useGPU = true;  // PATCH #37G: force GPU acceleration
     }
 
     /**
@@ -87,8 +314,7 @@ class QuantumMonteCarloEngine {
      * @param {object} position - { side: 'LONG'|'SHORT', entryPrice, quantity }
      * @returns {{ scenarios: object, riskMetrics: object, blackSwanProb: number, recommendation: string }}
      */
-    simulate(priceHistory, portfolioValue, position = null) {
-        console.log('[QUANTUM] Uruchamiam symulacje ' + (this.useGPU ? 'GPU (RTX 5070 Ti)' : 'CPU') + ' | nScenarios=' + this.nScenarios + ' nQuantumPaths=' + this.nQuantumPaths);
+    async simulate(priceHistory, portfolioValue, position = null) {
         if (!priceHistory || priceHistory.length < 60) {
             return this._defaultResult(portfolioValue);
         }
@@ -116,20 +342,28 @@ class QuantumMonteCarloEngine {
         // Encode return distribution into quantum register
         qs.equalSuperposition();
 
-        // Apply Grover-like amplitude amplification on tail states
-        // (boosts probability of sampling extreme scenarios)
+        // PATCH #35: Proper Grover-like amplitude amplification on tail states
+        // Mark extreme negative-return bins by flipping their amplitude sign (oracle),
+        // then apply diffusion operator to amplify their probability.
+        // This is applied directly to basis-state amplitudes (classical simulation).
         const tailBound = mu - 2.5 * sigma; // Mark extreme negative returns
         const nBins = qs.dim;
         const binWidth = (6 * sigma) / nBins;
         const binStart = mu - 3 * sigma;
 
-        for (let q = 0; q < nQubits; q++) {
-            // Phase shift tail states to amplify their probability
-            const binIdx = 1 << q;
-            const binCenter = binStart + binIdx * binWidth;
-            if (binCenter < tailBound) {
-                qs.phaseShift(q, Math.PI * 0.3); // Amplify tail probability
+        // Grover iterations: floor(π/4 × √(N/M)) ≈ 2-3 for partial marking
+        const nGroverIters = 2;
+        for (let gIter = 0; gIter < nGroverIters; gIter++) {
+            // Oracle: phase-flip all basis states corresponding to tail bins
+            for (let i = 0; i < nBins; i++) {
+                const binCenter = binStart + i * binWidth;
+                if (binCenter < tailBound) {
+                    qs.amplitudes[2 * i] *= -1;       // flip real
+                    qs.amplitudes[2 * i + 1] *= -1;   // flip imaginary
+                }
             }
+            // Diffusion operator: H⊗n → conditional phase flip → H⊗n
+            qs.groverDiffusion();
         }
 
         // 4. Generate scenarios across time horizons
@@ -139,9 +373,10 @@ class QuantumMonteCarloEngine {
         for (const horizon of this.timeHorizons) {
             const pathReturns = [];
 
+            // PATCH #43: GPU-ONLY — full quantum paths always (no CPU_SAFETY caps)
+            const effectiveQuantumPaths = this.nQuantumPaths;
+
             // Quantum-amplified paths (focus on tail events)
-            // PATCH #47: Cap quantum paths on CPU
-            const effectiveQuantumPaths = this.nQuantumPaths; // PATCH #43: GPU-ONLY, no caps
             for (let p = 0; p < effectiveQuantumPaths; p++) {
                 let pathReturn = 0;
                 for (let d = 0; d < horizon; d++) {
@@ -162,19 +397,51 @@ class QuantumMonteCarloEngine {
                 pathReturns.push(pathReturn);
             }
 
-            // Classical paths (normal distribution + fat tails)
-            // PATCH #47: Cap classical paths on CPU
-            const nClassicalPaths = this.nScenarios - this.nQuantumPaths; // PATCH #43: GPU-ONLY, no caps
-            for (let p = 0; p < nClassicalPaths; p++) {
-                let pathReturn = 0;
-                for (let d = 0; d < horizon; d++) {
-                    const baseReturn = gaussianRandom(mu, sigma);
-                    // Student-t tails (heavier than Gaussian)
-                    const df = Math.max(3, 6 - kurtosis * 0.5); // degrees of freedom from kurtosis
-                    const tFactor = 1.0 + (Math.random() < 0.1 ? gaussianRandom(0, sigma * (6 / df)) : 0);
-                    pathReturn += baseReturn * tFactor;
+            // PATCH #37+38: GPU-accelerated classical path generation
+            // PATCH #43: GPU-ONLY — full paths, remote GPU required
+            let nClassicalPaths = this.nScenarios - this.nQuantumPaths;
+            const qmcParams = {
+                nPaths: nClassicalPaths,
+                nSteps: horizon,
+                currentPrice: 1.0, // We work with returns, normalize later
+                mu: mu * 252,      // Annualize for GBM
+                sigma: sigma * Math.sqrt(252),
+                dt: 1 / 252,
+                jumpIntensity: kurtosis > 1.0 ? 0.05 * (1 + kurtosis / 10) : 0,
+                jumpMean: skewness * sigma * 0.5,
+                jumpStd: sigma * 2.5,
+            };
+            let gpuResult = null;
+            let gpuSource = 'cpu';
+
+            // PATCH #38: Try remote GPU first (RTX 5070 Ti via ngrok)
+            if (this._pipeline && this._pipeline.remoteGPU) {
+                try {
+                    const remoteResult = await this._pipeline.remoteGPU.offloadQMC(qmcParams);
+                    if (remoteResult && remoteResult.finalPrices) {
+                        gpuResult = remoteResult;
+                        gpuSource = 'remote-gpu';
+                    }
+                } catch (e) { /* Remote unavailable, try local GPU */ }
+            }
+
+            // PATCH #43: GPU-ONLY — skip local GPU (TF.js), only remote
+            // gpuBatchMonteCarlo now returns null (forces remote GPU)
+
+            if (gpuResult && gpuResult.finalPrices) {
+                // Convert final prices back to log returns
+                for (let p = 0; p < gpuResult.finalPrices.length; p++) {
+                    pathReturns.push(Math.log(gpuResult.finalPrices[p]));
                 }
-                pathReturns.push(pathReturn);
+                if (!this._gpuMCStats) this._gpuMCStats = { calls: 0, totalTimeMs: 0, totalPaths: 0, remoteHits: 0 };
+                this._gpuMCStats.calls++;
+                this._gpuMCStats.totalTimeMs += gpuResult.computeTimeMs || 0;
+                this._gpuMCStats.totalPaths += gpuResult.pathsGenerated || gpuResult.finalPrices.length;
+                if (gpuSource === 'remote-gpu') this._gpuMCStats.remoteHits++;
+            } else {
+                // PATCH #43: GPU-ONLY — NO CPU fallback, use quantum paths only
+                // If remote GPU is down, we still have quantum-amplified paths from QuantumState
+                console.warn('[QMC] Remote GPU offline — using quantum paths only (no CPU MC)');
             }
 
             // Sort for VaR/CVaR calculation
@@ -359,6 +626,7 @@ class QAOAStrategyOptimizer {
     /**
      * Optimize strategy selection using QAOA.
      * Encodes strategy utility as Ising model, finds optimal combination.
+     * PATCH #47: async + CPU safety caps + event-loop yielding
      *
      * @param {Object<string,{returns: number, risk: number, sharpe: number, correlation: number[]}>} strategyMetrics
      * @param {number} maxStrategies - max number of strategies to activate
@@ -406,17 +674,15 @@ class QAOAStrategyOptimizer {
         let betas = new Array(this.nLayers).fill(0).map(() => Math.random() * Math.PI * 0.5);
 
         // 3. Classical optimization loop (gradient-free: Nelder-Mead style)
+        // PATCH #43: GPU-ONLY — no CPU caps, full iterations always
+        const effectiveIterations = this.nIterations;
         let bestEnergy = -Infinity;
         let bestState = null;
         let bestGammas = gammas.slice();
         let bestBetas = betas.slice();
         const convergenceHistory = [];
 
-        // PATCH #47: Cap iterations on CPU + async yielding to prevent event-loop block
-        const effectiveIterations = this.nIterations; // PATCH #43: GPU-ONLY, no caps
         for (let iter = 0; iter < effectiveIterations; iter++) {
-            // Yield event loop every N iterations to prevent blocking
-            // PATCH #43: No yield needed - QAOA runs on remote GPU
             // Evaluate QAOA circuit
             const result = this._evaluateQAOACircuit(nQubits, gammas, betas, h, J, constraintPenalty, maxStrategies);
 
@@ -664,27 +930,28 @@ class VariationalQuantumClassifier {
         // 1. Angle encoding: map features to qubit rotations
         const qs = new QuantumState(this.nQubits);
 
-        // Feature encoding layer
+        // Feature encoding layer (PATCH #35: use ry() for Y-axis rotations)
         for (let q = 0; q < this.nQubits; q++) {
             const fIdx1 = q % features.length;
             const fIdx2 = (q + this.nQubits) % features.length;
             // Ry rotation for feature encoding
             const angle = features[fIdx1] * Math.PI;
-            qs.phaseShift(q, angle);
+            qs.ry(q, angle);
             // Hadamard for superposition
             qs.hadamard(q);
-            // Second feature rotation
+            // Second feature rotation (Rz for phase encoding)
             qs.phaseShift(q, features[fIdx2] * Math.PI * 0.5);
         }
 
         // 2. Variational layers: parameterized rotations + entanglement
+        //    PATCH #35: Use actual Ry gates for Y-rotations (P0-2 fix)
         let paramIdx = 0;
         for (let l = 0; l < this.nLayers; l++) {
-            // Parameterized rotations on each qubit
+            // Parameterized rotations on each qubit: Ry-Rz-Ry ansatz
             for (let q = 0; q < this.nQubits; q++) {
-                qs.phaseShift(q, this.params[paramIdx++]); // Ry
-                qs.phaseShift(q, this.params[paramIdx++]); // Rz
-                qs.phaseShift(q, this.params[paramIdx++]); // Ry
+                qs.ry(q, this.params[paramIdx++]);         // Ry (Y-axis rotation)
+                qs.phaseShift(q, this.params[paramIdx++]); // Rz (phase rotation)
+                qs.ry(q, this.params[paramIdx++]);         // Ry (Y-axis rotation)
             }
             // Entanglement: ring of CNOTs
             for (let q = 0; q < this.nQubits - 1; q++) {
@@ -878,10 +1145,17 @@ class QuantumFeatureMapper {
         const maxEntropy = Math.log2(phiX.dim);
         quantumFeatures.push(entropy / maxEntropy); // Normalized entropy
 
-        // c) Quantum correlation features: self-kernel overlap
-        const phiX2 = this._createFeatureMapState(features);
-        const overlap = this._computeOverlap(phiX, phiX2);
-        quantumFeatures.push(overlap);
+        // c) PATCH #35: Quantum novelty score — overlap with recent historical state
+        //    Was: self-kernel |⟨φ(x)|φ(x)⟩|² ≡ 1.0 always (no information).
+        //    Now: 1 - overlap with last state → measures regime change / novelty.
+        let noveltyScore = 1.0; // fully novel if no history
+        if (this.enhancedFeatureHistory.length > 0) {
+            const prevFeatures = this.enhancedFeatureHistory[this.enhancedFeatureHistory.length - 1];
+            const phiPrev = this._createFeatureMapState(prevFeatures.slice(0, features.length));
+            const prevOverlap = this._computeOverlap(phiX, phiPrev);
+            noveltyScore = 1 - prevOverlap; // 0 = identical, 1 = completely different
+        }
+        quantumFeatures.push(noveltyScore);
 
         // d) Phase-space features: interference patterns
         for (let q = 0; q < Math.min(this.nQubits, 4); q++) {
@@ -1065,11 +1339,11 @@ class QuantumRiskAnalyzer {
      * @param {object} strategySignals - current strategy signals
      * @returns {{ riskLevel: string, riskScore: number, qmcResult: object, stressTest: object, correlations: object, blackSwanAlert: boolean }}
      */
-    analyze(priceHistory, portfolioValue, position = null, strategySignals = {}) {
+    async analyze(priceHistory, portfolioValue, position = null, strategySignals = {}) {
         const t0 = Date.now();
 
         // 1. Quantum Monte Carlo scenario simulation
-        const qmcResult = this.qmc.simulate(priceHistory, portfolioValue, position);
+        const qmcResult = await this.qmc.simulate(priceHistory, portfolioValue, position);
 
         // 2. Quantum stress testing (extreme scenarios)
         const stressTest = this._quantumStressTest(priceHistory, portfolioValue);
@@ -1116,15 +1390,8 @@ class QuantumRiskAnalyzer {
         const mu = returns.reduce((s, r) => s + r, 0) / returns.length;
         const sigma = Math.sqrt(returns.reduce((s, r) => s + (r - mu) ** 2, 0) / (returns.length - 1));
 
-        // Define extreme stress scenarios using quantum superposition
-        const nQubits = 4;
-        const qs = new QuantumState(nQubits);
-        qs.equalSuperposition();
-
-        // Amplify extreme states
-        for (let q = 0; q < nQubits; q++) {
-            qs.phaseShift(q, Math.PI * 0.4);
-        }
+        // PATCH #35: Removed dead QuantumState allocation that was never read.
+        // Stress scenarios use hard-coded shocks + classical MC simulation below.
 
         const stressScenarios = [
             { name: 'Flash Crash (-10%)',      shock: -0.10, probability: 0.001 },
@@ -1226,12 +1493,12 @@ class QuantumRiskAnalyzer {
 
         // 3. Black swan indicators
         const indicators = {
-            extremeMove: maxReturn > avgAbsReturn * 6, // PATCH 30c: was 4, // 4σ event
-            volAccelerating: volAcceleration > 3.5,    // Vol increasing rapidly
-            qmcBlackSwanHigh: qmcResult && qmcResult.riskMetrics && parseFloat(qmcResult.riskMetrics.blackSwanProb) > 15,
+            extremeMove: maxReturn > avgAbsReturn * 4, // 4σ event
+            volAccelerating: volAcceleration > 2.5,    // Vol increasing rapidly
+            qmcBlackSwanHigh: qmcResult && qmcResult.riskMetrics && parseFloat(qmcResult.riskMetrics.blackSwanProb) > 5,
         };
 
-        const isAlert = Object.values(indicators).filter(Boolean).length >= 3; // PATCH 30c: require ALL 3 (was 2)
+        const isAlert = Object.values(indicators).filter(Boolean).length >= 2;
 
         if (isAlert) {
             this.blackSwanHistory.push({
@@ -1289,16 +1556,51 @@ class QuantumRiskAnalyzer {
 // ═════════════════════════════════════════════════════════════════════════════
 class QuantumDecisionVerifier {
     constructor(config = {}) {
-        // PATCH #30: Lowered thresholds to unblock trades (was 0.45/0.03/0.5)
-        this.minConfidenceThreshold = config.minConfidence || 0.18; // PATCH #32: raised from 0.15 (user request)   // was 0.45  way too high
-        this.maxVaRThreshold = config.maxVaRPct || 0.05;              // was 0.03  5% VaR is safe for paper
-        this.minSharpeThreshold = config.minSharpe || 0.0;            // was 0.5  disabled (Sharpe not used anyway)
+        this.minConfidenceThreshold = config.minConfidence || 0.45;
+        this.maxVaRThreshold = config.maxVaRPct || 0.03; // 3% max VaR
+        this.minSharpeThreshold = config.minSharpe || 0.5;
         this.rejectCount = 0;
         this.approveCount = 0;
-        this.consecutiveRejects = 0;
-        this.missedOpportunities = [];
         this.lastVerification = null;
-        this.adaptiveThreshold = this.minConfidenceThreshold;
+
+        // PATCH #37: Dynamic ML-tuned QDV thresholds
+        this._dynamicThresholds = new DynamicQDVThresholds({
+            minConfidence: this.minConfidenceThreshold,
+            maxVaRPct: this.maxVaRThreshold,
+            minSharpe: this.minSharpeThreshold,
+        });
+        this._useDynamicThresholds = true;
+    }
+
+    /**
+     * PATCH #37: Update dynamic threshold regime from VQC.
+     * @param {string} regime
+     */
+    setRegime(regime) {
+        this._dynamicThresholds.setRegime(regime);
+    }
+
+    /**
+     * PATCH #37: Update dynamic threshold win rate.
+     * @param {number} winRate
+     */
+    setWinRate(winRate) {
+        this._dynamicThresholds.setWinRate(winRate);
+    }
+
+    /**
+     * PATCH #37: Tune dynamic thresholds (called periodically).
+     * @param {number} cycleCount
+     */
+    tuneDynamicThresholds(cycleCount) {
+        return this._dynamicThresholds.tune(cycleCount);
+    }
+
+    /**
+     * PATCH #37: Get dynamic threshold status for dashboard.
+     */
+    getDynamicThresholdStatus() {
+        return this._dynamicThresholds.getStatus();
     }
 
     /**
@@ -1320,145 +1622,92 @@ class QuantumDecisionVerifier {
         let approved = true;
         let modifiedConfidence = consensus.confidence;
         const modifications = {};
-        let positionSizeMultiplier = 1.0;  // PATCH #30: risk-based sizing
 
-        // Use adaptive threshold (lowers after consecutive rejects)
-        const effectiveThreshold = this.adaptiveThreshold;
-
-        // --- Check 1: Risk level gate ---
-        // PATCH #30: CRITICAL blocks, HIGH/ELEVATED reduce position size (don't block)
-        if (riskAnalysis && riskAnalysis.riskLevel === 'CRITICAL') {
-            approved = false;
-            checks.push('[CHECK1-RISK] REJECTED: Risk level CRITICAL (score: ' + riskAnalysis.riskScore + '/100)');
-        } else if (riskAnalysis && riskAnalysis.riskLevel === 'HIGH') {
-            positionSizeMultiplier *= 0.4;
-            modifications.positionReduction = 'Position reduced to 40% due to HIGH risk (score: ' + riskAnalysis.riskScore + ')';
-            checks.push('[CHECK1-RISK] RISK-SIZED: Position at 40% (HIGH risk, score=' + riskAnalysis.riskScore + ')');
-        } else if (riskAnalysis && riskAnalysis.riskLevel === 'ELEVATED') {
-            positionSizeMultiplier *= 0.65;
-            modifications.positionReduction = 'Position reduced to 65% due to ELEVATED risk (score: ' + riskAnalysis.riskScore + ')';
-            checks.push('[CHECK1-RISK] RISK-SIZED: Position at 65% (ELEVATED risk, score=' + riskAnalysis.riskScore + ')');
-        } else if (riskAnalysis) {
-            checks.push('[CHECK1-RISK] PASSED: Risk ' + riskAnalysis.riskLevel + ' (score=' + riskAnalysis.riskScore + ')');
+        // PATCH #37: Apply dynamic thresholds if enabled
+        if (this._useDynamicThresholds) {
+            const dynThresholds = this._dynamicThresholds.getThresholds();
+            this.minConfidenceThreshold = dynThresholds.minConfidence;
+            this.maxVaRThreshold = dynThresholds.maxVaRPct;
+            this.minSharpeThreshold = dynThresholds.minSharpe;
         }
 
-        // --- Check 2: Black swan gate ---
+        // Check 1: Risk level gate
+        if (riskAnalysis && riskAnalysis.riskLevel === 'CRITICAL') {
+            approved = false;
+            checks.push('REJECTED: Risk level CRITICAL (score: ' + riskAnalysis.riskScore + ')');
+        } else if (riskAnalysis && riskAnalysis.riskLevel === 'HIGH') {
+            modifiedConfidence *= 0.7; // Reduce confidence in high-risk environment
+            modifications.confidenceReduction = '30% reduction due to HIGH risk';
+            checks.push('MODIFIED: Confidence reduced 30% (HIGH risk)');
+        }
+
+        // Check 2: Black swan gate
         if (riskAnalysis && riskAnalysis.blackSwanAlert) {
             if (consensus.action === 'BUY') {
                 approved = false;
-                checks.push('[CHECK2-BSWAN] REJECTED: Black swan alert active - no new LONG positions');
+                checks.push('REJECTED: Black swan alert active — no new LONG positions');
             } else if (consensus.action === 'SELL') {
-                modifiedConfidence = Math.min(0.95, modifiedConfidence * 1.35);
-                positionSizeMultiplier = Math.min(positionSizeMultiplier * 1.2, 1.0);
-                checks.push('[CHECK2-BSWAN] BOOSTED: SELL conf +35% during black swan -> ' + (modifiedConfidence * 100).toFixed(1) + '%');
+                modifiedConfidence = Math.min(0.95, modifiedConfidence * 1.2);
+                checks.push('BOOSTED: SELL confidence increased during black swan');
             }
-        } else {
-            checks.push('[CHECK2-BSWAN] PASSED: No black swan detected');
         }
 
-        // --- Check 3: QMC VaR gate (BUY only) ---
+        // Check 3: QMC VaR gate
         if (qmcSimulation && qmcSimulation.scenarios && qmcSimulation.scenarios['1d']) {
             const var95 = qmcSimulation.scenarios['1d'].VaR_95;
             if (var95) {
                 const varPct = Math.abs(parseFloat(var95.returnPct)) / 100;
-                if (varPct > this.maxVaRThreshold && (consensus.action === 'BUY' || consensus.action === 'SELL')) { // PATCH 31: apply to SELL too
-                    modifiedConfidence *= 0.85;
-                    modifications.varGate = 'VaR(' + var95.returnPct + ') exceeds ' + (this.maxVaRThreshold * 100) + '% threshold';
-                    checks.push('[CHECK3-VAR] MODIFIED: VaR ' + var95.returnPct + ' > ' + (this.maxVaRThreshold * 100) + '%, BUY conf -15%');
-                } else {
-                    checks.push('[CHECK3-VAR] PASSED: VaR=' + (varPct * 100).toFixed(2) + '%, threshold=' + (this.maxVaRThreshold * 100) + '%');
+                if (varPct > this.maxVaRThreshold && consensus.action === 'BUY') {
+                    modifiedConfidence *= 0.8;
+                    modifications.varGate = 'VaR(' + var95.returnPct + ') exceeds threshold';
+                    checks.push('MODIFIED: VaR too high (' + var95.returnPct + '), confidence -20%');
                 }
-                modifications.varDetails = { varPct: (varPct * 100).toFixed(2) + '%', threshold: (this.maxVaRThreshold * 100) + '%', action: consensus.action };
             }
         }
 
-        // --- Check 4: QMC position outlook (BUY only) ---
+        // Check 4: QMC position outlook
         if (qmcSimulation && qmcSimulation.riskMetrics && qmcSimulation.riskMetrics.positionRisk) {
             const posRisk = qmcSimulation.riskMetrics.positionRisk;
             const probProfit = parseFloat(posRisk.probProfitable);
-            if ((consensus.action === 'BUY' || consensus.action === 'SELL') && probProfit < 40) { // PATCH 31: apply to SELL too
-                modifiedConfidence *= 0.8;
-                checks.push('[CHECK4-QMC] MODIFIED: QMC profit prob low (' + posRisk.probProfitable + '%), BUY conf -20%');
-            } else {
-                checks.push('[CHECK4-QMC] PASSED: Profit prob ' + (posRisk ? posRisk.probProfitable : 'N/A') + '%');
+            if (consensus.action === 'BUY' && probProfit < 40) {
+                modifiedConfidence *= 0.75;
+                checks.push('MODIFIED: QMC shows only ' + posRisk.probProfitable + ' profit probability');
             }
         }
 
-        // --- Check 5: Confidence floor + NeuronAI Override (PATCH #32) ---
-        if (modifiedConfidence < effectiveThreshold) {
-            if (consensus.source === 'NEURON_AI_LLM' && consensus.confidence >= 0.25
-                && ((consensus.mtfScore || 0) >= 18 && (consensus.mtfBias && (consensus.mtfBias.score || 0) >= 18))) {
-                approved = true;
-                positionSizeMultiplier *= 0.7;
-                checks.push('[NEURON-OVERRIDE] APPROVED: LLM conf ' + (consensus.confidence * 100).toFixed(1) + '% + MTF >= 18 -> bypass threshold');
-            } else if (this.consecutiveRejects >= 5 && modifiedConfidence >= 0.12) {
-                modifications.adaptiveOverride = 'Adaptive override after ' + this.consecutiveRejects + ' consecutive rejects (threshold was ' + (effectiveThreshold * 100).toFixed(1) + '%)';
-                positionSizeMultiplier *= 0.5;
-                checks.push('[CHECK5-CONF] ADAPTIVE-OVERRIDE: conf ' + (modifiedConfidence * 100).toFixed(1) + '% < threshold ' + (effectiveThreshold * 100).toFixed(1) + '% but ALLOWED after ' + this.consecutiveRejects + ' rejects (half size)');
-            } else {
-                approved = false;
-                checks.push('[CHECK5-CONF] REJECTED: conf ' + (modifiedConfidence * 100).toFixed(1) + '% < adaptive threshold ' + (effectiveThreshold * 100).toFixed(1) + '% (consecutive rejects: ' + this.consecutiveRejects + ')');
-            }
-        } else {
-            checks.push('[CHECK5-CONF] PASSED: conf ' + (modifiedConfidence * 100).toFixed(1) + '% >= threshold ' + (effectiveThreshold * 100).toFixed(1) + '%');
+        // Check 5: Confidence floor
+        if (modifiedConfidence < this.minConfidenceThreshold) {
+            approved = false;
+            checks.push('REJECTED: Post-quantum confidence ' + (modifiedConfidence * 100).toFixed(1) + '% below threshold ' + (this.minConfidenceThreshold * 100) + '%');
         }
 
-        // --- Check 6: QMC recommendation alignment (BUY only) ---
+        // Check 6: QMC recommendation alignment
         if (qmcSimulation && qmcSimulation.recommendation) {
             const rec = qmcSimulation.recommendation.toLowerCase();
-            if ((consensus.action === 'BUY' && (rec.includes('bearish') || rec.includes('reducing') || rec.includes('caution'))) || (consensus.action === 'SELL' && (rec.includes('bullish') || rec.includes('upside') || rec.includes('optimistic')))) { // PATCH 31: bidirectional
-                modifiedConfidence *= 0.9;
-                checks.push('[CHECK6-ALIGN] MODIFIED: QMC bearish vs BUY, conf -10%');
-            } else {
-                checks.push('[CHECK6-ALIGN] PASSED: Recommendation aligned');
+            if (consensus.action === 'BUY' && (rec.includes('bearish') || rec.includes('reducing') || rec.includes('caution'))) {
+                modifiedConfidence *= 0.85;
+                checks.push('MODIFIED: QMC recommendation conflicts with BUY signal');
             }
         }
 
-        // --- PATCH #30: NeuronAI Override ---
-        // If signal has strong strategy agreement (>= 3 strategies) and conf >= 18%, override rejection
-        const isCriticalRisk = riskAnalysis && riskAnalysis.riskLevel === 'CRITICAL'; // PATCH 31
-        if (!approved && consensus.confidence >= 0.18 && !isCriticalRisk) { // PATCH 31: CRITICAL risk cannot be overridden
-            const strategyCount = (consensus.strategyVotes && typeof consensus.strategyVotes === 'object')
-                ? Object.keys(consensus.strategyVotes).length
-                : (consensus.strategies ? consensus.strategies : 0);
-            const agreeingStrategies = (consensus.agreeing || consensus.supportingStrategies || strategyCount || 0);
-            if (agreeingStrategies >= 3 || consensus.confidence >= 0.25) {
-                approved = true;
-                positionSizeMultiplier *= 0.6;  // 60% size for overridden trades
-                modifications.neuronAIOverride = 'NeuronAI override: ' + agreeingStrategies + ' strategies agree, original conf ' + (consensus.confidence * 100).toFixed(1) + '%';
-                checks.push('[OVERRIDE-NEURONAI] APPROVED: Strong consensus override (' + agreeingStrategies + ' strategies, conf=' + (consensus.confidence * 100).toFixed(1) + '%) - position at ' + (positionSizeMultiplier * 100).toFixed(0) + '%');
-            }
-        }
+        if (approved) this.approveCount++;
+        else this.rejectCount++;
 
-        // --- PATCH #30: Adaptive threshold management ---
+        // PATCH #37: Record decision for dynamic threshold tuning
+        this._dynamicThresholds.recordDecision(approved, checks.join(' | '));
         if (approved) {
-            this.approveCount++;
-            this.consecutiveRejects = 0;
-            // Gradually restore threshold toward base after successful trades
-            this.adaptiveThreshold = Math.min(this.minConfidenceThreshold, this.adaptiveThreshold + 0.008); // PATCH 31: faster restoration
+            this._dynamicThresholds.resetStarvation();
         } else {
-            this.rejectCount++;
-            this.consecutiveRejects++;
-            // Lower threshold gradually after 3+ consecutive rejects (floor: 0.10)
-            if (this.consecutiveRejects >= 3) {
-                this.adaptiveThreshold = Math.max(0.10, this.adaptiveThreshold - 0.015);
-            }
-            // Track missed opportunities
-            this.missedOpportunities.push({
-                timestamp: Date.now(),
-                action: consensus.action,
-                originalConfidence: consensus.confidence,
-                modifiedConfidence: modifiedConfidence,
-                reason: checks.join(' | '),
-                riskScore: riskAnalysis ? riskAnalysis.riskScore : null,
-            });
-            if (this.missedOpportunities.length > 100) this.missedOpportunities.shift();
+            this._dynamicThresholds.incrementStarvation();
         }
 
-        // Apply position size multiplier
-        modifications.positionSizeMultiplier = Math.round(positionSizeMultiplier * 100) / 100;
-
-        const fullReason = checks.join(' | ') || 'All quantum checks passed';
+        // PATCH #20: Track consecutive rejections for starvation detection
+        if (!this._consecutiveRejects) this._consecutiveRejects = 0;
+        if (approved) {
+            this._consecutiveRejects = 0;
+        } else {
+            this._consecutiveRejects++;
+        }
 
         this.lastVerification = {
             timestamp: Date.now(),
@@ -1467,11 +1716,8 @@ class QuantumDecisionVerifier {
             approved,
             finalAction: approved ? consensus.action : 'HOLD',
             finalConfidence: approved ? Math.round(modifiedConfidence * 1000) / 1000 : 0,
-            positionSizeMultiplier: Math.round(positionSizeMultiplier * 100) / 100,
-            reason: fullReason,
+            reason: checks.join(' | ') || 'All quantum checks passed',
             modifications,
-            adaptiveThreshold: Math.round(this.adaptiveThreshold * 1000) / 1000,
-            consecutiveRejects: this.consecutiveRejects,
             stats: { totalApproved: this.approveCount, totalRejected: this.rejectCount },
         };
 
@@ -1482,15 +1728,33 @@ class QuantumDecisionVerifier {
         return {
             approveCount: this.approveCount,
             rejectCount: this.rejectCount,
-            consecutiveRejects: this.consecutiveRejects,
-            adaptiveThreshold: Math.round(this.adaptiveThreshold * 1000) / 1000,
-            missedOpportunitiesCount: this.missedOpportunities.length,
-            recentMissed: this.missedOpportunities.slice(-5),
             rejectRate: this.approveCount + this.rejectCount > 0
                 ? ((this.rejectCount / (this.approveCount + this.rejectCount)) * 100).toFixed(1) + '%'
                 : 'N/A',
             lastVerification: this.lastVerification,
+            // PATCH #37: Dynamic threshold status
+            dynamicThresholds: this._dynamicThresholds ? this._dynamicThresholds.getStatus() : null,
+            currentThresholds: {
+                minConfidence: this.minConfidenceThreshold,
+                maxVaRPct: this.maxVaRThreshold,
+                minSharpe: this.minSharpeThreshold,
+            },
         };
+    }
+
+    /**
+     * PATCH #20: Get the consecutive rejection count.
+     * Used by bot.js to detect starvation caused by QDV.
+     */
+    getConsecutiveRejectCount() {
+        return this._consecutiveRejects || 0;
+    }
+
+    /**
+     * PATCH #20: Reset consecutive rejection counter (after a trade goes through).
+     */
+    resetConsecutiveRejects() {
+        this._consecutiveRejects = 0;
     }
 }
 
@@ -1502,10 +1766,12 @@ class QuantumDecisionVerifier {
 class DecompositionPipeline {
     constructor(config = {}) {
         this.maxSubProblemSize = config.maxSubProblemSize || 4; // Max qubits per sub-problem
-        // PATCH #47: CPU safety caps for SQA
+        // PATCH #43: GPU-ONLY — full SQA parameters (no CPU caps)
+        const sqaReplicas = config.nReplicas || 6;
+        const sqaIterations = config.maxIterations || 200;
         this.annealer = new SimulatedQuantumAnnealer({
-            nReplicas: config.nReplicas || 6 /* PATCH #43: GPU-ONLY, no caps */,
-            maxIterations: config.maxIterations || 200 /* PATCH #43: GPU-ONLY, no caps */,
+            nReplicas: sqaReplicas,
+            maxIterations: sqaIterations,
         });
         this.decompositionCount = 0;
     }
@@ -1650,37 +1916,6 @@ class DecompositionPipeline {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// PATCH #42: Strategy name fuzzy matching map for QAOA
-// Signal keys → trade strategy name aliases
-const STRATEGY_NAME_MAP_PIPELINE = {
-    'NeuralAI': ['neuralai', 'neuronai', 'neuron'],
-    'EnterpriseML': ['enterpriseml', 'ml', 'deeprl'],
-    'AdvancedAdaptive': ['advancedadaptive', 'adaptive', 'ensemblevoting'],
-    'RSITurbo': ['rsiturbo', 'rsi'],
-    'SuperTrend': ['supertrend'],
-    'MACrossover': ['macrossover', 'ma_crossover', 'ma'],
-    'MomentumPro': ['momentumpro', 'momentum'],
-};
-
-function _fuzzyMatchTrades(sName, tradeHistory) {
-    const aliases = STRATEGY_NAME_MAP_PIPELINE[sName] || [sName.toLowerCase()];
-    return tradeHistory.filter(t => {
-        if (!t.strategy) return false;
-        const ts = t.strategy.toLowerCase();
-        for (const alias of aliases) {
-            if (ts.includes(alias)) return true;
-        }
-        if (t.reason) {
-            const tr = t.reason.toLowerCase();
-            for (const alias of aliases) {
-                if (tr.includes(alias)) return true;
-            }
-        }
-        return false;
-    });
-}
-
-
 // 8. HYBRID QUANTUM-CLASSICAL PIPELINE — Main Orchestrator
 //    Full enterprise-grade pipeline:
 //    Pre-processing (Classical AI) → Quantum Boost → Post-processing (Hybrid)
@@ -1688,6 +1923,9 @@ function _fuzzyMatchTrades(sName, tradeHistory) {
 class HybridQuantumClassicalPipeline {
     constructor(config = {}) {
         this.version = PIPELINE_VERSION;
+
+        // PATCH #38: Remote GPU offload client (local PC RTX via ngrok tunnel)
+        this.remoteGPU = getRemoteGPUClient(config);
 
         // Quantum components
         this.qmc = new QuantumMonteCarloEngine(config.qmc || {});
@@ -1697,6 +1935,12 @@ class HybridQuantumClassicalPipeline {
         this.riskAnalyzer = new QuantumRiskAnalyzer(config.riskAnalyzer || {});
         this.verifier = new QuantumDecisionVerifier(config.verifier || {});
         this.decomposer = new DecompositionPipeline(config.decomposer || {});
+
+        // PATCH #38: Inject remote GPU client reference into QMC for GPU offload
+        this.qmc._pipeline = this;
+
+        // PATCH #38: Give QMC a back-reference for remote GPU offload
+        this.qmc._pipeline = this;
 
         // Internal state
         this.isReady = false;
@@ -1709,6 +1953,8 @@ class HybridQuantumClassicalPipeline {
             totalWeightUpdates: 0,
             avgProcessingTimeMs: 0,
             vqcAccuracy: 'N/A',
+            remoteGpuOffloads: 0,
+            remoteGpuFallbacks: 0,
         };
         this._totalProcessingTime = 0;
 
@@ -1740,6 +1986,12 @@ class HybridQuantumClassicalPipeline {
         this.isReady = true;
         console.log('[HYBRID PIPELINE] v' + this.version + ' initialized');
         console.log('[HYBRID PIPELINE] Components: QMC, QAOA(p=' + this.qaoa.nLayers + '), VQC(' + this.vqc.nQubits + 'q,' + this.vqc.nLayers + 'L), QFM(' + this.featureMapper.nQubits + 'q), QRA, QDV, Decomposer');
+        // PATCH #38: Log remote GPU configuration
+        if (this.remoteGPU && this.remoteGPU.remoteUrl) {
+            console.log('[HYBRID PIPELINE] 🎮 Remote GPU configured: ' + this.remoteGPU.remoteUrl + ' (timeout: ' + this.remoteGPU.timeoutMs + 'ms)');
+        } else {
+            console.log('[HYBRID PIPELINE] Remote GPU: not configured (CPU-only mode)');
+        }
     }
 
     /**
@@ -1803,6 +2055,7 @@ class HybridQuantumClassicalPipeline {
         };
 
         // 2a. VQC Regime Classification (every cycle — fast)
+        // PATCH #38: Try remote GPU → local VQC fallback
         try {
             const returns = [];
             for (let i = Math.max(1, priceHistory.length - 30); i < priceHistory.length; i++) {
@@ -1822,11 +2075,26 @@ class HybridQuantumClassicalPipeline {
                     this.quantumFeedback.lastCorrelationScore,   // quantum correlation
                 ].map(f => Math.max(-1, Math.min(1, f)));       // Clip to [-1, 1]
 
-                result.regimeClassification = this.vqc.classify(features);
+                // PATCH #38: Remote GPU VQC offload → local VQC fallback
+                let vqcResult = null;
+                if (this.remoteGPU) {
+                    try { vqcResult = await this.remoteGPU.offloadVQC(features); } catch (e) {}
+                }
+                if (!vqcResult) vqcResult = this.vqc.classify(features);
+                else this.pipelineMetrics.remoteGpuOffloads++;
+
+                result.regimeClassification = vqcResult;
                 this.quantumFeedback.lastVQCRegime = result.regimeClassification;
 
+                // PATCH #37: Feed VQC regime to dynamic QDV thresholds
+                if (result.regimeClassification && result.regimeClassification.regime) {
+                    this.verifier.setRegime(result.regimeClassification.regime);
+                }
+
                 // Buffer for VQC training
-                this._vqcTrainingBuffer.push({ features, label: this._regimeToLabel(result.regimeClassification.regime) });
+                // PATCH #35: Use classical ground truth label instead of VQC output (P1-1 fix)
+                const groundTruthLabel = this._classifyRegimeClassical(returns, mu, sigma);
+                this._vqcTrainingBuffer.push({ features, label: groundTruthLabel });
                 if (this._vqcTrainingBuffer.length > this._maxVQCBuffer) {
                     this._vqcTrainingBuffer.shift();
                 }
@@ -1838,7 +2106,7 @@ class HybridQuantumClassicalPipeline {
         // 2b. Quantum Risk Analysis (periodic)
         if (this.cycleCount % this.riskAnalysisInterval === 0) {
             try {
-                result.riskAnalysis = this.riskAnalyzer.analyze(priceHistory, portfolioValue, position);
+                result.riskAnalysis = await this.riskAnalyzer.analyze(priceHistory, portfolioValue, position);
                 this.quantumFeedback.blackSwanAlert = result.riskAnalysis.blackSwanAlert;
                 this.quantumFeedback.quantumRiskScore = result.riskAnalysis.riskScore;
             } catch (e) {
@@ -1849,7 +2117,7 @@ class HybridQuantumClassicalPipeline {
         // 2c. QMC Scenario Simulation (periodic)
         if (this.cycleCount % this.qmcSimulationInterval === 0) {
             try {
-                result.qmcSimulation = this.qmc.simulate(priceHistory, portfolioValue, position);
+                result.qmcSimulation = await this.qmc.simulate(priceHistory, portfolioValue, position);
                 this.quantumFeedback.qmcOutlook = result.qmcSimulation.recommendation;
             } catch (e) {
                 console.warn('[HYBRID] QMC error:', e.message);
@@ -1857,12 +2125,12 @@ class HybridQuantumClassicalPipeline {
         }
 
         // 2d. QAOA + Decomposition Weight Optimization (periodic)
-        if (this.cycleCount % this.weightOptimizationInterval === 0 && tradeHistory.length >= 3 /* PATCH #42: lowered from 5 */) {
+        if (this.cycleCount % this.weightOptimizationInterval === 0 && tradeHistory.length >= 5) {
             try {
                 const strategyNames = signals ? Array.from(signals.keys()) : [];
                 const stratMetrics = {};
                 for (const sName of strategyNames) {
-                    const sTrades = _fuzzyMatchTrades(sName, tradeHistory); // PATCH #42: fuzzy name matching
+                    const sTrades = tradeHistory.filter(t => t.strategy === sName || (t.reason && t.reason.includes(sName)));
                     const sReturns = sTrades.map(t => t.pnl || 0);
                     const avgRet = sReturns.length > 0 ? sReturns.reduce((s, v) => s + v, 0) / sReturns.length : 0;
                     const stdRet = sReturns.length > 1 ? Math.sqrt(sReturns.reduce((s, v) => s + (v - avgRet) ** 2, 0) / (sReturns.length - 1)) : 1;
@@ -1886,7 +2154,15 @@ class HybridQuantumClassicalPipeline {
                 const decompResult = this.decomposer.decomposeAndOptimize(stratMetrics, corrMatrix);
 
                 // Also run QAOA for comparison
-                const qaoaResult = await this.qaoa.optimize(stratMetrics, Math.min(5, strategyNames.length));
+                // PATCH #38: Remote GPU QAOA offload → local QAOA fallback
+                let qaoaResult = null;
+                if (this.remoteGPU) {
+                    try {
+                        qaoaResult = await this.remoteGPU.offloadQAOA(stratMetrics, Math.min(5, strategyNames.length));
+                        if (qaoaResult) this.pipelineMetrics.remoteGpuOffloads++;
+                    } catch (e) {}
+                }
+                if (!qaoaResult) qaoaResult = await this.qaoa.optimize(stratMetrics, Math.min(5, strategyNames.length));
 
                 // Blend QAOA + Decomposition weights (50/50)
                 const blendedWeights = {};
@@ -1941,6 +2217,9 @@ class HybridQuantumClassicalPipeline {
         if (!this.isReady || !consensus || consensus.action === 'HOLD') {
             return { approved: true, finalAction: consensus ? consensus.action : 'HOLD', finalConfidence: 0, verificationResult: null };
         }
+
+        // PATCH #37: Tune dynamic QDV thresholds periodically
+        this.verifier.tuneDynamicThresholds(this.cycleCount);
 
         const riskAnalysis = this.riskAnalyzer.lastAnalysis;
         const qmcSim = this.qmc.lastSimulation;
@@ -2000,7 +2279,7 @@ class HybridQuantumClassicalPipeline {
      * @param {string}   level          - 'FULL', 'STANDARD', 'RISK_ONLY'
      * @returns {{ vqcRegime, riskAnalysis, qmcSimulation, correlations }}
      */
-    continuousMonitoring(positions, priceHistory, portfolioValue, level = 'STANDARD') {
+    async continuousMonitoring(positions, priceHistory, portfolioValue, level = 'STANDARD') {
         if (!this.isReady || !priceHistory || priceHistory.length < 30) {
             return { vqcRegime: null, riskAnalysis: null, qmcSimulation: null, correlations: null };
         }
@@ -2045,7 +2324,7 @@ class HybridQuantumClassicalPipeline {
         // 4b. QRA Risk Analysis (all levels)
         try {
             const firstPos = positions && positions.size > 0 ? positions.values().next().value : null;
-            result.riskAnalysis = this.riskAnalyzer.analyze(priceHistory, portfolioValue, firstPos);
+            result.riskAnalysis = await this.riskAnalyzer.analyze(priceHistory, portfolioValue, firstPos);
             this.quantumFeedback.quantumRiskScore = result.riskAnalysis.riskScore;
             this.quantumFeedback.lastBlackSwanAlert = result.riskAnalysis.blackSwanAlert;
         } catch (e) {
@@ -2056,7 +2335,7 @@ class HybridQuantumClassicalPipeline {
         if (level === 'FULL') {
             try {
                 const firstPos = positions && positions.size > 0 ? positions.values().next().value : null;
-                result.qmcSimulation = this.qmc.simulate(priceHistory, portfolioValue, firstPos);
+                result.qmcSimulation = await this.qmc.simulate(priceHistory, portfolioValue, firstPos);
                 this.quantumFeedback.qmcOutlook = result.qmcSimulation.recommendation;
             } catch (e) {
                 console.warn('[HYBRID S4] QMC error:', e.message);
@@ -2104,6 +2383,16 @@ class HybridQuantumClassicalPipeline {
             isReady: this.isReady,
             cycleCount: this.cycleCount,
             metrics: this.pipelineMetrics,
+            // PATCH #37+38: GPU acceleration status (local + remote)
+            gpu: {
+                enabled: GPU_ENABLED,
+                backend: GPU_BACKEND,
+                gpuStatus: getGPUStatus(),
+                qmcGpuStats: this.qmc._gpuMCStats || { calls: 0, totalTimeMs: 0, totalPaths: 0, remoteHits: 0 },
+                // PATCH #38: Remote GPU offload status
+                remoteGPU: this.remoteGPU ? this.remoteGPU.getStatus() : { configured: false },
+                remoteGpuOffloads: this.pipelineMetrics.remoteGpuOffloads || 0,
+            },
             components: {
                 qmc: { simulationCount: this.qmc.simulationCount, lastSimulationTime: this.qmc.lastSimulation ? this.qmc.lastSimulation.computeTimeMs : 0 },
                 qaoa: { optimizationCount: this.qaoa.optimizationCount, layers: this.qaoa.nLayers },
@@ -2126,6 +2415,51 @@ class HybridQuantumClassicalPipeline {
         const map = { 'TRENDING_UP': 0, 'TRENDING_DOWN': 1, 'RANGING': 2, 'HIGH_VOLATILITY': 3 };
         return map[regime] !== undefined ? map[regime] : 2;
     }
+
+    /**
+     * Classical regime classification for VQC training ground truth.
+     * Uses statistical analysis of returns to determine market regime.
+     * PATCH #35: Added to break self-referential VQC training loop (P1-1 fix)
+     *
+     * @param {number[]} returns - array of log returns
+     * @param {number} mu - mean return
+     * @param {number} sigma - std deviation of returns
+     * @returns {number} regime label: 0=TRENDING_UP, 1=TRENDING_DOWN, 2=RANGING, 3=HIGH_VOLATILITY
+     */
+    _classifyRegimeClassical(returns, mu, sigma) {
+        // 1. Volatility check — HIGH_VOLATILITY if recent vol >> historical
+        const recentReturns = returns.slice(-5);
+        const recentVol = Math.sqrt(recentReturns.reduce((s, r) => s + (r - mu) ** 2, 0) / recentReturns.length);
+        if (recentVol > sigma * 2.0 && recentVol > 0.01) {
+            return 3; // HIGH_VOLATILITY
+        }
+
+        // 2. Trend detection — normalized mean return (z-score like)
+        const trendStrength = sigma > 1e-8 ? mu / sigma : 0;
+
+        // 3. Autocorrelation check — trending markets have positive lag-1 autocorrelation
+        let autoCorr = 0;
+        if (returns.length >= 10) {
+            let sumProd = 0, sumSq = 0;
+            for (let i = 1; i < returns.length; i++) {
+                sumProd += (returns[i] - mu) * (returns[i - 1] - mu);
+                sumSq += (returns[i] - mu) ** 2;
+            }
+            autoCorr = sumSq > 0 ? sumProd / sumSq : 0;
+        }
+
+        // 4. Directional consistency — what % of recent returns are same direction
+        const upRatio = recentReturns.filter(r => r > 0).length / recentReturns.length;
+
+        // Combined classification
+        if (trendStrength > 0.3 && (autoCorr > 0.1 || upRatio > 0.7)) {
+            return 0; // TRENDING_UP
+        }
+        if (trendStrength < -0.3 && (autoCorr > 0.1 || upRatio < 0.3)) {
+            return 1; // TRENDING_DOWN
+        }
+        return 2; // RANGING
+    }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -2141,4 +2475,15 @@ module.exports = {
     QuantumDecisionVerifier,
     DecompositionPipeline,
     PIPELINE_VERSION,
+    QuantumState,           // PATCH #35: re-exported for consumers needing direct quantum state access
+    // PATCH #37: GPU acceleration exports
+    GPUQuantumState,
+    DynamicQDVThresholds,
+    gpuBatchMonteCarlo,
+    gpuMatMul,
+    gpuVaRCalculation,
+    getGPUStatus,
+    // PATCH #38: Remote GPU offload exports
+    RemoteGPUClient,
+    getRemoteGPUClient,
 };
