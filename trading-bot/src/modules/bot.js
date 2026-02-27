@@ -21,11 +21,22 @@
  *   - QMC scenario simulation for position outlook & partial close decisions
  *   - QRA risk scoring per position with black swan emergency exits
  *   - Position health scoring (0-100) with 6 weighted factors
+ * PATCH #20: SKYNET AUTONOMOUS BRAIN (Audyt Skynet)
+ *   [P0] NeuronAI → Skynet Brain: executeOverride, emergencyHalt, globalParamEvolution,
+ *        positionCommander, defenseMode, phaseRecovery, configEvolution
+ *   [P0] QDV Starvation Fallback: cyclesWithoutTrade → force trade if >300 idle cycles
+ *   [P0] Skynet Override Gate: veto/force consensus before QDV verification
+ *   [P1] Position Sync Mutex: _withPositionLock() prevents APM/QPM/PM race conditions
+ *   [P1] ML↔Quantum Cross-System Feedback: learnFromQuantumVerification()
+ *   [P1] Ensemble Volatility-Adjusted Thresholds: regime-aware dynamic thresholds
+ *   [P2] Execution Engine: Fixed dead _validateSignal(), proper balance-based validation
+ *   [P2] Experience Buffer: Priority replay with 70% recency / 30% high-priority split
+ *   [P3] Comprehensive logging with Skynet status fields throughout
  *
  * Architecture:
  *   Config -> DataPipeline -> StrategyRunner -> EnsembleVoting -> ExecutionEngine
  *   PortfolioManager <-> RiskManager <-> MLIntegration
- *   AdaptiveNeuralEngine -> EnsembleVoting (dynamic weights + signal)
+ *   AdaptiveNeuralEngine (SKYNET BRAIN) -> Override/Veto -> EnsembleVoting (dynamic weights + signal)
  *   MegatronCore -> LLM Chat + Activity Feed + Commands
  *   QuantumHybridEngine -> Signal Enhancement + Weight Optimization + VaR
  *   HybridQuantumClassicalPipeline -> QMC + QAOA + VQC + QFM + QRA + QDV + Decomposer
@@ -90,12 +101,21 @@ class AutonomousTradingBot {
         this.hybridPipeline = null;
         // PATCH #18: Quantum Position Manager
         this.quantumPosMgr = null;
-        // PATCH #28: GPU-Accelerated Quantum System
-        this.quantumGPU = null;
-        // PATCH #36: Quantum toggle
-        this._quantumEnabled = true;
-        // PATCH #24: Neuron AI Manager (Central Brain/Skynet)
-        this.neuronManager = null;
+        // PATCH #20: Position sync mutex — prevent concurrent PM/APM/QPM modifications
+        this._positionMutex = Promise.resolve();
+    }
+
+    /**
+     * PATCH #20: Async mutex for position operations.
+     * Ensures only one position-modifying operation runs at a time.
+     * Prevents race conditions between PM, APM, and QPM.
+     */
+    _withPositionLock(fn) {
+        let release;
+        const newMutex = new Promise(resolve => { release = resolve; });
+        const prev = this._positionMutex;
+        this._positionMutex = newMutex;
+        return prev.then(() => fn()).finally(() => release());
     }
 
     async initialize() {
@@ -104,9 +124,6 @@ class AutonomousTradingBot {
 
         // HTTP + WS Server
         await this.server.start();
-
-        // Wire bot reference for quantum API endpoints
-        if (this.server) this.server._botRef = this;
 
         // OKX Live Data
         try {
@@ -236,34 +253,41 @@ class AutonomousTradingBot {
             console.warn('[WARN] Quantum Engine: ' + e.message);
         }
 
-        // PATCH #17: Hybrid Quantum-Classical Pipeline v3.0
+        // PATCH #17 + #37 + #38: Hybrid Quantum-Classical Pipeline v3.2 (GPU-Accelerated + Remote Offload)
         try {
             const { HybridQuantumClassicalPipeline } = require('../core/ai/hybrid_quantum_pipeline');
             this.hybridPipeline = new HybridQuantumClassicalPipeline({
-                // PATCH #42: Boosted config for 40% GPU utilization
-                qmc: { nScenarios: 50000, nQuantumPaths: 10000, confidenceLevels: [0.95, 0.99], timeHorizons: [1, 5, 10] },
-                qaoa: { nLayers: 4, nIterations: 300, learningRate: 0.03 },
+                qmc: { nScenarios: 8000, nQuantumPaths: 1500, confidenceLevels: [0.95, 0.99], timeHorizons: [1, 5, 10] },
+                qaoa: { nLayers: 4, nIterations: 150, learningRate: 0.05 },
                 vqc: { nQubits: 4, nLayers: 3, nFeatures: 8, learningRate: 0.01 },
-                featureMapper: { nQubits: 5, nReps: 3, maxCacheSize: 1000 },
+                featureMapper: { nQubits: 5, nReps: 2, maxCacheSize: 500 },
                 riskAnalyzer: {},
-                verifier: { minConfidence: 0.20, maxVaRPct: 0.05, minSharpe: 0.0 },
-                decomposer: { maxSubProblemSize: 4, nReplicas: 8, maxIterations: 300 },
-                riskAnalysisInterval: 5,
-                weightOptimizationInterval: 10,
-                vqcTrainInterval: 30,
-                qmcSimulationInterval: 5,
+                verifier: { minConfidence: 0.40, maxVaRPct: 0.035, minSharpe: 0.4 },
+                decomposer: { maxSubProblemSize: 4, nReplicas: 6, maxIterations: 200 },
+                riskAnalysisInterval: 10,
+                weightOptimizationInterval: 30,
+                vqcTrainInterval: 50,
+                qmcSimulationInterval: 15,
+                // PATCH #38: Remote GPU offload (local PC RTX via ngrok tunnel)
+                gpuRemoteUrl: process.env.GPU_REMOTE_URL || '',
+                gpuTimeoutMs: parseInt(process.env.GPU_TIMEOUT_MS) || 2000,
+                gpuPingIntervalMs: parseInt(process.env.GPU_PING_INTERVAL_MS) || 10000,
             });
             this.hybridPipeline.initialize();
-            // PATCH #38: Remote GPU Bridge (Local PC RTX 5070 Ti via SSH tunnel)
+            // PATCH #37+38: Initialize GPU backend for quantum pipeline
             try {
-                const gpuBridge = require('../core/ai/remote_gpu_bridge');
-                const gpuUrl = process.env.GPU_REMOTE_URL || 'http://127.0.0.1:4001';
-                this.remoteGPUClient = gpuBridge.attach(this.hybridPipeline, { gpuRemoteUrl: gpuUrl });
-                this.mon.setComponent('remoteGPU', true);
-            } catch (e) {
-                console.warn('[WARN] Remote GPU Bridge: ' + e.message);
+                const { initGPU, getGPUStatus } = require('../core/ai/quantum_gpu_sim');
+                const gpuResult = await initGPU();
+                const gpuTag = gpuResult.enabled ? 'GPU:' + gpuResult.backend : 'CPU';
+                const remoteUrl = process.env.GPU_REMOTE_URL;
+                const remoteTag = remoteUrl ? ' + RemoteGPU(' + remoteUrl.replace(/https?:\/\//, '').slice(0, 30) + ')' : '';
+                console.log('[OK] Hybrid Quantum Pipeline v' + this.hybridPipeline.version + ' [' + gpuTag + remoteTag + ']: QMC + QAOA(p=4) + VQC(4q,3L) + QFM(5q) + QRA + QDV(dynamic) + Decomposer');
+                // Expose GPU status getter for API
+                this._getGPUStatus = getGPUStatus;
+            } catch (gpuErr) {
+                console.log('[OK] Hybrid Quantum Pipeline v' + this.hybridPipeline.version + ' [CPU]: QMC + QAOA(p=4) + VQC(4q,3L) + QFM(5q) + QRA + QDV(dynamic) + Decomposer');
+                console.warn('[WARN] GPU init: ' + gpuErr.message);
             }
-            console.log('[OK] Hybrid Quantum Pipeline v' + this.hybridPipeline.version + ': QMC + QAOA(p=4) + VQC(4q,3L) + QFM(5q) + QRA + QDV + Decomposer');
             this.mon.setComponent('hybridPipeline', true);
         } catch (e) {
             console.warn('[WARN] Hybrid Pipeline: ' + e.message);
@@ -287,22 +311,6 @@ class AutonomousTradingBot {
             console.warn('[WARN] Quantum Position Manager: ' + e.message);
         }
 
-        // PATCH #28: GPU-Accelerated Quantum Trading System (Init)
-        try {
-            const { QuantumGPUBridge } = require('./quantum-gpu-bridge');
-            this.quantumGPU = new QuantumGPUBridge({
-                quantumDir: require('path').resolve(__dirname, '../../../quantum'),
-                maxAgeMs: 600000,
-                autoRun: false,
-                logger: console,
-            });
-            await this.quantumGPU.initialize();
-            console.log('[OK] Quantum GPU Bridge: Active (v' + require('./quantum-gpu-bridge').BRIDGE_VERSION + ')');
-            this.mon.setComponent('quantumGPU', true);
-        } catch (e) {
-            console.warn('[WARN] Quantum GPU Bridge: ' + e.message);
-        }
-
         // PATCH #16: MEGATRON AI Chat System
         try {
             const { MegatronCore, attachMegatronRoutes } = require('../core/ai/megatron_system');
@@ -316,80 +324,9 @@ class AutonomousTradingBot {
             });
             if (this.server.app && this.server.wss) {
                 attachMegatronRoutes(this.server.app, this.server.wss, this.server.wsClients, this.megatron);
-
-            // PATCH #24: Neuron AI Manager API endpoint
-            this.server.app.get('/api/neuron-ai/status', (req, res) => {
-                if (this.neuronManager) {
-                    res.json(this.neuronManager.getStatus());
-                } else {
-                    res.json({ error: 'Neuron AI Manager not initialized' });
-                }
-            });
-            // PATCH #36: Quantum Pipeline Toggle API
-            this.server.app.get('/api/quantum/enabled', (req, res) => {
-                res.json({
-                    enabled: this._quantumEnabled,
-                    hybridPipeline: !!(this.hybridPipeline),
-                    quantumPosMgr: !!(this.quantumPosMgr),
-                    quantumGPU: !!(this.quantumGPU),
-                });
-            });
-            this.server.app.post('/api/quantum/toggle', (req, res) => {
-                this._quantumEnabled = !this._quantumEnabled;
-                const state = this._quantumEnabled ? 'ON' : 'OFF';
-                console.log('[PATCH #36] Quantum Pipeline toggled: ' + state);
-                if (this.megatron) {
-                    this.megatron.logActivity('QUANTUM', 'Pipeline ' + state,
-                        'Quantum computation ' + (this._quantumEnabled ? 'enabled' : 'disabled') + ' by user');
-                }
-                res.json({ enabled: this._quantumEnabled, message: 'Quantum Pipeline ' + state });
-            });
-            // PATCH #37: Quantum GPU status endpoint
-            this.server.app.get('/api/quantum/status', (req, res) => {
-                const qStatus = (this.quantumGPU && typeof this.quantumGPU.getStatus === 'function') ? this.quantumGPU.getStatus() : {};
-                res.json({
-                    enabled: this._quantumEnabled !== false,
-                    hybridPipeline: !!(this.hybridPipeline),
-                    quantumPosMgr: !!(this.quantumPosMgr),
-                    quantumGPU: !!(this.quantumGPU),
-                    gpuUsed: (qStatus && qStatus.gpuUsed) || false,
-                    gpuDevice: (qStatus && qStatus.gpuDevice) || 'N/A',
-                    runCount: (qStatus && qStatus.runCount) || 0,
-                    resultsAge: (qStatus && qStatus.resultsAge) || 'unknown',
-                    autoRun: (qStatus && qStatus.autoRun) || false,
-                    vram: 'N/A',
-                    lastRun: (qStatus && qStatus.lastRun) || 'never' // PATCH #38C: real data
-                });
-            });
-
-            // PATCH #37: NeuronAI state reset endpoint
-            this.server.app.post('/api/neuron-ai/reset', (req, res) => {
-                try {
-                    if (this.neuronManager) {
-                        this.neuronManager.totalDecisions = 0;
-                        this.neuronManager.overrideCount = 0;
-                        this.neuronManager.evolutionCount = 0;
-                        this.neuronManager.totalPnL = 0;
-                        this.neuronManager.winCount = 0;
-                        this.neuronManager.lossCount = 0;
-                        this.neuronManager.consecutiveLosses = 0;
-                        this.neuronManager.consecutiveWins = 0;
-                        this.neuronManager.riskMultiplier = 1.0;
-                        this.neuronManager.recentTrades = [];
-                        if (this.neuronManager._saveState) this.neuronManager._saveState();
-                        console.log('[PATCH #37] NeuronAI state reset by API');
-                        if (this.megatron) this.megatron.logActivity('SYSTEM', 'NeuronAI Reset', 'State reset to factory defaults by dashboard user');
-                        res.json({ success: true, message: 'NeuronAI state reset to factory defaults', timestamp: new Date().toISOString() });
-                    } else {
-                        res.status(500).json({ success: false, error: 'NeuronManager not initialized' });
-                    }
-                } catch (err) {
-                    console.error('[PATCH #37] NeuronAI reset error:', err.message);
-                    res.status(500).json({ success: false, error: err.message });
-                }
-            });
-
             }
+            // PATCH #36: Pass Megatron to ExecutionEngine for SL/TP/TIME activity logging (P1-5)
+            this.exec.setMegatron(this.megatron);
             console.log('[OK] MEGATRON AI: Online | LLM Providers: ' + this.megatron.llm.providers.size);
             this.mon.setComponent('megatron', true);
         } catch (e) {
@@ -400,59 +337,13 @@ class AutonomousTradingBot {
         this.state.load(this.pm, this.rm, this.ml);
 
         this.mon.setComponent('monitoring', true);
-        
-        // PATCH #24: Initialize Neuron AI Manager (Central Brain/Skynet)
-        try {
-            const { NeuronAIManager } = require('../core/ai/neuron_ai_manager');
-            this.neuronManager = new NeuronAIManager();
-            global._neuronAIInstance = this.neuronManager; // PATCH #32: global ref for exec-engine partial TP learning
-            this.neuronManager.initialize(this.megatron);
-            // PATCH #40: Connect CPU Neural Engine (AdaptiveNeuralEngine) to NeuronAI
-            if (this.neuralAI) {
-                this.neuronManager.setNeuralEngine(this.neuralAI);
-            }
-            // Apply NeuronAI adapted weights to ensemble if any
-            const adaptedW = this.neuronManager.getAdaptedWeights();
-            if (adaptedW && this.ensemble) {
-                for (const [k, v] of Object.entries(adaptedW)) {
-                    if (this.ensemble.staticWeights && this.ensemble.staticWeights[k] !== undefined) {
-                        this.ensemble.staticWeights[k] = v;
-                    }
-                }
-                const totalW = Object.values(this.ensemble.staticWeights).reduce((s, v) => s + v, 0);
-                if (totalW > 0) {
-                    for (const k of Object.keys(this.ensemble.staticWeights)) {
-                        this.ensemble.staticWeights[k] /= totalW;
-                    }
-                }
-                console.log('[NEURON AI] Adapted weights applied to ensemble');
-            }
-            // Wire to Megatron for chat routing
-            if (this.megatron && this.megatron.setNeuronManager) {
-                this.megatron.setNeuronManager(this.neuronManager);
-            }
-            this.mon.setComponent('neuronManager', true);
-        } catch (e) {
-            console.warn('[WARN] Neuron AI Manager: ' + e.message);
-        }
-
-        // PATCH 30c: Sync _lastRealizedPnL from portfolio to prevent false PnL delta at startup
-        try {
-            const startupPortfolio = this.pm.getPortfolio();
-            this._lastRealizedPnL = startupPortfolio.realizedPnL || 0;
-            this._lastPositionCount = this.pm.positionCount || 0;
-            console.log('[PATCH 30c] _lastRealizedPnL synced: $' + this._lastRealizedPnL.toFixed(2));
-        } catch(e) {}
-
         console.log('[' + this.config.instanceId + '] MODULAR ENTERPRISE Bot initialized');
         console.log('ML: ' + (this.ml ? this.ml.getConfidenceInfo() : 'disabled'));
         console.log('Neural AI: ' + (this.neuralAI ? 'ACTIVE (' + this.neuralAI.phase + ')' : 'disabled'));
         console.log('Quantum: ' + (this.quantumEngine ? 'ACTIVE (SQA+QWalk+QVaR)' : 'disabled'));
-        console.log('Hybrid Pipeline: ' + (this.hybridPipeline ? 'ACTIVE v' + this.hybridPipeline.version + ' (QMC+QAOA+VQC+QFM+QRA+QDV)' : 'disabled'));
+        console.log('Hybrid Pipeline: ' + (this.hybridPipeline ? 'ACTIVE v' + this.hybridPipeline.version + ' (QMC+QAOA+VQC+QFM+QRA+QDV+GPU)' : 'disabled'));
         console.log('Quantum Pos Mgr: ' + (this.quantumPosMgr && this.quantumPosMgr.isReady ? 'ACTIVE v' + this.quantumPosMgr.version + ' (4-stage)' : 'disabled'));
         console.log('Megatron: ' + (this.megatron ? 'ONLINE (' + this.megatron.llm.providers.size + ' LLM providers)' : 'disabled'));
-        console.log('Quantum GPU: ' + (this.quantumGPU ? 'ACTIVE (bridge v' + require('./quantum-gpu-bridge').BRIDGE_VERSION + ')' : 'disabled'));
-        console.log('Neuron AI: ' + (this.neuronManager ? 'BRAIN ACTIVE v' + this.neuronManager.version + ' (' + this.neuronManager.totalDecisions + ' decisions, PnL: $' + this.neuronManager.totalPnL.toFixed(2) + ')' : 'disabled'));
     }
 
     _getPortfolioData() {
@@ -489,10 +380,10 @@ class AutonomousTradingBot {
                 if (this.megatron) this.megatron.logActivity('SYSTEM', 'Auto-Resume', 'Pauza zakonczona, trading wznowiony');
             }
 
-                        // PATCH #37C: Circuit breaker active in ALL modes (was bypassed in sim/paper)
-            if (this.rm && this.rm.isCircuitBreakerTripped()) {
-                console.log('[CB] \ud83d\udd34 Circuit breaker TRIPPED - skipping cycle (PATCH37C)');
-                if (this.megatron) this.megatron.logActivity('RISK', 'Circuit Breaker', 'Trading wstrzymany -- circuit breaker aktywny (ALL MODES)', {}, 'critical');
+            // Circuit breaker check
+            if (this.rm.isCircuitBreakerTripped()) {
+                console.log('[CB] Circuit breaker tripped - skipping');
+                if (this.megatron) this.megatron.logActivity('RISK', 'Circuit Breaker', 'Trading wstrzymany -- circuit breaker aktywny', {}, 'critical');
                 return;
             }
             console.log('[' + this.config.instanceId + '] Trading cycle #' + this._cycleCount + '...');
@@ -507,11 +398,7 @@ class AutonomousTradingBot {
             if (this._lastAnalyzedCandleTimestamp && newTs && newTs === this._lastAnalyzedCandleTimestamp) {
                 this._sameCandleCycleCount++;
                 const hasPos = this.pm.positionCount > 0;
-                // PATCH #21: Allow periodic re-analysis every 10th cycle even without position
-                // Without this fix, bot sits idle 97% of the time between candles
-                const shouldRunPos = hasPos && (this._sameCandleCycleCount % 10 === 0); // PATCH #44: 3→10 (5min vs 1.5min) to reduce overtrading
-                const shouldReAnalyze = !hasPos && (this._sameCandleCycleCount % 10 === 0);
-                const shouldRun = shouldRunPos || shouldReAnalyze;
+                const shouldRun = hasPos && (this._sameCandleCycleCount % 3 === 0);
                 if (!shouldRun) {
                     console.log('[CYCLE] Same candle - monitoring only');
                     for (const [sym, pos] of this.pm.getPositions()) {
@@ -536,7 +423,7 @@ class AutonomousTradingBot {
                                     history, async (s) => this._getCurrentPrice(s)
                                 );
                                 if (!qpmResult.summary.skipped) {
-                                    await this._applyQuantumPositionActions(qpmResult, history);
+                                    this._applyQuantumPositionActions(qpmResult, history);
                                 }
                             } catch(e) { console.warn('[WARN] QPM same-candle:', e.message); }
                         }
@@ -544,21 +431,11 @@ class AutonomousTradingBot {
                     this._detectAndLearnFromCloses();
                     return;
                 } else {
-                    if (shouldReAnalyze) {
-                        console.log('[CYCLE] PATCH #21: Periodic re-analysis without position (cycle ' + this._sameCandleCycleCount + ')');
-                    } else {
-                        console.log('[CYCLE] Same candle but position open - strategies cycle ' + this._sameCandleCycleCount);
-                    }
+                    console.log('[CYCLE] Same candle but position open - strategies cycle ' + this._sameCandleCycleCount);
                 }
             } else {
                 this._lastAnalyzedCandleTimestamp = newTs;
                 this._sameCandleCycleCount = 0;
-                // PATCH #21: Log new candle to Megatron
-                if (this.megatron && latestCandle) {
-                    this.megatron.logActivity('MARKET', '🕯️ New Candle',
-                        'Price: $' + (latestCandle.close || 0).toFixed(2) + ' | Vol: ' + (latestCandle.volume || 0).toFixed(0),
-                        { price: latestCandle.close, volume: latestCandle.volume }, 'low');
-                }
             }
 
             // 3. Append to history
@@ -577,7 +454,7 @@ class AutonomousTradingBot {
             }
 
             // PATCH #17: Hybrid Pipeline -- STAGE 1: PRE-PROCESSING (Quantum Feature Enhancement)
-            if (this._quantumEnabled && this.hybridPipeline && this.hybridPipeline.isReady && this.neuralAI && history.length > 20) {
+            if (this.hybridPipeline && this.hybridPipeline.isReady && this.neuralAI && history.length > 20) {
                 try {
                     let classicalFeatures = null;
                     try {
@@ -597,19 +474,6 @@ class AutonomousTradingBot {
                     }
                 } catch(e) { console.warn('[WARN] Hybrid pre-process:', e.message); }
             }
-
-            // 4. PATCH #22: Compute MTF bias before strategy run
-            try {
-                var tfData = this.dp.getCachedTimeframeData();
-                if (tfData && (tfData.h1 || tfData.h4 || tfData.d1)) {
-                    var mtfModule = this.strategies.getMTFConfluence();
-                    var mtfBias = mtfModule.computeBias(tfData);
-                    if (this._cycleCount % 10 === 0) {
-                        console.log('[MTF] Bias: ' + mtfBias.direction + ' (score=' + mtfBias.score + ', perm=' + mtfBias.tradePermission + ', reason=' + mtfBias.reason + ')');
-                        console.log('[MTF] D1=' + mtfBias.timeframes.d1.direction + '(' + mtfBias.timeframes.d1.strength + ') H4=' + mtfBias.timeframes.h4.direction + '(' + mtfBias.timeframes.h4.strength + ') H1=' + mtfBias.timeframes.h1.direction + '(' + mtfBias.timeframes.h1.strength + ')');
-                    }
-                }
-            } catch(e) { console.warn('[MTF] Bias computation failed:', e.message); }
 
             // 4. Run all strategies
             const allSignals = await this.strategies.runAll(history);
@@ -648,8 +512,7 @@ class AutonomousTradingBot {
                     const hasPos = this.pm.positionCount > 0;
                     const aiSignal = await this.neuralAI.generateAISignal(history, hasPos);
                     if (aiSignal && aiSignal.action !== 'HOLD') {
-                        // PATCH #24: NeuralAI removed from ensemble voting (now central brain manager)
-                        // allSignals.set('NeuralAI', aiSignal);
+                        allSignals.set('NeuralAI', aiSignal);
                         console.log('[NEURAL AI] ' + aiSignal.action + ' (conf: ' + ((aiSignal.confidence||0)*100).toFixed(1) + '%, regime: ' + (aiSignal.regime || 'N/A') + ')');
                         if (this.megatron) {
                             this.megatron.logActivity('SIGNAL', 'Neural AI: ' + aiSignal.action,
@@ -692,7 +555,7 @@ class AutonomousTradingBot {
 
             // PATCH #17: Hybrid Pipeline -- STAGE 2: QUANTUM BOOST
             let hybridBoostResult = null;
-            if (this._quantumEnabled && this.hybridPipeline && this.hybridPipeline.isReady && history.length > 30) {
+            if (this.hybridPipeline && this.hybridPipeline.isReady && history.length > 30) {
                 try {
                     const priceArr = history.map(c => c.close);
                     const portfolio = this.pm.getPortfolio();
@@ -791,325 +654,233 @@ class AutonomousTradingBot {
             }
 
             // 6. Ensemble voting (with dynamic Thompson Sampling weights)
+            // PATCH #20: Pass regime info for volatility-adjusted thresholds
             let consensus = null;
             if (allSignals.size > 0) {
-                consensus = null; // PATCH #24: Neuron AI Manager decides instead of ensemble
-                const mtfBiasForVote = this.strategies.getMTFConfluence ? this.strategies.getMTFConfluence().getLastBias() : null;
-
-                if (this.neuronManager && this.neuronManager.isReady) {
-                    // Get raw votes from ensemble (without NeuralAI)
-                    const rawVotes = this.ensemble.getRawVotes(allSignals, this.rm, mtfBiasForVote);
-
-                    // PATCH #25: Build enriched state for Neuron AI with full indicators
-                    const portfolioState = this.pm.getPortfolio();
-                    const _posCount = this.pm.positionCount;
-                    const _marketHist = this.dp.getMarketDataHistory();
-                    const _ind = require('./indicators');
-
-                    // Compute all indicators
-                    let rsiVal = null, macdData = null, bollingerData = null, atrVal = null;
-                    let volumeCurrent = 0, volumeAvg = 0, sma20 = null, sma50 = null, sma200 = null;
-                    try {
-                        const _prices = _marketHist.slice(-210).map(function(c) { return c.close; });
-                        if (_prices.length >= 14) rsiVal = _ind.calculateRSI(_prices, 14);
-                        if (_prices.length >= 26) macdData = _ind.calculateMACD(_prices);
-                        if (_prices.length >= 20) bollingerData = _ind.calculateBollingerBands(_prices, 20, 2);
-                        if (_prices.length >= 20) sma20 = _ind.calculateSMA(_prices, 20);
-                        if (_prices.length >= 50) sma50 = _ind.calculateSMA(_prices, 50);
-                        if (_prices.length >= 200) sma200 = _ind.calculateSMA(_prices, 200);
-                    } catch(indErr) { console.warn('[NEURON] Indicator calc error:', indErr.message); }
-                    try {
-                        if (_marketHist.length >= 20) {
-                            const candleData = _marketHist.slice(-20).map(function(c) {
-                                return { symbol: 'BTCUSDT', timestamp: Date.now(), open: c.open || c.close, high: c.high, low: c.low, close: c.close, volume: c.volume || 0 };
-                            });
-                            atrVal = _ind.calculateATR(candleData, 14);
-                        }
-                        if (_marketHist.length >= 1) volumeCurrent = _marketHist[_marketHist.length - 1].volume || 0;
-                        if (_marketHist.length >= 20) {
-                            var _vols = _marketHist.slice(-20).map(function(c) { return c.volume || 0; });
-                            volumeAvg = _vols.reduce(function(a,b) { return a+b; }, 0) / _vols.length;
-                        }
-                    } catch(indErr2) {}
-
-                    // Build position details array
-                    var positionDetails = [];
-                    var currentPrice = ((_marketHist.slice(-1)[0] || {}).close) || 0;
-                    for (const [posKey, p] of this.pm.getPositions()) {
-                        var uPnL = p.side === 'SHORT'
-                            ? (p.entryPrice - currentPrice) * p.quantity
-                            : (currentPrice - p.entryPrice) * p.quantity;
-                        positionDetails.push({
-                            key: posKey,
-                            symbol: p.symbol || posKey.split('_')[0],
-                            side: p.side || 'LONG',
-                            entryPrice: p.entryPrice,
-                            quantity: p.quantity,
-                            unrealizedPnL: uPnL,
-                            stopLoss: p.stopLoss,
-                            takeProfit: p.takeProfit,
-                            holdingHours: (Date.now() - (p.entryTime || Date.now())) / 3600000,
-                        });
-                    }
-
-                    // Recent prices (last 10 candle closes for trend context)
-                    var recentPrices = _marketHist.slice(-10).map(function(c) { return c.close; });
-
-                    const neuronState = {
-                        votes: rawVotes.votes,
-                        signalSummary: rawVotes.signalSummary,
-                        mlSignal: rawVotes.mlSignal || {},
-                        mtfBias: mtfBiasForVote || {},
-                        regime: (this.neuralAI && this.neuralAI.currentRegime) || 'UNKNOWN',
-                        portfolio: {
-                            totalValue: (portfolioState && portfolioState.totalValue) || 0,
-                            realizedPnL: (portfolioState && portfolioState.realizedPnL) || 0,
-                            winRate: (portfolioState && portfolioState.winRate) || 0,
-                            totalTrades: (portfolioState && portfolioState.totalTrades) || 0,
-                            drawdownPct: (portfolioState && portfolioState.drawdown) || 0,
-                        },
-                        price: currentPrice,
-                        positionCount: _posCount,
-                        positionDetails: positionDetails,
-                        // PATCH #25: Legacy fields for backward compatibility
-                        hasPosition: _posCount > 0,
-                        positionSide: positionDetails.length > 0 ? positionDetails[0].side : 'NONE',
-                        indicators: {
-                            rsi: rsiVal,
-                            macd: macdData ? macdData.macd : null,
-                            macdSignal: macdData ? macdData.signal : null,
-                            macdHistogram: macdData ? macdData.histogram : null,
-                            bollingerUpper: bollingerData ? bollingerData.upper : null,
-                            bollingerMiddle: bollingerData ? bollingerData.middle : null,
-                            bollingerLower: bollingerData ? bollingerData.lower : null,
-                            bollingerBandwidth: bollingerData ? bollingerData.bandwidth : null,
-                            atr: atrVal,
-                            volume: volumeCurrent,
-                            avgVolume: volumeAvg,
-                            sma20: sma20,
-                            sma50: sma50,
-                            sma200: sma200,
-                        },
-                        recentPrices: recentPrices,
-                        quantumRisk: this._lastQuantumRisk || {},
-                quantumGPU: this.quantumGPU ? this.quantumGPU.getSignal() : null,
-                    };
-
-                    try {
-                        const neuronDecision = await this.neuronManager.makeDecision(neuronState);
-
-                        if (neuronDecision && neuronDecision.action !== 'HOLD') {
-                            let consensusPrice = ((this.dp.getMarketDataHistory().slice(-1)[0] || {}).close) || 0;
-                            for (const [, sig] of allSignals) {
-                                if (sig.price && sig.price > 0) { consensusPrice = sig.price; break; }
-                            }
-                            consensus = {
-                                timestamp: Date.now(),
-                                symbol: this.config.symbol || 'BTCUSDT',
-                                action: neuronDecision.action,
-                                price: consensusPrice,
-                                quantity: 0,
-                                confidence: neuronDecision.confidence,
-                                strategy: 'NeuronAI',
-                                reasoning: neuronDecision.reasoning || 'Neuron AI autonomous',
-                                riskLevel: 1,
-                                metadata: {
-                                    votes: rawVotes.votes,
-                                    source: neuronDecision.source,
-                                    isOverride: neuronDecision.isOverride,
-                                    neuronAI: true,
-                                },
-                            };
-
-                            if (this.megatron && this.megatron.logActivity) {
-                                this.megatron.logActivity('NEURON_AI',
-                                    'DECISION: ' + neuronDecision.action,
-                                    (neuronDecision.reasoning || '') + ' | Conf: ' + (neuronDecision.confidence * 100).toFixed(1) + '%' +
-                                    (neuronDecision.isOverride ? ' | OVERRIDE' : ''),
-                                    neuronDecision, 'high');
-                            }
-                        } else {
-                            // PATCH #39: When NeuronAI returns HOLD, try ensemble as fallback
-                            // Previously: consensus = null -> permanent HOLD paralysis
-                            consensus = this.ensemble.vote(allSignals, this.rm, mtfBiasForVote);
-                            if (consensus && consensus.action !== 'HOLD') {
-                                console.log('[PATCH39] NeuronAI HOLD -> Ensemble fallback: ' + consensus.action + ' (conf: ' + (consensus.confidence*100).toFixed(1) + '%)');
-                                if (this.megatron && this.megatron.logActivity) {
-                                    this.megatron.logActivity('ENSEMBLE', 'FALLBACK from NeuronAI HOLD',
-                                        consensus.action + ' conf=' + (consensus.confidence*100).toFixed(1) + '%', {}, 'normal');
-                                }
-                            } else {
-                                consensus = null; // Both NeuronAI and Ensemble say HOLD
-                            }
-                        }
-                    } catch (neuronErr) {
-                        console.warn('[WARN] Neuron AI decision failed, falling back to ensemble:', neuronErr.message);
-                        consensus = this.ensemble.vote(allSignals, this.rm, mtfBiasForVote);
-                    }
-                } else {
-                    consensus = this.ensemble.vote(allSignals, this.rm, mtfBiasForVote);
-                }
-                // PATCH #21: Log HOLD/no-consensus to Megatron too
-                if (!consensus || consensus.action === 'HOLD') {
-                    if (this.megatron && this._cycleCount % 5 === 0) {
-                        this.megatron.logActivity('SIGNAL', 'HOLD - No trade signal',
-                            'Cycle #' + this._cycleCount + ' | Strategies: ' + allSignals.size,
-                            { action: 'HOLD', strategies: allSignals.size }, 'low');
-                    }
-                }
+                const regimeInfo = this.neuralAI && this.neuralAI.isReady
+                    ? { regime: this.neuralAI.currentRegime, volatility: 0 }
+                    : null;
+                consensus = this.ensemble.vote(allSignals, this.rm, regimeInfo);
                 if (consensus && consensus.action !== 'HOLD') {
                     console.log('[CONSENSUS] ' + consensus.action + ' (conf: ' + (consensus.confidence*100).toFixed(1) + '%)');
-                    // PATCH #21: Log ensemble decision to Megatron activity feed
-                    if (this.megatron) {
-                        var eIcon = consensus.action === 'BUY' ? 'UP' : 'DOWN';
-                        this.megatron.logActivity('SIGNAL', eIcon + ' Ensemble: ' + consensus.action,
-                            'Consensus conf: ' + (consensus.confidence * 100).toFixed(1) + '%',
-                            { action: consensus.action, conf: consensus.confidence });
-                    }
                     this._lastConsensusStrategies = [];
                     for (const [name, sig] of allSignals) {
                         if (sig.action === consensus.action) this._lastConsensusStrategies.push(name);
                     }
 
-                    // PATCH #17: Hybrid Pipeline -- STAGE 3: POST-PROCESSING (Quantum Decision Verification)
-                    let shouldExecute = true;
-                    if (this.hybridPipeline && this.hybridPipeline.isReady) {
-                        try {
-                            const portfolio = this.pm.getPortfolio();
-                            const verification = this.hybridPipeline.postProcess(consensus, portfolio.totalValue);
+                    // ═══════════════════════════════════════════════════════════════
+                    // PATCH #20: SKYNET OVERRIDE GATE — before quantum verification
+                    // If Skynet has an active override, it takes precedence.
+                    // If Skynet is in defense mode, it may VETO BUY signals.
+                    // ═══════════════════════════════════════════════════════════════
+                    if (this.neuralAI && this.neuralAI.isReady) {
+                        // Check Skynet override
+                        if (this.neuralAI._activeOverride && this.neuralAI._activeOverride.expiresAt > Date.now()) {
+                            const ovr = this.neuralAI._activeOverride;
+                            if (ovr.action === 'HOLD') {
+                                // Skynet VETO — block all trades
+                                console.log('[SKYNET VETO] Trade blocked: ' + ovr.reason);
+                                if (this.megatron) this.megatron.logActivity('SKYNET', 'VETO',
+                                    consensus.action + ' blocked: ' + ovr.reason, {}, 'critical');
+                                consensus = null;
+                            } else if (ovr.action !== consensus.action) {
+                                // Skynet wants a different action — override if confidence is high
+                                if (ovr.confidence > this.neuralAI.evolvedConfig.ensembleOverrideThreshold) {
+                                    console.log('[SKYNET OVERRIDE] ' + consensus.action + ' -> ' + ovr.action +
+                                        ' (conf: ' + (ovr.confidence * 100).toFixed(1) + '%) — ' + ovr.reason);
+                                    consensus.action = ovr.action;
+                                    consensus.confidence = ovr.confidence;
+                                    consensus.strategy = 'SkynetOverride';
+                                    consensus.reasoning = 'Skynet override: ' + ovr.reason;
+                                    if (this.megatron) this.megatron.logActivity('SKYNET', 'OVERRIDE',
+                                        ovr.action + ' forced: ' + ovr.reason, ovr, 'critical');
+                                }
+                            }
+                        }
 
-            if (!verification.approved) {
-                // PATCH #30: Full detailed logging (no truncation)
-                const reason = verification.reason || 'unknown';
-                const origConf = verification.originalConfidence ? (verification.originalConfidence * 100).toFixed(1) : '?';
-                const finalConf = verification.finalConfidence ? (verification.finalConfidence * 100).toFixed(1) : '0';
-                const adaptThresh = verification.adaptiveThreshold ? (verification.adaptiveThreshold * 100).toFixed(1) : '?';
-                const rejects = verification.consecutiveRejects || 0;
-                const stats = verification.stats || {};
-
-                console.log(`\n${'='.repeat(80)}`);
-                console.log(`[QUANTUM-VERIFIER] ODRZUCONO / REJECTED: ${consensus.action}`);
-                console.log(`  Original confidence: ${origConf}%`);
-                console.log(`  Final confidence:    ${finalConf}%`);
-                console.log(`  Adaptive threshold:  ${adaptThresh}%`);
-                console.log(`  Consecutive rejects: ${rejects}`);
-                console.log(`  Approved/Rejected:   ${stats.totalApproved || 0}/${stats.totalRejected || 0}`);
-                console.log(`  Reason: ${reason}`);
-                if (verification.modifications) {
-                    console.log(`  Modifications: ${JSON.stringify(verification.modifications)}`);
-                }
-                console.log(`${'='.repeat(80)}\n`);
-                
-                shouldExecute = false;
-            } else {
-                // PATCH #30: Approved with risk-based position sizing
-                const posScale = verification.positionSizeMultiplier || 1.0;
-                const origConf = consensus.confidence;
-                consensus.confidence = verification.finalConfidence;
-
-                console.log(`\n${'='.repeat(80)}`);
-                console.log(`[QUANTUM-VERIFIER] ZATWIERDZONO / APPROVED: ${consensus.action}`);
-                console.log(`  Original confidence: ${(origConf * 100).toFixed(1)}%`);
-                console.log(`  Final confidence:    ${(verification.finalConfidence * 100).toFixed(1)}%`);
-                console.log(`  Position size scale: ${(posScale * 100).toFixed(0)}%`);
-                console.log(`  Adaptive threshold:  ${verification.adaptiveThreshold ? (verification.adaptiveThreshold * 100).toFixed(1) : '?'}%`);
-                if (verification.modifications) {
-                    const mods = verification.modifications;
-                    if (mods.neuronAIOverride) console.log(`  NeuronAI Override:   ${mods.neuronAIOverride}`);
-                    if (mods.adaptiveOverride) console.log(`  Adaptive Override:   ${mods.adaptiveOverride}`);
-                    if (mods.positionReduction) console.log(`  Risk Adjustment:     ${mods.positionReduction}`);
-                }
-                console.log(`${'='.repeat(80)}\n`);
-
-                // PATCH #30: Apply position size multiplier to the trade
-                if (posScale < 1.0 && this.riskManager) {
-                    try {
-                        // Scale position size through risk manager
-                        this.riskManager.setPositionScaleOverride(posScale);
-                    } catch(e) {
-                        // Fallback: store scale for execution engine
-                        consensus.positionSizeMultiplier = posScale;
+                        // Defense mode — block BUY signals
+                        // PATCH #39E: Allow BUY if starvation is extreme (>400 cycles)
+                        if (consensus && this.neuralAI.defenseMode && consensus.action === 'BUY') {
+                            if (this.neuralAI.cyclesWithoutTrade > 400) {
+                                console.log('[SKYNET DEFENSE] BUY ALLOWED despite defense mode — EXTREME starvation (' + this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
+                                if (this.megatron) this.megatron.logActivity('SKYNET', 'Defense Override',
+                                    'BUY allowed after ' + this.neuralAI.cyclesWithoutTrade + ' idle cycles (starvation break)', {}, 'critical');
+                                // Reduce position size as safety measure
+                                consensus.confidence = Math.min(consensus.confidence, 0.50);
+                            } else {
+                                console.log('[SKYNET DEFENSE] BUY blocked by defense mode (losses: ' + this.neuralAI.consecutiveLosses + ')');
+                                if (this.megatron) this.megatron.logActivity('SKYNET', 'Defense Block',
+                                    'BUY blocked — ' + this.neuralAI.consecutiveLosses + ' consecutive losses', {}, 'high');
+                                consensus = null;
+                            }
+                        }
                     }
                 }
-                consensus.positionSizeMultiplier = posScale;
             }
-                        } catch(e) {
-                            console.warn('[WARN] Hybrid verifier:', e.message);
+
+            // ═══════════════════════════════════════════════════════════════
+            // PATCH #20: SKYNET STARVATION OVERRIDE — if no trade for too long
+            // Force lower thresholds to prevent the bot from starving
+            // ═══════════════════════════════════════════════════════════════
+            if (!consensus && this.neuralAI && this.neuralAI.isReady) {
+                const starvation = this.neuralAI.checkStarvationOverride();
+                if (starvation && allSignals.size > 0) {
+                    // Re-vote with temporarily lowered thresholds
+                    const origWeights = { ...this.ensemble.weights };
+                    // Slightly boost all non-HOLD signals
+                    for (const [name, sig] of allSignals) {
+                        if (sig.action !== 'HOLD' && sig.confidence > 0.2) {
+                            sig.confidence = Math.min(0.95, sig.confidence * 1.15);
                         }
                     }
+                    consensus = this.ensemble.vote(allSignals, this.rm);
+                    this.ensemble.weights = origWeights; // Restore weights
+                    if (consensus && consensus.action !== 'HOLD') {
+                        console.log('[SKYNET STARVATION] Trade forced: ' + consensus.action + ' — ' + starvation.reason);
+                        consensus.reasoning = starvation.reason;
+                        if (this.megatron) this.megatron.logActivity('SKYNET', 'Starvation Override',
+                            consensus.action + ': ' + starvation.reason, {}, 'high');
+                    }
+                }
+            }
 
-                                        // PATCH #27: RANGING regime filter — penalize trades in sideways markets
-                    // Analysis showed ranging market trades have poor win rate and high reversal risk
-                    if (shouldExecute && consensus.action !== 'HOLD') {
-                        const currentRegime = (this.neuralAI && this.neuralAI.currentRegime) || '';
-                        const regimeUpper = (currentRegime + '').toUpperCase();
-                        if (regimeUpper.includes('RANG') || regimeUpper.includes('SIDEWAYS') || regimeUpper.includes('CHOPPY')) {
-                            const oldConf = consensus.confidence;
-                            // PATCH #38D: Disabled redundant RANGING penalty (NeuronAI already applies -25%)
-                            // consensus.confidence *= 0.92; // PATCH #30b: Mild 8% penalty (NeuronAI already applies -25% internally)
-                            console.log('[P27 REGIME] RANGING detected — confidence reduced: ' +
-                                (oldConf * 100).toFixed(1) + '% -> ' + (consensus.confidence * 100).toFixed(1) + '%');
+            // ═══════════════════════════════════════════════════════════════
+            // PATCH #20: SKYNET POSITION COMMANDS — execute AI-driven commands
+            // ═══════════════════════════════════════════════════════════════
+            if (this.neuralAI && this.neuralAI.isReady) {
+                const commands = this.neuralAI.consumePositionCommands();
+                for (const cmd of commands) {
+                    try {
+                        if (cmd.type === 'FORCE_EXIT' && this.pm.hasPosition(cmd.symbol)) {
+                            const price = await this._getCurrentPrice(cmd.symbol);
+                            if (price) {
+                                const trade = this.pm.closePosition(cmd.symbol, price, null, 'SKYNET_' + cmd.type, 'Skynet');
+                                if (trade) {
+                                    this.rm.recordTradeResult(trade.pnl);
+                                    console.log('[SKYNET CMD] FORCE_EXIT ' + cmd.symbol + ' | PnL: $' + trade.pnl.toFixed(2) + ' | ' + cmd.reason);
+                                    if (this.megatron) this.megatron.logActivity('SKYNET', 'Force Exit',
+                                        cmd.symbol + ' PnL: $' + trade.pnl.toFixed(2) + ' | ' + cmd.reason, trade, 'critical');
+                                }
+                            }
+                        } else if (cmd.type === 'PARTIAL_CLOSE' && this.pm.hasPosition(cmd.symbol)) {
+                            const pos = this.pm.getPosition(cmd.symbol);
+                            const price = await this._getCurrentPrice(cmd.symbol);
+                            if (price && pos) {
+                                const closeQty = pos.quantity * cmd.pct;
+                                if (closeQty > 0.000001) {
+                                    const trade = this.pm.closePosition(cmd.symbol, price, closeQty, 'SKYNET_PARTIAL', 'Skynet');
+                                    if (trade) {
+                                        this.rm.recordTradeResult(trade.pnl);
+                                        console.log('[SKYNET CMD] PARTIAL_CLOSE ' + cmd.symbol + ' ' + (cmd.pct * 100).toFixed(0) + '% | PnL: $' + trade.pnl.toFixed(2));
+                                        if (this.megatron) this.megatron.logActivity('SKYNET', 'Partial Close',
+                                            cmd.symbol + ' ' + (cmd.pct * 100).toFixed(0) + '% | ' + cmd.reason, trade, 'high');
+                                    }
+                                }
+                            }
+                        }
+                        // FLIP and SCALE_IN handled by converting to consensus signal
+                    } catch(e) { console.warn('[WARN] Skynet command:', e.message); }
+                }
+            }
+
+            if (consensus && consensus.action !== 'HOLD') {
+                if (!this._lastConsensusStrategies || this._lastConsensusStrategies.length === 0) {
+                    this._lastConsensusStrategies = [];
+                    for (const [name, sig] of allSignals) {
+                        if (sig.action === consensus.action) this._lastConsensusStrategies.push(name);
+                    }
+                }
+
+                // PATCH #17: Hybrid Pipeline -- STAGE 3: POST-PROCESSING (Quantum Decision Verification)
+                // PATCH #20: With starvation fallback — if QDV rejects but bot is starved, override
+                let shouldExecute = true;
+                let qdvRejected = false;
+                if (this.hybridPipeline && this.hybridPipeline.isReady) {
+                    try {
+                        const portfolio = this.pm.getPortfolio();
+                        const verification = this.hybridPipeline.postProcess(consensus, portfolio.totalValue);
+
+                        if (!verification.approved) {
+                            qdvRejected = true;
+                            shouldExecute = false;
+                            console.log('[HYBRID VERIFIER] REJECTED: ' + consensus.action +
+                                ' (conf: ' + (consensus.confidence * 100).toFixed(1) + '%) -> ' + verification.verificationResult.reason);
                             if (this.megatron) {
-                                this.megatron.logActivity('RISK', 'P27 RANGING Penalty',
-                                    'Regime: ' + currentRegime + ' | Conf: ' + (oldConf * 100).toFixed(1) +
-                                    '% -> ' + (consensus.confidence * 100).toFixed(1) + '%', {}, 'normal');
+                                this.megatron.logActivity('QUANTUM', 'Trade ODRZUCONY',
+                                    consensus.action + ' zablokowany przez Quantum Decision Verifier: ' + verification.verificationResult.reason,
+                                    verification.verificationResult, 'high');
+                            }
+
+                            // PATCH #20: Cross-system feedback — inform Skynet about rejection
+                            if (this.neuralAI && this.neuralAI.isReady) {
+                                this.neuralAI.learnFromQuantumVerification(
+                                    consensus.strategy || 'EnsembleVoting', false,
+                                    verification.verificationResult.reason, consensus);
+                            }
+
+                            // PATCH #20: Starvation override — if QDV rejects but bot is starved, force through
+                            if (this.neuralAI && this.neuralAI.cyclesWithoutTrade > 300) {
+                                console.log('[SKYNET] QDV rejection overridden — STARVATION (' +
+                                    this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
+                                shouldExecute = true;
+                                qdvRejected = false;
+                                if (this.megatron) this.megatron.logActivity('SKYNET', 'QDV Starvation Override',
+                                    'QDV rejection bypassed after ' + this.neuralAI.cyclesWithoutTrade + ' idle cycles', {}, 'high');
+                            }
+                        } else {
+                            const oldConf = consensus.confidence;
+                            consensus.confidence = verification.finalConfidence;
+                            if (Math.abs(oldConf - consensus.confidence) > 0.01) {
+                                console.log('[HYBRID VERIFIER] APPROVED: ' + consensus.action +
+                                    ' (conf adjusted: ' + (oldConf * 100).toFixed(1) + '% -> ' + (consensus.confidence * 100).toFixed(1) + '%)');
+                            } else {
+                                console.log('[HYBRID VERIFIER] APPROVED: ' + consensus.action +
+                                    ' (conf: ' + (consensus.confidence * 100).toFixed(1) + '%)');
+                            }
+                            if (this.megatron) {
+                                this.megatron.logActivity('QUANTUM', 'Trade ZATWIERDZONY',
+                                    consensus.action + ' przeszedl przez Quantum Decision Verifier | Conf: ' + (consensus.confidence * 100).toFixed(1) + '%',
+                                    verification.verificationResult.modifications || {});
+                            }
+
+                            // PATCH #20: Cross-system feedback — inform Skynet about approval
+                            if (this.neuralAI && this.neuralAI.isReady) {
+                                this.neuralAI.learnFromQuantumVerification(
+                                    consensus.strategy || 'EnsembleVoting', true, null, consensus);
                             }
                         }
+                    } catch(e) {
+                        console.warn('[WARN] Hybrid verifier:', e.message);
                     }
+                }
 
-// PATCH #26: Signal quality gate — minimum confidence before execution
-                    // Analysis showed low-confidence trades have very low win rate
-                    if (shouldExecute && consensus.confidence < 0.35) { // PATCH #37C: raised from 0.18 to 0.35
-                        shouldExecute = false;
-                        console.log('[P26 QUALITY GATE] BLOCKED: ' + consensus.action +
-                            ' confidence ' + (consensus.confidence * 100).toFixed(1) + '% < 35% minimum (PATCH37C)');
-                        if (this.megatron) {
-                            this.megatron.logActivity('RISK', 'Trade blocked by Quality Gate (P26)',
-                                consensus.action + ' conf=' + (consensus.confidence * 100).toFixed(1) + '% < 18%', {}, 'normal');
-                        }
-                    }
-
-                    // PATCH #26: Anti-scalping cooldown check
-                    if (shouldExecute && this.rm && this.rm.checkTradeCooldown && !this.rm.checkTradeCooldown()) {
-                        shouldExecute = false;
-                        console.log('[P26 COOLDOWN] BLOCKED: ' + consensus.action + ' — minimum 3 min between trades');
-                        if (this.megatron) {
-                            this.megatron.logActivity('RISK', 'Trade blocked by Anti-Scalp Cooldown (P26)',
-                                'Minimum 3 minutes between new entries', {}, 'normal');
-                        }
-                    }
-
-                    // PATCH #26: Post-win cooldown — reduce confidence after 2+ consecutive wins
-                    if (shouldExecute && this.rm && this.rm.getPostWinCooldownMultiplier) {
-                        const winMult = this.rm.getPostWinCooldownMultiplier();
-                        if (winMult < 1.0) {
-                            consensus.confidence *= winMult;
-                            console.log('[P26 WIN COOLDOWN] Confidence reduced: ' +
-                                (consensus.confidence * 100).toFixed(1) + '% (post-win cooldown x' + winMult + ')');
-                            // Re-check quality gate after reduction
-                            if (consensus.confidence < 0.35) { // PATCH #37C: raised floor
-                                shouldExecute = false;
-                                console.log('[P26 QUALITY GATE] BLOCKED after win cooldown — conf too low');
-                            }
-                        }
-                    }
-
-                    if (shouldExecute) {
+                if (shouldExecute) {
                         await this.exec.executeTradeSignal(consensus, this.dp);
+                        // PATCH #36: Track trade open time for ML learning duration (P0-1)
+                        if (consensus.action === 'BUY') this._lastTradeOpenTime = Date.now();
 
-                        // PATCH #19: Quantum Initial SL/TP
-                        if ((consensus.action === 'BUY' || consensus.action === 'SELL') && this.quantumPosMgr && this.quantumPosMgr.isReady
+                        // ═══════════════════════════════════════════════════════════
+                        // PATCH #19: Quantum Initial SL/TP — replace static 1.5x/4.0x
+                        // ATR with VQC regime + QRA risk + QMC scenario-adjusted levels
+                        // immediately after position open for optimal risk management.
+                        // ═══════════════════════════════════════════════════════════
+                        if (consensus.action === 'BUY' && this.quantumPosMgr && this.quantumPosMgr.isReady
                             && this.pm.hasPosition(consensus.symbol)) {
                             try {
                                 const pos = this.pm.getPosition(consensus.symbol);
-                                pos._qpmManaged = true;
+                                pos._qpmManaged = true; // Mark position as QPM-managed
+
                                 const currentPrice = pos.entryPrice;
+
+                                // Get quantum data from hybrid pipeline boost result
                                 let vqcRegime = null, qraRisk = null, qmcSim = null;
                                 if (hybridBoostResult) {
                                     vqcRegime = hybridBoostResult.regimeClassification || null;
                                     qraRisk = hybridBoostResult.riskAnalysis || null;
                                     qmcSim = hybridBoostResult.qmcSimulation || null;
                                 }
+
+                                // Calculate current ATR from live market data
                                 let currentATR = pos.atrAtEntry || (currentPrice * 0.02);
                                 if (history && history.length >= 20) {
                                     try {
@@ -1123,11 +894,16 @@ class AutonomousTradingBot {
                                         if (liveATR > 0) currentATR = liveATR;
                                     } catch (e) { /* use entry ATR */ }
                                 }
+
+                                // Calculate quantum-adjusted initial SL/TP
                                 const sltpResult = this.quantumPosMgr.dynamicSLTP.calculate(
                                     pos, currentPrice, currentATR, vqcRegime, qraRisk, qmcSim
                                 );
+
                                 if (sltpResult.newSL && Math.abs(sltpResult.newSL - pos.stopLoss) > 0.01) {
                                     const oldSL = pos.stopLoss;
+                                    // Direct set for initial quantum SL (bypass direction check
+                                    // since this is the first quantum calculation for the position)
                                     pos.stopLoss = sltpResult.newSL;
                                     console.log('[QUANTUM INIT SL] ' + consensus.symbol +
                                         ': $' + oldSL.toFixed(2) + ' -> $' + sltpResult.newSL.toFixed(2) +
@@ -1135,9 +911,11 @@ class AutonomousTradingBot {
                                     if (this.megatron) {
                                         this.megatron.logActivity('QUANTUM', 'Initial SL (Quantum-Adjusted)',
                                             consensus.symbol + ': Static $' + oldSL.toFixed(2) +
-                                            ' -> Quantum $' + sltpResult.newSL.toFixed(2), sltpResult.adjustments);
+                                            ' -> Quantum $' + sltpResult.newSL.toFixed(2) +
+                                            ' | ' + sltpResult.reasoning, sltpResult.adjustments);
                                     }
                                 }
+
                                 if (sltpResult.newTP && Math.abs(sltpResult.newTP - pos.takeProfit) > 0.01) {
                                     const oldTP = pos.takeProfit;
                                     this.pm.updateTakeProfit(consensus.symbol, sltpResult.newTP);
@@ -1147,16 +925,24 @@ class AutonomousTradingBot {
                                     if (this.megatron) {
                                         this.megatron.logActivity('QUANTUM', 'Initial TP (Quantum-Adjusted)',
                                             consensus.symbol + ': Static $' + (oldTP || 0).toFixed(2) +
-                                            ' -> Quantum $' + sltpResult.newTP.toFixed(2), sltpResult.adjustments);
+                                            ' -> Quantum $' + sltpResult.newTP.toFixed(2) +
+                                            ' | ' + sltpResult.reasoning, sltpResult.adjustments);
                                     }
                                 }
+
                                 console.log('[QUANTUM INIT] Position ' + consensus.symbol +
                                     ' opened with quantum SL/TP | Regime: ' +
                                     (vqcRegime ? vqcRegime.regime : 'N/A') +
-                                    ' | Risk: ' + (qraRisk ? qraRisk.riskScore + '/100' : 'N/A'));
+                                    ' | Risk: ' + (qraRisk ? qraRisk.riskScore + '/100' : 'N/A') +
+                                    ' | QMC: ' + (qmcSim ? (qmcSim.recommendation || 'N/A').substring(0, 30) : 'N/A'));
                             } catch (e) {
                                 console.warn('[WARN] Quantum initial SL/TP:', e.message);
                             }
+                        }
+
+                        // PATCH #20: Notify Skynet that a trade was executed
+                        if (this.neuralAI && this.neuralAI.isReady) {
+                            this.neuralAI.notifyTradeExecuted();
                         }
 
                         this.server.broadcastPortfolioUpdate();
@@ -1173,7 +959,10 @@ class AutonomousTradingBot {
             if (this.pm.positionCount > 0) {
                 const getPriceFn = async (sym) => this._getCurrentPrice(sym);
                 await this.exec.monitorPositions(getPriceFn, history);
+
+                // PATCH #20: Position operations under mutex lock to prevent race conditions
                 if (this.advancedPositionManager) {
+                    await this._withPositionLock(async () => {
                     try {
                         const prices = {};
                         for (const sym of this.pm.getPositions().keys()) {
@@ -1196,9 +985,14 @@ class AutonomousTradingBot {
                             }
                         }
                     } catch(e) { console.warn('[WARN] APM monitor:', e.message); }
+                    });
                 }
 
-                // PATCH #19: APM-PM State Sync
+                // ═══════════════════════════════════════════════════════════════
+                // PATCH #19: APM-PM State Sync — prevent divergence
+                // Periodically verify APM's active positions match PM's positions.
+                // Remove orphaned APM positions that no longer exist in PM.
+                // ═══════════════════════════════════════════════════════════════
                 if (this.advancedPositionManager && this._cycleCount % 10 === 0) {
                     try {
                         const pmPositions = this.pm.getPositions();
@@ -1221,21 +1015,12 @@ class AutonomousTradingBot {
                         }
                     } catch(e) { /* APM sync non-critical */ }
                 }
-
-                // PATCH #39: Balance sanitizer - fix lockedInPositions leak
-                if (this.pm.positionCount === 0 && this.pm.balance && this.pm.balance.lockedInPositions > 0) {
-                    const leaked = this.pm.balance.lockedInPositions;
-                    this.pm.balance.usdtBalance += leaked;
-                    this.pm.balance.lockedInPositions = 0;
-                    console.log('[PATCH39 BALANCE] Recovered leaked lockedInPositions: $' + leaked.toFixed(2) + ' -> usdtBalance');
-                    if (this.megatron && this.megatron.logActivity) {
-                        this.megatron.logActivity('SYSTEM', 'Balance Leak Fix', 'Recovered $' + leaked.toFixed(2) + ' from lockedInPositions (0 positions)', {}, 'normal');
-                    }
-                }
             }
 
             // PATCH #18: Quantum Position Monitoring (full cycle re-evaluation)
+            // PATCH #20: Under position mutex to prevent race conditions with APM/PM
             if (this.pm.positionCount > 0 && this.quantumPosMgr && this.quantumPosMgr.isReady) {
+                await this._withPositionLock(async () => {
                 try {
                     const priceArr = history.map(c => c.close);
                     const portfolio = this.pm.getPortfolio();
@@ -1244,9 +1029,10 @@ class AutonomousTradingBot {
                         history, async (s) => this._getCurrentPrice(s)
                     );
                     if (!qpmResult.summary.skipped) {
-                        await this._applyQuantumPositionActions(qpmResult, history);
+                        this._applyQuantumPositionActions(qpmResult, history);
                     }
                 } catch(e) { console.warn('[WARN] QPM full-cycle:', e.message); }
+                });
             }
 
             // PATCH #15: Neural AI learning from closes
@@ -1255,19 +1041,28 @@ class AutonomousTradingBot {
             // 8. Update health + state
             this.mon.updateHealth(this.pm, this.rm, this.ml, this.isRunning);
 
-            // PATCH #15: Periodic Neural AI status
+            // PATCH #15/20: Periodic Skynet AI status
             if (this.neuralAI && this.neuralAI.isReady && this._cycleCount % 20 === 0) {
                 try {
                     const aiStatus = this.neuralAI.getStatus();
-                    console.log('[NEURAL AI STATUS] Phase: ' + (aiStatus.phase || 'N/A') +
-                        ' | Regime: ' + (aiStatus.regime || 'N/A') +
+                    console.log('[SKYNET STATUS] Phase: ' + (aiStatus.phase || 'N/A') +
+                        ' | Regime: ' + (aiStatus.currentRegime || 'N/A') +
                         ' | Candles: ' + (aiStatus.candlesProcessed || 0) +
                         ' | GRU: ' + (aiStatus.gruTrained ? 'TRAINED' : 'untrained') +
-                        ' | Thompson: ' + (aiStatus.thompsonUpdates || 0));
+                        ' | Thompson: ' + (aiStatus.metaOptimizerUpdates || 0) +
+                        ' | Defense: ' + (aiStatus.defenseMode ? 'ON' : 'off') +
+                        ' | Streak: W' + (aiStatus.consecutiveWins || 0) + '/L' + (aiStatus.consecutiveLosses || 0) +
+                        ' | Aggression: ' + (aiStatus.evolvedConfig ? aiStatus.evolvedConfig.aggressionLevel.toFixed(2) : 'N/A') +
+                        ' | Risk: ' + (aiStatus.evolvedConfig ? (aiStatus.evolvedConfig.riskPerTrade * 100).toFixed(1) + '%' : 'N/A') +
+                        ' | IdleCycles: ' + (aiStatus.cyclesWithoutTrade || 0));
                     if (this.megatron) {
-                        this.megatron.logActivity('LEARNING', 'Neural AI Status',
-                            'Phase: ' + aiStatus.phase + ' | GRU: ' + (aiStatus.gruTrained ? 'trained' : 'learning') +
-                            ' | Thompson: ' + aiStatus.thompsonUpdates + ' updates');
+                        this.megatron.logActivity('LEARNING', 'Skynet Status',
+                            'Phase: ' + aiStatus.phase +
+                            ' | GRU: ' + (aiStatus.gruTrained ? 'trained' : 'learning') +
+                            ' | Thompson: ' + aiStatus.metaOptimizerUpdates + ' updates' +
+                            ' | Defense: ' + (aiStatus.defenseMode ? 'ON' : 'off') +
+                            ' | WinRate: ' + (aiStatus.rollingWinRate || 'N/A') +
+                            ' | Evolutions: ' + (aiStatus.configEvolutions || 0));
                     }
                 } catch(e) {}
             }
@@ -1338,7 +1133,7 @@ class AutonomousTradingBot {
      * PATCH #18: Apply quantum position management actions.
      * Executes SL/TP adjustments, partial closes, and logs to Megatron.
      */
-    async _applyQuantumPositionActions(qpmResult, marketDataHistory) {
+    _applyQuantumPositionActions(qpmResult, marketDataHistory) {
         try {
             // Apply SL/TP adjustments
             for (const adj of qpmResult.adjustments) {
@@ -1346,6 +1141,7 @@ class AutonomousTradingBot {
                 if (!pos) continue;
 
                 if (adj.type === 'SL_UPDATE' && adj.newValue) {
+                    // Direction-aware SL update: updateStopLoss handles direction internally
                     this.pm.updateStopLoss(adj.symbol, adj.newValue);
                     console.log('[QUANTUM SL] ' + adj.symbol + ': $' + adj.oldValue.toFixed(2) +
                         ' -> $' + adj.newValue.toFixed(2) + ' | ' + adj.reasoning);
@@ -1418,32 +1214,50 @@ class AutonomousTradingBot {
                     ' | Consolidate: ' + (opt.consolidations || []).length);
             }
 
-            // PATCH #19: Execute pyramid recommendations
+            // ═══════════════════════════════════════════════════════════════════
+            // PATCH #19: Execute pyramid recommendations from QAOA optimizer
+            // Previously pyramid recs were only logged — now they are executed
+            // as additional position layers with proper risk validation.
+            // ═══════════════════════════════════════════════════════════════════
             if (qpmResult.portfolioOpt && qpmResult.portfolioOpt.pyramidRecommendations) {
                 for (const pyrRec of qpmResult.portfolioOpt.pyramidRecommendations) {
                     const pos = this.pm.getPosition(pyrRec.symbol);
                     if (!pos) continue;
+
                     try {
                         const currentPrice = await this._getCurrentPrice(pyrRec.symbol);
                         if (!currentPrice) continue;
+
+                        // Calculate pyramid quantity based on recommended size percentage
                         const portfolio = this.pm.getPortfolio();
                         const addValue = portfolio.totalValue * (pyrRec.addSizePct / 100);
                         const addQty = addValue / currentPrice;
+
                         if (addQty <= 0.000001) continue;
+
+                        // Verify risk limits before pyramid execution
                         if (!this.rm.checkOvertradingLimit()) {
-                            console.log('[PYRAMID SKIP] Overtrading limit for ' + pyrRec.symbol);
+                            console.log('[PYRAMID SKIP] Overtrading limit reached for ' + pyrRec.symbol);
                             continue;
                         }
+
+                        // Verify we have sufficient balance
                         if (addValue > this.pm.balance.usdtBalance * 0.9) {
                             console.log('[PYRAMID SKIP] Insufficient balance for ' + pyrRec.symbol);
                             continue;
                         }
+
+                        // Execute pyramid add via PortfolioManager
                         const result = this.pm.addToPosition(pyrRec.symbol, currentPrice, addQty);
                         if (result) {
+                            // Account for trading fees
                             const fees = currentPrice * addQty * this.config.tradingFeeRate;
                             this.pm.portfolio.realizedPnL -= fees;
+
+                            // Recalculate SL/TP for the new average entry via QPM
                             if (this.quantumPosMgr && this.quantumPosMgr.isReady) {
                                 try {
+                                    const priceArr = marketDataHistory.map(c => c.close);
                                     let currentATR = pos.atrAtEntry || (currentPrice * 0.02);
                                     if (marketDataHistory && marketDataHistory.length >= 20) {
                                         const candleData = marketDataHistory.slice(-20).map(c => ({
@@ -1455,6 +1269,7 @@ class AutonomousTradingBot {
                                         const liveATR = ind.calculateATR(candleData, 14);
                                         if (liveATR > 0) currentATR = liveATR;
                                     }
+                                    // Recalculate quantum SL/TP with new average entry
                                     const sltpResult = this.quantumPosMgr.dynamicSLTP.calculate(
                                         result, currentPrice, currentATR, null, null, null
                                     );
@@ -1462,14 +1277,21 @@ class AutonomousTradingBot {
                                     if (sltpResult.newTP) this.pm.updateTakeProfit(pyrRec.symbol, sltpResult.newTP);
                                 } catch (e) { /* QPM recalc non-critical */ }
                             }
+
                             console.log('[QUANTUM PYRAMID] Level ' + pyrRec.level + ' ' + pyrRec.symbol +
                                 ': +' + addQty.toFixed(6) + ' @ $' + currentPrice.toFixed(2) +
-                                ' | New avg: $' + result.entryPrice.toFixed(2) + ' | ' + pyrRec.reason);
+                                ' | New avg: $' + result.entryPrice.toFixed(2) +
+                                ' | ' + pyrRec.reason);
+
                             if (this.megatron) {
                                 this.megatron.logActivity('TRADE', 'Quantum Pyramid: L' + pyrRec.level,
                                     pyrRec.symbol + ' +' + addQty.toFixed(6) + ' @ $' + currentPrice.toFixed(2) +
-                                    ' | New avg: $' + result.entryPrice.toFixed(2) + ' | ' + pyrRec.reason, pyrRec, 'normal');
+                                    ' | New avg: $' + result.entryPrice.toFixed(2) +
+                                    ' | Total qty: ' + result.quantity.toFixed(6) +
+                                    ' | ' + pyrRec.reason, pyrRec, 'normal');
                             }
+
+                            // Sync pyramid with APM
                             if (this.advancedPositionManager) {
                                 try {
                                     const pid = pyrRec.symbol + '-pyramid-' + Date.now();
@@ -1485,15 +1307,20 @@ class AutonomousTradingBot {
                 }
             }
 
+            // ═══════════════════════════════════════════════════════════════════
             // PATCH #19: Execute consolidation recommendations
+            // Close tiny or very unhealthy positions as recommended by QAOA.
+            // ═══════════════════════════════════════════════════════════════════
             if (qpmResult.portfolioOpt && qpmResult.portfolioOpt.consolidations) {
                 for (const cons of qpmResult.portfolioOpt.consolidations) {
                     if (cons.action !== 'CLOSE') continue;
                     const pos = this.pm.getPosition(cons.symbol);
                     if (!pos) continue;
+
                     try {
                         const currentPrice = await this._getCurrentPrice(cons.symbol);
                         if (!currentPrice) continue;
+
                         const trade = this.pm.closePosition(cons.symbol, currentPrice, null, 'QUANTUM_CONSOLIDATE', 'QuantumPosMgr');
                         if (trade) {
                             this.rm.recordTradeResult(trade.pnl);
@@ -1504,9 +1331,13 @@ class AutonomousTradingBot {
                             }
                             if (this.megatron) {
                                 this.megatron.logActivity('TRADE', 'Quantum Consolidation',
-                                    cons.symbol + ' | PnL: $' + trade.pnl.toFixed(2) + ' | ' + cons.reason, trade, 'normal');
+                                    cons.symbol + ' | PnL: $' + trade.pnl.toFixed(2) +
+                                    ' | ' + cons.reason, trade, 'normal');
                             }
-                            if (this.quantumPosMgr) this.quantumPosMgr.onPositionClosed(cons.symbol);
+                            if (this.quantumPosMgr) {
+                                this.quantumPosMgr.onPositionClosed(cons.symbol);
+                            }
+                            // Sync APM
                             if (this.advancedPositionManager) {
                                 try {
                                     const ap = this.advancedPositionManager.activePositions;
@@ -1541,28 +1372,54 @@ class AutonomousTradingBot {
             if (currentPosCount < this._lastPositionCount || Math.abs(currentRealizedPnL - this._lastRealizedPnL) > 0.01) {
                 const pnlDelta = currentRealizedPnL - this._lastRealizedPnL;
                 if (Math.abs(pnlDelta) > 0.01) {
-                    console.log('[NEURAL AI] Trade close detected: PnL=$' + pnlDelta.toFixed(2));
+                    console.log('[SKYNET] Trade close detected: PnL=$' + pnlDelta.toFixed(2));
+
+                    // PATCH #20: Compute real features for learnFromTrade
+                    const drawdownPct = portfolio.maxDrawdown || 0;
+                    const history = this.dp.getMarketDataHistory();
+                    let volatility = 0.02;
+                    if (history && history.length > 20) {
+                        const returns = [];
+                        for (let i = 1; i < Math.min(history.length, 50); i++) {
+                            returns.push((history[i].close - history[i-1].close) / history[i-1].close);
+                        }
+                        if (returns.length > 5) {
+                            const mean = returns.reduce((s, r) => s + r, 0) / returns.length;
+                            volatility = Math.sqrt(returns.reduce((s, r) => s + (r - mean) ** 2, 0) / returns.length);
+                        }
+                    }
+
+                    // PATCH #36: Divide PnL among contributing strategies (P2-5)
+                    const stratCount = Math.max(1, this._lastConsensusStrategies.length);
                     for (const stratName of this._lastConsensusStrategies) {
                         this.neuralAI.learnFromTrade({
-                            pnl: pnlDelta, strategy: stratName,
-                            winRate: portfolio.winRate || 0, consecutiveLosses: this.rm.consecutiveLosses || 0,
-                        });
-                    } // end strategy for-loop
-                    // PATCH 30c: neuronManager.learnFromTrade OUTSIDE loop (was inside = N losses for 1 trade)
-                    if (this.neuronManager) {
-                        this.neuronManager.learnFromTrade({
-                            pnl: pnlDelta,
-                            strategy: 'EnsembleVoting',
-                            action: 'close',
+                            pnl: pnlDelta / stratCount, strategy: stratName,
+                            winRate: portfolio.winRate || 0,
+                            consecutiveLosses: this.rm.consecutiveLosses || 0,
+                            drawdownPct: drawdownPct,
+                            volatility: volatility,
+                            symbol: this.config.symbol,
                         });
                     }
                     this.neuralAI.learnFromTrade({
                         pnl: pnlDelta, strategy: 'EnsembleVoting',
-                        winRate: portfolio.winRate || 0, consecutiveLosses: this.rm.consecutiveLosses || 0,
+                        winRate: portfolio.winRate || 0,
+                        consecutiveLosses: this.rm.consecutiveLosses || 0,
+                        drawdownPct: drawdownPct,
+                        volatility: volatility,
+                        symbol: this.config.symbol,
                     });
+                    // PATCH #36: ML must also learn from SL/TP/TIME closes (P0-1)
+                    if (this.ml) {
+                        try {
+                            this.ml.learnFromTrade(pnlDelta, Date.now() - (this._lastTradeOpenTime || Date.now()), history || []);
+                        } catch(e) { console.warn('[ML LEARN] Error in _detectAndLearnFromCloses:', e.message); }
+                    }
                     if (this.megatron) {
                         this.megatron.logActivity('LEARNING', 'Trade learned',
-                            'PnL: $' + pnlDelta.toFixed(2) + ' | Strategies: ' + (this._lastConsensusStrategies.join(', ') || 'N/A'),
+                            'PnL: $' + pnlDelta.toFixed(2) + ' | Strategies: ' + (this._lastConsensusStrategies.join(', ') || 'N/A') +
+                            ' | Defense: ' + (this.neuralAI.defenseMode ? 'ON' : 'off') +
+                            ' | W' + this.neuralAI.consecutiveWins + '/L' + this.neuralAI.consecutiveLosses,
                             { pnl: pnlDelta }, pnlDelta >= 0 ? 'normal' : 'high');
                     }
                 }
@@ -1613,9 +1470,6 @@ class AutonomousTradingBot {
         this.state.save(this.pm, this.rm, this.ml);
         if (this.neuralAI) {
             try { await this.neuralAI.saveCheckpoint(); console.log('[NEURAL AI] Checkpoint saved'); } catch(e) {}
-        }
-        if (this.neuronManager) {
-            try { this.neuronManager._saveState(); console.log('[NEURON AI MANAGER] State saved'); } catch(e) {}
         }
         if (this.megatron) this.megatron.logActivity('SYSTEM', 'Bot Shutdown', 'Graceful stop');
         console.log('Bot stopped. State saved.');

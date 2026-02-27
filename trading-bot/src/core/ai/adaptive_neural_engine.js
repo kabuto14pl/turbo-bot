@@ -52,6 +52,18 @@ const BUFFER_MAX_SIZE = 2000;      // Experience buffer capacity
 const BLEND_AI_WEIGHT_INITIAL = 0.3;  // AI influence starts at 30%
 const BLEND_AI_WEIGHT_MAX = 0.85;     // AI influence grows to 85%
 
+// PATCH #20: Skynet Autonomous Brain Constants
+const DEFENSE_MODE_TRIGGER_LOSSES = 5;     // PATCH #39A: 3→5 (prevent premature defense lock)
+const DEFENSE_MODE_RISK_REDUCTION = 0.65;  // PATCH #39A: 0.5→0.65 (less aggressive risk cut)
+const DEFENSE_MODE_COOLDOWN_MS = 1800000;  // PATCH #39A: 1h→30min (faster recovery)
+const PARAM_EVOLUTION_INTERVAL = 50;       // Evolve config every N trades
+const PHASE_RECOVERY_TIMEOUT_MS = 120000;  // 2min timeout to detect training crash
+const PRIORITY_REPLAY_RATIO = 0.3;         // 30% of replay buffer = high-priority
+const MIN_TRADES_PER_CYCLE = 1;            // Starvation override threshold
+const STARVATION_WINDOW_CYCLES = 200;      // Cycles without trade = starvation
+const AGGRESSION_RAMP_WINS = 5;            // Win streak to increase aggression
+const AGGRESSION_DECAY_LOSSES = 4;         // PATCH #39A: 2→4 (slower aggression decay)
+
 // ============================================================================
 // FEATURE PIPELINE — extracts and normalizes features from candle data
 // ============================================================================
@@ -115,13 +127,30 @@ class FeaturePipeline {
         }
 
         // MACD histogram
+        // PATCH #36: Proper MACD Signal Line (EMA9 of MACD values) → histogram = MACD - Signal
         let macdHist = 0;
-        if (sliceP.length >= 26) {
+        if (sliceP.length >= 35) { // Need 26+9=35 for proper signal line
+            // Compute MACD line for last 9 bars + current
+            const macdValues = [];
+            for (let j = sliceP.length - 10; j < sliceP.length; j++) {
+                const subSlice = sliceP.slice(0, j + 1);
+                if (subSlice.length >= 26) {
+                    const e12 = this._ema(subSlice, 12);
+                    const e26 = this._ema(subSlice, 26);
+                    macdValues.push(e12 - e26);
+                }
+            }
+            if (macdValues.length >= 2) {
+                const currentMACD = macdValues[macdValues.length - 1];
+                // Signal line = EMA9 of MACD values
+                const signalLine = this._ema(macdValues, Math.min(9, macdValues.length));
+                macdHist = currentMACD - signalLine;
+            }
+        } else if (sliceP.length >= 26) {
+            // Fallback: not enough data for full signal, use simple MACD line
             const ema12 = this._ema(sliceP, 12);
             const ema26 = this._ema(sliceP, 26);
-            const macdLine = ema12 - ema26;
-            // Signal line approximation (9-period EMA of MACD)
-            macdHist = macdLine * 0.2; // Simplified: use fraction of MACD line
+            macdHist = ema12 - ema26;
         }
 
         // Bollinger %B
@@ -642,9 +671,6 @@ class MetaStrategyOptimizer {
         this.totalUpdates = 0;
     }
 
-    /**
-     * Initialize Beta(1,1) uniform priors for all strategy-regime pairs
-     */
     _ensureDistributions(regime, strategies) {
         if (!this.distributions[regime]) this.distributions[regime] = {};
         for (const s of strategies) {
@@ -654,18 +680,12 @@ class MetaStrategyOptimizer {
         }
     }
 
-    /**
-     * Sample from Beta(alpha, beta) distribution using Gamma distribution method
-     */
     _sampleBeta(alpha, beta) {
         const x = this._sampleGamma(alpha, 1);
         const y = this._sampleGamma(beta, 1);
         return (x + y) > 0 ? x / (x + y) : 0.5;
     }
 
-    /**
-     * Marsaglia and Tsang's Gamma distribution sampler
-     */
     _sampleGamma(shape, scale) {
         if (shape < 1) {
             return this._sampleGamma(shape + 1, scale) * Math.pow(Math.random(), 1.0 / shape);
@@ -690,17 +710,10 @@ class MetaStrategyOptimizer {
         return Math.sqrt(-2 * Math.log(u1 + 1e-10)) * Math.cos(2 * Math.PI * u2);
     }
 
-    /**
-     * Get optimal strategy weights for current regime via Thompson Sampling
-     * @param {string} regime - current market regime
-     * @param {string[]} strategies - available strategy names
-     * @returns {object} - { strategyName: weight }
-     */
     getOptimalWeights(regime, strategies) {
         strategies = strategies || this.defaultStrategies;
         this._ensureDistributions(regime, strategies);
 
-        // Not enough data yet — return blended static weights
         if (this.totalUpdates < 10) return { ...this.staticWeights };
 
         const samples = {};
@@ -712,7 +725,6 @@ class MetaStrategyOptimizer {
             total += sample;
         }
 
-        // Normalize to sum to 1, with minimum 3% per strategy (exploration floor)
         const minWeight = 0.03;
         const weights = {};
         const excess = strategies.length * minWeight;
@@ -720,7 +732,6 @@ class MetaStrategyOptimizer {
             weights[s] = minWeight + (1 - excess) * (samples[s] / (total || 1));
         }
 
-        // Blend with static weights for safety: AI_blend * thompson + (1-AI_blend) * static
         const aiBlend = Math.min(BLEND_AI_WEIGHT_MAX,
             BLEND_AI_WEIGHT_INITIAL + (this.totalUpdates / 200) * (BLEND_AI_WEIGHT_MAX - BLEND_AI_WEIGHT_INITIAL));
 
@@ -730,37 +741,27 @@ class MetaStrategyOptimizer {
             result[s] = aiBlend * weights[s] + (1 - aiBlend) * staticW;
         }
 
-        // Final normalization
         const finalTotal = Object.values(result).reduce((a, b) => a + b, 0);
         for (const s of Object.keys(result)) result[s] /= finalTotal;
 
         return result;
     }
 
-    /**
-     * Record trade result for a strategy in a regime
-     * Updates the Beta distribution parameters
-     */
     recordResult(regime, strategy, pnl) {
         this._ensureDistributions(regime, [strategy]);
         const dist = this.distributions[regime][strategy];
 
         if (pnl > 0) {
-            // Win: increase alpha proportionally to profit magnitude
             const bonus = Math.min(3, 1 + Math.abs(pnl) / 20);
             dist.alpha += bonus;
         } else if (pnl < 0) {
-            // Loss: increase beta proportionally to loss magnitude
             const penalty = Math.min(3, 1 + Math.abs(pnl) / 20);
             dist.beta += penalty;
         } else {
-            // Breakeven: small increase to both (shrinks variance)
             dist.alpha += 0.2;
             dist.beta += 0.2;
         }
 
-        // Decay old data: periodically reduce alpha/beta to adapt to changing markets
-        // Every 50 updates, decay by 5%
         this.totalUpdates++;
         if (this.totalUpdates % 50 === 0) {
             for (const r of Object.keys(this.distributions)) {
@@ -773,9 +774,6 @@ class MetaStrategyOptimizer {
         }
     }
 
-    /**
-     * Get expected win rate per strategy for a regime
-     */
     getExpectedWinRates(regime) {
         if (!this.distributions[regime]) return {};
         const rates = {};
@@ -799,7 +797,7 @@ class NeuralRiskManager {
     constructor() {
         this.model = null;
         this.trained = false;
-        this.defaultRisk = 0.015; // 1.5% default
+        this.defaultRisk = 0.015;
     }
 
     buildModel() {
@@ -807,15 +805,11 @@ class NeuralRiskManager {
         this.model = tf.sequential();
         this.model.add(tf.layers.dense({ units: 8, activation: 'relu', inputShape: [RISK_FEATURES] }));
         this.model.add(tf.layers.dense({ units: 4, activation: 'relu' }));
-        this.model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' })); // 0-1 output
+        this.model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
         this.model.compile({ optimizer: tf.train.adam(0.001), loss: 'meanSquaredError' });
         console.log('[NEURAL AI] Risk model built: ' + this.model.countParams() + ' parameters');
     }
 
-    /**
-     * Predict optimal risk percentage
-     * @returns {{ riskPercent: number, confidence: number, source: string }}
-     */
     async predict(riskFeatures) {
         if (!tf || !this.model || !this.trained) {
             return { riskPercent: this.defaultRisk, confidence: 0.3, source: 'DEFAULT' };
@@ -825,7 +819,6 @@ class NeuralRiskManager {
             const pred = this.model.predict(input);
             return pred.dataSync()[0];
         });
-        // Scale sigmoid output [0,1] to risk range [0.005, 0.03] (0.5% - 3.0%)
         const riskPercent = 0.005 + result * 0.025;
         return { riskPercent, confidence: 0.6, source: 'NEURAL' };
     }
@@ -833,7 +826,6 @@ class NeuralRiskManager {
     async train(samples, epochs = 10) {
         if (!tf || !this.model || samples.length < 30) return;
         const xs = tf.tensor2d(samples.map(s => s.features), [samples.length, RISK_FEATURES]);
-        // Target: optimal risk normalized to [0,1] where 0=0.5% and 1=3%
         const ys = tf.tensor2d(samples.map(s => [s.targetRisk]), [samples.length, 1]);
         try {
             await this.model.fit(xs, ys, { epochs, batchSize: Math.min(16, samples.length), verbose: 0 });
@@ -866,20 +858,29 @@ class NeuralRiskManager {
 
 // ============================================================================
 // EXPERIENCE BUFFER — stores market data + trade outcomes for training
+// PATCH #20: Priority replay with recency weighting + TD-error priority
 // ============================================================================
 class ExperienceBuffer {
     constructor(maxSize = BUFFER_MAX_SIZE) {
         this.maxSize = maxSize;
-        this.lstmSequences = [];    // { features, label }
-        this.regimeSamples = [];    // { features, label }
-        this.riskSamples = [];      // { features, targetRisk }
+        this.lstmSequences = [];
+        this.regimeSamples = [];
+        this.riskSamples = [];
         this.candlesProcessed = 0;
         this.lastTrainCandle = 0;
+        this.highPriorityLSTM = [];
+        this.maxHighPriority = Math.floor(maxSize * PRIORITY_REPLAY_RATIO);
     }
 
-    addLSTMSequence(features, label) {
-        this.lstmSequences.push({ features, label });
+    addLSTMSequence(features, label, priority = 1.0) {
+        const entry = { features, label, priority, timestamp: Date.now() };
+        this.lstmSequences.push(entry);
         if (this.lstmSequences.length > this.maxSize) this.lstmSequences.shift();
+
+        if (priority > 1.5) {
+            this.highPriorityLSTM.push(entry);
+            if (this.highPriorityLSTM.length > this.maxHighPriority) this.highPriorityLSTM.shift();
+        }
     }
 
     addRegimeSample(features, label) {
@@ -890,6 +891,31 @@ class ExperienceBuffer {
     addRiskSample(features, targetRisk) {
         this.riskSamples.push({ features, targetRisk });
         if (this.riskSamples.length > this.maxSize / 2) this.riskSamples.shift();
+    }
+
+    getPrioritizedLSTMBatch(maxSamples = 1000) {
+        const recentCount = Math.ceil(maxSamples * (1 - PRIORITY_REPLAY_RATIO));
+        const priorityCount = Math.floor(maxSamples * PRIORITY_REPLAY_RATIO);
+
+        const recent = this.lstmSequences.slice(-recentCount);
+
+        let prioritySamples = [];
+        if (this.highPriorityLSTM.length > 0) {
+            for (let i = 0; i < priorityCount; i++) {
+                const idx = Math.floor(Math.random() * this.highPriorityLSTM.length);
+                prioritySamples.push(this.highPriorityLSTM[idx]);
+            }
+        }
+
+        const combined = [...recent, ...prioritySamples];
+
+        for (let i = combined.length - 1; i > 0; i--) {
+            const recencyWeight = i > combined.length * 0.7 ? 2 : 1;
+            const j = Math.floor(Math.pow(Math.random(), 1 / recencyWeight) * (i + 1));
+            [combined[i], combined[j]] = [combined[j], combined[i]];
+        }
+
+        return combined.slice(0, maxSamples);
     }
 
     shouldTrain() {
@@ -906,12 +932,13 @@ class ExperienceBuffer {
             lstmCount: this.lstmSequences.length,
             regimeCount: this.regimeSamples.length,
             riskCount: this.riskSamples.length,
+            highPriorityCount: this.highPriorityLSTM.length,
         };
     }
 }
 
 // ============================================================================
-// ADAPTIVE NEURAL ENGINE — Main Orchestrator
+// ADAPTIVE NEURAL ENGINE — SKYNET AUTONOMOUS BRAIN (PATCH #20)
 // ============================================================================
 class AdaptiveNeuralEngine {
     constructor() {
@@ -923,7 +950,7 @@ class AdaptiveNeuralEngine {
         this.buffer = new ExperienceBuffer();
 
         this.isReady = false;
-        this.phase = 'HEURISTIC'; // HEURISTIC → LEARNING → AI_ACTIVE
+        this.phase = 'HEURISTIC';
         this.currentRegime = 'RANGING';
         this.lastPrediction = null;
         this.lastRegimeResult = null;
@@ -932,28 +959,58 @@ class AdaptiveNeuralEngine {
         this.totalSignalsGenerated = 0;
         this.correctPredictions = 0;
         this.initialized = false;
+
+        // PATCH #20: SKYNET AUTONOMOUS BRAIN STATE
+        this.defenseMode = false;
+        this.defenseModeActivatedAt = 0;
+        this.consecutiveLosses = 0;
+        this.consecutiveWins = 0;
+
+        this.evolvedConfig = {
+            riskPerTrade: 0.015,
+            aggressionLevel: 1.0,
+            confidenceThreshold: 0.35,
+            ensembleOverrideThreshold: 0.85,
+            reversalEnabled: true,
+            maxDrawdownTolerance: 0.12,
+        };
+        this.configEvolutionHistory = [];
+        this.totalTradesForEvolution = 0;
+        this.recentTradeResults = [];
+
+        this.pendingPositionCommands = [];
+
+        this.cyclesWithoutTrade = 0;
+        this.lastTradeTimestamp = Date.now();
+
+        this.quantumRejectionsForStrategy = {};
+        this.quantumApprovalsForStrategy = {};
+        this.crossSystemFeedback = [];
+
+        this._lastTrainingAttempt = 0;
+        this._trainingFailCount = 0;
+
+        this._activeOverride = null;
+
+        this._performanceWindow = [];
+        this._rollingWinRate = 0.5;
+        this._rollingSharpe = 0;
+        this._rollingAvgPnL = 0;
     }
 
-    /**
-     * Initialize all models, load checkpoints if available
-     */
     async initialize() {
-        console.log('[NEURAL AI] Initializing Adaptive Neural Engine...');
+        console.log('[SKYNET] Initializing Adaptive Neural Engine (SKYNET BRAIN)...');
 
-        // Ensure model directory exists
         if (!fs.existsSync(MODEL_DIR)) fs.mkdirSync(MODEL_DIR, { recursive: true });
 
-        // Build models
         this.pricePredictor.buildModel();
         this.regimeDetector.buildModel();
         this.riskPredictor.buildModel();
 
-        // Try loading checkpoints
         const gruLoaded = await this.pricePredictor.load(MODEL_DIR);
         const regimeLoaded = await this.regimeDetector.load(MODEL_DIR);
         const riskLoaded = await this.riskPredictor.load(MODEL_DIR);
 
-        // Load meta-optimizer and feature stats
         try {
             const metaPath = path.join(MODEL_DIR, 'meta_state.json');
             if (fs.existsSync(metaPath)) {
@@ -965,11 +1022,17 @@ class AdaptiveNeuralEngine {
                 this.phase = state.phase || 'HEURISTIC';
                 this.totalSignalsGenerated = state.totalSignals || 0;
                 this.correctPredictions = state.correctPredictions || 0;
-                console.log('[NEURAL AI] State restored: phase=' + this.phase + ', candles=' + this.buffer.candlesProcessed);
+                if (state.evolvedConfig) {
+                    Object.assign(this.evolvedConfig, state.evolvedConfig);
+                }
+                if (state.defenseMode !== undefined) this.defenseMode = state.defenseMode;
+                if (state.consecutiveLosses !== undefined) this.consecutiveLosses = state.consecutiveLosses;
+                if (state.consecutiveWins !== undefined) this.consecutiveWins = state.consecutiveWins;
+                console.log('[SKYNET] State restored: phase=' + this.phase + ', candles=' + this.buffer.candlesProcessed +
+                    ', defense=' + this.defenseMode + ', aggression=' + this.evolvedConfig.aggressionLevel.toFixed(2));
             }
-        } catch (e) { console.warn('[NEURAL AI] No saved state, starting fresh'); }
+        } catch (e) { console.warn('[SKYNET] No saved state, starting fresh'); }
 
-        // Determine initial phase
         if (gruLoaded && this.buffer.candlesProcessed >= 500) {
             this.phase = 'AI_ACTIVE';
         } else if (this.buffer.candlesProcessed >= 100) {
@@ -980,48 +1043,43 @@ class AdaptiveNeuralEngine {
 
         this.isReady = true;
         this.initialized = true;
-        console.log('[NEURAL AI] Engine ready | Phase: ' + this.phase + ' | TF: ' + (tf ? tf.version.tfjs : 'N/A'));
-        console.log('[NEURAL AI] Models: GRU=' + (gruLoaded ? 'loaded' : 'new') +
+        console.log('[SKYNET] Engine ready | Phase: ' + this.phase + ' | TF: ' + (tf ? tf.version.tfjs : 'N/A'));
+        console.log('[SKYNET] Models: GRU=' + (gruLoaded ? 'loaded' : 'new') +
             ', Regime=' + (regimeLoaded ? 'loaded' : 'new') +
             ', Risk=' + (riskLoaded ? 'loaded' : 'new'));
+        console.log('[SKYNET] Config: risk=' + (this.evolvedConfig.riskPerTrade * 100).toFixed(1) +
+            '%, aggression=' + this.evolvedConfig.aggressionLevel.toFixed(2) +
+            ', confThreshold=' + this.evolvedConfig.confidenceThreshold);
     }
 
-    /**
-     * Process market data update — extract features, buffer data, detect regime
-     * Call this every trading cycle with latest candle history
-     */
     async processMarketUpdate(candles) {
         if (!this.isReady || !candles || candles.length < 80) return;
 
         this.buffer.candlesProcessed++;
+        this.cyclesWithoutTrade++;
 
-        // Extract features
         const lstmFeatures = this.featurePipeline.extractLSTMFeatures(candles);
         const regimeFeatures = this.featurePipeline.extractRegimeFeatures(candles);
 
-        // Detect market regime
         if (regimeFeatures) {
             this.lastRegimeResult = await this.regimeDetector.detect(regimeFeatures);
             this.currentRegime = this.lastRegimeResult.regime;
-
-            // Buffer regime sample with heuristic label
             const label = this.regimeDetector.generateLabel(regimeFeatures);
             this.buffer.addRegimeSample(regimeFeatures, label);
         }
 
-        // Buffer LSTM sequence with direction label (from previous prediction)
         if (lstmFeatures && candles.length >= LSTM_WINDOW + 62) {
             const prices = candles.map(c => c.close);
             const n = prices.length;
-            // Label: direction of CURRENT candle vs previous
             const currentReturn = (prices[n - 1] - prices[n - 2]) / prices[n - 2];
-            const label = currentReturn > DIRECTION_THRESHOLD ? [0, 0, 1]  // UP
-                : currentReturn < -DIRECTION_THRESHOLD ? [1, 0, 0]  // DOWN
-                : [0, 1, 0]; // NEUTRAL
+            const label = currentReturn > DIRECTION_THRESHOLD ? [0, 0, 1]
+                : currentReturn < -DIRECTION_THRESHOLD ? [1, 0, 0]
+                : [0, 1, 0];
 
-            this.buffer.addLSTMSequence(lstmFeatures, label);
+            const absReturn = Math.abs(currentReturn);
+            const priority = absReturn > 0.01 ? 3.0 : absReturn > 0.005 ? 2.0 : 1.0;
+            this.buffer.addLSTMSequence(lstmFeatures, label, priority);
 
-            // Track prediction accuracy
             if (this.lastPrediction) {
                 const predictedDir = this.lastPrediction.direction;
                 const actualDir = label[2] > 0.5 ? 'UP' : label[0] > 0.5 ? 'DOWN' : 'NEUTRAL';
@@ -1029,136 +1087,300 @@ class AdaptiveNeuralEngine {
             }
         }
 
-        // Phase transitions
         if (this.phase === 'HEURISTIC' && this.buffer.candlesProcessed >= 100) {
             this.phase = 'LEARNING';
-            console.log('[NEURAL AI] Phase transition: HEURISTIC -> LEARNING');
+            console.log('[SKYNET] Phase transition: HEURISTIC -> LEARNING');
         }
         if (this.phase === 'LEARNING' && this.buffer.candlesProcessed >= 500 && this.pricePredictor.trained) {
             this.phase = 'AI_ACTIVE';
-            console.log('[NEURAL AI] Phase transition: LEARNING -> AI_ACTIVE');
+            console.log('[SKYNET] Phase transition: LEARNING -> AI_ACTIVE');
         }
 
-        // Trigger training if enough new data
+        if (this.phase === 'LEARNING' && this.buffer.candlesProcessed > 600 && !this.pricePredictor.trained) {
+            if (this._trainingFailCount > 3) {
+                console.log('[SKYNET] PHASE RECOVERY: Training failed ' + this._trainingFailCount + ' times, forcing retrain');
+                this.buffer.lastTrainCandle = 0;
+                this._trainingFailCount = 0;
+            }
+        }
+
+        if (this.defenseMode && Date.now() - this.defenseModeActivatedAt > DEFENSE_MODE_COOLDOWN_MS) {
+            if (this.consecutiveWins >= 2 || (Date.now() - this.defenseModeActivatedAt > DEFENSE_MODE_COOLDOWN_MS * 3)) {
+                this.defenseMode = false;
+                console.log('[SKYNET] DEFENSE MODE DEACTIVATED: ' +
+                    (this.consecutiveWins >= 2 ? 'Win streak recovery' : 'Cooldown expired'));
+            }
+        }
+
         if (this.buffer.shouldTrain() && !this.trainingInProgress) {
             this._triggerTraining();
         }
 
-        // Save checkpoint periodically
         if (this.buffer.candlesProcessed % CHECKPOINT_INTERVAL === 0) {
             await this._saveCheckpoint();
         }
     }
 
-    /**
-     * Generate AI trading signal based on GRU prediction + regime context
-     * @param {Array} candles - market data history
-     * @param {boolean} hasPosition - whether we currently have an open position
-     * @returns {object|null} - signal { action, confidence, symbol, strategy, ... }
-     */
     async generateAISignal(candles, hasPosition) {
         if (!this.isReady || this.phase === 'HEURISTIC') return null;
+
+        if (this._activeOverride && this._activeOverride.expiresAt > Date.now()) {
+            const ovr = this._activeOverride;
+            console.log('[SKYNET OVERRIDE] Forcing: ' + ovr.action + ' (conf: ' + (ovr.confidence * 100).toFixed(1) + '%) — ' + ovr.reason);
+            const price = candles[candles.length - 1].close;
+            return {
+                symbol: 'BTCUSDT', action: ovr.action, confidence: ovr.confidence, price,
+                timestamp: Date.now(), strategy: 'NeuralAI', riskLevel: 1, quantity: 0,
+                metadata: { override: true, reason: ovr.reason, phase: this.phase },
+            };
+        }
 
         const lstmFeatures = this.featurePipeline.extractLSTMFeatures(candles);
         if (!lstmFeatures) return null;
 
-        // GRU prediction
         const prediction = await this.pricePredictor.predict(lstmFeatures);
         this.lastPrediction = prediction;
         this.totalSignalsGenerated++;
 
-        // Combine with regime context
         const regime = this.currentRegime;
         let action = 'HOLD';
         let confidence = prediction.confidence;
 
-        // AI blend factor based on phase and training maturity
         const aiTrust = this.phase === 'AI_ACTIVE'
             ? Math.min(0.9, 0.5 + this.pricePredictor.trainCount * 0.05)
             : Math.min(0.5, 0.2 + this.pricePredictor.trainCount * 0.03);
 
-        // Regime-aware signal generation
+        const aggressionMult = this.evolvedConfig.aggressionLevel;
+        const defenseMult = this.defenseMode ? DEFENSE_MODE_RISK_REDUCTION : 1.0;
+
+        // PATCH #39C: Combined confidence floor
+        const combinedMult = aiTrust * aggressionMult * defenseMult;
+        const effectiveMult = Math.max(0.25, combinedMult);
+
         if (prediction.direction === 'UP' && confidence > 0.45) {
             if (regime === 'TRENDING_UP') {
                 action = 'BUY';
-                confidence = Math.min(0.95, confidence * 1.15 * aiTrust); // Boost in favorable regime
+                confidence = Math.min(0.95, confidence * 1.15 * effectiveMult);
             } else if (regime === 'RANGING') {
                 action = 'BUY';
-                confidence = confidence * 0.85 * aiTrust; // Moderate in ranging
+                confidence = confidence * 0.85 * effectiveMult;
             } else if (regime === 'TRENDING_DOWN') {
-                // PATCH #23: Allow cautious contrarian BUY with heavy penalty
+                action = 'HOLD';
+                confidence *= 0.5;
+            } else {
                 action = 'BUY';
-                confidence = confidence * 0.35 * aiTrust;
-            } else { // HIGH_VOLATILITY
-                action = 'BUY';
-                confidence = confidence * 0.7 * aiTrust; // Cautious in high vol
+                confidence = confidence * 0.7 * effectiveMult;
             }
         } else if (prediction.direction === 'DOWN' && confidence > 0.45) {
             if (regime === 'TRENDING_DOWN' && hasPosition) {
                 action = 'SELL';
-                confidence = Math.min(0.95, confidence * 1.15 * aiTrust);
+                confidence = Math.min(0.95, confidence * 1.15 * aiTrust * aggressionMult);
             } else if (regime === 'RANGING' && hasPosition) {
                 action = 'SELL';
-                confidence = confidence * 0.85 * aiTrust;
+                confidence = confidence * 0.85 * aiTrust * aggressionMult;
             } else if (regime === 'HIGH_VOLATILITY' && hasPosition) {
                 action = 'SELL';
-                confidence = confidence * 0.75 * aiTrust;
-            } else if (!hasPosition && regime === 'TRENDING_DOWN') {
-                // PATCH #23: NEURON AI - Open SHORT in confirmed downtrend
-                action = 'SELL';
-                confidence = Math.min(0.90, confidence * 1.05 * aiTrust);
-            } else if (!hasPosition && regime === 'HIGH_VOLATILITY') {
-                // PATCH #23: SHORT in high volatility downmove
-                action = 'SELL';
-                confidence = confidence * 0.65 * aiTrust;
+                confidence = confidence * 0.75 * aiTrust * aggressionMult;
             } else if (!hasPosition) {
-                action = 'HOLD'; // No clear regime for shorting
+                action = 'HOLD';
             }
         }
 
-        // Minimum confidence filter
-        // PATCH #23b: Lower minimum confidence for SHORT in strong trends
-        if (confidence < 0.15) action = 'HOLD';
-        if (action !== 'HOLD') {
-            console.log('[NEURAL AI] SIGNAL: ' + action + ' | conf=' + (confidence*100).toFixed(1) + '% | regime=' + regime + ' | dir=' + prediction.direction + ' | hasPos=' + hasPosition);
-        } else if (prediction.direction === 'DOWN' && !hasPosition) {
-            console.log('[NEURAL AI] FILTERED: conf=' + (confidence*100).toFixed(1) + '% < 15% | regime=' + regime + ' | aiTrust=' + aiTrust.toFixed(3));
+        // PATCH #39D: Dynamic confidence threshold (evolved)
+        if (confidence < this.evolvedConfig.confidenceThreshold) action = 'HOLD';
+
+        if (this.defenseMode && action === 'BUY') {
+            console.log('[SKYNET DEFENSE] BUY blocked — defense mode active (losses: ' + this.consecutiveLosses + ')');
+            action = 'HOLD';
         }
 
         if (action === 'HOLD') return null;
 
         const price = candles[candles.length - 1].close;
         return {
-            symbol: 'BTCUSDT',
-            action,
-            confidence,
-            price,
-            timestamp: Date.now(),
-            strategy: 'NeuralAI',
-            riskLevel: 1,
-            quantity: 0,
+            symbol: 'BTCUSDT', action, confidence, price,
+            timestamp: Date.now(), strategy: 'NeuralAI',
+            riskLevel: this.defenseMode ? 0.5 : 1, quantity: 0,
             metadata: {
-                gruPrediction: prediction,
-                regime,
+                gruPrediction: prediction, regime,
                 regimeConfidence: this.lastRegimeResult ? this.lastRegimeResult.confidence : 0,
-                phase: this.phase,
-                aiTrust,
+                phase: this.phase, aiTrust,
                 trainCount: this.pricePredictor.trainCount,
+                defenseMode: this.defenseMode,
+                aggressionLevel: this.evolvedConfig.aggressionLevel,
+                evolvedRisk: this.evolvedConfig.riskPerTrade,
             },
         };
     }
 
-    /**
-     * Get optimal strategy weights from Thompson Sampling meta-optimizer
-     * @returns {object} - { strategyName: weight }
-     */
+    executeOverride(action, confidence, reason, durationMs = 60000) {
+        if (!this.isReady || this.phase !== 'AI_ACTIVE') {
+            console.log('[SKYNET] Override rejected — phase: ' + this.phase + ' (need AI_ACTIVE)');
+            return false;
+        }
+        this._activeOverride = {
+            action, confidence: Math.max(0.1, Math.min(0.95, confidence)),
+            reason: reason || 'Skynet autonomous override',
+            expiresAt: Date.now() + durationMs, createdAt: Date.now(),
+        };
+        console.log('[SKYNET OVERRIDE] ACTIVE: ' + action + ' (conf: ' + (confidence * 100).toFixed(1) +
+            '%, expires: ' + (durationMs / 1000) + 's) — ' + reason);
+        return true;
+    }
+
+    emergencyHalt(reason, durationMs = 1800000) {
+        this._activeOverride = {
+            action: 'HOLD', confidence: 0,
+            reason: 'EMERGENCY HALT: ' + (reason || 'Unknown'),
+            expiresAt: Date.now() + durationMs, createdAt: Date.now(),
+        };
+        this.defenseMode = true;
+        this.defenseModeActivatedAt = Date.now();
+        console.log('[SKYNET EMERGENCY] TRADING HALTED for ' + (durationMs / 60000).toFixed(0) + ' min — ' + reason);
+        return true;
+    }
+
+    globalParamEvolution() {
+        if (this.recentTradeResults.length < 10) return this.evolvedConfig;
+
+        const results = this.recentTradeResults.slice(-50);
+        const wins = results.filter(r => r.pnl > 0).length;
+        const losses = results.filter(r => r.pnl < 0).length;
+        const winRate = wins / results.length;
+        const avgPnL = results.reduce((s, r) => s + r.pnl, 0) / results.length;
+        const avgWin = wins > 0 ? results.filter(r => r.pnl > 0).reduce((s, r) => s + r.pnl, 0) / wins : 0;
+        const avgLoss = losses > 0 ? Math.abs(results.filter(r => r.pnl < 0).reduce((s, r) => s + r.pnl, 0) / losses) : 1;
+        const profitFactor = avgLoss > 0 ? avgWin / avgLoss : 1;
+
+        const prevConfig = { ...this.evolvedConfig };
+
+        if (winRate > 0.6 && profitFactor > 1.5) {
+            this.evolvedConfig.riskPerTrade = Math.min(0.03, this.evolvedConfig.riskPerTrade * 1.1);
+        } else if (winRate < 0.4 || profitFactor < 0.8) {
+            this.evolvedConfig.riskPerTrade = Math.max(0.005, this.evolvedConfig.riskPerTrade * 0.8);
+        }
+
+        if (this.consecutiveWins >= AGGRESSION_RAMP_WINS) {
+            this.evolvedConfig.aggressionLevel = Math.min(2.0, this.evolvedConfig.aggressionLevel * 1.05);
+        } else if (this.consecutiveLosses >= AGGRESSION_DECAY_LOSSES) {
+            this.evolvedConfig.aggressionLevel = Math.max(0.5, this.evolvedConfig.aggressionLevel * 0.9);
+        }
+        this.evolvedConfig.aggressionLevel += (1.0 - this.evolvedConfig.aggressionLevel) * 0.02;
+
+        // PATCH #39D: Tighter ceiling (0.45 not 0.50)
+        if (winRate > 0.55 && this.evolvedConfig.confidenceThreshold > 0.25) {
+            this.evolvedConfig.confidenceThreshold = Math.max(0.25, this.evolvedConfig.confidenceThreshold - 0.01);
+        } else if (winRate < 0.45 && this.evolvedConfig.confidenceThreshold < 0.45) {
+            this.evolvedConfig.confidenceThreshold = Math.min(0.45, this.evolvedConfig.confidenceThreshold + 0.005);
+        }
+
+        this.evolvedConfig.reversalEnabled = winRate > 0.50 && profitFactor > 1.2;
+
+        // PATCH #39D: Floor raised to 0.08
+        if (profitFactor > 2.0) {
+            this.evolvedConfig.maxDrawdownTolerance = Math.min(0.20, this.evolvedConfig.maxDrawdownTolerance + 0.005);
+        } else if (profitFactor < 1.0) {
+            this.evolvedConfig.maxDrawdownTolerance = Math.max(0.08, this.evolvedConfig.maxDrawdownTolerance - 0.005);
+        }
+
+        const changes = [];
+        if (Math.abs(prevConfig.riskPerTrade - this.evolvedConfig.riskPerTrade) > 0.0001)
+            changes.push('risk: ' + (prevConfig.riskPerTrade * 100).toFixed(1) + '% → ' + (this.evolvedConfig.riskPerTrade * 100).toFixed(1) + '%');
+        if (Math.abs(prevConfig.aggressionLevel - this.evolvedConfig.aggressionLevel) > 0.01)
+            changes.push('aggression: ' + prevConfig.aggressionLevel.toFixed(2) + ' → ' + this.evolvedConfig.aggressionLevel.toFixed(2));
+        if (Math.abs(prevConfig.confidenceThreshold - this.evolvedConfig.confidenceThreshold) > 0.001)
+            changes.push('confThreshold: ' + (prevConfig.confidenceThreshold * 100).toFixed(0) + '% → ' + (this.evolvedConfig.confidenceThreshold * 100).toFixed(0) + '%');
+
+        if (changes.length > 0) {
+            console.log('[SKYNET EVOLUTION] Config mutated: ' + changes.join(' | ') +
+                ' | WinRate: ' + (winRate * 100).toFixed(0) + '% | PF: ' + profitFactor.toFixed(2));
+            this.configEvolutionHistory.push({
+                timestamp: Date.now(), changes, winRate, profitFactor,
+                config: { ...this.evolvedConfig },
+            });
+            if (this.configEvolutionHistory.length > 100) this.configEvolutionHistory.shift();
+        }
+
+        return this.evolvedConfig;
+    }
+
+    positionCommand(type, symbol, pct, reason) {
+        if (!this.isReady || this.phase !== 'AI_ACTIVE') return false;
+        const validTypes = ['PARTIAL_CLOSE', 'FLIP', 'SCALE_IN', 'FORCE_EXIT'];
+        if (!validTypes.includes(type)) return false;
+        const command = {
+            type, symbol: symbol || 'BTCUSDT',
+            pct: Math.max(0, Math.min(1, pct || 1.0)),
+            reason: reason || 'Skynet position command',
+            timestamp: Date.now(),
+        };
+        this.pendingPositionCommands.push(command);
+        console.log('[SKYNET COMMAND] ' + type + ' ' + symbol + ' (' + (pct * 100).toFixed(0) + '%) — ' + reason);
+        return true;
+    }
+
+    consumePositionCommands() {
+        const commands = [...this.pendingPositionCommands];
+        this.pendingPositionCommands = [];
+        return commands;
+    }
+
+    learnFromQuantumVerification(strategy, approved, reason, consensus) {
+        if (approved) {
+            this.quantumApprovalsForStrategy[strategy] = (this.quantumApprovalsForStrategy[strategy] || 0) + 1;
+        } else {
+            this.quantumRejectionsForStrategy[strategy] = (this.quantumRejectionsForStrategy[strategy] || 0) + 1;
+            const rejects = this.quantumRejectionsForStrategy[strategy] || 0;
+            const approves = this.quantumApprovalsForStrategy[strategy] || 0;
+            const rejectRate = rejects / (rejects + approves + 1);
+            if (rejectRate > 0.5 && rejects > 5) {
+                this.metaOptimizer.recordResult(this.currentRegime, strategy, -0.5);
+                console.log('[SKYNET FEEDBACK] Strategy ' + strategy + ' penalized: ' +
+                    (rejectRate * 100).toFixed(0) + '% quantum rejection rate');
+            }
+        }
+        this.crossSystemFeedback.push({
+            timestamp: Date.now(), strategy, approved,
+            reason: reason || '', regime: this.currentRegime,
+        });
+        if (this.crossSystemFeedback.length > 200) this.crossSystemFeedback.shift();
+    }
+
+    checkStarvationOverride() {
+        if (this.cyclesWithoutTrade < STARVATION_WINDOW_CYCLES) return null;
+        // PATCH #39B: Allow starvation override to break defense deadlock
+        if (this.defenseMode && this.cyclesWithoutTrade < STARVATION_WINDOW_CYCLES * 2) return null;
+        if (this.defenseMode && this.cyclesWithoutTrade >= STARVATION_WINDOW_CYCLES * 2) {
+            console.log('[SKYNET STARVATION] DEFENSE DEADLOCK BREAK — ' + this.cyclesWithoutTrade + ' idle cycles, temporarily suspending defense mode');
+            this.defenseMode = false;
+            this.defenseModeActivatedAt = 0;
+        }
+
+        const tempThreshold = Math.max(0.20, this.evolvedConfig.confidenceThreshold - 0.10);
+        console.log('[SKYNET STARVATION] ' + this.cyclesWithoutTrade + ' cycles without trade — threshold temporarily lowered to ' +
+            (tempThreshold * 100).toFixed(0) + '%');
+
+        return {
+            tempConfidenceThreshold: tempThreshold,
+            reason: 'Trade starvation override (' + this.cyclesWithoutTrade + ' idle cycles)',
+        };
+    }
+
+    notifyTradeExecuted() {
+        this.cyclesWithoutTrade = 0;
+        this.lastTradeTimestamp = Date.now();
+    }
+
+    getEvolvedRiskPercent() {
+        const base = this.evolvedConfig.riskPerTrade;
+        const defenseMult = this.defenseMode ? DEFENSE_MODE_RISK_REDUCTION : 1.0;
+        return base * defenseMult * this.evolvedConfig.aggressionLevel;
+    }
+
     getOptimalStrategyWeights() {
         return this.metaOptimizer.getOptimalWeights(this.currentRegime);
     }
 
-    /**
-     * Get optimal risk percentage from neural risk manager
-     */
     async getOptimalRiskPercent(drawdownPct, winRate, volatility, consecutiveLosses, hoursSinceLastTrade) {
         const regimeIdx = REGIMES.indexOf(this.currentRegime);
         const features = this.featurePipeline.extractRiskFeatures(
@@ -1166,107 +1388,143 @@ class AdaptiveNeuralEngine {
             drawdownPct, winRate, volatility, consecutiveLosses, hoursSinceLastTrade
         );
         this.lastRiskResult = await this.riskPredictor.predict(features);
+        const evolvedRisk = this.getEvolvedRiskPercent();
+        const neuralRisk = this.lastRiskResult.riskPercent;
+        this.lastRiskResult.riskPercent = 0.6 * neuralRisk + 0.4 * evolvedRisk;
+        this.lastRiskResult.evolvedComponent = evolvedRisk;
         return this.lastRiskResult;
     }
 
-    /**
-     * Learn from a completed trade
-     */
     async learnFromTrade(tradeResult) {
         if (!tradeResult) return;
-
         const { pnl, strategy, regime } = tradeResult;
         const actualRegime = regime || this.currentRegime;
 
-        // Update meta-optimizer (Thompson Sampling)
         if (strategy) {
             this.metaOptimizer.recordResult(actualRegime, strategy, pnl);
         }
 
-        // Buffer risk training sample
-        // Target risk: if trade was profitable, current risk was good; if loss, should have been lower
-        const currentRisk = this.lastRiskResult ? this.lastRiskResult.riskPercent : 0.015;
-        let targetRisk;
         if (pnl > 0) {
-            // Profitable: slightly increase risk (up to 3%)
-            targetRisk = Math.min(0.03, currentRisk * 1.1);
-        } else {
-            // Loss: decrease risk
-            targetRisk = Math.max(0.005, currentRisk * 0.7);
+            this.consecutiveWins++;
+            this.consecutiveLosses = 0;
+        } else if (pnl < 0) {
+            this.consecutiveLosses++;
+            this.consecutiveWins = 0;
         }
-        // Normalize to [0, 1] for sigmoid output
+
+        if (this.consecutiveLosses >= DEFENSE_MODE_TRIGGER_LOSSES && !this.defenseMode) {
+            this.defenseMode = true;
+            this.defenseModeActivatedAt = Date.now();
+            console.log('[SKYNET DEFENSE] ACTIVATED: ' + this.consecutiveLosses + ' consecutive losses' +
+                ' | Risk reduced to ' + (DEFENSE_MODE_RISK_REDUCTION * 100) + '%');
+        }
+
+        this.recentTradeResults.push({ pnl, strategy, regime: actualRegime, timestamp: Date.now() });
+        if (this.recentTradeResults.length > 100) this.recentTradeResults.shift();
+        this.totalTradesForEvolution++;
+
+        if (this.totalTradesForEvolution % PARAM_EVOLUTION_INTERVAL === 0) {
+            this.globalParamEvolution();
+        }
+
+        this._performanceWindow.push(pnl);
+        if (this._performanceWindow.length > 100) this._performanceWindow.shift();
+        const pWin = this._performanceWindow.filter(p => p > 0).length;
+        this._rollingWinRate = pWin / this._performanceWindow.length;
+        this._rollingAvgPnL = this._performanceWindow.reduce((s, p) => s + p, 0) / this._performanceWindow.length;
+
+        if (tradeResult.drawdownPct && tradeResult.drawdownPct > this.evolvedConfig.maxDrawdownTolerance) {
+            this.emergencyHalt('Drawdown ' + (tradeResult.drawdownPct * 100).toFixed(1) + '% exceeds tolerance ' +
+                (this.evolvedConfig.maxDrawdownTolerance * 100).toFixed(1) + '%', 1800000);
+        }
+
+        if (this.consecutiveLosses >= 4 && strategy) {
+            this.positionCommand('FORCE_EXIT', tradeResult.symbol || 'BTCUSDT', 1.0,
+                'Emergency exit: ' + this.consecutiveLosses + ' consecutive losses');
+        }
+
+        // PATCH #36: Kelly Criterion-based target risk
+        const recentPnLs = this.recentTradeResults.slice(-20);
+        const recentWins = recentPnLs.filter(r => r.pnl > 0);
+        const recentLosses = recentPnLs.filter(r => r.pnl < 0);
+        let targetRisk;
+        if (recentWins.length >= 3 && recentLosses.length >= 2) {
+            const p = recentWins.length / recentPnLs.length;
+            const q = 1 - p;
+            const avgWin = recentWins.reduce((s, r) => s + r.pnl, 0) / recentWins.length;
+            const avgLoss = Math.abs(recentLosses.reduce((s, r) => s + r.pnl, 0) / recentLosses.length);
+            const b = avgLoss > 0 ? avgWin / avgLoss : 1;
+            const kellyFraction = (p * b - q) / Math.max(b, 0.01);
+            targetRisk = Math.max(0.005, Math.min(0.03, kellyFraction * 0.5));
+        } else {
+            targetRisk = 0.015;
+        }
+        const ddPct = tradeResult.drawdownPct || 0;
+        if (ddPct > 0.05) {
+            targetRisk *= Math.max(0.3, 1 - (ddPct - 0.05) * 5);
+        }
         const normalizedTarget = (targetRisk - 0.005) / 0.025;
 
         const regimeIdx = REGIMES.indexOf(actualRegime);
-        // Get approximate features for risk sample
         const riskFeatures = [
             (regimeIdx >= 0 ? regimeIdx : 2) / 3,
-            0.5, // placeholder drawdown
-            tradeResult.winRate || 0.5,
-            0.5, // placeholder volatility
-            (tradeResult.consecutiveLosses || 0) / 5,
-            0.5, // placeholder time
+            Math.min(1, (tradeResult.drawdownPct || 0) / 0.20),
+            tradeResult.winRate || this._rollingWinRate,
+            Math.min(1, (tradeResult.volatility || 0.02) / 0.05),
+            Math.min(1, (tradeResult.consecutiveLosses || this.consecutiveLosses) / 5),
+            Math.min(1, (Date.now() - this.lastTradeTimestamp) / (24 * 3600000)),
         ];
         this.buffer.addRiskSample(riskFeatures, normalizedTarget);
 
-        console.log(`[NEURAL AI] Trade learned: PnL=$${pnl.toFixed(2)} | Regime=${actualRegime} | Strategy=${strategy} | MetaUpdates=${this.metaOptimizer.totalUpdates}`);
+        this.notifyTradeExecuted();
+
+        console.log(`[SKYNET] Trade learned: PnL=$${pnl.toFixed(2)} | Regime=${actualRegime} | Strategy=${strategy} | ` +
+            `Streak: W${this.consecutiveWins}/L${this.consecutiveLosses} | Defense: ${this.defenseMode} | ` +
+            `Risk: ${(this.evolvedConfig.riskPerTrade * 100).toFixed(1)}% | Updates=${this.metaOptimizer.totalUpdates}`);
     }
 
-    /**
-     * Trigger asynchronous model training
-     */
     async _triggerTraining() {
         if (this.trainingInProgress) return;
         this.trainingInProgress = true;
+        this._lastTrainingAttempt = Date.now();
 
         try {
-            console.log('[NEURAL AI] Training cycle started...');
+            console.log('[SKYNET] Training cycle started...');
             const t0 = Date.now();
 
-            // 1. Train GRU price predictor
             if (this.buffer.lstmSequences.length >= MIN_TRAIN_SAMPLES) {
-                // Shuffle and take last N sequences
-                const sequences = this.buffer.lstmSequences.slice(-Math.min(1000, this.buffer.lstmSequences.length));
-                // Shuffle
-                for (let i = sequences.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [sequences[i], sequences[j]] = [sequences[j], sequences[i]];
-                }
+                const sequences = this.buffer.getPrioritizedLSTMBatch(1000);
                 await this.pricePredictor.train(sequences, 5);
             }
 
-            // 2. Train regime detector
             if (this.buffer.regimeSamples.length >= 50) {
                 const samples = this.buffer.regimeSamples.slice(-500);
                 await this.regimeDetector.train(samples, 8);
             }
 
-            // 3. Train risk predictor
             if (this.buffer.riskSamples.length >= 30) {
                 await this.riskPredictor.train(this.buffer.riskSamples.slice(-200), 10);
             }
 
             this.buffer.markTrained();
+            this._trainingFailCount = 0;
             const elapsed = Date.now() - t0;
-            console.log(`[NEURAL AI] Training complete in ${elapsed}ms | GRU: ${this.pricePredictor.trainCount} trains, acc: ${(this.pricePredictor.lastAccuracy * 100).toFixed(1)}%`);
+            console.log(`[SKYNET] Training complete in ${elapsed}ms | GRU: ${this.pricePredictor.trainCount} trains, acc: ${(this.pricePredictor.lastAccuracy * 100).toFixed(1)}%`);
 
         } catch (e) {
-            console.error('[NEURAL AI] Training error:', e.message);
+            console.error('[SKYNET] Training error:', e.message);
+            this._trainingFailCount++;
         } finally {
             this.trainingInProgress = false;
         }
     }
 
-    /**
-     * Save all model checkpoints and state
-     */
     async _saveCheckpoint() {
         try {
             await this.pricePredictor.save(MODEL_DIR);
             await this.regimeDetector.save(MODEL_DIR);
             await this.riskPredictor.save(MODEL_DIR);
 
-            // Save meta-optimizer, feature stats, and engine state
             const state = {
                 meta: this.metaOptimizer.getState(),
                 features: this.featurePipeline.getState(),
@@ -1276,16 +1534,21 @@ class AdaptiveNeuralEngine {
                 totalSignals: this.totalSignalsGenerated,
                 correctPredictions: this.correctPredictions,
                 savedAt: new Date().toISOString(),
+                evolvedConfig: this.evolvedConfig,
+                defenseMode: this.defenseMode,
+                consecutiveLosses: this.consecutiveLosses,
+                consecutiveWins: this.consecutiveWins,
+                totalTradesForEvolution: this.totalTradesForEvolution,
+                configEvolutionHistory: this.configEvolutionHistory.slice(-20),
             };
             fs.writeFileSync(path.join(MODEL_DIR, 'meta_state.json'), JSON.stringify(state, null, 2));
         } catch (e) {
-            console.error('[NEURAL AI] Checkpoint save error:', e.message);
+            console.error('[SKYNET] Checkpoint save error:', e.message);
         }
     }
 
-    /**
-     * Get comprehensive status for API/dashboard
-     */
+    async saveCheckpoint() { return this._saveCheckpoint(); }
+
     getStatus() {
         const accuracy = this.totalSignalsGenerated > 10
             ? (this.correctPredictions / this.totalSignalsGenerated * 100).toFixed(1) + '%'
@@ -1312,6 +1575,24 @@ class AdaptiveNeuralEngine {
             lastRegime: this.lastRegimeResult,
             lastRisk: this.lastRiskResult,
             tfVersion: tf ? tf.version.tfjs : 'N/A',
+            defenseMode: this.defenseMode,
+            consecutiveWins: this.consecutiveWins,
+            consecutiveLosses: this.consecutiveLosses,
+            evolvedConfig: { ...this.evolvedConfig },
+            cyclesWithoutTrade: this.cyclesWithoutTrade,
+            rollingWinRate: (this._rollingWinRate * 100).toFixed(1) + '%',
+            rollingAvgPnL: this._rollingAvgPnL.toFixed(2),
+            pendingCommands: this.pendingPositionCommands.length,
+            activeOverride: this._activeOverride ? {
+                action: this._activeOverride.action,
+                expiresIn: Math.max(0, this._activeOverride.expiresAt - Date.now()),
+            } : null,
+            quantumFeedback: {
+                rejects: { ...this.quantumRejectionsForStrategy },
+                approves: { ...this.quantumApprovalsForStrategy },
+            },
+            configEvolutions: this.configEvolutionHistory.length,
+            highPriorityBufferSize: this.buffer.highPriorityLSTM.length,
         };
     }
 }
