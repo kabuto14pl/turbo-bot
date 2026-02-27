@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PM2 ECOSYSTEM CONFIGURATION - PATCH #43: GPU-ONLY Architecture
  *
  * Dashboard URL: http://64.226.70.149:8080/
@@ -15,10 +15,11 @@
 module.exports = {
   apps: [{
     name: 'turbo-bot',
-    script: 'npx',
-    args: 'ts-node trading-bot/autonomous_trading_bot_final.ts',
+    script: 'node',
+    args: 'trading-bot/src/modules/bot.js',
     cwd: '/root/turbo-bot',
     instances: 1,
+    exec_mode: 'fork',
     autorestart: true,
     watch: false,
     max_memory_restart: '1G',
@@ -41,6 +42,7 @@ module.exports = {
     args: 'dashboard-server.js',
     cwd: '/root/turbo-bot',
     instances: 1,
+    exec_mode: 'fork',
     autorestart: true,
     watch: false,
     max_memory_restart: '256M',
