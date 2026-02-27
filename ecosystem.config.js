@@ -1,8 +1,22 @@
+﻿/**
+ * PM2 ECOSYSTEM CONFIGURATION - PATCH #43: GPU-ONLY Architecture
+ *
+ * Dashboard URL: http://64.226.70.149:8080/
+ * Bot Health API: http://64.226.70.149:3001/
+ *
+ * GPU: RTX 5070 Ti on local PC via SSH tunnel (VPS:4001 -> Local:4000)
+ *
+ * Start all:    pm2 start ecosystem.config.js
+ * Restart all:  pm2 restart all
+ * Logs:         pm2 logs turbo-bot --lines 50
+ * Monitor:      pm2 monit
+ */
+
 module.exports = {
   apps: [{
     name: 'turbo-bot',
-    script: 'node',
-    args: 'trading-bot/src/modules/bot.js',
+    script: 'npx',
+    args: 'ts-node trading-bot/autonomous_trading_bot_final.ts',
     cwd: '/root/turbo-bot',
     instances: 1,
     autorestart: true,
@@ -10,7 +24,10 @@ module.exports = {
     max_memory_restart: '1G',
     env: {
       NODE_ENV: 'production',
-      MODE: 'simulation'
+      MODE: 'simulation',
+      // PATCH #43: GPU-ONLY - Remote GPU via SSH tunnel
+      GPU_REMOTE_URL: 'http://127.0.0.1:4001',
+      GPU_TIMEOUT_MS: '3000',
     },
     error_file: '/root/turbo-bot/logs/pm2-error.log',
     out_file: '/root/turbo-bot/logs/pm2-out.log',
@@ -35,6 +52,4 @@ module.exports = {
     log_date_format: 'YYYY-MM-DD HH:mm:ss',
     merge_logs: true
   }]
-  // NOTE: quantum-scheduler removed  quantum computations run on LOCAL PC with GPU
-  // Local PC pushes results via POST to http://64.226.70.149:3001/api/quantum/signal
 };

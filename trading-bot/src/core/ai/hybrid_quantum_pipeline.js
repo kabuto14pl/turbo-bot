@@ -38,19 +38,12 @@ const {
     QUANTUM_VERSION,
 } = require('./quantum_optimizer');
 
-const PIPELINE_VERSION = '3.3.0-CPU-SAFE';
+const PIPELINE_VERSION = '4.0.0-GPU-ONLY';
 
-// PATCH #47: CPU SAFETY CAPS -- reduce computation scale when no GPU available
-// When remote GPU (RTX 5070 Ti via SSH tunnel) is offline, these caps prevent
-// CPU 100% spikes from heavy quantum computations (QAOA, QMC, SQA).
-const CPU_SAFETY = {
-    QMC_MAX_CLASSICAL_PATHS: 1500,   // vs 8000-10000 default (5-7x reduction)
-    QMC_MAX_QUANTUM_PATHS:   500,    // vs 2000 default (4x reduction)
-    QAOA_MAX_ITERATIONS:     30,     // vs 200 default (6.7x reduction)
-    QAOA_YIELD_EVERY_N:      5,      // async yield every N iterations
-    SQA_MAX_ITERATIONS:      100,    // vs 200 default (2x reduction)
-    SQA_MAX_REPLICAS:        4,      // vs 6 default (1.5x reduction)
-};
+// PATCH #43: GPU-ONLY MODE
+// All quantum computation runs on RTX 5070 Ti via SSH tunnel.
+// NO CPU fallback - quantum ops return neutral results if GPU offline.
+// CPU_SAFETY caps eliminated entirely - full-scale parameters always.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILITY: Quantum random generators
@@ -148,7 +141,7 @@ class QuantumMonteCarloEngine {
 
             // Quantum-amplified paths (focus on tail events)
             // PATCH #47: Cap quantum paths on CPU
-            const effectiveQuantumPaths = Math.min(this.nQuantumPaths, CPU_SAFETY.QMC_MAX_QUANTUM_PATHS);
+            const effectiveQuantumPaths = this.nQuantumPaths; // PATCH #43: GPU-ONLY, no caps
             for (let p = 0; p < effectiveQuantumPaths; p++) {
                 let pathReturn = 0;
                 for (let d = 0; d < horizon; d++) {
@@ -171,7 +164,7 @@ class QuantumMonteCarloEngine {
 
             // Classical paths (normal distribution + fat tails)
             // PATCH #47: Cap classical paths on CPU
-            const nClassicalPaths = Math.min(this.nScenarios - this.nQuantumPaths, CPU_SAFETY.QMC_MAX_CLASSICAL_PATHS);
+            const nClassicalPaths = this.nScenarios - this.nQuantumPaths; // PATCH #43: GPU-ONLY, no caps
             for (let p = 0; p < nClassicalPaths; p++) {
                 let pathReturn = 0;
                 for (let d = 0; d < horizon; d++) {
@@ -420,12 +413,10 @@ class QAOAStrategyOptimizer {
         const convergenceHistory = [];
 
         // PATCH #47: Cap iterations on CPU + async yielding to prevent event-loop block
-        const effectiveIterations = Math.min(this.nIterations, CPU_SAFETY.QAOA_MAX_ITERATIONS);
+        const effectiveIterations = this.nIterations; // PATCH #43: GPU-ONLY, no caps
         for (let iter = 0; iter < effectiveIterations; iter++) {
             // Yield event loop every N iterations to prevent blocking
-            if (iter > 0 && iter % CPU_SAFETY.QAOA_YIELD_EVERY_N === 0) {
-                await new Promise(r => setImmediate(r));
-            }
+            // PATCH #43: No yield needed - QAOA runs on remote GPU
             // Evaluate QAOA circuit
             const result = this._evaluateQAOACircuit(nQubits, gammas, betas, h, J, constraintPenalty, maxStrategies);
 
@@ -1513,8 +1504,8 @@ class DecompositionPipeline {
         this.maxSubProblemSize = config.maxSubProblemSize || 4; // Max qubits per sub-problem
         // PATCH #47: CPU safety caps for SQA
         this.annealer = new SimulatedQuantumAnnealer({
-            nReplicas: Math.min(config.nReplicas || 6, CPU_SAFETY.SQA_MAX_REPLICAS),
-            maxIterations: Math.min(config.maxIterations || 200, CPU_SAFETY.SQA_MAX_ITERATIONS),
+            nReplicas: config.nReplicas || 6 /* PATCH #43: GPU-ONLY, no caps */,
+            maxIterations: config.maxIterations || 200 /* PATCH #43: GPU-ONLY, no caps */,
         });
         this.decompositionCount = 0;
     }
