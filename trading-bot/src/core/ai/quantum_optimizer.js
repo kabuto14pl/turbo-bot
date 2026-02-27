@@ -164,6 +164,47 @@ class QuantumState {
     /**
      * Create equal superposition (apply H to all qubits)
      */
+    /**
+     * Grover diffusion operator: 2|s><s| - I
+     * Reflects amplitudes about the mean (used in amplitude amplification)
+     */
+    groverDiffusion() {
+        const n = this.dim;
+        let meanR = 0, meanI = 0;
+        for (let i = 0; i < n; i++) {
+            meanR += this.amplitudes[2 * i];
+            meanI += this.amplitudes[2 * i + 1];
+        }
+        meanR /= n;
+        meanI /= n;
+        for (let i = 0; i < n; i++) {
+            this.amplitudes[2 * i] = 2 * meanR - this.amplitudes[2 * i];
+            this.amplitudes[2 * i + 1] = 2 * meanI - this.amplitudes[2 * i + 1];
+        }
+    }
+
+    /**
+     * Ry rotation gate: [[cos(t/2), -sin(t/2)], [sin(t/2), cos(t/2)]]
+     */
+    ry(qubit, theta) {
+        const step = 1 << qubit;
+        const cosH = Math.cos(theta / 2);
+        const sinH = Math.sin(theta / 2);
+        for (let i = 0; i < this.dim; i++) {
+            if ((i & step) === 0) {
+                const pair = i | step;
+                const r0 = this.amplitudes[2 * i];
+                const i0 = this.amplitudes[2 * i + 1];
+                const r1 = this.amplitudes[2 * pair];
+                const i1 = this.amplitudes[2 * pair + 1];
+                this.amplitudes[2 * i]       = cosH * r0 - sinH * r1;
+                this.amplitudes[2 * i + 1]   = cosH * i0 - sinH * i1;
+                this.amplitudes[2 * pair]     = sinH * r0 + cosH * r1;
+                this.amplitudes[2 * pair + 1] = sinH * i0 + cosH * i1;
+            }
+        }
+    }
+
     equalSuperposition() {
         for (let q = 0; q < this.nQubits; q++) {
             this.hadamard(q);
@@ -823,4 +864,6 @@ module.exports = {
     QuantumWalkOptimizer,
     QuantumState,
     QUANTUM_VERSION,
+    gaussianRandom,
+    quantumRandom,
 };
