@@ -1,4 +1,4 @@
-﻿# PATCH #43: GPU-ONLY Architecture - Start GPU + SSH Tunnel Services
+# PATCH #43: GPU-ONLY Architecture - Start GPU + SSH Tunnel Services
 #
 # Starts 1 service + 2 SSH tunnels:
 #   1. Python CUDA Service    (port 4000) - RTX 5070 Ti @ 40% utilization
@@ -107,9 +107,9 @@ $cudaProc = Start-Process -FilePath "python" -ArgumentList "gpu-cuda-service.py"
 $bgProcesses += $cudaProc
 Write-Host "  PID: $($cudaProc.Id)" -ForegroundColor DarkGray
 
-Write-Host "  Waiting for GPU initialization..." -ForegroundColor DarkGray
+Write-Host "  Waiting for GPU initialization (up to 60s)..." -ForegroundColor DarkGray
 $cudaReady = $false
-for ($i = 0; $i -lt 30; $i++) {
+for ($i = 0; $i -lt 60; $i++) {
     Start-Sleep -Seconds 1
     try {
         $h = (Invoke-WebRequest -Uri http://localhost:4000/health -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop).Content | ConvertFrom-Json
@@ -121,7 +121,7 @@ for ($i = 0; $i -lt 30; $i++) {
     } catch {}
 }
 if (-not $cudaReady) {
-    Write-Host "[ERROR] CUDA service did not start in 30s!" -ForegroundColor Red
+    Write-Host "[ERROR] CUDA service did not start in 60s!" -ForegroundColor Red
 }
 
 # STEP 2: SSH Tunnel - GPU (VPS:4001 -> Local:4000)
