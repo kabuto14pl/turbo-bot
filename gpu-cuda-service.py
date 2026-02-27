@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 PATCH #43: GPU-ONLY CUDA Service  RTX 5070 Ti @ 40% Utilization
 
@@ -49,7 +49,7 @@ try:
         torch.cuda.set_per_process_memory_fraction(0.4, 0)
         device = torch.device('cuda:0')
         gpu_name = torch.cuda.get_device_name(0)
-        vram_total = torch.cuda.get_device_properties(0).total_mem / (1024**3)
+        vram_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         print(f"[GPU] {gpu_name} | VRAM: {vram_total:.1f} GB | Limit: 40% ({vram_total*0.4:.1f} GB)")
 except ImportError:
     print("ERROR: PyTorch not installed. Run: pip install torch --index-url https://download.pytorch.org/whl/cu124")
