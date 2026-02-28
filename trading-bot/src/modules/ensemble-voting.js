@@ -77,6 +77,12 @@ class EnsembleVoting {
                         for (const k of Object.keys(blended)) {
                             blended[k] /= total;
                         }
+                    } else {
+                        // PATCH #45: BUG #20 FIX — all-zero weights edge case, fall back to static
+                        console.warn('[ENSEMBLE] All-zero blended weights detected — falling back to static');
+                        for (const [name, w] of Object.entries(this.staticWeights)) {
+                            blended[name] = w;
+                        }
                     }
 
                     // PATCH #42: ML weight floor removed (ML no longer votes)

@@ -1083,7 +1083,10 @@ class AdaptiveNeuralEngine {
             if (this.lastPrediction) {
                 const predictedDir = this.lastPrediction.direction;
                 const actualDir = label[2] > 0.5 ? 'UP' : label[0] > 0.5 ? 'DOWN' : 'NEUTRAL';
+                // PATCH #45: BUG #13 FIX — track prediction evaluations separately from signal count
+                // Only increment if prediction was validated against actual candle
                 if (predictedDir === actualDir) this.correctPredictions++;
+                this.totalPredictionsEvaluated = (this.totalPredictionsEvaluated || 0) + 1;
             }
         }
 
@@ -1105,11 +1108,12 @@ class AdaptiveNeuralEngine {
         }
 
         if (this.defenseMode && Date.now() - this.defenseModeActivatedAt > DEFENSE_MODE_COOLDOWN_MS) {
-            if (this.consecutiveWins >= 2 || (Date.now() - this.defenseModeActivatedAt > DEFENSE_MODE_COOLDOWN_MS * 3)) {
-                this.defenseMode = false;
-                console.log('[SKYNET] DEFENSE MODE DEACTIVATED: ' +
-                    (this.consecutiveWins >= 2 ? 'Win streak recovery' : 'Cooldown expired'));
-            }
+            // PATCH #45: BUG #11 FIX — deactivate defense mode on cooldown expiry regardless of wins
+            // Previously required 2 wins OR 3x cooldown, causing 90-min deadlock when no positions open
+            this.defenseMode = false;
+            console.log('[SKYNET] DEFENSE MODE DEACTIVATED: ' +
+                (this.consecutiveWins >= 2 ? 'Win streak recovery' : 'Cooldown expired (' +
+                ((Date.now() - this.defenseModeActivatedAt) / 60000).toFixed(0) + ' min)'));
         }
 
         if (this.buffer.shouldTrain() && !this.trainingInProgress) {
@@ -1174,13 +1178,14 @@ class AdaptiveNeuralEngine {
         } else if (prediction.direction === 'DOWN' && confidence > 0.45) {
             if (regime === 'TRENDING_DOWN' && hasPosition) {
                 action = 'SELL';
-                confidence = Math.min(0.95, confidence * 1.15 * aiTrust * aggressionMult);
+                // PATCH #45: BUG #10 FIX — apply defenseMult to SELL signals too (easier exit in defense mode)
+                confidence = Math.min(0.95, confidence * 1.15 * effectiveMult);
             } else if (regime === 'RANGING' && hasPosition) {
                 action = 'SELL';
-                confidence = confidence * 0.85 * aiTrust * aggressionMult;
+                confidence = confidence * 0.85 * effectiveMult;
             } else if (regime === 'HIGH_VOLATILITY' && hasPosition) {
                 action = 'SELL';
-                confidence = confidence * 0.75 * aiTrust * aggressionMult;
+                confidence = confidence * 0.75 * effectiveMult;
             } else if (!hasPosition) {
                 action = 'HOLD';
             }
@@ -1306,7 +1311,8 @@ class AdaptiveNeuralEngine {
 
     positionCommand(type, symbol, pct, reason) {
         if (!this.isReady || this.phase !== 'AI_ACTIVE') return false;
-        const validTypes = ['PARTIAL_CLOSE', 'FLIP', 'SCALE_IN', 'FORCE_EXIT'];
+        // PATCH #45: BUG #1 FIX — added FORCE_ENTRY to valid types (was missing, causing FLIP to silently fail)
+        const validTypes = ['PARTIAL_CLOSE', 'FLIP', 'SCALE_IN', 'FORCE_EXIT', 'FORCE_ENTRY'];
         if (!validTypes.includes(type)) return false;
         const command = {
             type, symbol: symbol || 'BTCUSDT',
@@ -1397,7 +1403,12 @@ class AdaptiveNeuralEngine {
 
     async learnFromTrade(tradeResult) {
         if (!tradeResult) return;
-        const { pnl, strategy, regime } = tradeResult;
+        // PATCH #45: BUG #12 FIX — validate inputs to prevent NaN corrupting Thompson Sampling
+        const { strategy, regime } = tradeResult;
+        const pnl = (typeof tradeResult.pnl === 'number' && !isNaN(tradeResult.pnl)) ? tradeResult.pnl : 0;
+        if (typeof tradeResult.pnl !== 'number' || isNaN(tradeResult.pnl)) {
+            console.warn('[SKYNET] learnFromTrade: invalid pnl value:', tradeResult.pnl, '— using 0');
+        }
         const actualRegime = regime || this.currentRegime;
 
         if (strategy) {
@@ -1550,8 +1561,9 @@ class AdaptiveNeuralEngine {
     async saveCheckpoint() { return this._saveCheckpoint(); }
 
     getStatus() {
-        const accuracy = this.totalSignalsGenerated > 10
-            ? (this.correctPredictions / this.totalSignalsGenerated * 100).toFixed(1) + '%'
+        const evalCount = this.totalPredictionsEvaluated || this.totalSignalsGenerated;
+        const accuracy = evalCount > 10
+            ? (this.correctPredictions / evalCount * 100).toFixed(1) + '%'
             : 'N/A (collecting data)';
 
         return {

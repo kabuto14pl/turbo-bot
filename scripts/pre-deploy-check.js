@@ -96,13 +96,13 @@ for (const [file, exps] of Object.entries(requiredExports)) {
 // ─── 3. Critical Bug Checks ────────────────────────────────────────────
 console.log('\nCritical Bug Guards:');
 
-// BUG #1: Check if FORCE_ENTRY is handled
-const neuronPath = path.join(__dirname, '..', 'trading-bot/src/core/ai/neuron_ai_manager.js');
-if (fs.existsSync(neuronPath)) {
-    const neuronCode = fs.readFileSync(neuronPath, 'utf8');
+// BUG #1: Check if FORCE_ENTRY is handled in adaptive_neural_engine.js (positionCommand validTypes)
+const skynetPath = path.join(__dirname, '..', 'trading-bot/src/core/ai/adaptive_neural_engine.js');
+if (fs.existsSync(skynetPath)) {
+    const skynetCode = fs.readFileSync(skynetPath, 'utf8');
     check(
         'BUG #1: FORCE_ENTRY in valid command types',
-        neuronCode.includes("'FORCE_ENTRY'") || neuronCode.includes('"FORCE_ENTRY"'),
+        skynetCode.includes("'FORCE_ENTRY'") || skynetCode.includes('"FORCE_ENTRY"'),
         'warn'
     );
 }
@@ -111,12 +111,13 @@ if (fs.existsSync(neuronPath)) {
 const botPath = path.join(__dirname, '..', 'trading-bot/src/modules/bot.js');
 if (fs.existsSync(botPath)) {
     const botCode = fs.readFileSync(botPath, 'utf8');
-    const scaleInIdx = botCode.indexOf('SCALE_IN');
-    if (scaleInIdx > -1) {
-        const scaleInSection = botCode.substring(scaleInIdx, scaleInIdx + 500);
+    // Find the actual SCALE_IN handler (rawAction === 'SCALE_IN') not comments
+    const handlerIdx = botCode.indexOf("rawAction === 'SCALE_IN'");
+    if (handlerIdx > -1) {
+        const scaleInSection = botCode.substring(handlerIdx, handlerIdx + 1200);
         check(
             'BUG #14: SCALE_IN has risk manager check',
-            scaleInSection.includes('rm.') || scaleInSection.includes('riskManager') || scaleInSection.includes('calculateOptimal'),
+            scaleInSection.includes('maxExposure') || scaleInSection.includes('checkMaxDrawdown'),
             'warn'
         );
     }

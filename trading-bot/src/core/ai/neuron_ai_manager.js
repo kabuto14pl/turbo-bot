@@ -149,6 +149,7 @@ class NeuronAIManager {
         const messages = [{ role: 'user', content: prompt }];
 
         const result = await this.llmRouter.call(SYSTEM_PROMPT, messages, { temperature: 0.3 });
+        this._lastState = state; // PATCH #45: BUG #6 FIX — store state in LLM path too (was only in fallback)
         const raw = (result && result.content) ? result.content.trim() : '';
 
         // Parse JSON response
@@ -311,10 +312,11 @@ class NeuronAIManager {
         if (action !== 'HOLD' && action !== 'CLOSE') {
             confidence *= Math.sqrt(Math.max(0.50, this.riskMultiplier)); // PATCH 31: sqrt dampening
             // PATCH #31: Apply confidence boost from win/loss streak
-            if (this.confidenceBoost && this.confidenceBoost > 0) {
-                confidence += this.confidenceBoost;
+            if (this.confidenceBoost && this.confidenceBoost !== 0) {
+                confidence += this.confidenceBoost; // BUG #7 NOTE: confidenceBoost can be negative (loss streak)
             }
-            confidence = Math.max(0.18, Math.min(1.0, confidence)); // PATCH #32: lowered from 0.28 // PATCH 31: floor raised: floor 0.1->0.25 for actionable signals
+            // PATCH #45: BUG #7 FIX — don't artificially raise weak signals; use 0.10 floor instead of 0.18
+            confidence = Math.max(0.10, Math.min(1.0, confidence));
         }
 
         // PATCH #32: OVERRIDE HOLD -> SELL w silnym trendzie spadkowym
@@ -573,13 +575,19 @@ class NeuronAIManager {
             }
         }
 
+        // PATCH #45: BUG #5 FIX — cap riskMultiplier to max 2.0 (was unbounded in defense exit path)
+        const MAX_RISK_MULTIPLIER = 2.0;
+
         // PATCH #32: AUTOMATYCZNE WYJSCIE Z DEFENSE MODE
         const mtfScore = (this._lastState && this._lastState.mtfBias && this._lastState.mtfBias.score) || 0;
         if (this.consecutiveWins >= 3 || (this.consecutiveLosses === 0 && mtfScore > 30)) {
-            this.riskMultiplier = Math.min(1.5, this.riskMultiplier + 0.25);
+            this.riskMultiplier = Math.min(MAX_RISK_MULTIPLIER, this.riskMultiplier + 0.25);
             this.confidenceBoost = 0.20;
             console.log('[NEURON EVOLVE] DEFENSE EXIT -- riskMultiplier UP to ' + this.riskMultiplier.toFixed(2));
         }
+
+        // BUG #5 FIX: Hard cap on riskMultiplier regardless of path
+        this.riskMultiplier = Math.max(0.3, Math.min(MAX_RISK_MULTIPLIER, this.riskMultiplier));
 
         if (this.megatron && this.megatron.logActivity) {
             try {
@@ -785,6 +793,7 @@ class NeuronAIManager {
                 consecutiveLosses: this.consecutiveLosses,
                 consecutiveWins: this.consecutiveWins,
                 riskMultiplier: this.riskMultiplier,
+                confidenceBoost: this.confidenceBoost, // PATCH #45: BUG #4 FIX — persist confidenceBoost
                 adaptedWeights: this.adaptedWeights,
                 reversalEnabled: this.reversalEnabled,
                 aggressiveMode: this.aggressiveMode,
@@ -808,9 +817,10 @@ class NeuronAIManager {
                 this.lossCount = data.lossCount || 0;
                 this.consecutiveLosses = data.consecutiveLosses || 0;
                 this.consecutiveWins = data.consecutiveWins || 0;
-                this.riskMultiplier = data.riskMultiplier || 1.0;
+                this.riskMultiplier = data.riskMultiplier ?? 1.0; // PATCH #45: ?? instead of || (0 is valid)
+                this.confidenceBoost = data.confidenceBoost ?? 0.0; // PATCH #45: BUG #4 FIX — restore confidenceBoost
                 this.adaptedWeights = data.adaptedWeights || null;
-                this.reversalEnabled = data.reversalEnabled || false;
+                this.reversalEnabled = data.reversalEnabled ?? true; // PATCH #45: BUG #8 FIX — ?? true (was || false)
                 this.aggressiveMode = data.aggressiveMode || false;
                 this.recentTrades = data.recentTrades || [];
                 console.log('[NEURON AI] State restored: ' + this.totalDecisions + ' decisions, PnL: $' + this.totalPnL.toFixed(2));

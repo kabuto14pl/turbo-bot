@@ -752,13 +752,16 @@ class AutonomousTradingBot {
                 if (starvation && allSignals.size > 0) {
                     // Re-vote with temporarily lowered thresholds
                     const origWeights = { ...this.ensemble.weights };
-                    // Slightly boost all non-HOLD signals
+                    // PATCH #45: BUG #17 FIX — clone signals to avoid mutating originals in-place
+                    const boostedSignals = new Map();
                     for (const [name, sig] of allSignals) {
-                        if (sig.action !== 'HOLD' && sig.confidence > 0.2) {
-                            sig.confidence = Math.min(0.95, sig.confidence * 1.15);
+                        const cloned = { ...sig };
+                        if (cloned.action !== 'HOLD' && cloned.confidence > 0.2) {
+                            cloned.confidence = Math.min(0.95, cloned.confidence * 1.15);
                         }
+                        boostedSignals.set(name, cloned);
                     }
-                    consensus = this.ensemble.vote(allSignals, this.rm);
+                    consensus = this.ensemble.vote(boostedSignals, this.rm);
                     this.ensemble.weights = origWeights; // Restore weights
                     if (consensus && consensus.action !== 'HOLD') {
                         console.log('[SKYNET STARVATION] Trade forced: ' + consensus.action + ' — ' + starvation.reason);
@@ -1246,34 +1249,74 @@ class AutonomousTradingBot {
 
                         if (rawAction === 'SCALE_IN' && this.pm.positionCount > 0) {
                             // Add to existing position (pyramiding)
+                            // PATCH #45: BUG #14 FIX — validate via Risk Manager before scaling in
                             try {
                                 const firstPos = Array.from(this.pm.getPositions().entries())[0];
                                 if (firstPos) {
                                     const [sym, pos] = firstPos;
                                     const scalePrice = await this._getCurrentPrice(sym);
                                     if (scalePrice && llmConf >= 0.40) {
-                                        const scaleQty = pos.quantity * 0.25; // 25% of existing position
-                                        this.pm.addToPosition(sym, scalePrice, scaleQty, atr);
-                                        console.log('[SKYNET PRIME] SCALE_IN ' + sym + ' +' + scaleQty.toFixed(6) +
-                                            ' @ $' + scalePrice.toFixed(2) + ' | ' + llmReasoning);
-                                        if (this.megatron) this.megatron.logActivity('SKYNET', 'Scale In (LLM)',
-                                            sym + ' +' + scaleQty.toFixed(6) + ' @ $' + scalePrice.toFixed(2) +
-                                            ' | Conf: ' + (llmConf * 100).toFixed(1) + '% | ' + llmReasoning,
-                                            { provider: llmDecision.provider }, 'high');
+                                        // BUG #14 FIX: Check risk manager before SCALE_IN
+                                        const portfolio = this.pm.getPortfolio();
+                                        const currentExposure = pos.quantity * scalePrice;
+                                        const maxExposure = portfolio.totalValue * 0.15; // Max 15% per position
+                                        if (currentExposure >= maxExposure) {
+                                            console.log('[SKYNET PRIME] SCALE_IN BLOCKED — max exposure reached: $' +
+                                                currentExposure.toFixed(2) + ' >= $' + maxExposure.toFixed(2));
+                                        } else if (this.rm && !this.rm.checkMaxDrawdown()) {
+                                            console.log('[SKYNET PRIME] SCALE_IN BLOCKED — drawdown kill switch active');
+                                        } else {
+                                            const scaleQty = pos.quantity * 0.25; // 25% of existing position
+                                            // Cap scale qty so total doesn't exceed max exposure
+                                            const maxScaleValue = maxExposure - currentExposure;
+                                            const cappedQty = Math.min(scaleQty, maxScaleValue / scalePrice);
+                                            if (cappedQty > 0.000001) {
+                                                this.pm.addToPosition(sym, scalePrice, cappedQty, atr);
+                                                console.log('[SKYNET PRIME] SCALE_IN ' + sym + ' +' + cappedQty.toFixed(6) +
+                                                    ' @ $' + scalePrice.toFixed(2) + ' | ' + llmReasoning);
+                                                if (this.megatron) this.megatron.logActivity('SKYNET', 'Scale In (LLM)',
+                                                    sym + ' +' + cappedQty.toFixed(6) + ' @ $' + scalePrice.toFixed(2) +
+                                                    ' | Conf: ' + (llmConf * 100).toFixed(1) + '% | ' + llmReasoning,
+                                                    { provider: llmDecision.provider }, 'high');
+                                            }
+                                        }
                                     }
                                 }
                             } catch (scaleErr) { console.warn('[SKYNET PRIME] SCALE_IN error:', scaleErr.message); }
 
                         } else if (rawAction === 'ADJUST_SL' && this.pm.positionCount > 0) {
                             // Tighten or loosen SL based on LLM analysis
+                            // PATCH #45: BUG #15 FIX — apply SL relative to each position's entry price
                             try {
-                                const newSL = llmDetails.stopLoss || llmDetails.sl || llmDetails.newSL;
-                                if (newSL && newSL > 0) {
-                                    for (const [sym] of this.pm.getPositions()) {
-                                        this.pm.updateStopLoss(sym, newSL);
-                                        console.log('[SKYNET PRIME] ADJUST_SL ' + sym + ' -> $' + newSL.toFixed(2) + ' | ' + llmReasoning);
+                                const slValue = llmDetails.stopLoss || llmDetails.sl || llmDetails.newSL;
+                                if (slValue && slValue > 0) {
+                                    for (const [sym, pos] of this.pm.getPositions()) {
+                                        // BUG #15 FIX: Calculate SL relative to entry price
+                                        let adjustedSL = slValue;
+                                        if (pos && pos.entryPrice) {
+                                            // If slValue looks like an absolute price, use it directly
+                                            // If it looks like a percentage/distance, calculate relative to entry
+                                            if (slValue < 1) {
+                                                // Treat as percentage distance
+                                                adjustedSL = pos.side === 'LONG'
+                                                    ? pos.entryPrice * (1 - slValue)
+                                                    : pos.entryPrice * (1 + slValue);
+                                            }
+                                            // Sanity check: SL shouldn't be more than 10% away from entry
+                                            const slDistance = Math.abs(adjustedSL - pos.entryPrice) / pos.entryPrice;
+                                            if (slDistance > 0.10) {
+                                                console.log('[SKYNET PRIME] ADJUST_SL ' + sym + ' CAPPED — SL distance ' +
+                                                    (slDistance * 100).toFixed(1) + '% too far from entry');
+                                                adjustedSL = pos.side === 'LONG'
+                                                    ? pos.entryPrice * 0.90
+                                                    : pos.entryPrice * 1.10;
+                                            }
+                                        }
+                                        this.pm.updateStopLoss(sym, adjustedSL);
+                                        console.log('[SKYNET PRIME] ADJUST_SL ' + sym + ' -> $' + adjustedSL.toFixed(2) +
+                                            ' (entry: $' + ((pos && pos.entryPrice) || 0).toFixed(2) + ') | ' + llmReasoning);
                                         if (this.megatron) this.megatron.logActivity('SKYNET', 'Adjust SL (LLM)',
-                                            sym + ' SL -> $' + newSL.toFixed(2) + ' | ' + llmReasoning,
+                                            sym + ' SL -> $' + adjustedSL.toFixed(2) + ' | ' + llmReasoning,
                                             { provider: llmDecision.provider }, 'normal');
                                     }
                                 }
@@ -1322,6 +1365,7 @@ class AutonomousTradingBot {
 
                         } else if (rawAction === 'FLIP' && this.pm.positionCount > 0) {
                             // Close current position and open opposite direction
+                            // PATCH #45: BUG #1/#16 FIX — execute opposite entry directly instead of FORCE_ENTRY
                             try {
                                 const firstPos = Array.from(this.pm.getPositions().entries())[0];
                                 if (firstPos && llmConf >= 0.50) {
@@ -1336,11 +1380,29 @@ class AutonomousTradingBot {
                                             console.log('[SKYNET PRIME] FLIP close ' + sym + ' ' + pos.side +
                                                 ' | PnL: $' + closeTrade.pnl.toFixed(2));
                                         }
-                                        // Issue opposite direction via positionCommand
+                                        // BUG #1/#16 FIX: Open opposite direction directly via execution engine
+                                        // instead of using positionCommand('FORCE_ENTRY') which was not in validTypes
                                         const newSide = pos.side === 'LONG' ? 'SHORT' : 'LONG';
-                                        if (this.neuralAI && this.neuralAI.isReady) {
-                                            this.neuralAI.positionCommand('FORCE_ENTRY',
-                                                sym, newSide, 'SKYNET_PRIME FLIP: ' + llmReasoning);
+                                        const flipAction = newSide === 'LONG' ? 'BUY' : 'SELL';
+                                        const flipSignal = {
+                                            symbol: sym, action: flipAction, confidence: llmConf,
+                                            price: flipPrice, strategy: 'SkynetPrime_FLIP',
+                                            reasoning: 'FLIP: ' + llmReasoning, isFlip: true,
+                                        };
+                                        // Validate via risk manager before opening opposite
+                                        if (this.rm && this.rm.checkMaxDrawdown()) {
+                                            const flipQty = this.rm.calculateOptimalQuantity(
+                                                flipPrice, llmConf, atr, sym, regime);
+                                            if (flipQty > 0) {
+                                                flipSignal.quantity = flipQty;
+                                                const flipResult = this.exec.executeSignal(flipSignal, this.pm);
+                                                console.log('[SKYNET PRIME] FLIP open ' + sym + ' ' + newSide +
+                                                    ' qty: ' + flipQty.toFixed(6) + ' @ $' + flipPrice.toFixed(2));
+                                            } else {
+                                                console.log('[SKYNET PRIME] FLIP open BLOCKED — risk manager returned 0 qty');
+                                            }
+                                        } else {
+                                            console.log('[SKYNET PRIME] FLIP open BLOCKED — drawdown kill switch active');
                                         }
                                         if (this.megatron) this.megatron.logActivity('SKYNET', 'FLIP (LLM)',
                                             sym + ' ' + pos.side + ' -> ' + newSide +
@@ -1352,8 +1414,9 @@ class AutonomousTradingBot {
 
                         } else if (rawAction === 'OVERRIDE_BIAS' && this.neuralAI && this.neuralAI.isReady) {
                             // LLM wants to override the neural engine's bias
+                            // PATCH #45: BUG #18 FIX — raise confidence gate from 0.45 to 0.60
                             try {
-                                if (llmConf >= 0.45) {
+                                if (llmConf >= 0.60) {
                                     this.neuralAI.executeOverride(
                                         llmDecision.action === 'BUY' ? 'BUY' : llmDecision.action === 'SELL' ? 'SELL' : 'HOLD',
                                         llmConf, 'SKYNET PRIME LLM: ' + llmReasoning
