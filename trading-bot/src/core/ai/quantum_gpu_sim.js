@@ -236,9 +236,9 @@ function getGPUStatus() {
 class DynamicQDVThresholds {
     constructor(baseConfig) {
         baseConfig = baseConfig || {};
-        this.baseMinConfidence = baseConfig.minConfidence || 0.40;
-        this.baseMaxVaRPct = baseConfig.maxVaRPct || 0.035;
-        this.baseMinSharpe = baseConfig.minSharpe || 0.40;
+        this.baseMinConfidence = baseConfig.minConfidence || 0.30; // P47: 0.40->0.30 (was rejecting all signals)
+        this.baseMaxVaRPct = baseConfig.maxVaRPct || 0.04; // P47: 0.035->0.04
+        this.baseMinSharpe = baseConfig.minSharpe || 0.30; // P47: 0.40->0.30
         this.currentMinConfidence = this.baseMinConfidence;
         this.currentMaxVaRPct = this.baseMaxVaRPct;
         this.currentMinSharpe = this.baseMinSharpe;

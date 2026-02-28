@@ -62,11 +62,12 @@ class NeuronAIManager {
         this.consecutiveLosses = 0;
         this.consecutiveWins = 0;
 
-        // PATCH #26: Raised fallback thresholds for higher quality signals
+        // PATCH #47: Lowered thresholds — P22-P26 thresholds were too high, bot was starving
+        // MTF score=0 most of the time (MTFConfluence not wired), so minMTFScore=22 blocked ALL trades
         this.fallbackRules = {
-            minMTFScore: 22,       // P27: 20->22 for higher quality signals (was 15 pre-P26)
-            minMLConfidence: 0.60, // Was 0.5 -- require higher ML confidence
-            maxDrawdownPct: 0.10,
+            minMTFScore: 12,       // P47: 22->12 (MTF often 0 or low, was blocking everything)
+            minMLConfidence: 0.45, // P47: 0.60->0.45 (ML signals 80-95% but needed alignment)
+            maxDrawdownPct: 0.12,
             trendFollowBias: 0.7,
             minHoldMinutes: 15,    // PATCH #26: Anti-scalping -- minimum expected hold
         };
@@ -262,6 +263,21 @@ class NeuronAIManager {
                     action = 'HOLD';
                     reason = 'Max positions reached (' + maxPositions + ')';
                 }
+            }
+        }
+
+        // PATCH #47: ML-only path — when MTF is weak/zero but ML has strong signal aligned with votes
+        // This prevents total starvation when MTFConfluence is not wired or SMA-derived score is too low
+        if (action === 'HOLD' && positionCount < maxPositions) {
+            const mlConf = mlSignal.confidence || 0;
+            if (mlConf > 0.75 && mlSignal.action === 'BUY' && (votes.BUY || 0) > 0.30) {
+                action = 'BUY';
+                confidence = Math.min(0.75, mlConf * 0.85);
+                reason = 'Ja, Neuron AI, ML+Ensemble alignment BUY -- ML conf=' + (mlConf*100).toFixed(0) + '% votes.BUY=' + ((votes.BUY||0)*100).toFixed(0) + '%';
+            } else if (mlConf > 0.75 && mlSignal.action === 'SELL' && (votes.SELL || 0) > 0.30) {
+                action = 'SELL';
+                confidence = Math.min(0.75, mlConf * 0.85);
+                reason = 'Ja, Neuron AI, ML+Ensemble alignment SELL -- ML conf=' + (mlConf*100).toFixed(0) + '% votes.SELL=' + ((votes.SELL||0)*100).toFixed(0) + '%';
             }
         }
 

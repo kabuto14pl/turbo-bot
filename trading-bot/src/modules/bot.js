@@ -275,7 +275,7 @@ class AutonomousTradingBot {
                 vqc: { nQubits: 4, nLayers: 3, nFeatures: 8, learningRate: 0.01 },
                 featureMapper: { nQubits: 5, nReps: 2, maxCacheSize: 500 },
                 riskAnalyzer: {},
-                verifier: { minConfidence: 0.40, maxVaRPct: 0.035, minSharpe: 0.4 },
+                verifier: { minConfidence: 0.30, maxVaRPct: 0.04, minSharpe: 0.3 },
                 decomposer: { maxSubProblemSize: 4, nReplicas: 6, maxIterations: 200 },
                 riskAnalysisInterval: 10,
                 weightOptimizationInterval: 30,
@@ -351,8 +351,16 @@ class AutonomousTradingBot {
         // for rich actions (SCALE_IN, PARTIAL_CLOSE, FLIP, ADJUST_SL/TP)
         try {
             const { NeuronAIManager } = require('../core/ai/neuron_ai_manager');
-            this.neuronManager = new NeuronAIManager(this.neuralAI);
-            console.log('[OK] NeuronAI LLM Brain: Online | Actions: SCALE_IN, PARTIAL_CLOSE, FLIP, ADJUST_SL/TP, OVERRIDE_BIAS');
+            this.neuronManager = new NeuronAIManager();
+            // PATCH #47: CRITICAL FIX — initialize() was NEVER called!
+            // Without this, llmRouter=null, isReady=false, all decisions used CPU fallback.
+            // This connects NeuronAI to Megatron's LLM providers (GitHub/Grok).
+            if (this.megatron) {
+                this.neuronManager.initialize(this.megatron);
+                console.log('[OK] NeuronAI LLM Brain: INITIALIZED with Megatron | LLM: ' + (this.neuronManager.llmRouter ? 'Connected (' + this.megatron.llm.providers.size + ' providers)' : 'Fallback') + ' | Actions: SCALE_IN, PARTIAL_CLOSE, FLIP, ADJUST_SL/TP, OVERRIDE_BIAS');
+            } else {
+                console.warn('[WARN] NeuronAI Manager: Megatron not available — LLM fallback mode');
+            }
             this.mon.setComponent('neuronManager', true);
         } catch (e) {
             console.warn('[WARN] NeuronAI Manager: ' + e.message);
@@ -1428,6 +1436,67 @@ class AutonomousTradingBot {
                                         { provider: llmDecision.provider, confidence: llmConf }, 'critical');
                                 }
                             } catch (ovrErr) { console.warn('[SKYNET PRIME] OVERRIDE error:', ovrErr.message); }
+
+                        } else if ((rawAction === 'BUY' || rawAction === 'SELL') && rawAction !== 'HOLD') {
+                            // ═══════════════════════════════════════════════════════════════
+                            // PATCH #47: SKYNET PRIME DIRECT TRADE — NeuronAI simple BUY/SELL
+                            // Previously, simple BUY/SELL from NeuronAI were LOGGED but NEVER
+                            // EXECUTED (no handler existed). This caused total trade starvation
+                            // when ensemble consensus was always HOLD.
+                            // Now: NeuronAI BUY/SELL generates a trade signal and executes it
+                            // through QDV verification + execution engine.
+                            // ═══════════════════════════════════════════════════════════════
+                            try {
+                                const maxPositions = (this.config.multiPosition && this.config.multiPosition.maxPositions) || 3;
+                                if (llmConf >= 0.40 && this.pm.positionCount < maxPositions) {
+                                    const tradePrice = await this._getCurrentPrice(this.config.symbol);
+                                    if (tradePrice) {
+                                        const tradeSignal = {
+                                            symbol: this.config.symbol,
+                                            action: rawAction,
+                                            confidence: llmConf,
+                                            price: tradePrice,
+                                            strategy: 'SkynetPrime_' + (llmDecision.provider || 'cpu'),
+                                            reasoning: 'SKYNET PRIME: ' + llmReasoning,
+                                            timestamp: Date.now(),
+                                        };
+                                        // Apply QDV verification if available
+                                        let shouldExecute = true;
+                                        if (this.hybridPipeline && this.hybridPipeline.isReady) {
+                                            try {
+                                                const pf = this.pm.getPortfolio();
+                                                const ver = this.hybridPipeline.postProcess(tradeSignal, pf.totalValue);
+                                                if (!ver.approved) {
+                                                    shouldExecute = false;
+                                                    console.log('[SKYNET PRIME] QDV REJECTED: ' + rawAction +
+                                                        ' (conf: ' + (llmConf*100).toFixed(1) + '%) -> ' +
+                                                        ver.verificationResult.reason);
+                                                } else {
+                                                    tradeSignal.confidence = ver.finalConfidence;
+                                                }
+                                            } catch(qe) { /* QDV error, allow trade */ }
+                                        }
+                                        if (shouldExecute) {
+                                            // Add regime for regime-aware sizing
+                                            if (this.neuralAI && this.neuralAI.currentRegime) {
+                                                tradeSignal.regime = this.neuralAI.currentRegime;
+                                            }
+                                            await this.exec.executeTradeSignal(tradeSignal, this.dp);
+                                            console.log('[SKYNET PRIME] DIRECT TRADE: ' + rawAction +
+                                                ' (conf: ' + (llmConf*100).toFixed(1) + '%) | Provider: ' +
+                                                (llmDecision.provider || 'cpu') + ' | ' + llmReasoning);
+                                            if (this.megatron) this.megatron.logActivity('SKYNET', 'Direct Trade (LLM)',
+                                                rawAction + ' conf=' + (llmConf*100).toFixed(1) + '% | ' + llmReasoning,
+                                                { provider: llmDecision.provider }, 'critical');
+                                        }
+                                    }
+                                } else if (llmConf < 0.40) {
+                                    console.log('[SKYNET PRIME] ' + rawAction + ' SKIPPED — conf ' +
+                                        (llmConf*100).toFixed(1) + '% below 40% gate');
+                                }
+                            } catch (directErr) {
+                                console.warn('[SKYNET PRIME] DIRECT TRADE error:', directErr.message);
+                            }
                         }
 
                         // Log personality/reasoning to Megatron
