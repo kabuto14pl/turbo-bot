@@ -30,6 +30,9 @@ test-results-*/
 *_test.ts
 test_*.js
 test_*.ts
+# Allow real test suites in src/__tests__/
+!src/__tests__/
+!src/__tests__/**
 coverage/
 .nyc_output/
 *.lcov

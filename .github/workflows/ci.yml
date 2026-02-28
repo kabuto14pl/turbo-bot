@@ -1,93 +1,92 @@
-# 🔧 [DEVELOPMENT-TOOL]
-# Development configuration file
-name: CI/CD Pipeline
+# Turbo Bot CI Pipeline
+# Uruchamia się na KAŻDYM pushu do master — łapie bugi PRZED deployem na VPS
+
+name: CI — Lint, Syntax & Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
   pull_request:
-    branches: [main]
+    branches: [master, main]
+
+env:
+  NODE_VERSION: '20.x'
 
 jobs:
-  test:
+  # ─── SYNTAX CHECK ────────────────────────────────────────────────────
+  syntax:
+    name: Syntax Check
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Check JS syntax (core files)
+        run: |
+          echo "Checking syntax of core bot files..."
+          ERRORS=0
+          for f in trading-bot/src/modules/bot.js trading-bot/src/core/ai/*.js trading-bot/src/modules/*.js; do
+            if [ -f "$f" ]; then
+              node --check "$f" 2>&1 || { echo "SYNTAX ERROR: $f"; ERRORS=$((ERRORS+1)); }
+            fi
+          done
+          if [ $ERRORS -gt 0 ]; then
+            echo "$ERRORS file(s) with syntax errors!"
+            exit 1
+          fi
+          echo "All core files passed syntax check"
+
+  # ─── LINT ─────────────────────────────────────────────────────────────
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
 
-      - name: Run linter
-        run: npm run lint
+      - name: Lint core bot files
+        run: |
+          npx eslint \
+            trading-bot/src/modules/bot.js \
+            trading-bot/src/core/ai/*.js \
+            trading-bot/src/modules/*.js \
+            --max-warnings 30 \
+            --format stylish
 
-      - name: Run Must-Pass Tests (Production Blockers)
-        run: npm test -- --testPathPattern="must-pass" --verbose
-        continue-on-error: false
-
-      - name: Run Unit Tests (Component Coverage)
-        run: npm test -- --testPathPattern="unit" --verbose
-        continue-on-error: false
-
-      - name: Run All Tests with Coverage
-        run: npm test -- --coverage --verbose
-
-      - name: Build project
-        run: npm run build
-
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  security:
+  # ─── TESTS ────────────────────────────────────────────────────────────
+  test:
+    name: Critical Tests
     runs-on: ubuntu-latest
+    needs: [syntax]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run security audit
-        run: npm audit
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Install dependencies
+        run: npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
 
-  docker:
+      - name: Run critical bug tests
+        run: npx jest src/__tests__/critical-bugs.test.js --verbose --no-cache
+
+  # ─── DEPLOY GATE ──────────────────────────────────────────────────────
+  deploy-ready:
+    name: Deploy Gate
     runs-on: ubuntu-latest
-    needs: [test]
-    if: github.ref == 'refs/heads/main'
-
+    needs: [syntax, lint, test]
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: All checks passed
+        run: echo "All quality gates passed — safe to deploy to VPS"

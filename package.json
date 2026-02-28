@@ -26,8 +26,9 @@
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch --passWithNoTests",
     "test:enterprise": "jest --testPathPattern=enterprise --passWithNoTests",
-    "lint": "echo 'Skipping lint for Enterprise preparation'",
-    "lint:fix": "echo 'Skipping lint for Enterprise preparation'",
+    "lint": "eslint trading-bot/src/modules/bot.js trading-bot/src/core/ai/*.js trading-bot/src/modules/*.js --max-warnings 30",
+    "lint:fix": "eslint trading-bot/src/modules/bot.js trading-bot/src/core/ai/*.js trading-bot/src/modules/*.js --fix",
+    "precheck": "node scripts/pre-deploy-check.js",
     "clean": "rm -rf dist",
     "prepare": "echo 'Enterprise Bot prepared for deployment'",
     "monitor": "docker-compose up -d prometheus grafana",
@@ -159,7 +160,9 @@
     ],
     "testMatch": [
       "**/__tests__/**/*.test.ts",
-      "**/?(*.)+(spec|test).ts"
+      "**/__tests__/**/*.test.js",
+      "**/?(*.)+(spec|test).ts",
+      "**/?(*.)+(spec|test).js"
     ],
     "collectCoverageFrom": [
       "src/**/*.ts",
@@ -168,8 +171,12 @@
       "!**/node_modules/**"
     ],
     "transform": {
-      "^.+\\.ts$": "ts-jest"
+      "^.+\\.ts$": "ts-jest",
+      "^.+\\.js$": "babel-jest"
     },
+    "transformIgnorePatterns": [
+      "node_modules/"
+    ],
     "moduleFileExtensions": [
       "ts",
       "js",
