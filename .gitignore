@@ -164,6 +164,7 @@ yarn.lock.bak
 !CONTRIBUTING.md
 !CHANGELOG.md
 !LICENSE.md
+!SKYNET_NEURONAI_DEEP_ANALYSIS.md
 
 # 🚫 PREVENT TEST FILE ACCUMULATION IN ROOT
 # ==========================================
