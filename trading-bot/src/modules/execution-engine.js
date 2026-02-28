@@ -13,6 +13,12 @@
  * - Volatility-adaptive SL tightening
  * - SL tightened to 1.5x ATR (from 2.0x), TP widened to 4.0x (from 3.0x)
  * - 24h underwater exit for losing positions
+ *
+ * PATCH #44: SKYNET PRIME fixes:
+ * - [P0-A] Fee Gate: reject trades where expected profit < 1.5× fees
+ * - [P0-B] learnFromTrade dedup: single learn point in bot.js
+ * - [P0-C] Min-hold cooldown: 15min between close and re-open
+ * - [P0-E] SHORT trailing SL: 5-phase Chandelier for SHORT positions
  */
 const ind = require('./indicators');
 
@@ -24,10 +30,15 @@ class ExecutionEngine {
         this.ml = mlIntegration || null;
         this.advancedPositionManager = null;
         this.monitoringSystem = null;
+        this.megatron = null; // PATCH #36: Megatron reference for activity logging
+        // PATCH #44: Min-hold cooldown tracking
+        this._lastCloseTime = 0;
     }
 
     setAdvancedPositionManager(apm) { this.advancedPositionManager = apm; }
     setMonitoringSystem(ms) { this.monitoringSystem = ms; }
+    // PATCH #36: Allow bot.js to set Megatron reference for SL/TP/TIME activity logs
+    setMegatron(megatron) { this.megatron = megatron; }
 
     /**
      * Monitor open positions: Chandelier trailing SL, 3-level partial TP, time exits
@@ -53,68 +64,27 @@ class ExecutionEngine {
 
                 const atr = pos.atrAtEntry;
                 const isShort = pos.side === 'SHORT';
+                // Direction-aware profit calculation: positive = favorable move
                 const profit = isShort ? (pos.entryPrice - price) : (price - pos.entryPrice);
                 const atrMult = atr > 0 ? profit / atr : 0;
 
+                // ============================================
                 // QPM COORDINATION (PATCH #19)
+                // When Quantum Position Manager is actively managing
+                // this position's SL/TP via quantum-adjusted algorithms
+                // (VQC regime + QRA risk + QMC scenarios), skip classical
+                // trailing phases to avoid conflicting adjustments.
+                // SHORT positions are also deferred to QPM for full
+                // direction-aware quantum management.
+                // ============================================
                 const qpmManaged = pos._qpmManaged || false;
 
                 // ============================================
                 // CHANDELIER TRAILING STOP-LOSS (ATR-based)
+                // Continuous trailing from highest price minus N*ATR
                 // Active only for LONG positions without QPM management.
+                // SHORT trailing and QPM-managed positions use quantum SL.
                 // ============================================
-                // PATCH #23: SHORT trailing stop-loss
-                if (atr > 0 && !qpmManaged && isShort) {
-                    let newShortSL = pos.stopLoss;
-                    const shortProfit = pos.entryPrice - price;
-                    const shortAtrMult = atr > 0 ? shortProfit / atr : 0;
-                    
-                    if (shortAtrMult >= 1.0 && shortAtrMult < 1.5) {
-                        newShortSL = pos.entryPrice - pos.entryPrice * 0.003;
-                    } else if (shortAtrMult >= 1.5 && shortAtrMult < 2.0) {
-                        newShortSL = pos.entryPrice - 0.5 * atr;
-                    } else if (shortAtrMult >= 2.0 && shortAtrMult < 3.0) {
-                        newShortSL = pos.entryPrice - 1.0 * atr;
-                    }
-                    if (shortAtrMult >= 3.0 && pos._lowestPrice) {
-                        var chandelierShortSL = pos._lowestPrice + 1.5 * atr;
-                        var minChanShort = pos.entryPrice - 1.5 * atr;
-                        newShortSL = Math.min(chandelierShortSL, minChanShort);
-                    }
-                    
-                    if (newShortSL < pos.stopLoss) {
-                        var shortPhase = shortAtrMult >= 3.0 ? 'CHANDELIER' : shortAtrMult >= 2.0 ? 'LOCK_1x' : shortAtrMult >= 1.5 ? 'LOCK_0.5x' : 'BREAKEVEN';
-                        console.log('[SHORT TRAIL] ' + shortPhase + ' ' + shortAtrMult.toFixed(1) + 'x ATR | SL: $' + pos.stopLoss.toFixed(2) + ' -> $' + newShortSL.toFixed(2));
-                        this.pm.updateStopLoss(sym, newShortSL);
-                    }
-                    
-                    if (shortAtrMult >= 1.5 && !pos._partialTp1Done && pos.quantity > 0) {
-                        var closeQtyS1 = pos.quantity * 0.25;
-                        if (closeQtyS1 > 0.000001) {
-                            var tradeS1 = this.pm.closePosition(sym, price, closeQtyS1, 'SHORT_TP_L1', 'PARTIAL_TP');
-                            if (tradeS1) {
-                                pos._partialTp1Done = true;
-                                // PATCH #32: NeuronAI learns from SHORT partial TP
-                                try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: tradeS1.pnl, strategy: 'SHORT_PARTIAL_TP_L1', reason: 'Short partial profit locked' }); } catch(eN3) {}
-                                console.log('[SHORT TP L1] 25% @ ' + shortAtrMult.toFixed(1) + 'x ATR | PnL: $' + tradeS1.pnl.toFixed(2));
-                                if (this.ml) this.ml.learnFromTrade(tradeS1.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
-                            }
-                        }
-                    }
-                    if (shortAtrMult >= 2.5 && !pos._partialTp2Done && pos.quantity > 0) {
-                        var closeQtyS2 = pos.quantity * 0.333;
-                        if (closeQtyS2 > 0.000001) {
-                            var tradeS2 = this.pm.closePosition(sym, price, closeQtyS2, 'SHORT_TP_L2', 'PARTIAL_TP');
-                            if (tradeS2) {
-                                pos._partialTp2Done = true;
-                                // PATCH #32: NeuronAI learns from SHORT partial TP L2
-                                try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: tradeS2.pnl, strategy: 'SHORT_PARTIAL_TP_L2', reason: 'Short partial 2 locked' }); } catch(eN4) {}
-                                console.log('[SHORT TP L2] 25% @ ' + shortAtrMult.toFixed(1) + 'x ATR | PnL: $' + tradeS2.pnl.toFixed(2));
-                                if (this.ml) this.ml.learnFromTrade(tradeS2.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
-                            }
-                        }
-                    }
-                }
                 if (atr > 0 && !qpmManaged && !isShort) {
                     let newSL = pos.stopLoss;
 
@@ -153,16 +123,8 @@ class ExecutionEngine {
                         newSL = Math.max(chandelierSL, minChandelier);
                     }
 
-                    // PATCH #26: Minimum hold time — first 15 min, only allow SL if loss > 2.5x ATR
-                // Analysis showed <5min trades have only 20% win rate (noise trading)
-                const holdMinutes = (Date.now() - (pos.entryTime || Date.now())) / 60000;
-                if (holdMinutes < 15 && atrMult < 1.0) {
-                    // During first 15 min, DON'T tighten SL — let position breathe
-                    // Only trail after minimum hold period or if already profitable > 1x ATR
-                }
-
-                // SL can only move UP, never down
-                    if (newSL > pos.stopLoss && (holdMinutes >= 15 || atrMult >= 1.0)) {
+                    // SL can only move UP, never down
+                    if (newSL > pos.stopLoss) {
                         const phase = atrMult >= 3.0 ? 'CHANDELIER' : atrMult >= 2.0 ? 'LOCK_1x' : atrMult >= 1.5 ? 'LOCK_0.5x' : 'BREAKEVEN';
                         console.log(`[TRAILING SL] ${phase} ${atrMult.toFixed(1)}x ATR | SL: $${pos.stopLoss.toFixed(2)} -> $${newSL.toFixed(2)} | High: $${(pos._highestPrice || price).toFixed(2)}`);
                         this.pm.updateStopLoss(sym, newSL);
@@ -170,47 +132,91 @@ class ExecutionEngine {
 
                     // ============================================
                     // 3-LEVEL PARTIAL TAKE-PROFIT
-                    // Level 1: 25% at 2.0x ATR (P27: adjusted for 2.5x SL, ~0.8R)
-                    // Level 2: 25% at 3.75x ATR (P27: 1:1.5 RR with 2.5x SL)
+                    // Level 1: 25% at 1.5x ATR
+                    // Level 2: 25% at 2.5x ATR
                     // Level 3: 50% runner (full TP or Chandelier exit)
                     // ============================================
 
-                    // PARTIAL TP LEVEL 1: 25% at 2.0x ATR — 0.8R with 2.5x ATR SL (P27)
-                    if (atrMult >= 2.0 && !pos._partialTp1Done && pos.quantity > 0) {
+                    // PARTIAL TP LEVEL 1: 25% at 1.5x ATR
+                    if (atrMult >= 1.5 && !pos._partialTp1Done && pos.quantity > 0) {
                         const closeQty = pos.quantity * 0.25;
                         if (closeQty > 0.000001) {
-                            const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L1_2.0ATR', 'PARTIAL_TP');
+                            const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L1_1.5ATR', 'PARTIAL_TP');
                             if (trade) {
                                 pos._partialTp1Done = true;
-                                  // PATCH #32: NeuronAI learns from LONG partial TP L1
-                                  try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: trade.pnl, strategy: 'PARTIAL_TP_L1', reason: 'Partial profit locked' }); } catch(eN1) {}
                                 // Move SL to breakeven + buffer after first TP
                                 const beSL = pos.entryPrice + pos.entryPrice * 0.003;
                                 if (beSL > pos.stopLoss) this.pm.updateStopLoss(sym, beSL);
                                 console.log(`[PARTIAL TP L1] 25% @ ${atrMult.toFixed(1)}x ATR: ${closeQty.toFixed(6)} | PnL: $${trade.pnl.toFixed(2)}`);
-                                if (this.ml) this.ml.learnFromTrade(trade.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
+                                // PATCH #44B: learnFromTrade removed — single learn point in bot.js _detectAndLearnFromCloses()
                             }
                         }
                     }
 
-                    // PARTIAL TP LEVEL 2: 25% at 3.75x ATR — 1:1.5 RR with 2.5x ATR SL (P27)
-                    if (atrMult >= 3.75 && !pos._partialTp2Done && pos.quantity > 0) {
+                    // PARTIAL TP LEVEL 2: 25% at 2.5x ATR
+                    if (atrMult >= 2.5 && !pos._partialTp2Done && pos.quantity > 0) {
                         const closeQty = pos.quantity * 0.333; // 25% of original = 33% of remaining 75%
                         if (closeQty > 0.000001) {
-                            const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L2_3.75ATR', 'PARTIAL_TP');
+                            const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L2_2.5ATR', 'PARTIAL_TP');
                             if (trade) {
                                 pos._partialTp2Done = true;
-                                  // PATCH #32: NeuronAI learns from LONG partial TP L2
-                                  try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: trade.pnl, strategy: 'PARTIAL_TP_L2', reason: 'Second partial profit locked' }); } catch(eN2) {}
                                 // Lock 1x ATR profit on remainder
                                 const lockSL = pos.entryPrice + 1.0 * atr;
                                 if (lockSL > pos.stopLoss) this.pm.updateStopLoss(sym, lockSL);
                                 console.log(`[PARTIAL TP L2] 25% @ ${atrMult.toFixed(1)}x ATR: ${closeQty.toFixed(6)} | PnL: $${trade.pnl.toFixed(2)}`);
-                                if (this.ml) this.ml.learnFromTrade(trade.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
+                                // PATCH #44B: learnFromTrade removed — single learn point in bot.js _detectAndLearnFromCloses()
                             }
                         }
                     }
                     // Level 3 (remaining 50%) runs as a "runner" - exits via TP, Chandelier SL, or time
+                }
+
+                // ============================================
+                // PATCH #44E: SHORT TRAILING STOP-LOSS (ATR-based)
+                // Mirror of LONG 5-phase trailing but tracking
+                // _lowestPrice and moving SL DOWN (tighter).
+                // Fallback when QPM is not managing the position.
+                // ============================================
+                if (atr > 0 && !qpmManaged && isShort) {
+                    let newSL = pos.stopLoss;
+
+                    let currentATR = atr;
+                    if (marketDataHistory && marketDataHistory.length >= 20) {
+                        const candleData = marketDataHistory.slice(-20).map(c => ({
+                            symbol: sym, timestamp: Date.now(),
+                            open: c.open || c.close, high: c.high, low: c.low,
+                            close: c.close, volume: c.volume || 0
+                        }));
+                        const liveATR = ind.calculateATR(candleData, 14);
+                        if (liveATR > 0) currentATR = liveATR;
+                    }
+
+                    // SHORT Phase 2: 1.0x-1.5x ATR — move SL to breakeven - buffer
+                    if (atrMult >= 1.0 && atrMult < 1.5) {
+                        const beBuffer = pos.entryPrice * 0.003;
+                        newSL = pos.entryPrice - beBuffer;
+                    }
+                    // SHORT Phase 3: 1.5x-2.0x ATR — lock 0.5x ATR profit
+                    else if (atrMult >= 1.5 && atrMult < 2.0) {
+                        newSL = pos.entryPrice - 0.5 * atr;
+                    }
+                    // SHORT Phase 4: 2.0x-3.0x ATR — lock 1.0x ATR profit
+                    else if (atrMult >= 2.0 && atrMult < 3.0) {
+                        newSL = pos.entryPrice - 1.0 * atr;
+                    }
+                    // SHORT Phase 5: 3.0x+ — Chandelier from lowest price + 1.5x ATR
+                    if (atrMult >= 3.0) {
+                        const chandelierSL = pos._lowestPrice + 1.5 * currentATR;
+                        const minChandelier = pos.entryPrice - 1.5 * atr;
+                        newSL = Math.min(chandelierSL, minChandelier);
+                    }
+
+                    // SHORT: SL can only move DOWN (tighter)
+                    if (newSL > 0 && newSL < pos.stopLoss) {
+                        const phase = atrMult >= 3.0 ? 'CHANDELIER' : atrMult >= 2.0 ? 'LOCK_1x' : atrMult >= 1.5 ? 'LOCK_0.5x' : 'BREAKEVEN';
+                        console.log('[SHORT TRAILING SL] ' + phase + ' ' + atrMult.toFixed(1) + 'x ATR | SL: $' + pos.stopLoss.toFixed(2) + ' -> $' + newSL.toFixed(2) + ' | Low: $' + (pos._lowestPrice || price).toFixed(2));
+                        this.pm.updateStopLoss(sym, newSL);
+                    }
                 }
 
                 // ============================================
@@ -236,42 +242,21 @@ class ExecutionEngine {
                 }
 
                 // ============================================
-                // SL / TP / TIME CHECK - execute close (direction-aware)
+                // SL / TP / TIME CHECK - execute close
+                // Direction-aware: LONG SL below entry, SHORT SL above entry
                 // ============================================
-                // PATCH #26: Minimum hold time gate for SL — during first 10 min, only emergency SL
-                const holdMin = (Date.now() - (pos.entryTime || Date.now())) / 60000;
-                const isEmergencySL = atr > 0 ? Math.abs(profit) > 2.5 * atr : Math.abs(profit / pos.entryPrice) > 0.04;
-
                 let close = false, reason = '';
                 if (timeExit) { close = true; reason = 'TIME_EXIT'; }
                 else if (isShort) {
-                    if (price >= pos.stopLoss) {
-                        // PATCH #26: During first 10 min, only close on emergency SL
-                        if (holdMin >= 10 || isEmergencySL) {
-                            close = true; reason = 'STOP_LOSS';
-                        } else {
-                            console.log('[HOLD GATE] ' + sym + ' SL hit at ' + holdMin.toFixed(1) + 'min — holding (min 10min rule), loss: $' + Math.abs(profit).toFixed(2));
-                        }
-                    }
-                    else if (pos.takeProfit && price <= pos.takeProfit) {
-                        // PATCH #26: During first 15 min, require wider TP margin (let it run more)
-                        if (holdMin >= 15 || Math.abs(profit) > 1.5 * (atr || pos.entryPrice * 0.02)) {
-                            close = true; reason = 'TAKE_PROFIT';
-                        }
-                    }
+                    // SHORT: SL is above entry (price rises beyond stop = loss)
+                    // SHORT: TP is below entry (price falls to target = profit)
+                    if (price >= pos.stopLoss) { close = true; reason = 'STOP_LOSS'; }
+                    else if (pos.takeProfit && price <= pos.takeProfit) { close = true; reason = 'TAKE_PROFIT'; }
                 } else {
-                    if (price <= pos.stopLoss) {
-                        if (holdMin >= 10 || isEmergencySL) {
-                            close = true; reason = 'STOP_LOSS';
-                        } else {
-                            console.log('[HOLD GATE] ' + sym + ' SL hit at ' + holdMin.toFixed(1) + 'min — holding (min 10min rule), loss: $' + Math.abs(profit).toFixed(2));
-                        }
-                    }
-                    else if (price >= pos.takeProfit) {
-                        if (holdMin >= 15 || profit > 1.5 * (atr || pos.entryPrice * 0.02)) {
-                            close = true; reason = 'TAKE_PROFIT';
-                        }
-                    }
+                    // LONG: SL is below entry (price falls below stop = loss)
+                    // LONG: TP is above entry (price rises to target = profit)
+                    if (price <= pos.stopLoss) { close = true; reason = 'STOP_LOSS'; }
+                    else if (price >= pos.takeProfit) { close = true; reason = 'TAKE_PROFIT'; }
                 }
 
                 if (close) {
@@ -280,9 +265,19 @@ class ExecutionEngine {
                         const e = reason === 'TAKE_PROFIT' ? '[TP]' : reason === 'STOP_LOSS' ? '[SL]' : '[TIME]';
                         console.log(`${e} ${sym}: $${pos.entryPrice.toFixed(2)} -> $${price.toFixed(2)} | PnL: ${trade.pnl >= 0 ? '+' : ''}$${trade.pnl.toFixed(2)}`);
                         this.risk.recordTradeResult(trade.pnl);
-                        if (this.ml) this.ml.learnFromTrade(trade.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
-                          // PATCH #32: NeuronAI learns from all position closes
-                          try { if (global._neuronAIInstance) global._neuronAIInstance.learnFromTrade({ pnl: trade.pnl, strategy: reason, reason: reason }); } catch(eNClose) {}
+                        // PATCH #44B: learnFromTrade removed — single learn point in bot.js _detectAndLearnFromCloses()
+                        // PATCH #44C: Track close time for min-hold cooldown
+                        this._lastCloseTime = Date.now();
+                        // PATCH #36: Log SL/TP/TIME close to Megatron activity feed (P1-5)
+                        if (this.megatron) {
+                            const icon = reason === 'TAKE_PROFIT' ? '🎯' : reason === 'STOP_LOSS' ? '🛑' : '⏰';
+                            const pnlStr = (trade.pnl >= 0 ? '+' : '') + '$' + trade.pnl.toFixed(2);
+                            const severity = trade.pnl >= 0 ? 'normal' : 'high';
+                            this.megatron.logActivity('TRADE', icon + ' ' + reason.replace('_', ' ') + ': ' + sym,
+                                pnlStr + ' | Entry: $' + pos.entryPrice.toFixed(2) + ' → Exit: $' + price.toFixed(2) +
+                                ' | Duration: ' + ((Date.now() - (pos.entryTime || Date.now())) / 3600000).toFixed(1) + 'h',
+                                { reason, pnl: trade.pnl, entryPrice: pos.entryPrice, exitPrice: price }, severity);
+                        }
                         // Sync APM
                         if (this.advancedPositionManager) {
                             try {
@@ -315,20 +310,7 @@ class ExecutionEngine {
             const valid = this._validateSignal(signal);
             if (!valid.valid) { console.log(`[TRADE REJECTED] ${valid.reason}`); return; }
 
-            // PATCH #26: Anti-scalping cooldown check — minimum 3 min between new entries
-            if ((signal.action === 'BUY' || signal.action === 'SELL') && this.risk && this.risk.checkTradeCooldown) {
-                if (!this.risk.checkTradeCooldown()) {
-                    console.log('[EXEC P26] Trade BLOCKED by anti-scalping cooldown');
-                    return;
-                }
-            }
-            // PATCH #31: Dedup guard - same symbol+action within 5s window
-            const tradeKey = signal.symbol + ':' + signal.action + ':' + Math.floor(Date.now() / 5000);
-            if (this._lastTradeKey === tradeKey) {
-                console.log('[EXEC P31] DEDUP: Identical signal blocked within 5s window');
-                return;
-            }
-
+            console.log(`[EXEC] ${signal.action} ${signal.symbol} (conf: ${(signal.confidence * 100).toFixed(1)}%)`);
 
             // Get ATR for dynamic risk
             let atrValue, dynamicRisk = this.config.riskPerTrade;
@@ -352,10 +334,40 @@ class ExecutionEngine {
             await this._sleep(Math.random() * 40 + 10);
 
             // PATCH #14: Always use risk manager for quantity (ignores signal.quantity from ensemble)
-            const quantity = this.risk.calculateOptimalQuantity(signal.price, signal.confidence, atrValue, signal.symbol);
+            const quantity = this.risk.calculateOptimalQuantity(signal.price, signal.confidence, atrValue, signal.symbol, signal.regime || null);
             if (quantity <= 0) { console.log('[EXEC] Quantity=0, skipping'); return; }
 
             const fees = signal.price * quantity * this.config.tradingFeeRate;
+
+            // ═══════════════════════════════════════════════════════
+            // PATCH #44A: FEE GATE — reject trades where expected
+            // profit < 1.5× round-trip fees. Prevents fee-burning.
+            // ═══════════════════════════════════════════════════════
+            if (signal.action === 'BUY') {
+                const roundTripFees = fees * 2; // entry + exit
+                const expectedMinMove = atrValue ? atrValue * 1.5 : signal.price * 0.015;
+                const expectedProfit = expectedMinMove * quantity;
+                if (expectedProfit < roundTripFees * 1.5) {
+                    console.log('[FEE GATE] REJECTED: Expected $' + expectedProfit.toFixed(2) +
+                        ' < 1.5x fees $' + (roundTripFees * 1.5).toFixed(2) +
+                        ' | ATR: ' + (atrValue ? atrValue.toFixed(2) : 'N/A'));
+                    return;
+                }
+            }
+
+            // ═══════════════════════════════════════════════════════
+            // PATCH #44C: MIN-HOLD COOLDOWN — prevent rapid re-entry
+            // after position close. Enforces 15 min cooling period.
+            // ═══════════════════════════════════════════════════════
+            if (signal.action === 'BUY' && this._lastCloseTime > 0) {
+                const MIN_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
+                const elapsed = Date.now() - this._lastCloseTime;
+                if (elapsed < MIN_COOLDOWN_MS) {
+                    console.log('[MIN HOLD] BUY rejected — cooldown ' +
+                        ((MIN_COOLDOWN_MS - elapsed) / 60000).toFixed(1) + 'min remaining');
+                    return;
+                }
+            }
 
             const trade = {
                 id: this.config.instanceId + '-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
@@ -365,175 +377,105 @@ class ExecutionEngine {
             };
 
             if (signal.action === 'BUY') {
-                // PATCH #40: Position-aware BUY handler
-                const existingPos = this.pm.getPosition(signal.symbol);
-                
-                if (existingPos && existingPos.side === 'SHORT') {
-                    // BUY signal + have SHORT = CLOSE SHORT (proper reversal)
-                    const holdMs = Date.now() - (existingPos.entryTime || 0);
-                    if (holdMs < 15 * 60 * 1000) {
-                        console.log('[PATCH40] BUY close SHORT delayed — hold only ' + (holdMs/60000).toFixed(1) + 'min (min: 15min)');
-                        return;
-                    }
-                    const result = this.pm.closePosition(signal.symbol, signal.price, null, 'BUY_CLOSE_SHORT', signal.strategy);
-                    if (result) {
-                        trade.pnl = result.pnl;
-                        trade.entryPrice = existingPos.entryPrice;
-                        trade.quantity = existingPos.quantity;
-                        trade.action = 'BUY';
-                        const emoji = result.pnl >= 0 ? 'WIN' : 'LOSS';
-                        console.log('[PATCH40] BUY closes SHORT: $' + existingPos.entryPrice.toFixed(2) + ' -> $' + signal.price.toFixed(2) + ' | ' + emoji + ' PnL: $' + result.pnl.toFixed(2));
-                        if (this.ml) this.ml.learnFromTrade(result.pnl, holdMs, dataPipeline ? dataPipeline.getMarketDataHistory() : []);
-                        this.risk.recordTradeResult(result.pnl);
-                        if (this.advancedPositionManager) {
-                            try {
-                                const ap = this.advancedPositionManager.activePositions;
-                                if (ap) { for (const [pid, p] of ap) { if (p && p.symbol === signal.symbol) { await this.advancedPositionManager.closePosition(pid, 'BUY_CLOSE_SHORT'); break; } } }
-                            } catch(e) { /* APM sync non-critical */ }
-                        }
-                    }
-                } else if (existingPos) {
-                    // BUY signal + already have LONG = same direction, HOLD
-                    console.log('[PATCH40] BUY aligned with existing LONG — holding position');
-                    return;
+                let sl, tp;
+                if (atrValue && atrValue > 0) {
+                    // SL: 1.5x ATR (tighter than old 2x - better R:R with trailing)
+                    // TP: 4x ATR (wider - let runners run with partial TP levels)
+                    sl = signal.price - 1.5 * atrValue;
+                    tp = signal.price + 4.0 * atrValue;
                 } else {
-                    // No position — open LONG
-                    let sl, tp;
-                    if (atrValue && atrValue > 0) {
-                        sl = signal.price - 2.5 * atrValue;
-                        tp = signal.price + 5.0 * atrValue;
-                    } else {
-                        sl = signal.price * 0.985;
-                        tp = signal.price * 1.04;
-                    }
-                    this.pm.openPosition(signal.symbol, {
-                        entryPrice: signal.price, quantity,
-                        stopLoss: sl, takeProfit: tp,
-                        atrAtEntry: atrValue || 0
-                    });
-                    console.log('[BUY OPEN] ' + quantity.toFixed(6) + ' @ $' + signal.price.toFixed(2));
-                    console.log('[RISK] SL: $' + sl.toFixed(2) + ' | TP: $' + tp.toFixed(2));
-                    trade.pnl = -fees;
-                    trade.entryPrice = signal.price;
-                    if (this.advancedPositionManager) {
-                        try {
-                            const pid = signal.symbol + '-' + Date.now();
-                            await this.advancedPositionManager.openPosition(pid, signal.symbol, 'long', signal.price, quantity, signal.strategy, 2.0);
-                        } catch(e) { /* APM registration non-critical */ }
-                    }
+                    sl = signal.price * 0.985;
+                    tp = signal.price * 1.04;
+                }
+                this.pm.openPosition(signal.symbol, {
+                    entryPrice: signal.price, quantity,
+                    stopLoss: sl, takeProfit: tp,
+                    atrAtEntry: atrValue || 0
+                });
+                console.log(`[BUY] ${quantity.toFixed(6)} @ $${signal.price.toFixed(2)}`);
+                console.log(`[RISK] SL: $${sl.toFixed(2)} (-${atrValue ? '1.5x ATR' : '1.5%'}) | TP: $${tp.toFixed(2)} (+${atrValue ? '4x ATR' : '4%'})`);
+                trade.pnl = -fees;
+                trade.entryPrice = signal.price;
+
+                // APM registration
+                if (this.advancedPositionManager) {
+                    try {
+                        const pid = signal.symbol + '-' + Date.now();
+                        await this.advancedPositionManager.openPosition(pid, signal.symbol, 'long', signal.price, quantity, signal.strategy, 2.0);
+                    } catch(e) { /* APM registration non-critical */ }
                 }
             } else if (signal.action === 'SELL') {
-                // PATCH #40: Position-aware SELL handler
                 const pos = this.pm.getPosition(signal.symbol);
-                
-                if (pos && pos.side === 'SHORT') {
-                    // SELL signal + have SHORT = same direction, HOLD
-                    console.log('[PATCH40] SELL aligned with existing SHORT — holding position (entry: $' + pos.entryPrice.toFixed(2) + ')');
-                    return;
-                } else if (pos) {
-                    // SELL signal + have LONG = CLOSE LONG
-                    const holdMs = Date.now() - (pos.entryTime || 0);
-                    if (holdMs < 15 * 60 * 1000) {
-                        console.log('[PATCH40] SELL close LONG delayed — hold only ' + (holdMs/60000).toFixed(1) + 'min (min: 15min)');
-                        return;
-                    }
-                    const result = this.pm.closePosition(signal.symbol, signal.price, null, 'SELL', signal.strategy);
-                    if (result) {
-                        trade.pnl = result.pnl;
-                        trade.entryPrice = pos.entryPrice;
-                        trade.quantity = pos.quantity;
-                        const emoji = result.pnl >= 0 ? 'WIN' : 'LOSS';
-                        console.log('[SELL] $' + pos.entryPrice.toFixed(2) + ' -> $' + signal.price.toFixed(2) + ' | ' + emoji + ' PnL: $' + result.pnl.toFixed(2));
-                        if (this.ml) this.ml.learnFromTrade(result.pnl, holdMs, dataPipeline ? dataPipeline.getMarketDataHistory() : []);
-                        this.risk.recordTradeResult(result.pnl);
-                        if (this.advancedPositionManager) {
-                            try {
-                                const ap = this.advancedPositionManager.activePositions;
-                                if (ap) { for (const [pid, p] of ap) { if (p && p.symbol === signal.symbol) { await this.advancedPositionManager.closePosition(pid, 'BOT_SELL'); break; } } }
-                            } catch(e) { /* APM sync non-critical */ }
-                        }
-                    }
-                } else {
-                    // No position — open SHORT
-                    let shortSL, shortTP;
-                    if (atrValue && atrValue > 0) {
-                        shortSL = signal.price + 2.5 * atrValue;
-                        shortTP = signal.price - 5.0 * atrValue;
-                    } else {
-                        shortSL = signal.price * 1.015;
-                        shortTP = signal.price * 0.96;
-                    }
-                    this.pm.openPosition(signal.symbol, {
-                        entryPrice: signal.price, quantity,
-                        stopLoss: shortSL, takeProfit: shortTP,
-                        atrAtEntry: atrValue || 0, side: 'SHORT'
-                    });
-                    console.log('[SHORT OPEN] ' + quantity.toFixed(6) + ' ' + signal.symbol + ' @ $' + signal.price.toFixed(2));
-                    console.log('[RISK] SL: $' + shortSL.toFixed(2) + ' | TP: $' + shortTP.toFixed(2));
-                    trade.pnl = -fees;
-                    trade.entryPrice = signal.price;
-                    trade.action = 'SHORT';
+                if (!pos) { console.error(`[SELL] No position for ${signal.symbol}`); return; }
+                const result = this.pm.closePosition(signal.symbol, signal.price, null, 'SELL', signal.strategy);
+                if (result) {
+                    trade.pnl = result.pnl;
+                    trade.entryPrice = pos.entryPrice;
+                    trade.quantity = pos.quantity;
+                    const emoji = result.pnl >= 0 ? 'WIN' : 'LOSS';
+                    console.log(`[SELL] $${pos.entryPrice.toFixed(2)} -> $${signal.price.toFixed(2)} | ${emoji} PnL: $${result.pnl.toFixed(2)}`);
+                    // PATCH #44B: learnFromTrade removed — single learn point in bot.js _detectAndLearnFromCloses()
+                    // PATCH #44C: Track close time for min-hold cooldown
+                    this._lastCloseTime = Date.now();
+                    // PATCH #14: recordTradeResult ONCE here only — removed duplicate at bottom
+                    this.risk.recordTradeResult(result.pnl);
+                    // APM sync
                     if (this.advancedPositionManager) {
                         try {
-                            const pid = signal.symbol + '-SHORT-' + Date.now();
-                            await this.advancedPositionManager.openPosition(pid, signal.symbol, 'short', signal.price, quantity, signal.strategy, 2.0);
-                        } catch(eApmShort) { /* APM non-critical */ }
+                            const ap = this.advancedPositionManager.activePositions;
+                            if (ap) {
+                                for (const [pid, p] of ap) {
+                                    if (p && p.symbol === signal.symbol) {
+                                        await this.advancedPositionManager.closePosition(pid, 'BOT_SELL');
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch(e) { /* APM sync non-critical */ }
                     }
-                    this.pm.trades.push(trade);
-                    if (this.pm.trades.length > 5000) this.pm.trades = this.pm.trades.slice(-5000);
-                    this.pm.balance.totalValue = this.pm.balance.usdtBalance + Math.abs(this.pm.balance.btcBalance) * signal.price;
-                    this.pm.portfolio.totalValue = this.pm.balance.totalValue;
-                    this.pm.portfolio.totalTrades++;
-                    this.pm.portfolio.realizedPnL += trade.pnl;
-                    if (this.risk && this.risk.markTradeExecuted) { this.risk.markTradeExecuted(); }
-                    this._lastTradeKey = tradeKey;
-                    console.log('[EXEC DONE] SHORT ' + trade.quantity.toFixed(4) + ' ' + trade.symbol + ' @ $' + trade.price.toFixed(2) + ' | Fees: $' + fees.toFixed(2));
-                    return;
                 }
             }
 
             // Push trade + update portfolio
-            this.pm.trades.push(trade);
-            this.pm.portfolio.totalTrades++;
-            if (this.pm.trades.length > 5000) this.pm.trades = this.pm.trades.slice(-5000); // PATCH 31b: raised from 1000
+            // PATCH #36: Only push trade for BUY — SELL is already recorded by pm.closePosition() (P2-4)
+            if (signal.action === 'BUY') {
+                this.pm.trades.push(trade);
+                this.pm.portfolio.totalTrades++;
+                if (this.pm.trades.length > 1000) this.pm.trades = this.pm.trades.slice(-1000);
+                this.pm.portfolio.realizedPnL += trade.pnl; // BUY pnl = -fees only
+            }
             this.pm.balance.totalValue = this.pm.balance.usdtBalance + this.pm.balance.btcBalance * signal.price;
             this.pm.portfolio.totalValue = this.pm.balance.totalValue;
-            this.pm.portfolio.realizedPnL += trade.pnl;
-            if (trade.pnl > 0) this.pm.portfolio.successfulTrades++;
-            else if (trade.pnl < 0 && signal.action === 'SELL') this.pm.portfolio.failedTrades++;
-            const completed = this.pm.portfolio.successfulTrades + this.pm.portfolio.failedTrades;
-            this.pm.portfolio.winRate = completed > 0 ? (this.pm.portfolio.successfulTrades / completed) * 100 : 0;
 
             // PATCH #14: NO duplicate recordTradeResult here (this was the double-count bug)
 
-            // PATCH #26: Mark trade timestamp for anti-scalping cooldown
-            if (this.risk && this.risk.markTradeExecuted) {
-                this.risk.markTradeExecuted();
-            }
-            this._lastTradeKey = tradeKey; // PATCH #31: mark dedup key
-            console.log('[EXEC DONE] ' + trade.action + ' ' + trade.quantity.toFixed(4) + ' ' + trade.symbol + ' @ $' + trade.price.toFixed(2) + ' | PnL: $' + trade.pnl.toFixed(2));
+            console.log(`[EXEC DONE] ${trade.action} ${trade.quantity.toFixed(4)} ${trade.symbol} @ $${trade.price.toFixed(2)} | PnL: $${trade.pnl.toFixed(2)}`);
         } catch (err) {
-            console.error('[EXEC ERROR] ' + err.message);
+            console.error(`[EXEC ERROR] ${err.message}`);
         }
     }
 
-    // PATCH #25: Multi-position support — removed hasPosition BUY block
+    /**
+     * PATCH #20: Fixed validation — works with risk manager sizing (quantity=0 from ensemble).
+     * Uses portfolio value + risk manager for actual sizing validation, not signal.quantity.
+     */
     _validateSignal(signal) {
         if (!signal || !signal.action || !signal.price) return { valid: false, reason: 'Invalid signal' };
-        // PATCH #25: Allow BUY even when position exists (multi-position)
-        // Limit: max 5 simultaneous positions per symbol
+        if (signal.action === 'BUY' && this.pm.hasPosition(signal.symbol)) return { valid: false, reason: 'Position already open' };
+        if (signal.action === 'SELL' && !this.pm.hasPosition(signal.symbol)) return { valid: false, reason: 'No position to sell' };
         if (signal.action === 'BUY') {
-            const currentCount = this.pm.getPositionCountForSymbol
-                ? this.pm.getPositionCountForSymbol(signal.symbol)
-                : (this.pm.hasPosition(signal.symbol) ? 1 : 0);
-            if (currentCount >= 5) {
-                return { valid: false, reason: 'Max 5 positions for ' + signal.symbol };
+            const portfolio = this.pm.getPortfolio();
+            const maxPositionValue = portfolio.totalValue * 0.20; // 20% max from risk config
+            // Check available balance, not signal.quantity (which is 0 from ensemble)
+            if (this.pm.balance.usdtBalance < signal.price * 0.001) {
+                return { valid: false, reason: 'Insufficient balance' };
             }
-            // Max position value check: 20% of portfolio per position
-            const maxPos = this.pm.getPortfolio().totalValue * 0.20;
-            if (signal.price * (signal.quantity || 0.001) > maxPos) return { valid: false, reason: 'Exceeds max position' };
+            // Validate total exposure won't exceed limits
+            const currentExposure = this.pm.balance.btcBalance * signal.price;
+            if (currentExposure >= maxPositionValue) {
+                return { valid: false, reason: 'Max position value exceeded ($' + maxPositionValue.toFixed(0) + ')' };
+            }
         }
-        // PATCH #23: SELL without position = open SHORT
         return { valid: true };
     }
 

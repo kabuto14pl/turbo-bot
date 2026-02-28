@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 /**
  * @module Bot
  * @description Main orchestrator. Wires all modules together.
@@ -22,16 +22,26 @@
  *   - QRA risk scoring per position with black swan emergency exits
  *   - Position health scoring (0-100) with 6 weighted factors
  * PATCH #20: SKYNET AUTONOMOUS BRAIN (Audyt Skynet)
- *   [P0] NeuronAI Ôćĺ Skynet Brain: executeOverride, emergencyHalt, globalParamEvolution,
+ *   [P0] NeuronAI → Skynet Brain: executeOverride, emergencyHalt, globalParamEvolution,
  *        positionCommander, defenseMode, phaseRecovery, configEvolution
- *   [P0] QDV Starvation Fallback: cyclesWithoutTrade Ôćĺ force trade if >300 idle cycles
+ *   [P0] QDV Starvation Fallback: cyclesWithoutTrade → force trade if >300 idle cycles
  *   [P0] Skynet Override Gate: veto/force consensus before QDV verification
  *   [P1] Position Sync Mutex: _withPositionLock() prevents APM/QPM/PM race conditions
- *   [P1] MLÔćöQuantum Cross-System Feedback: learnFromQuantumVerification()
+ *   [P1] ML↔Quantum Cross-System Feedback: learnFromQuantumVerification()
  *   [P1] Ensemble Volatility-Adjusted Thresholds: regime-aware dynamic thresholds
  *   [P2] Execution Engine: Fixed dead _validateSignal(), proper balance-based validation
  *   [P2] Experience Buffer: Priority replay with 70% recency / 30% high-priority split
  *   [P3] Comprehensive logging with Skynet status fields throughout
+ *
+ * PATCH #44: SKYNET PRIME
+ *   [P0-A] Fee Gate: reject trades where expected profit < 1.5× fees
+ *   [P0-B] learnFromTrade dedup: single learn point in _detectAndLearnFromCloses()
+ *   [P0-C] Min-hold: 15min cooldown between close and re-open
+ *   [P0-D] Hard drawdown kill switch in RiskManager
+ *   [P0-E] SHORT trailing SL: 5-phase Chandelier for SHORT positions
+ *   [P1-A] RANGING stale position close: auto-close after 4h in dead zone
+ *   [P1-B] Confidence-scaled sizing + RANGING/HIGH_VOL regime reduction
+ *   [P1-D] Regime pass-through to execution for sizing awareness
  *
  * Architecture:
  *   Config -> DataPipeline -> StrategyRunner -> EnsembleVoting -> ExecutionEngine
@@ -88,6 +98,9 @@ class AutonomousTradingBot {
         this.backtestEngine = null;
         // PATCH #15: Neural AI
         this.neuralAI = null;
+        // PATCH #44: NeuronAI LLM Brain (enhancement layer over Skynet)
+        this.neuronManager = null;
+        this._lastLLMCycle = 0;
         this._lastPositionCount = 0;
         this._lastRealizedPnL = 0;
         this._lastConsensusStrategies = [];
@@ -101,7 +114,7 @@ class AutonomousTradingBot {
         this.hybridPipeline = null;
         // PATCH #18: Quantum Position Manager
         this.quantumPosMgr = null;
-        // PATCH #20: Position sync mutex ÔÇö prevent concurrent PM/APM/QPM modifications
+        // PATCH #20: Position sync mutex — prevent concurrent PM/APM/QPM modifications
         this._positionMutex = Promise.resolve();
     }
 
@@ -235,7 +248,7 @@ class AutonomousTradingBot {
             console.warn('[WARN] Neural AI: ' + e.message);
         }
 
-        // PATCH #16: Quantum-Hybrid Engine (legacy ÔÇö still used for per-signal enhancement)
+        // PATCH #16: Quantum-Hybrid Engine (legacy — still used for per-signal enhancement)
         try {
             const { QuantumHybridEngine } = require('../core/ai/quantum_optimizer');
             this.quantumEngine = new QuantumHybridEngine({
@@ -293,7 +306,7 @@ class AutonomousTradingBot {
             console.warn('[WARN] Hybrid Pipeline: ' + e.message);
         }
 
-        // PATCH #18: Quantum Position Manager (Stage 4 ÔÇö Continuous Monitoring)
+        // PATCH #18: Quantum Position Manager (Stage 4 — Continuous Monitoring)
         try {
             const { QuantumPositionManager } = require('../core/ai/quantum_position_manager');
             const ind = require('./indicators');
@@ -333,12 +346,20 @@ class AutonomousTradingBot {
             console.warn('[WARN] Megatron: ' + e.message);
         }
 
+        // PATCH #44: NeuronAI Manager — LLM Brain enhancement layer over Skynet
+        // Wraps AdaptiveNeuralEngine with LLM cascade (Ollama → Grok → GPT-4o-mini)
+        // for rich actions (SCALE_IN, PARTIAL_CLOSE, FLIP, ADJUST_SL/TP)
+        try {
+            const { NeuronAIManager } = require('../core/ai/neuron_ai_manager');
+            this.neuronManager = new NeuronAIManager(this.neuralAI);
+            console.log('[OK] NeuronAI LLM Brain: Online | Actions: SCALE_IN, PARTIAL_CLOSE, FLIP, ADJUST_SL/TP, OVERRIDE_BIAS');
+            this.mon.setComponent('neuronManager', true);
+        } catch (e) {
+            console.warn('[WARN] NeuronAI Manager: ' + e.message);
+        }
+
         // Load saved state
         this.state.load(this.pm, this.rm, this.ml);
-        // PATCH #41H: Sync _lastRealizedPnL with loaded state to prevent phantom loss detection
-        const _loadedPortfolio = this.pm.getPortfolio();
-        this._lastRealizedPnL = _loadedPortfolio.realizedPnL || 0;
-        this._lastPositionCount = this.pm.positionCount || 0;
 
         this.mon.setComponent('monitoring', true);
         console.log('[' + this.config.instanceId + '] MODULAR ENTERPRISE Bot initialized');
@@ -504,8 +525,7 @@ class AutonomousTradingBot {
                     if (mlAction) {
                         console.log('[ML] ' + (mlAction.action_type || 'NULL') + ' (conf: ' + ((mlAction.confidence||0)*100).toFixed(1) + '%)');
                         const mlSignal = this.ml.createSignal(mlAction, latest.close, this.config.symbol);
-                        // PATCH #42A: ML is ADVISOR not voter
-                        this._mlAdvisorSignal = mlSignal;
+                        allSignals.set('EnterpriseML', mlSignal);
                     }
                     this.ml.logProgress();
                 } catch (e) { console.error('[ML ERROR]', e.message); }
@@ -517,8 +537,7 @@ class AutonomousTradingBot {
                     const hasPos = this.pm.positionCount > 0;
                     const aiSignal = await this.neuralAI.generateAISignal(history, hasPos);
                     if (aiSignal && aiSignal.action !== 'HOLD') {
-                        // PATCH #42B: NeuralAI is BRAIN not voter ??? signal NOT added to ensemble
-                        this._neuralAISignal = aiSignal; // stored for override gate
+                        allSignals.set('NeuralAI', aiSignal);
                         console.log('[NEURAL AI] ' + aiSignal.action + ' (conf: ' + ((aiSignal.confidence||0)*100).toFixed(1) + '%, regime: ' + (aiSignal.regime || 'N/A') + ')');
                         if (this.megatron) {
                             this.megatron.logActivity('SIGNAL', 'Neural AI: ' + aiSignal.action,
@@ -574,8 +593,8 @@ class AutonomousTradingBot {
                         portfolio, currentPosition, trades
                     );
 
-                    // PATCH #42D: QAOA weight override DISABLED ??? Thompson Sampling is sole weight manager
-                    if (false && hybridBoostResult.weightRecommendation && hybridBoostResult.weightRecommendation.weights) {
+                    // CRITICAL FIX (Patch #17): Apply quantum weight optimization to ensemble
+                    if (hybridBoostResult.weightRecommendation && hybridBoostResult.weightRecommendation.weights) {
                         const qWeights = hybridBoostResult.weightRecommendation.weights;
                         const currentWeights = this.ensemble.weights;
                         for (const strategy of Object.keys(currentWeights)) {
@@ -669,50 +688,31 @@ class AutonomousTradingBot {
                 consensus = this.ensemble.vote(allSignals, this.rm, regimeInfo);
                 if (consensus && consensus.action !== 'HOLD') {
                     console.log('[CONSENSUS] ' + consensus.action + ' (conf: ' + (consensus.confidence*100).toFixed(1) + '%)');
-
-                    // ===================================================
-                    // PATCH #42E: ML ADVISOR confirms or modifies consensus
-                    // ML does NOT vote, but advises on the consensus decision
-                    // ===================================================
-                    if (this._mlAdvisorSignal && this._mlAdvisorSignal.action !== 'HOLD') {
-                        const mlAdv = this._mlAdvisorSignal.action;
-                        const mlAdvConf = this._mlAdvisorSignal.confidence || 0;
-                        if (mlAdv === consensus.action) {
-                            // ML AGREES ??? boost confidence up to 20%
-                            const boost = Math.min(0.20, mlAdvConf * 0.25);
-                            consensus.confidence = Math.min(0.95, consensus.confidence + boost);
-                            console.log('[ML ADVISOR] CONFIRMS ' + consensus.action + ' (ML conf=' + (mlAdvConf*100).toFixed(1) + '%) boost +' + (boost*100).toFixed(0) + '%');
-                        } else {
-                            // ML OPPOSES ??? reduce confidence by 30%
-                            consensus.confidence *= 0.70;
-                            console.log('[ML ADVISOR] OPPOSES ' + consensus.action + ' (ML says ' + mlAdv + ' at ' + (mlAdvConf*100).toFixed(1) + '%) conf reduced 30%');
-                        }
-                    }
                     this._lastConsensusStrategies = [];
                     for (const [name, sig] of allSignals) {
                         if (sig.action === consensus.action) this._lastConsensusStrategies.push(name);
                     }
 
-                    // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
-                    // PATCH #20: SKYNET OVERRIDE GATE ÔÇö before quantum verification
+                    // ═══════════════════════════════════════════════════════════════
+                    // PATCH #20: SKYNET OVERRIDE GATE — before quantum verification
                     // If Skynet has an active override, it takes precedence.
                     // If Skynet is in defense mode, it may VETO BUY signals.
-                    // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+                    // ═══════════════════════════════════════════════════════════════
                     if (this.neuralAI && this.neuralAI.isReady) {
                         // Check Skynet override
                         if (this.neuralAI._activeOverride && this.neuralAI._activeOverride.expiresAt > Date.now()) {
                             const ovr = this.neuralAI._activeOverride;
                             if (ovr.action === 'HOLD') {
-                                // Skynet VETO ÔÇö block all trades
+                                // Skynet VETO — block all trades
                                 console.log('[SKYNET VETO] Trade blocked: ' + ovr.reason);
                                 if (this.megatron) this.megatron.logActivity('SKYNET', 'VETO',
                                     consensus.action + ' blocked: ' + ovr.reason, {}, 'critical');
                                 consensus = null;
                             } else if (ovr.action !== consensus.action) {
-                                // Skynet wants a different action ÔÇö override if confidence is high
+                                // Skynet wants a different action — override if confidence is high
                                 if (ovr.confidence > this.neuralAI.evolvedConfig.ensembleOverrideThreshold) {
                                     console.log('[SKYNET OVERRIDE] ' + consensus.action + ' -> ' + ovr.action +
-                                        ' (conf: ' + (ovr.confidence * 100).toFixed(1) + '%) ÔÇö ' + ovr.reason);
+                                        ' (conf: ' + (ovr.confidence * 100).toFixed(1) + '%) — ' + ovr.reason);
                                     consensus.action = ovr.action;
                                     consensus.confidence = ovr.confidence;
                                     consensus.strategy = 'SkynetOverride';
@@ -723,11 +723,11 @@ class AutonomousTradingBot {
                             }
                         }
 
-                        // Defense mode ÔÇö block BUY signals
+                        // Defense mode — block BUY signals
                         // PATCH #39E: Allow BUY if starvation is extreme (>400 cycles)
                         if (consensus && this.neuralAI.defenseMode && consensus.action === 'BUY') {
                             if (this.neuralAI.cyclesWithoutTrade > 400) {
-                                console.log('[SKYNET DEFENSE] BUY ALLOWED despite defense mode ÔÇö EXTREME starvation (' + this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
+                                console.log('[SKYNET DEFENSE] BUY ALLOWED despite defense mode — EXTREME starvation (' + this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
                                 if (this.megatron) this.megatron.logActivity('SKYNET', 'Defense Override',
                                     'BUY allowed after ' + this.neuralAI.cyclesWithoutTrade + ' idle cycles (starvation break)', {}, 'critical');
                                 // Reduce position size as safety measure
@@ -735,7 +735,7 @@ class AutonomousTradingBot {
                             } else {
                                 console.log('[SKYNET DEFENSE] BUY blocked by defense mode (losses: ' + this.neuralAI.consecutiveLosses + ')');
                                 if (this.megatron) this.megatron.logActivity('SKYNET', 'Defense Block',
-                                    'BUY blocked ÔÇö ' + this.neuralAI.consecutiveLosses + ' consecutive losses', {}, 'high');
+                                    'BUY blocked — ' + this.neuralAI.consecutiveLosses + ' consecutive losses', {}, 'high');
                                 consensus = null;
                             }
                         }
@@ -743,30 +743,10 @@ class AutonomousTradingBot {
                 }
             }
 
-            // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
-            // ===================================================================
-            // PATCH #42E2: ML FORCE-TRADE ??? consensus HOLD but ML strongly disagrees
-            // ===================================================================
-            if (!consensus && this._mlAdvisorSignal && this._mlAdvisorSignal.action !== 'HOLD') {
-                const mlFConf = this._mlAdvisorSignal.confidence || 0;
-                const mlFAct = this._mlAdvisorSignal.action;
-                if (mlFConf >= 0.80) {
-                    console.log('[ML FORCE] ML ' + mlFAct + ' at ' + (mlFConf*100).toFixed(1) + '% overrides HOLD consensus (reduced size)');
-                    consensus = {
-                        action: mlFAct,
-                        confidence: mlFConf * 0.65,
-                        price: this._mlAdvisorSignal.price,
-                        symbol: this._mlAdvisorSignal.symbol || this.config.symbol,
-                        strategy: 'ML_Force',
-                        reasoning: 'ML override at ' + (mlFConf*100).toFixed(0) + '% confidence',
-                    };
-                    this._lastConsensusStrategies = ['EnterpriseML'];
-                }
-            }
-
-            // PATCH #20: SKYNET STARVATION OVERRIDE ÔÇö if no trade for too long
+            // ═══════════════════════════════════════════════════════════════
+            // PATCH #20: SKYNET STARVATION OVERRIDE — if no trade for too long
             // Force lower thresholds to prevent the bot from starving
-            // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+            // ═══════════════════════════════════════════════════════════════
             if (!consensus && this.neuralAI && this.neuralAI.isReady) {
                 const starvation = this.neuralAI.checkStarvationOverride();
                 if (starvation && allSignals.size > 0) {
@@ -781,7 +761,7 @@ class AutonomousTradingBot {
                     consensus = this.ensemble.vote(allSignals, this.rm);
                     this.ensemble.weights = origWeights; // Restore weights
                     if (consensus && consensus.action !== 'HOLD') {
-                        console.log('[SKYNET STARVATION] Trade forced: ' + consensus.action + ' ÔÇö ' + starvation.reason);
+                        console.log('[SKYNET STARVATION] Trade forced: ' + consensus.action + ' — ' + starvation.reason);
                         consensus.reasoning = starvation.reason;
                         if (this.megatron) this.megatron.logActivity('SKYNET', 'Starvation Override',
                             consensus.action + ': ' + starvation.reason, {}, 'high');
@@ -789,9 +769,9 @@ class AutonomousTradingBot {
                 }
             }
 
-            // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
-            // PATCH #20: SKYNET POSITION COMMANDS ÔÇö execute AI-driven commands
-            // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+            // ═══════════════════════════════════════════════════════════════
+            // PATCH #20: SKYNET POSITION COMMANDS — execute AI-driven commands
+            // ═══════════════════════════════════════════════════════════════
             if (this.neuralAI && this.neuralAI.isReady) {
                 const commands = this.neuralAI.consumePositionCommands();
                 for (const cmd of commands) {
@@ -837,7 +817,7 @@ class AutonomousTradingBot {
                 }
 
                 // PATCH #17: Hybrid Pipeline -- STAGE 3: POST-PROCESSING (Quantum Decision Verification)
-                // PATCH #20: With starvation fallback ÔÇö if QDV rejects but bot is starved, override
+                // PATCH #20: With starvation fallback — if QDV rejects but bot is starved, override
                 let shouldExecute = true;
                 let qdvRejected = false;
                 if (this.hybridPipeline && this.hybridPipeline.isReady) {
@@ -856,16 +836,16 @@ class AutonomousTradingBot {
                                     verification.verificationResult, 'high');
                             }
 
-                            // PATCH #20: Cross-system feedback ÔÇö inform Skynet about rejection
+                            // PATCH #20: Cross-system feedback — inform Skynet about rejection
                             if (this.neuralAI && this.neuralAI.isReady) {
                                 this.neuralAI.learnFromQuantumVerification(
                                     consensus.strategy || 'EnsembleVoting', false,
                                     verification.verificationResult.reason, consensus);
                             }
 
-                            // PATCH #20: Starvation override ÔÇö if QDV rejects but bot is starved, force through
+                            // PATCH #20: Starvation override — if QDV rejects but bot is starved, force through
                             if (this.neuralAI && this.neuralAI.cyclesWithoutTrade > 300) {
-                                console.log('[SKYNET] QDV rejection overridden ÔÇö STARVATION (' +
+                                console.log('[SKYNET] QDV rejection overridden — STARVATION (' +
                                     this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
                                 shouldExecute = true;
                                 qdvRejected = false;
@@ -888,7 +868,7 @@ class AutonomousTradingBot {
                                     verification.verificationResult.modifications || {});
                             }
 
-                            // PATCH #20: Cross-system feedback ÔÇö inform Skynet about approval
+                            // PATCH #20: Cross-system feedback — inform Skynet about approval
                             if (this.neuralAI && this.neuralAI.isReady) {
                                 this.neuralAI.learnFromQuantumVerification(
                                     consensus.strategy || 'EnsembleVoting', true, null, consensus);
@@ -900,15 +880,19 @@ class AutonomousTradingBot {
                 }
 
                 if (shouldExecute) {
+                        // PATCH #44: Pass regime for regime-aware sizing
+                        if (this.neuralAI && this.neuralAI.currentRegime) {
+                            consensus.regime = this.neuralAI.currentRegime;
+                        }
                         await this.exec.executeTradeSignal(consensus, this.dp);
                         // PATCH #36: Track trade open time for ML learning duration (P0-1)
                         if (consensus.action === 'BUY') this._lastTradeOpenTime = Date.now();
 
-                        // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
-                        // PATCH #19: Quantum Initial SL/TP ÔÇö replace static 1.5x/4.0x
+                        // ═══════════════════════════════════════════════════════════
+                        // PATCH #19: Quantum Initial SL/TP — replace static 1.5x/4.0x
                         // ATR with VQC regime + QRA risk + QMC scenario-adjusted levels
                         // immediately after position open for optimal risk management.
-                        // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+                        // ═══════════════════════════════════════════════════════════
                         if (consensus.action === 'BUY' && this.quantumPosMgr && this.quantumPosMgr.isReady
                             && this.pm.hasPosition(consensus.symbol)) {
                             try {
@@ -1004,6 +988,44 @@ class AutonomousTradingBot {
                 const getPriceFn = async (sym) => this._getCurrentPrice(sym);
                 await this.exec.monitorPositions(getPriceFn, history);
 
+                // ═══════════════════════════════════════════════════════════
+                // PATCH #44A: RANGING STALE POSITION CLOSE
+                // If regime is RANGING and position has been open > 4h with
+                // PnL between -0.5x and +0.5x ATR, close to free capital.
+                // Better to take small loss/gain than hold dead position.
+                // ═══════════════════════════════════════════════════════════
+                if (this.neuralAI && this.neuralAI.currentRegime === 'RANGING') {
+                    for (const [sym, pos] of this.pm.getPositions()) {
+                        const holdHours = (Date.now() - (pos.entryTime || Date.now())) / 3600000;
+                        if (holdHours >= 4) {
+                            try {
+                                const price = await this._getCurrentPrice(sym);
+                                if (!price) continue;
+                                const atr = pos.atrAtEntry || (price * 0.02);
+                                const profit = pos.side === 'SHORT'
+                                    ? (pos.entryPrice - price) : (price - pos.entryPrice);
+                                if (Math.abs(profit) < 0.5 * atr) {
+                                    const trade = this.pm.closePosition(sym, price, null,
+                                        'RANGING_STALE', 'SkynetPrime');
+                                    if (trade) {
+                                        this.rm.recordTradeResult(trade.pnl);
+                                        console.log('[RANGING CLOSE] ' + sym + ' stale ' +
+                                            holdHours.toFixed(1) + 'h in RANGING | PnL: $' +
+                                            trade.pnl.toFixed(2));
+                                        if (this.megatron) {
+                                            this.megatron.logActivity('TRADE',
+                                                '📉 RANGING Stale Close',
+                                                sym + ' | ' + holdHours.toFixed(1) + 'h | PnL: $' +
+                                                trade.pnl.toFixed(2) + ' | Capital freed',
+                                                trade, 'normal');
+                                        }
+                                    }
+                                }
+                            } catch (e) { /* RANGING close non-critical */ }
+                        }
+                    }
+                }
+
                 // PATCH #20: Position operations under mutex lock to prevent race conditions
                 if (this.advancedPositionManager) {
                     await this._withPositionLock(async () => {
@@ -1032,11 +1054,11 @@ class AutonomousTradingBot {
                     });
                 }
 
-                // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
-                // PATCH #19: APM-PM State Sync ÔÇö prevent divergence
+                // ═══════════════════════════════════════════════════════════════
+                // PATCH #19: APM-PM State Sync — prevent divergence
                 // Periodically verify APM's active positions match PM's positions.
                 // Remove orphaned APM positions that no longer exist in PM.
-                // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+                // ═══════════════════════════════════════════════════════════════
                 if (this.advancedPositionManager && this._cycleCount % 10 === 0) {
                     try {
                         const pmPositions = this.pm.getPositions();
@@ -1077,6 +1099,285 @@ class AutonomousTradingBot {
                     }
                 } catch(e) { console.warn('[WARN] QPM full-cycle:', e.message); }
                 });
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // PATCH #44C: SKYNET PRIME — LLM ENHANCE CYCLE
+            // Every 5 cycles, call NeuronAIManager.makeDecision() with full
+            // bot state. LLM (Ollama→Grok→GPT-4o cascade) analyzes all
+            // indicators, positions, regime, and proposes rich actions:
+            // SCALE_IN, PARTIAL_CLOSE, FLIP, ADJUST_SL/TP, OVERRIDE_BIAS.
+            // Actions are executed via portfolio-manager or positionCommand().
+            // ═══════════════════════════════════════════════════════════════
+            if (this.neuronManager && this._cycleCount >= 5 &&
+                this._cycleCount % 5 === 0 && (this._cycleCount - this._lastLLMCycle) >= 5) {
+                try {
+                    this._lastLLMCycle = this._cycleCount;
+                    const ind = require('./indicators');
+                    const prices = history.map(c => c.close);
+                    const currentPrice = prices[prices.length - 1] || 0;
+
+                    // Build full indicator dashboard
+                    const rsi = ind.calculateRSI(prices.slice(-15), 14);
+                    const macdResult = ind.calculateMACD(prices);
+                    const bb = ind.calculateBollingerBands(prices.slice(-20), 20);
+                    const atr = ind.calculateATR(history, 14);
+                    const volumes = history.map(c => c.volume || 0);
+                    const lastVolume = volumes[volumes.length - 1] || 0;
+                    const avgVolume = volumes.length >= 20
+                        ? volumes.slice(-20).reduce((a, b) => a + b, 0) / 20 : lastVolume;
+                    const sma20 = ind.calculateSMA(prices.slice(-20), 20);
+                    const sma50 = prices.length >= 50 ? ind.calculateSMA(prices.slice(-50), 50) : sma20;
+                    const sma200 = prices.length >= 200 ? ind.calculateSMA(prices.slice(-200), 200) : sma50;
+
+                    // Build votes from allSignals (reconstruct ensemble proportions)
+                    const voteCounts = { BUY: 0, SELL: 0, HOLD: 0 };
+                    let voteTotal = 0;
+                    if (allSignals && allSignals.size > 0) {
+                        for (const [, sig] of allSignals) {
+                            const a = sig.action || 'HOLD';
+                            voteCounts[a] = (voteCounts[a] || 0) + (sig.confidence || 0.5);
+                            voteTotal += (sig.confidence || 0.5);
+                        }
+                    }
+                    const votes = {
+                        BUY: voteTotal > 0 ? voteCounts.BUY / voteTotal : 0,
+                        SELL: voteTotal > 0 ? voteCounts.SELL / voteTotal : 0,
+                        HOLD: voteTotal > 0 ? voteCounts.HOLD / voteTotal : 0,
+                    };
+
+                    // Build signal summary
+                    const signalSummary = [];
+                    if (allSignals && allSignals.size > 0) {
+                        for (const [name, sig] of allSignals) {
+                            signalSummary.push(name + ': ' + sig.action + ' (' + ((sig.confidence || 0) * 100).toFixed(0) + '%)');
+                        }
+                    }
+
+                    // Build position details
+                    const positionDetails = [];
+                    for (const [sym, pos] of this.pm.getPositions()) {
+                        try {
+                            const cp = await this._getCurrentPrice(sym);
+                            const uPnL = cp
+                                ? (pos.side === 'SHORT' ? (pos.entryPrice - cp) : (cp - pos.entryPrice)) * pos.quantity
+                                : 0;
+                            positionDetails.push({
+                                symbol: sym, side: pos.side || 'LONG',
+                                entryPrice: pos.entryPrice, quantity: pos.quantity,
+                                unrealizedPnL: uPnL,
+                                stopLoss: pos.stopLoss || 0, takeProfit: pos.takeProfit || 0,
+                                holdingHours: (Date.now() - (pos.entryTime || Date.now())) / 3600000,
+                            });
+                        } catch (_) {}
+                    }
+
+                    // Derive MTF bias from SMA alignment
+                    let mtfDirection = 'NEUTRAL';
+                    let mtfScore = 0;
+                    if (currentPrice > sma20 && sma20 > sma50 && sma50 > sma200) {
+                        mtfDirection = 'BULLISH'; mtfScore = 25;
+                    } else if (currentPrice < sma20 && sma20 < sma50 && sma50 < sma200) {
+                        mtfDirection = 'BEARISH'; mtfScore = -25;
+                    } else if (currentPrice > sma50) {
+                        mtfDirection = 'BULLISH'; mtfScore = 15;
+                    } else if (currentPrice < sma50) {
+                        mtfDirection = 'BEARISH'; mtfScore = -15;
+                    }
+
+                    // Build portfolio state
+                    const portfolio = this.pm.getPortfolio();
+                    const portfolioState = {
+                        totalValue: portfolio.totalValue || 0,
+                        drawdownPct: portfolio.drawdown || 0,
+                        winRate: portfolio.winRate || 0,
+                        realizedPnL: portfolio.realizedPnL || 0,
+                        totalTrades: portfolio.totalTrades || 0,
+                    };
+
+                    // Quantum risk from hybrid pipeline (if available this cycle)
+                    const qRisk = (hybridBoostResult && hybridBoostResult.riskAnalysis) ? {
+                        riskScore: hybridBoostResult.riskAnalysis.riskScore,
+                        riskLevel: hybridBoostResult.riskAnalysis.riskLevel,
+                        blackSwanAlert: hybridBoostResult.riskAnalysis.blackSwanAlert,
+                    } : {};
+
+                    // Build full state for NeuronAIManager
+                    const llmState = {
+                        price: currentPrice,
+                        regime: (this.neuralAI && this.neuralAI.currentRegime) || 'UNKNOWN',
+                        votes: votes,
+                        signals: allSignals,
+                        mtfBias: { direction: mtfDirection, score: mtfScore, tradePermission: mtfDirection !== 'NEUTRAL' ? 'ALLOW' : 'CAUTIOUS' },
+                        portfolio: portfolioState,
+                        positionCount: this.pm.positionCount,
+                        positionDetails: positionDetails,
+                        indicators: {
+                            rsi: rsi, macd: macdResult.macd, macdSignal: macdResult.signal,
+                            macdHistogram: macdResult.histogram,
+                            bollingerUpper: bb.upper, bollingerMiddle: bb.middle, bollingerLower: bb.lower,
+                            bollingerBandwidth: bb.upper && bb.middle ? (bb.upper - bb.lower) / bb.middle : 0,
+                            atr: atr, volume: lastVolume, avgVolume: avgVolume,
+                            sma20: sma20, sma50: sma50, sma200: sma200,
+                        },
+                        recentPrices: prices.slice(-10),
+                        quantumRisk: qRisk,
+                        signalSummary: signalSummary,
+                    };
+
+                    // Call NeuronAIManager — CPU Neural + LLM cascade
+                    const llmDecision = await this.neuronManager.makeDecision(llmState);
+
+                    if (llmDecision) {
+                        console.log('[SKYNET PRIME] LLM Decision: ' + llmDecision.action +
+                            ' (conf: ' + ((llmDecision.confidence || 0) * 100).toFixed(1) + '%)' +
+                            ' | Provider: ' + (llmDecision.provider || 'cpu') +
+                            ' | Raw: ' + (llmDecision.rawAction || llmDecision.action));
+
+                        // ═══════════════════════════════════════════════════════════
+                        // PATCH #44D: RICH ACTION HANDLER
+                        // Process LLM's rich actions beyond simple BUY/SELL/HOLD.
+                        // These enable the AI to manage positions like a human trader.
+                        // ═══════════════════════════════════════════════════════════
+                        const rawAction = llmDecision.rawAction || llmDecision.action;
+                        const llmConf = llmDecision.confidence || 0.5;
+                        const llmDetails = llmDecision.details || {};
+                        const llmReasoning = llmDecision.reasoning || 'Skynet Prime autonomous';
+
+                        if (rawAction === 'SCALE_IN' && this.pm.positionCount > 0) {
+                            // Add to existing position (pyramiding)
+                            try {
+                                const firstPos = Array.from(this.pm.getPositions().entries())[0];
+                                if (firstPos) {
+                                    const [sym, pos] = firstPos;
+                                    const scalePrice = await this._getCurrentPrice(sym);
+                                    if (scalePrice && llmConf >= 0.40) {
+                                        const scaleQty = pos.quantity * 0.25; // 25% of existing position
+                                        this.pm.addToPosition(sym, scalePrice, scaleQty, atr);
+                                        console.log('[SKYNET PRIME] SCALE_IN ' + sym + ' +' + scaleQty.toFixed(6) +
+                                            ' @ $' + scalePrice.toFixed(2) + ' | ' + llmReasoning);
+                                        if (this.megatron) this.megatron.logActivity('SKYNET', 'Scale In (LLM)',
+                                            sym + ' +' + scaleQty.toFixed(6) + ' @ $' + scalePrice.toFixed(2) +
+                                            ' | Conf: ' + (llmConf * 100).toFixed(1) + '% | ' + llmReasoning,
+                                            { provider: llmDecision.provider }, 'high');
+                                    }
+                                }
+                            } catch (scaleErr) { console.warn('[SKYNET PRIME] SCALE_IN error:', scaleErr.message); }
+
+                        } else if (rawAction === 'ADJUST_SL' && this.pm.positionCount > 0) {
+                            // Tighten or loosen SL based on LLM analysis
+                            try {
+                                const newSL = llmDetails.stopLoss || llmDetails.sl || llmDetails.newSL;
+                                if (newSL && newSL > 0) {
+                                    for (const [sym] of this.pm.getPositions()) {
+                                        this.pm.updateStopLoss(sym, newSL);
+                                        console.log('[SKYNET PRIME] ADJUST_SL ' + sym + ' -> $' + newSL.toFixed(2) + ' | ' + llmReasoning);
+                                        if (this.megatron) this.megatron.logActivity('SKYNET', 'Adjust SL (LLM)',
+                                            sym + ' SL -> $' + newSL.toFixed(2) + ' | ' + llmReasoning,
+                                            { provider: llmDecision.provider }, 'normal');
+                                    }
+                                }
+                            } catch (slErr) { console.warn('[SKYNET PRIME] ADJUST_SL error:', slErr.message); }
+
+                        } else if (rawAction === 'ADJUST_TP' && this.pm.positionCount > 0) {
+                            // Extend or tighten TP target
+                            try {
+                                const newTP = llmDetails.takeProfit || llmDetails.tp || llmDetails.newTP;
+                                if (newTP && newTP > 0) {
+                                    for (const [sym] of this.pm.getPositions()) {
+                                        this.pm.updateTakeProfit(sym, newTP);
+                                        console.log('[SKYNET PRIME] ADJUST_TP ' + sym + ' -> $' + newTP.toFixed(2) + ' | ' + llmReasoning);
+                                        if (this.megatron) this.megatron.logActivity('SKYNET', 'Adjust TP (LLM)',
+                                            sym + ' TP -> $' + newTP.toFixed(2) + ' | ' + llmReasoning,
+                                            { provider: llmDecision.provider }, 'normal');
+                                    }
+                                }
+                            } catch (tpErr) { console.warn('[SKYNET PRIME] ADJUST_TP error:', tpErr.message); }
+
+                        } else if (rawAction === 'PARTIAL_CLOSE' && this.pm.positionCount > 0) {
+                            // Close a portion of position (default 30%)
+                            try {
+                                const closePct = llmDetails.closePct || llmDetails.percentage || 0.30;
+                                for (const [sym, pos] of this.pm.getPositions()) {
+                                    const closePrice = await this._getCurrentPrice(sym);
+                                    if (closePrice) {
+                                        const closeQty = pos.quantity * closePct;
+                                        if (closeQty > 0.000001) {
+                                            const trade = this.pm.closePosition(sym, closePrice, closeQty,
+                                                'SKYNET_PRIME_PARTIAL', 'SkynetPrime');
+                                            if (trade) {
+                                                this.rm.recordTradeResult(trade.pnl);
+                                                console.log('[SKYNET PRIME] PARTIAL_CLOSE ' + sym + ' ' +
+                                                    (closePct * 100).toFixed(0) + '% | PnL: $' + trade.pnl.toFixed(2) +
+                                                    ' | ' + llmReasoning);
+                                                if (this.megatron) this.megatron.logActivity('SKYNET', 'Partial Close (LLM)',
+                                                    sym + ' ' + (closePct * 100).toFixed(0) + '% PnL: $' + trade.pnl.toFixed(2) +
+                                                    ' | ' + llmReasoning, trade, 'high');
+                                            }
+                                        }
+                                    }
+                                    break; // Only first position
+                                }
+                            } catch (pcErr) { console.warn('[SKYNET PRIME] PARTIAL_CLOSE error:', pcErr.message); }
+
+                        } else if (rawAction === 'FLIP' && this.pm.positionCount > 0) {
+                            // Close current position and open opposite direction
+                            try {
+                                const firstPos = Array.from(this.pm.getPositions().entries())[0];
+                                if (firstPos && llmConf >= 0.50) {
+                                    const [sym, pos] = firstPos;
+                                    const flipPrice = await this._getCurrentPrice(sym);
+                                    if (flipPrice) {
+                                        // Close existing
+                                        const closeTrade = this.pm.closePosition(sym, flipPrice, null,
+                                            'SKYNET_PRIME_FLIP', 'SkynetPrime');
+                                        if (closeTrade) {
+                                            this.rm.recordTradeResult(closeTrade.pnl);
+                                            console.log('[SKYNET PRIME] FLIP close ' + sym + ' ' + pos.side +
+                                                ' | PnL: $' + closeTrade.pnl.toFixed(2));
+                                        }
+                                        // Issue opposite direction via positionCommand
+                                        const newSide = pos.side === 'LONG' ? 'SHORT' : 'LONG';
+                                        if (this.neuralAI && this.neuralAI.isReady) {
+                                            this.neuralAI.positionCommand('FORCE_ENTRY',
+                                                sym, newSide, 'SKYNET_PRIME FLIP: ' + llmReasoning);
+                                        }
+                                        if (this.megatron) this.megatron.logActivity('SKYNET', 'FLIP (LLM)',
+                                            sym + ' ' + pos.side + ' -> ' + newSide +
+                                            ' | Close PnL: $' + (closeTrade ? closeTrade.pnl.toFixed(2) : '?') +
+                                            ' | ' + llmReasoning, { provider: llmDecision.provider }, 'critical');
+                                    }
+                                }
+                            } catch (flipErr) { console.warn('[SKYNET PRIME] FLIP error:', flipErr.message); }
+
+                        } else if (rawAction === 'OVERRIDE_BIAS' && this.neuralAI && this.neuralAI.isReady) {
+                            // LLM wants to override the neural engine's bias
+                            try {
+                                if (llmConf >= 0.45) {
+                                    this.neuralAI.executeOverride(
+                                        llmDecision.action === 'BUY' ? 'BUY' : llmDecision.action === 'SELL' ? 'SELL' : 'HOLD',
+                                        llmConf, 'SKYNET PRIME LLM: ' + llmReasoning
+                                    );
+                                    console.log('[SKYNET PRIME] OVERRIDE_BIAS -> ' + llmDecision.action +
+                                        ' | Conf: ' + (llmConf * 100).toFixed(1) + '% | ' + llmReasoning);
+                                    if (this.megatron) this.megatron.logActivity('SKYNET', 'Override Bias (LLM)',
+                                        llmDecision.action + ' | ' + llmReasoning,
+                                        { provider: llmDecision.provider, confidence: llmConf }, 'critical');
+                                }
+                            } catch (ovrErr) { console.warn('[SKYNET PRIME] OVERRIDE error:', ovrErr.message); }
+                        }
+
+                        // Log personality/reasoning to Megatron
+                        if (this.megatron && llmDecision.reasoning) {
+                            this.megatron.logActivity('AI', 'Skynet Prime Reasoning',
+                                llmDecision.reasoning.substring(0, 300),
+                                { action: rawAction, confidence: llmConf, provider: llmDecision.provider || 'cpu' });
+                        }
+                    }
+
+                } catch (llmErr) {
+                    console.warn('[SKYNET PRIME] LLM enhance cycle error:', llmErr.message);
+                }
             }
 
             // PATCH #15: Neural AI learning from closes
@@ -1156,6 +1457,26 @@ class AutonomousTradingBot {
                 } catch(e) {}
             }
 
+            // PATCH #44E: NeuronAI / Skynet Prime periodic status
+            if (this.neuronManager && this._cycleCount % 20 === 0) {
+                try {
+                    const naiStatus = this.neuronManager.getStatus();
+                    console.log('[SKYNET PRIME] Decisions: ' + (naiStatus.totalDecisions || 0) +
+                        ' | Overrides: ' + (naiStatus.overrideCount || 0) +
+                        ' | PnL: $' + (naiStatus.totalPnL || 0).toFixed(2) +
+                        ' | WinRate: ' + (naiStatus.recentWinRate || 0).toFixed(1) + '%' +
+                        ' | Risk: ' + (naiStatus.riskMultiplier || 1).toFixed(2) +
+                        ' | Provider: ' + (naiStatus.llmProvider ? naiStatus.llmProvider.lastUsed : 'none'));
+                    if (this.megatron) {
+                        this.megatron.logActivity('AI', 'Skynet Prime Status',
+                            'Decyzje: ' + (naiStatus.totalDecisions || 0) +
+                            ' | Overrides: ' + (naiStatus.overrideCount || 0) +
+                            ' | PnL: $' + (naiStatus.totalPnL || 0).toFixed(2) +
+                            ' | Provider: ' + (naiStatus.llmProvider ? naiStatus.llmProvider.label : 'offline'));
+                    }
+                } catch(e) {}
+            }
+
             // PATCH #16: Market activity log every 10 cycles
             if (this.megatron && this._cycleCount % 10 === 0 && history.length > 0) {
                 const last = history[history.length - 1];
@@ -1225,7 +1546,8 @@ class AutonomousTradingBot {
                         ' | PnL: $' + trade.pnl.toFixed(2) + ' | ' + pc.reason);
                     this.rm.recordTradeResult(trade.pnl);
                     if (this.ml) {
-                        this.ml.learnFromTrade(trade.pnl, Date.now() - (pos.entryTime || Date.now()), marketDataHistory);
+                        // PATCH #44B: learnFromTrade removed from QPM partial close
+                        // — single learn point in _detectAndLearnFromCloses() via PnL delta detection
                     }
                     if (this.megatron) {
                         const urgencyLevel = pc.urgency === 'CRITICAL' ? 'critical' : pc.urgency === 'HIGH' ? 'high' : 'normal';
@@ -1258,11 +1580,11 @@ class AutonomousTradingBot {
                     ' | Consolidate: ' + (opt.consolidations || []).length);
             }
 
-            // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+            // ═══════════════════════════════════════════════════════════════════
             // PATCH #19: Execute pyramid recommendations from QAOA optimizer
-            // Previously pyramid recs were only logged ÔÇö now they are executed
+            // Previously pyramid recs were only logged — now they are executed
             // as additional position layers with proper risk validation.
-            // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+            // ═══════════════════════════════════════════════════════════════════
             if (qpmResult.portfolioOpt && qpmResult.portfolioOpt.pyramidRecommendations) {
                 for (const pyrRec of qpmResult.portfolioOpt.pyramidRecommendations) {
                     const pos = this.pm.getPosition(pyrRec.symbol);
@@ -1351,10 +1673,10 @@ class AutonomousTradingBot {
                 }
             }
 
-            // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+            // ═══════════════════════════════════════════════════════════════════
             // PATCH #19: Execute consolidation recommendations
             // Close tiny or very unhealthy positions as recommended by QAOA.
-            // ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+            // ═══════════════════════════════════════════════════════════════════
             if (qpmResult.portfolioOpt && qpmResult.portfolioOpt.consolidations) {
                 for (const cons of qpmResult.portfolioOpt.consolidations) {
                     if (cons.action !== 'CLOSE') continue;
