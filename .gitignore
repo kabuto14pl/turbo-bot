@@ -254,3 +254,5 @@ data/*
 !.vscode/DEBUGGER_GUIDE.md
 !.vscode/extensions.json
 quantum/venv/
+
+debug-results*.txt

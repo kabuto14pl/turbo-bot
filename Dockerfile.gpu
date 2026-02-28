@@ -1,0 +1,49 @@
+# ═══════════════════════════════════════════════════════════════════════
+# PATCH #38: GPU Production Dockerfile — NVIDIA CUDA + Node.js + PM2
+# Turbo-Bot v6.2.0 — RTX 4090/A100/H100 Production Container
+#
+# Build: docker build -f Dockerfile.gpu -t turbo-bot-gpu .
+# Run:   docker run --gpus all -p 3001:3001 -p 8080:8080 turbo-bot-gpu
+# ═══════════════════════════════════════════════════════════════════════
+
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV NODE_VERSION=20
+
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    curl wget git build-essential python3 jq htop \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g pm2 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# App directory
+WORKDIR /app
+
+# Copy package files first (for Docker layer caching)
+COPY package.json package-lock.json* ./
+
+# Install dependencies — force GPU TF.js
+RUN npm install --no-optional 2>/dev/null; \
+    npm install @tensorflow/tfjs-node-gpu@4.22.0 || true; \
+    npm cache clean --force
+
+# Copy application code
+COPY . .
+
+# Verify GPU at build time (optional — may not have GPU during build)
+RUN node -e "console.log('Node:', process.version, 'Platform:', process.platform, 'Arch:', process.arch)" && \
+    node -e "try{require('@tensorflow/tfjs-node-gpu');console.log('tfjs-node-gpu: OK')}catch(e){console.log('tfjs-node-gpu: will init at runtime')}"
+
+# Expose ports
+EXPOSE 3001 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3001/health || exit 1
+
+# PM2 ecosystem start
+CMD ["pm2-runtime", "ecosystem.config.js"]
