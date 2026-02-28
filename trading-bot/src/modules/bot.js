@@ -169,12 +169,12 @@ class AutonomousTradingBot {
                 const { ProductionMLIntegrator } = require('../core/ml/production_ml_integrator');
                 const pml = new ProductionMLIntegrator();
                 this.ml.setProductionML(pml);
-            } catch(e) {}
+            } catch(e) { /* Optional module */ }
             try {
                 const { SimpleRLAdapter } = require('../core/ml/simple_rl_adapter');
                 const srl = new SimpleRLAdapter();
                 this.ml.setSimpleRL(srl);
-            } catch(e) {}
+            } catch(e) { /* Optional module */ }
         } catch (e) { console.warn('[WARN] ML: ' + e.message); }
 
         // PATCH #14: Advanced Position Manager
@@ -216,12 +216,12 @@ class AutonomousTradingBot {
             const { EnsemblePredictionEngine } = require('../core/ml/ensemble_prediction_engine');
             this.ensembleEngine = new EnsemblePredictionEngine();
             console.log('[OK] Ensemble Prediction Engine: Active');
-        } catch (e) {}
+        } catch (e) { /* Optional module */ }
         try {
             const { PortfolioOptimizationEngine } = require('../core/optimization/portfolio_optimization_engine');
             this.portfolioOptimizer = new PortfolioOptimizationEngine();
             console.log('[OK] Portfolio Optimizer: Active');
-        } catch (e) {}
+        } catch (e) { /* Optional module */ }
 
         // Initialize strategies
         try {
@@ -385,7 +385,7 @@ class AutonomousTradingBot {
                 const t = await this.dp.okxClient.getTicker(sym);
                 if (t && t.last) return parseFloat(t.last);
             }
-        } catch(e) {}
+        } catch(e) { /* Fallback to history */ }
         const h = this.dp.getMarketDataHistory();
         return h.length > 0 ? h[h.length - 1].close : null;
     }
@@ -430,7 +430,7 @@ class AutonomousTradingBot {
                         try {
                             const cp = await this._getCurrentPrice(sym);
                             if (cp) this.pm.portfolio.unrealizedPnL = (cp - pos.entryPrice) * pos.quantity;
-                        } catch(e) {}
+                        } catch(e) { /* Non-critical PnL update */ }
                     }
                     this.mon.updateHealth(this.pm, this.rm, this.ml, this.isRunning);
                     if (this.pm.positionCount > 0) {
@@ -1172,7 +1172,7 @@ class AutonomousTradingBot {
                                 stopLoss: pos.stopLoss || 0, takeProfit: pos.takeProfit || 0,
                                 holdingHours: (Date.now() - (pos.entryTime || Date.now())) / 3600000,
                             });
-                        } catch (_) {}
+                        } catch (_) { /* Non-critical position data */ }
                     }
 
                     // Derive MTF bias from SMA alignment
@@ -1395,7 +1395,7 @@ class AutonomousTradingBot {
                                                 flipPrice, llmConf, atr, sym, regime);
                                             if (flipQty > 0) {
                                                 flipSignal.quantity = flipQty;
-                                                const flipResult = this.exec.executeSignal(flipSignal, this.pm);
+                                                const flipResult = await this.exec.executeTradeSignal(flipSignal, this.dp);
                                                 console.log('[SKYNET PRIME] FLIP open ' + sym + ' ' + newSide +
                                                     ' qty: ' + flipQty.toFixed(6) + ' @ $' + flipPrice.toFixed(2));
                                             } else {
@@ -1472,7 +1472,7 @@ class AutonomousTradingBot {
                             ' | WinRate: ' + (aiStatus.rollingWinRate || 'N/A') +
                             ' | Evolutions: ' + (aiStatus.configEvolutions || 0));
                     }
-                } catch(e) {}
+                } catch(e) { /* Non-critical status log */ }
             }
 
             // PATCH #17: Periodic Hybrid Pipeline status
@@ -1496,7 +1496,7 @@ class AutonomousTradingBot {
                             ' | QAOA: ' + hStatus.components.qaoa.optimizationCount + ' optymalizacji' +
                             ' | Ryzyko: ' + hStatus.components.riskAnalyzer.lastRiskLevel);
                     }
-                } catch(e) {}
+                } catch(e) { /* Non-critical status log */ }
             }
 
             // PATCH #18: Periodic Quantum Position Manager status
@@ -1517,7 +1517,7 @@ class AutonomousTradingBot {
                             ' | Partial: ' + qpmStatus.totalPartialCloses +
                             ' | Emergency: ' + qpmStatus.totalEmergencyActions);
                     }
-                } catch(e) {}
+                } catch(e) { /* Non-critical status log */ }
             }
 
             // PATCH #44E: NeuronAI / Skynet Prime periodic status
@@ -1537,7 +1537,7 @@ class AutonomousTradingBot {
                             ' | PnL: $' + (naiStatus.totalPnL || 0).toFixed(2) +
                             ' | Provider: ' + (naiStatus.llmProvider ? naiStatus.llmProvider.label : 'offline'));
                     }
-                } catch(e) {}
+                } catch(e) { /* Non-critical status log */ }
             }
 
             // PATCH #16: Market activity log every 10 cycles
@@ -1862,11 +1862,11 @@ class AutonomousTradingBot {
                             this.quantumPosMgr.onPositionClosed(sym);
                         }
                     }
-                } catch(e) {}
+                } catch(e) { /* Non-critical QPM notify */ }
             }
             this._lastPositionCount = currentPosCount;
             this._lastRealizedPnL = currentRealizedPnL;
-        } catch(e) {}
+        } catch(e) { /* Non-critical learning */ }
     }
 
     async start() {
@@ -1898,7 +1898,7 @@ class AutonomousTradingBot {
         this.isRunning = false;
         this.state.save(this.pm, this.rm, this.ml);
         if (this.neuralAI) {
-            try { await this.neuralAI.saveCheckpoint(); console.log('[NEURAL AI] Checkpoint saved'); } catch(e) {}
+            try { await this.neuralAI.saveCheckpoint(); console.log('[NEURAL AI] Checkpoint saved'); } catch(e) { console.debug('[STOP] Checkpoint save failed:', e.message); }
         }
         if (this.megatron) this.megatron.logActivity('SYSTEM', 'Bot Shutdown', 'Graceful stop');
         console.log('Bot stopped. State saved.');

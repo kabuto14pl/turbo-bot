@@ -215,6 +215,7 @@ class NeuronAIManager {
      */
     // PATCH #25: Multi-position enabled, no hasPosition blocks, higher confidence cap
     _fallbackDecision(state) {
+        if (!state) state = {}; // PATCH #46: null guard — prevent TypeError on undefined state
         this._lastState = state; // PATCH #32: store for learnFromTrade MTF access
         const votes = state.votes || { BUY: 0, SELL: 0, HOLD: 1 };
         const mtf = state.mtfBias || {};
@@ -596,7 +597,7 @@ class NeuronAIManager {
                     ' | WR: ' + this._getRecentWinRate().toFixed(0) + '% | Risk: ' + this.riskMultiplier.toFixed(2),
                     { pnl: pnl, totalPnL: this.totalPnL, riskMultiplier: this.riskMultiplier },
                     pnl >= 0 ? 'normal' : 'high');
-            } catch(e) {}
+            } catch(e) { console.debug('[NEURON AI] Megatron log error:', e.message); }
         }
 
         this._saveState();
