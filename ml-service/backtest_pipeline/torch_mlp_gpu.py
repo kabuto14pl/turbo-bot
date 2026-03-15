@@ -551,31 +551,16 @@ class TorchMLPEngine:
         X = np.array([[features.get(name, 0) for name in self.feature_names]], dtype=np.float32)
         X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
 
-        # P#182: Route predictions through GPU service when gpu_url is set
+        # P#182b: Use locally-stored model for prediction (no HTTP per candle!)
+        # Training happens on remote GPU, but inference uses downloaded model (fast local)
         try:
-            if self.gpu_url and hasattr(self, '_current_symbol'):
-                import urllib.request as _urlreq
-                req_data = json.dumps({
-                    'symbol': self._current_symbol,
-                    'X': X.tolist(),
-                    'use_normalization': True,
-                }).encode('utf-8')
-                req = _urlreq.Request(
-                    f'{self.gpu_url}/gpu/mlp-predict',
-                    data=req_data,
-                    headers={'Content-Type': 'application/json'}
-                )
-                resp = json.loads(_urlreq.urlopen(req, timeout=5).read())
-                proba = np.array([resp['proba_down'][0], resp['proba_up'][0]])
-                expected_return = resp['expected_returns'][0] if resp.get('expected_returns') else 0.0
-            else:
-                if self._mean is not None:
-                    X = self._normalize(X)
-                with torch.no_grad():
-                    X_t = torch.tensor(X, dtype=torch.float32, device=self.device)
-                    logits, ret_pred = self.model(X_t)
-                    proba = torch.softmax(logits, dim=1).cpu().numpy()[0]
-                    expected_return = ret_pred.cpu().item()
+            if self._mean is not None:
+                X = self._normalize(X)
+            with torch.no_grad():
+                X_t = torch.tensor(X, dtype=torch.float32, device=self.device)
+                logits, ret_pred = self.model(X_t)
+                proba = torch.softmax(logits, dim=1).cpu().numpy()[0]
+                expected_return = ret_pred.cpu().item()
         except Exception:
             return self._heuristic_predict(row, history_df, regime)
 
