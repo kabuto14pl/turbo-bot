@@ -41,15 +41,25 @@ class XGBoostMLEngine:
     Features: 45 engineered from OHLCV + technical indicators.
     """
     
-    def __init__(self, use_gpu=None):
+    def __init__(self, use_gpu=None, gpu_url=None):
         if use_gpu is None:
             use_gpu = getattr(config, 'XGBOOST_USE_GPU', False)
 
+        self.gpu_url = gpu_url  # P#178: remote GPU service URL
         self.gpu_requested = bool(use_gpu)
-        self.use_gpu = self._resolve_gpu_mode(self.gpu_requested)
+
+        # P#179: When gpu_url is set, ALL training goes through remote GPU service.
+        if self.gpu_url:
+            self.use_gpu = False  # disable local CUDA — remote handles GPU
+            print(f"  🚀 XGBoost → remote GPU training: {self.gpu_url}")
+        else:
+            self.use_gpu = self._resolve_gpu_mode(self.gpu_requested)
+
         self.tree_method = 'hist'
         self.model_clf = None
         self.model_reg = None
+        self._booster_clf = None  # P#178: raw Booster from remote
+        self._booster_reg = None
         self.trained = False
         self.feature_names = []
         self.feature_importance = {}
@@ -346,6 +356,9 @@ class XGBoostMLEngine:
     
     def _train_models(self, X, y_dir, y_ret):
         """Train XGBoost classifier + regressor."""
+        # P#179: When gpu_url is set, ALWAYS use remote GPU. No CPU fallback.
+        if self.gpu_url:
+            return self._train_models_remote(X, y_dir, y_ret)
         
         # XGBoost Classifier (direction prediction)
         self.model_clf = xgb.XGBClassifier(
@@ -416,6 +429,85 @@ class XGBoostMLEngine:
         
         return True
     
+    def _train_models_remote(self, X, y_dir, y_ret):
+        """P#178/179: Train XGBoost on remote GPU service."""
+        import json
+        import urllib.request
+        import base64
+
+        X_list = X.values.tolist() if hasattr(X, 'values') else X.tolist()
+        y_dir_list = y_dir.tolist() if hasattr(y_dir, 'tolist') else list(y_dir)
+        y_ret_list = y_ret.tolist() if hasattr(y_ret, 'tolist') else list(y_ret)
+
+        payload = json.dumps({
+            'X': X_list,
+            'y_dir': y_dir_list,
+            'y_ret': y_ret_list,
+            'clf_params': {
+                'n_estimators': getattr(config, 'XGBOOST_N_ESTIMATORS', 200),
+                'max_depth': getattr(config, 'XGBOOST_MAX_DEPTH', 4),
+                'learning_rate': getattr(config, 'XGBOOST_LEARNING_RATE', 0.03),
+                'min_child_weight': getattr(config, 'XGBOOST_MIN_CHILD_WEIGHT', 10),
+            },
+            'cv_splits': 3,
+            'symbol': getattr(self, '_current_symbol', 'UNKNOWN'),
+        }).encode('utf-8')
+
+        try:
+            req = urllib.request.Request(
+                f'{self.gpu_url}/gpu/xgboost-train',
+                data=payload,
+                headers={'Content-Type': 'application/json'},
+            )
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                result = json.loads(resp.read().decode('utf-8'))
+
+            # Deserialize models from remote
+            clf_bytes = base64.b64decode(result['clf_model_b64'])
+            booster_clf = xgb.Booster()
+            booster_clf.load_model(bytearray(clf_bytes))
+            self._booster_clf = booster_clf
+
+            self.model_clf = xgb.XGBClassifier()
+            self.model_clf._Booster = booster_clf
+            self.model_clf.classes_ = np.array([0, 1])
+            self.model_clf._le = type('', (), {'classes_': np.array([0, 1])})()
+
+            if result.get('reg_model_b64'):
+                reg_bytes = base64.b64decode(result['reg_model_b64'])
+                booster_reg = xgb.Booster()
+                booster_reg.load_model(bytearray(reg_bytes))
+                self._booster_reg = booster_reg
+                self.model_reg = xgb.XGBRegressor()
+                self.model_reg._Booster = booster_reg
+
+            self.cv_scores = result.get('cv_scores', [])
+            self.trained = True
+            self.retrain_count += 1
+            self.last_retrain_idx = self.train_idx
+
+            # Feature importance from remote
+            top_imp = result.get('top_importance', [])
+            if top_imp and self.feature_names:
+                self.feature_importance = {}
+                for idx, score in top_imp:
+                    if idx < len(self.feature_names):
+                        self.feature_importance[self.feature_names[idx]] = score
+
+            up_ratio = result.get('up_ratio', 0)
+            train_ms = result.get('training_ms', 0)
+            xgb_device = result.get('xgb_device', 'cuda')
+            cv_str = [f"{s:.3f}" for s in self.cv_scores]
+            print(f"  🧠 XGBoost GPU trained: {result.get('n_trained', len(X_list))} samples, "
+                  f"device={xgb_device}, {train_ms:.0f}ms")
+            print(f"  📈 CV scores: {cv_str} | UP={up_ratio:.1%}")
+            return True
+
+        except Exception as e:
+            print(f"  ❌ XGBoost remote GPU training failed: {e}")
+            print(f"  ❌ GPU service at {self.gpu_url} unreachable — check gpu-cuda-service.py")
+            return False
+
     def maybe_retrain(self, df, current_idx):
         """
         Check if retrain is needed (sliding window every N candles).
