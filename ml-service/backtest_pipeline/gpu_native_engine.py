@@ -14,6 +14,7 @@ no longer the dominant driver.
 from __future__ import annotations
 
 import math
+import time
 
 import numpy as np
 
@@ -94,6 +95,15 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             return out
         unfolded = values.unfold(0, window, 1)
         out[window - 1:] = unfolded.std(dim=-1, unbiased=False)
+        return out
+
+    @staticmethod
+    def _rolling_max(values, window: int):
+        out = torch.zeros_like(values)
+        if values.numel() < window:
+            return out
+        unfolded = values.unfold(0, window, 1)
+        out[window - 1:] = unfolded.max(dim=-1).values
         return out
 
     def _tensor_inputs(self, df, device):
@@ -220,6 +230,166 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         regimes[trending_down.detach().cpu().numpy()] = 'TRENDING_DOWN'
         return regimes
 
+    def _build_qra_series(self, inputs, regimes, warmup: int):
+        close = inputs['close']
+        atr_pct = inputs['atr_pct']
+        volume_ratio = inputs['volume_ratio']
+        rsi = inputs['rsi']
+
+        risk = torch.full_like(close, 30.0)
+        risk += torch.where(atr_pct > 0.02, 20.0, torch.where(atr_pct > 0.015, 10.0, 0.0))
+        risk += torch.where(volume_ratio > 3.0, 15.0, torch.where(volume_ratio > 2.0, 8.0, 0.0))
+        risk += torch.where((rsi > 80.0) | (rsi < 20.0), 15.0, torch.where((rsi > 70.0) | (rsi < 30.0), 5.0, 0.0))
+
+        rolling_peak = self._rolling_max(close, 20)
+        drawdown = (rolling_peak - close) / torch.clamp(rolling_peak, min=1e-6)
+        risk += torch.where(drawdown > 0.05, 15.0, torch.where(drawdown > 0.02, 5.0, 0.0))
+
+        risk_np = risk.detach().cpu().numpy()
+        risk_np[regimes == 'HIGH_VOLATILITY'] += 20
+        risk_np[regimes == 'RANGING'] += 5
+        risk_np = np.clip(np.rint(risk_np), 0, 100).astype(np.int32)
+
+        interval = max(1, int(getattr(config, 'QRA_RISK_INTERVAL', 10)))
+        qra_series = np.full(len(risk_np), 50, dtype=np.int32)
+        last_risk = 50
+
+        for idx in range(warmup, len(risk_np)):
+            if (idx - warmup + 1) % interval == 0:
+                last_risk = int(risk_np[idx])
+            qra_series[idx] = last_risk
+
+        return qra_series
+
+    def _build_local_qmc_plan(self, inputs, warmup: int, device):
+        size = inputs['close'].shape[0]
+        close_cpu = inputs['close'].detach().cpu().numpy()
+        atr_pct_cpu = inputs['atr_pct'].detach().cpu().numpy()
+
+        qmc_interval = max(1, int(getattr(config, 'QMC_SIM_INTERVAL', 15)))
+        qmc_paths = max(2048, int(getattr(config, 'GPU_NATIVE_LOCAL_QMC_PATHS', 32768)))
+        qmc_steps = max(2, int(getattr(config, 'GPU_NATIVE_LOCAL_QMC_STEPS', getattr(config, 'REMOTE_GPU_QMC_STEPS', 16))))
+        qmc_lookback = max(32, int(getattr(config, 'GPU_NATIVE_LOCAL_QMC_LOOKBACK', 200)))
+        qmc_window_batch = max(1, int(getattr(config, 'GPU_NATIVE_LOCAL_QMC_BATCH', 32)))
+
+        qmc_outlook = np.full(size, 'NEUTRAL', dtype=object)
+        qmc_var = np.zeros(size, dtype=np.float32)
+        qmc_tp_adjust = np.ones(size, dtype=np.float32)
+        qmc_conf_boost = np.zeros(size, dtype=np.float32)
+
+        scheduled = [
+            idx for idx in range(warmup, size - 1)
+            if (idx - warmup + 1) % qmc_interval == 0
+        ]
+
+        if not scheduled:
+            return {
+                'qmc_outlook': qmc_outlook,
+                'qmc_var': qmc_var,
+                'qmc_tp_adjust': qmc_tp_adjust,
+                'qmc_conf_boost': qmc_conf_boost,
+                'qmc_points': 0,
+                'qmc_batches': 0,
+                'qmc_compute_ms': 0.0,
+            }
+
+        batch_count = 0
+        started_at = time.perf_counter()
+
+        for start in range(0, len(scheduled), qmc_window_batch):
+            batch_indices = scheduled[start:start + qmc_window_batch]
+            batch_count += 1
+
+            mus = []
+            sigmas = []
+            prices = []
+
+            for idx in batch_indices:
+                history = close_cpu[max(0, idx - qmc_lookback):idx]
+                prices.append(float(close_cpu[idx]))
+
+                if history.shape[0] < 2:
+                    mus.append(0.0)
+                    sigmas.append(0.0)
+                    continue
+
+                returns = np.diff(history) / np.clip(history[:-1], 1e-6, None)
+                mus.append(float(returns.mean()) * 252.0 if returns.size else 0.0)
+                sigmas.append(float(returns.std()) * math.sqrt(252.0) if returns.size else 0.0)
+
+            mu = torch.tensor(mus, dtype=torch.float32, device=device).view(-1, 1, 1)
+            sigma = torch.tensor(sigmas, dtype=torch.float32, device=device).view(-1, 1, 1)
+
+            drift = (mu - 0.5 * sigma.square()) * (1.0 / 252.0)
+            diffusion = sigma * math.sqrt(1.0 / 252.0)
+
+            with torch.no_grad():
+                noise = torch.randn((len(batch_indices), qmc_paths, qmc_steps), device=device)
+                final_prices = torch.exp((drift + diffusion * noise).sum(dim=2))
+                bullish_prob = (final_prices > 1.0).float().mean(dim=1)
+                var_proxy = 1.0 - torch.quantile(final_prices, 0.05, dim=1)
+
+            bullish_prob_np = bullish_prob.detach().cpu().numpy()
+            var_proxy_np = np.maximum(0.0, var_proxy.detach().cpu().numpy())
+
+            for local_idx, candle_idx in enumerate(batch_indices):
+                prob_positive = float(bullish_prob_np[local_idx])
+                qmc_var[candle_idx] = round(float(prices[local_idx] * var_proxy_np[local_idx]), 2)
+
+                if prob_positive > 0.60:
+                    qmc_outlook[candle_idx] = 'BULLISH'
+                    qmc_tp_adjust[candle_idx] = float(config.QMC_BULLISH_TP_BOOST)
+                    qmc_conf_boost[candle_idx] = 0.05
+                elif prob_positive < 0.40:
+                    qmc_outlook[candle_idx] = 'BEARISH'
+                    qmc_tp_adjust[candle_idx] = float(config.QMC_BEARISH_TP_SHRINK)
+                    qmc_conf_boost[candle_idx] = -0.05
+
+        default_var = round(float(close_cpu[warmup] * max(float(atr_pct_cpu[warmup]), 0.01) * 1.645), 2)
+        last_outlook = 'NEUTRAL'
+        last_var = default_var
+        last_tp_adjust = 1.0
+        last_conf_boost = 0.0
+        scheduled_set = set(scheduled)
+
+        for idx in range(warmup, size):
+            if idx in scheduled_set:
+                last_outlook = qmc_outlook[idx]
+                last_var = float(qmc_var[idx])
+                last_tp_adjust = float(qmc_tp_adjust[idx])
+                last_conf_boost = float(qmc_conf_boost[idx])
+            else:
+                qmc_outlook[idx] = last_outlook
+                qmc_var[idx] = last_var
+                qmc_tp_adjust[idx] = last_tp_adjust
+                qmc_conf_boost[idx] = last_conf_boost
+
+        return {
+            'qmc_outlook': qmc_outlook,
+            'qmc_var': qmc_var,
+            'qmc_tp_adjust': qmc_tp_adjust,
+            'qmc_conf_boost': qmc_conf_boost,
+            'qmc_points': len(scheduled),
+            'qmc_batches': batch_count,
+            'qmc_compute_ms': round((time.perf_counter() - started_at) * 1000.0, 2),
+        }
+
+    @staticmethod
+    def _row_buffers(df):
+        def column(name: str, default: float):
+            if name in df.columns:
+                values = df[name].to_numpy(dtype=np.float32, copy=True)
+                return np.nan_to_num(values, nan=default, posinf=default, neginf=default)
+            return np.full(len(df), default, dtype=np.float32)
+
+        close = column('close', 0.0)
+        return {
+            'close': close,
+            'high': column('high', float(close[0]) if len(close) else 0.0),
+            'low': column('low', float(close[0]) if len(close) else 0.0),
+            'atr': column('atr', 0.0),
+        }
+
     def _train_window_model(self, features, labels, valid, train_start: int, train_end: int, device):
         train_idx = torch.arange(train_start, train_end, device=device)
         train_idx = train_idx[valid[train_idx]]
@@ -335,10 +505,29 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         features = self._build_feature_matrix(inputs)
         labels, valid = self._build_labels(inputs['close'])
         regimes = self._build_regime_series(inputs)
-        self.gpu_native_stats['n_features'] = int(features.shape[1])
-
         warmup = min(getattr(config, 'XGBOOST_WARMUP_CANDLES', 500), max(250, int(len(df) * 0.6)))
         retrain_interval = int(getattr(config, 'GPU_NATIVE_RETRAIN_INTERVAL', getattr(config, 'XGBOOST_RETRAIN_INTERVAL', 200)))
+        qra_series = self._build_qra_series(inputs, regimes, warmup)
+        row_buffers = self._row_buffers(df)
+        self.gpu_native_stats['n_features'] = int(features.shape[1])
+
+        if getattr(config, 'GPU_NATIVE_LOCAL_QUANTUM', True):
+            quantum_plan = self._build_local_qmc_plan(inputs, warmup, device)
+            self.gpu_native_stats['quantum_mode'] = 'local-cuda-batched'
+            self.gpu_native_stats['qmc_points'] = quantum_plan['qmc_points']
+            self.gpu_native_stats['qmc_batches'] = quantum_plan['qmc_batches']
+            self.gpu_native_stats['qmc_compute_ms'] = quantum_plan['qmc_compute_ms']
+        else:
+            quantum_plan = {
+                'qmc_outlook': np.full(len(df), 'NEUTRAL', dtype=object),
+                'qmc_var': np.zeros(len(df), dtype=np.float32),
+                'qmc_tp_adjust': np.ones(len(df), dtype=np.float32),
+                'qmc_conf_boost': np.zeros(len(df), dtype=np.float32),
+                'qmc_points': 0,
+                'qmc_batches': 0,
+                'qmc_compute_ms': 0.0,
+            }
+            self.gpu_native_stats['quantum_mode'] = 'disabled'
 
         probas = torch.zeros((len(df), 2), device=device)
         cursor = warmup
@@ -361,8 +550,12 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         probs_cpu = probas.detach().cpu().numpy()
 
         for i in range(warmup, len(df) - 1):
-            row = df.iloc[i]
-            history = df.iloc[max(0, i - 200):i]
+            row = {
+                'close': float(row_buffers['close'][i]),
+                'high': float(row_buffers['high'][i]),
+                'low': float(row_buffers['low'][i]),
+                'atr': float(row_buffers['atr'][i]),
+            }
             candle_time = df.index[i]
             current_regime = regimes[i]
             self.cycle_count += 1
@@ -374,7 +567,17 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             self.phase_stats['phase_2'] += 1
             self.phase_stats['phase_4'] += 1
 
-            q_result = self.quantum.process_cycle(row, history, current_regime, {}, self.pm.capital)
+            qra_risk_score = int(qra_series[i])
+            q_result = {
+                'qmc_outlook': quantum_plan['qmc_outlook'][i],
+                'qmc_var': float(quantum_plan['qmc_var'][i]),
+                'qra_risk_score': qra_risk_score,
+                'qaoa_weights': None,
+                'qdv_verified': True,
+                'sl_adjust': float(config.QRA_SL_TIGHTEN_FACTOR) if qra_risk_score > config.QRA_HIGH_RISK_THRESHOLD else 1.0,
+                'tp_adjust': float(quantum_plan['qmc_tp_adjust'][i]),
+                'quantum_confidence_boost': float(quantum_plan['qmc_conf_boost'][i]),
+            }
 
             if self.pm.position is not None:
                 self.phase_stats['phase_10'] += 1
