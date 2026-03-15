@@ -388,7 +388,43 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             'high': column('high', float(close[0]) if len(close) else 0.0),
             'low': column('low', float(close[0]) if len(close) else 0.0),
             'atr': column('atr', 0.0),
+            'open': column('open', float(close[0]) if len(close) else 0.0),   # P#187: needed by ExternalSignals whale proxy
+            'volume': column('volume', 1.0),                                    # P#187: needed by ExternalSignals whale/COT proxies
         }
+
+    def _build_ext_signals_plan(self, df, warmup: int, regimes):
+        """
+        P#187: Pre-compute ExternalSignals composite decisions for all candles.
+        Runs once before the hot candle loop; results stored as numpy arrays.
+        ExternalSignalsSimulator is pure numpy — no API calls, ~2ms/candle.
+        """
+        n = len(df)
+        actions = np.full(n, 'HOLD', dtype=object)
+        confidences = np.zeros(n, dtype=np.float32)
+
+        if not self.external_signals.enabled:
+            return {'actions': actions, 'confidences': confidences}
+
+        lookback = min(getattr(config, 'GPU_NATIVE_LOCAL_QMC_LOOKBACK', 200), 200)
+        print(f'  🔌 Pre-computing ExternalSignals plan ({n - warmup} candles, lookback={lookback})')
+        t0 = time.perf_counter()
+
+        for i in range(warmup, n - 1):
+            hist_start = max(0, i - lookback)
+            sig = self.external_signals.generate_signal(
+                df.iloc[i],
+                df.iloc[hist_start:i],
+                str(regimes[i]),
+            )
+            if sig:
+                actions[i] = sig.get('action', 'HOLD')
+                confidences[i] = float(sig.get('confidence', 0.0))
+
+        elapsed = (time.perf_counter() - t0) * 1000
+        buy_n = int(np.sum(actions == 'BUY'))
+        sell_n = int(np.sum(actions == 'SELL'))
+        print(f'  ✅ ExtSig plan: {buy_n} BUY / {sell_n} SELL ({elapsed:.0f} ms)')
+        return {'actions': actions, 'confidences': confidences}
 
     def _train_window_model(self, features, labels, valid, train_start: int, train_end: int, device):
         train_idx = torch.arange(train_start, train_end, device=device)
@@ -529,6 +565,9 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             }
             self.gpu_native_stats['quantum_mode'] = 'disabled'
 
+        # P#187: Pre-compute ExternalSignals plan (pure numpy, runs once before hot loop)
+        ext_plan = self._build_ext_signals_plan(df, warmup, regimes)
+
         probas = torch.zeros((len(df), 2), device=device)
         cursor = warmup
         while cursor < len(df) - 1:
@@ -555,6 +594,8 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 'high': float(row_buffers['high'][i]),
                 'low': float(row_buffers['low'][i]),
                 'atr': float(row_buffers['atr'][i]),
+                'open': float(row_buffers['open'][i]),    # P#187
+                'volume': float(row_buffers['volume'][i]),  # P#187
             }
             candle_time = df.index[i]
             current_regime = regimes[i]
@@ -598,6 +639,19 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                     final_action = 'BUY' if proba_up >= proba_down else 'SELL'
                 else:
                     final_action = 'HOLD'
+
+                # P#187: ExternalSignals soft vote — blended at STATIC_WEIGHTS['ExternalSignals'] (0.10)
+                # Aligned signal → confidence boost; conflicting signal → small headwind
+                if final_action != 'HOLD' and self.external_signals.enabled:
+                    ext_action = ext_plan['actions'][i]
+                    ext_conf = float(ext_plan['confidences'][i])
+                    if ext_action not in ('HOLD', None) and ext_conf > 0.0:
+                        ext_w = config.STATIC_WEIGHTS.get('ExternalSignals', 0.10)
+                        if ext_action == final_action:
+                            final_confidence += ext_conf * ext_w
+                        else:
+                            final_confidence -= ext_conf * ext_w * 0.5
+                        final_confidence = min(config.CONFIDENCE_CLAMP_MAX, max(0.0, final_confidence))
 
                 if final_action == 'HOLD' or final_confidence < config.CONFIDENCE_FLOOR:
                     self._track_equity(row, candle_time)

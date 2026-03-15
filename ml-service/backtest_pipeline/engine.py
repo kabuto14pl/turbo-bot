@@ -285,14 +285,15 @@ class FullPipelineEngine:
             else:
                 # 4a. Classical strategies
                 signals = run_all_strategies(row, history)
-                
-                # 4a2. PATCH #152C: External signals (F&G, whale, macro, sentiment, COT)
-                if self.external_signals.enabled:
-                    ext_signal = self.external_signals.generate_signal(row, history, current_regime)
-                    if ext_signal and ext_signal.get('action') != 'HOLD':
-                        signals['ExternalSignals'] = ext_signal
-                    elif ext_signal:
-                        signals['ExternalSignals'] = ext_signal  # HOLD still participates in voting
+
+            # 4a2. P#187: ExternalSignals — pure numpy simulator (no API calls).
+            # Runs in BOTH gpu-only and full-pipeline modes. Weight: 0.10 (STATIC_WEIGHTS).
+            if self.external_signals.enabled:
+                ext_signal = self.external_signals.generate_signal(row, history, current_regime)
+                if ext_signal and ext_signal.get('action') != 'HOLD':
+                    signals['ExternalSignals'] = ext_signal
+                elif ext_signal:
+                    signals['ExternalSignals'] = ext_signal  # HOLD still participates in voting
             
             # 4b. ML prediction — PATCH #58: XGBoost as ADVISORY layer
             # XGBoost only used when it has proven edge (CV > threshold)

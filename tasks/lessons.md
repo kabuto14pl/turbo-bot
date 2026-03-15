@@ -14,6 +14,19 @@ Raising QMC/QAOA payload sizes increased individual GPU calls, but the GPU-nativ
 
 ---
 
+## 2026-03-15: PATCH #187 — ExternalSignals Enabled in GPU-Native Engine
+
+### L187.1: A weight in STATIC_WEIGHTS with no signal source is silent dead weight
+`EXTERNAL_SIGNALS_ENABLED = False` + `GPU_ONLY_BACKTEST = True` together meant ExternalSignals weight 0.10 was declared but the signal was never generated. The ensemble saw 9 weight slots but only 7 ever voted — effective weights were inflated by ~11% for all other strategies. Always verify `sum(active_signals weights) ≈ sum(STATIC_WEIGHTS)` at test time.
+
+### L187.2: Disabling a pure-numpy simulator to "save CPU" in a GPU backtest is wrong
+ExternalSignalsSimulator is ~2 ms/candle of numpy arithmetic (EMA, RSI, volume ratio). It was disabled with comment "CPU-only". But it's a backtest SIMULATOR, not a live API caller. The only latency that matters in backtests is total wall time. A 2ms numpy op across 14k candles = 28 s — acceptable overhead for a valid ensemble voter.
+
+### L187.3: GPU-native engine must explicitly add any column needed by pre-computation helpers
+`_row_buffers()` only cached `close/high/low/atr`. `ExternalSignalsSimulator._whale_proxy()` needs `open` to compute candle body, and `volume` for spike detection. Missing fields cause `float(row['open'])` KeyError at runtime. Extend `_row_buffers()` whenever adding a new pre-computation that reads the current candle.
+
+---
+
 ## 2026-03-12: PATCH #148 — 3-Layer Architecture + Fee Alignment
 
 ### L148.1: Pipeline complexity masks real decision ownership

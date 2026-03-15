@@ -346,7 +346,7 @@ SENTIMENT_CONTRARIAN_EXTREME_GREED_SELL_BOOST = 1.10  # SELL confidence boost in
 # ============================================================================
 # EXTERNAL SIGNALS SIMULATION (PATCH #152C)
 # ============================================================================
-EXTERNAL_SIGNALS_ENABLED = False        # P#183: disabled in GPU-only mode — CPU-only signal simulator
+EXTERNAL_SIGNALS_ENABLED = True         # P#187: re-enabled — ExternalSignalsSimulator is pure numpy (no API calls, ~2ms/candle)
 
 # ============================================================================
 # LIVE RETRAIN SCHEDULER (PATCH #58 — 7-day cycle on GPU)
