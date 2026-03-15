@@ -6,6 +6,7 @@ Runs on LOCAL PC (Windows) with RTX 5070 Ti GPU.
 VPS bot connects via SSH tunnel: VPS:4001  LocalPC:4000
 
 Endpoints:
+    GET  /ping              Lightweight liveness probe
   GET  /health            GPU status + VRAM usage
   POST /gpu/qmc           Quantum Monte Carlo path generation (CUDA)
   POST /gpu/qaoa-weights  QAOA strategy weight optimization (CUDA)
@@ -26,6 +27,7 @@ import time
 import math
 import json
 import logging
+import traceback
 from typing import Optional, List, Dict, Any
 
 #  FastAPI 
@@ -37,12 +39,42 @@ except ImportError:
     print("ERROR: FastAPI not installed. Run: pip install fastapi uvicorn")
     exit(1)
 
-#  PyTorch CUDA 
+#  PyTorch CUDA (with CPU fallback) 
+GPU_AVAILABLE = False
+GPU_INIT_ERROR = None
+device = None
+gpu_name = "N/A"
+vram_total = 0
+BACKEND = "cpu"
+
 try:
     import torch
+    print(f"[DIAG] PyTorch version: {torch.__version__}")
+    print(f"[DIAG] CUDA build: {torch.version.cuda or 'NOT BUILT WITH CUDA'}")
+    print(f"[DIAG] CUDA available: {torch.cuda.is_available()}")
+    if hasattr(torch.cuda, 'device_count'):
+        print(f"[DIAG] CUDA device count: {torch.cuda.device_count()}")
     if not torch.cuda.is_available():
-        print("WARNING: CUDA not available! PyTorch will use CPU (not intended).")
+        print("")
+        print("=" * 70)
+        print("  ⚠️  CUDA NOT AVAILABLE — GPU WILL NOT BE USED")
+        print("  ⚠️  Backtest will run on CPU (MUCH SLOWER)")
+        print("")
+        if 'cpu' in (torch.version.cuda or 'cpu').lower() or torch.version.cuda is None:
+            print("  FIX: You have PyTorch CPU-only build installed.")
+            print("  Run this command to install PyTorch with CUDA:")
+            print("")
+            print("    pip install torch --index-url https://download.pytorch.org/whl/cu124")
+            print("")
+        else:
+            print(f"  PyTorch CUDA build: {torch.version.cuda}")
+            print("  But CUDA runtime not detected. Check NVIDIA drivers.")
+            print("  Run: nvidia-smi")
+        print("=" * 70)
+        print("")
         GPU_AVAILABLE = False
+        device = torch.device('cpu')
+        BACKEND = "cpu"
     else:
         GPU_AVAILABLE = True
         #  40% GPU memory limit 
@@ -50,11 +82,18 @@ try:
         device = torch.device('cuda:0')
         gpu_name = torch.cuda.get_device_name(0)
         vram_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-        print(f"[GPU] {gpu_name} | VRAM: {vram_total:.1f} GB | Limit: 40% ({vram_total*0.4:.1f} GB)")
-except ImportError:
-    print("ERROR: PyTorch not installed. Run: pip install torch --index-url https://download.pytorch.org/whl/cu124")
+        BACKEND = "cuda"
+        print(f"")
+        print(f"  ✅ GPU ACTIVE: {gpu_name}")
+        print(f"  ✅ VRAM: {vram_total:.1f} GB | Limit: 40% ({vram_total*0.4:.1f} GB)")
+        print(f"")
+except Exception as init_error:
     GPU_AVAILABLE = False
-    device = None
+    GPU_INIT_ERROR = str(init_error)
+    device = torch.device('cpu') if 'torch' in dir() else None
+    BACKEND = "cpu"
+    print(f"WARNING: CUDA initialization failed, using CPU: {GPU_INIT_ERROR}")
+    traceback.print_exc()
 
 #  NVML for GPU monitoring 
 try:
@@ -71,7 +110,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [GPU] %(message)s')
 logger = logging.getLogger(__name__)
 
 #  FastAPI App 
-app = FastAPI(title="Turbo-Bot GPU Service", version="1.0.0-PATCH43")
+SERVICE_VERSION = "1.1.0-CPU-FALLBACK"
+
+app = FastAPI(title="Turbo-Bot GPU Service", version=SERVICE_VERSION)
 
 # Stats tracking
 stats = {
@@ -87,6 +128,7 @@ def get_gpu_info() -> dict:
     info = {
         "device": gpu_name if GPU_AVAILABLE else "N/A",
         "cuda_available": GPU_AVAILABLE,
+        "init_error": GPU_INIT_ERROR,
         "vram_total_gb": round(vram_total, 2) if GPU_AVAILABLE else 0,
         "vram_used_gb": 0,
         "vram_free_gb": 0,
@@ -115,14 +157,27 @@ def get_gpu_info() -> dict:
 # HEALTH CHECK
 # 
 
+@app.get("/ping")
+async def ping():
+    """Lightweight liveness endpoint for the Windows watchdog."""
+    return {
+        "status": "ok",
+        "service": "turbo-bot-gpu-cuda",
+        "version": SERVICE_VERSION,
+        "uptime_s": round(time.time() - stats["start_time"]),
+    }
+
 @app.get("/health")
 async def health():
     """Returns GPU status. Used by VPS bot RemoteGPUClient.ping()."""
     return {
-        "status": "online" if GPU_AVAILABLE else "degraded",
+        "status": "online" if GPU_AVAILABLE else ("online-cpu" if device is not None else "degraded"),
+        "backend": BACKEND,
+        "gpu_active": GPU_AVAILABLE,
         "service": "turbo-bot-gpu-cuda",
-        "version": "1.0.0-PATCH43",
+        "version": SERVICE_VERSION,
         "uptime_s": round(time.time() - stats["start_time"]),
+        "init_error": GPU_INIT_ERROR,
         "gpu": get_gpu_info(),
         "stats": stats,
     }
@@ -138,8 +193,10 @@ async def gpu_qmc(body: dict):
     Generate Monte Carlo paths using GPU-accelerated random sampling.
     Geometric Brownian Motion with optional Merton jump-diffusion.
     """
+    if device is None:
+        raise HTTPException(status_code=503, detail="PyTorch not available")
     if not GPU_AVAILABLE:
-        raise HTTPException(status_code=503, detail="GPU not available")
+        logger.warning("QMC running on CPU — install CUDA PyTorch for GPU acceleration")
 
     stats["requests"]["qmc"] += 1
     t0 = time.perf_counter()
@@ -179,8 +236,8 @@ async def gpu_qmc(body: dict):
             "pathsGenerated": n_paths,
             "nSteps": n_steps,
             "computeTimeMs": round(elapsed_ms, 2),
-            "backend": "cuda",
-            "device": gpu_name,
+            "backend": BACKEND,
+            "device": gpu_name if GPU_AVAILABLE else "cpu",
         }
 
     except Exception as e:
@@ -196,8 +253,10 @@ async def gpu_qmc(body: dict):
 @app.post("/gpu/qaoa-weights")
 async def gpu_qaoa(body: dict):
     """Optimize strategy weights using GPU-accelerated QAOA simulation."""
+    if device is None:
+        raise HTTPException(status_code=503, detail="PyTorch not available")
     if not GPU_AVAILABLE:
-        raise HTTPException(status_code=503, detail="GPU not available")
+        logger.warning("QAOA running on CPU — install CUDA PyTorch for GPU acceleration")
 
     stats["requests"]["qaoa"] += 1
     t0 = time.perf_counter()
@@ -272,7 +331,7 @@ async def gpu_qaoa(body: dict):
                 "finalEnergy": round(best_energy, 4),
             },
             "computeTimeMs": round(elapsed_ms, 2),
-            "backend": "cuda",
+            "backend": BACKEND,
         }
 
     except Exception as e:
@@ -288,8 +347,10 @@ async def gpu_qaoa(body: dict):
 @app.post("/gpu/vqc-regime")
 async def gpu_vqc(body: dict):
     """Classify market regime using GPU-accelerated neural inference."""
+    if device is None:
+        raise HTTPException(status_code=503, detail="PyTorch not available")
     if not GPU_AVAILABLE:
-        raise HTTPException(status_code=503, detail="GPU not available")
+        logger.warning("VQC running on CPU — install CUDA PyTorch for GPU acceleration")
 
     stats["requests"]["vqc"] += 1
     t0 = time.perf_counter()
@@ -298,32 +359,74 @@ async def gpu_vqc(body: dict):
         features = body.get("features", [0] * 8)
         if not isinstance(features, list):
             features = list(features)
+        # PATCH #139: Sanitize None/NaN values (JS NaN → JSON null → Python None)
+        features = [float(f) if f is not None and f == f else 0.0 for f in features]
 
         with torch.no_grad():
             x = torch.tensor(features, dtype=torch.float32, device=device)
-            vol = abs(x[0].item()) if len(x) > 0 else 0.5
-            momentum = x[4].item() if len(x) > 4 else 0
+            # Contract aligned with HybridQuantumClassicalPipeline:
+            # [mu, sigma, latest, zscore, upRatio, maxAbs, momentum5, correlation]
+            mean_return = x[0].item() if len(x) > 0 else 0.0
+            vol = abs(x[1].item()) if len(x) > 1 else 0.5
+            latest = x[2].item() if len(x) > 2 else 0.0
+            momentum = x[6].item() if len(x) > 6 else 0
             z_score = x[3].item() if len(x) > 3 else 0
+            up_ratio = x[4].item() if len(x) > 4 else 0.5
+            max_abs_return = abs(x[5].item()) if len(x) > 5 else 0.0
 
             regimes = ['TRENDING_UP', 'TRENDING_DOWN', 'RANGING', 'HIGH_VOLATILITY']
             scores = torch.zeros(4, device=device)
-            scores[0] = max(0, momentum) * 2 + max(0, z_score) * 0.5
-            scores[1] = max(0, -momentum) * 2 + max(0, -z_score) * 0.5
-            scores[2] = (1 - abs(momentum)) * 1.5
-            scores[3] = vol * 3
+            directional_bias = abs(up_ratio - 0.5) * 2.0 + abs(mean_return) * 3.5
+
+            # Stage 2 model tuning:
+            # - Penalize false-positive HIGH_VOLATILITY on quiet directional or balanced windows
+            # - Preserve ranging as the default low-conviction state
+            # - Add a targeted quiet-trend override for low-vol trend continuation windows
+            scores[0] = (
+                max(0, momentum) * 2.2
+                + max(0, z_score) * 0.45
+                + max(0, up_ratio - 0.52) * 2.4
+                + max(0, mean_return) * 2.2
+            )
+            scores[1] = (
+                max(0, -momentum) * 2.2
+                + max(0, -z_score) * 0.45
+                + max(0, 0.48 - up_ratio) * 2.4
+                + max(0, -mean_return) * 2.2
+            )
+            scores[2] = (
+                (1 - abs(momentum)) * 1.35
+                + max(0, 0.52 - vol) * 0.35
+                + max(0, 0.10 - abs(mean_return)) * 0.35
+                - directional_bias
+            )
+            scores[3] = (
+                max(0, vol - 0.5) * 3.2
+                + max(0, max_abs_return - 0.92) * 0.8
+                + max(0, abs(z_score) - 0.95) * 0.6
+            )
 
             probs = torch.softmax(scores, dim=0).cpu().tolist()
             regime_idx = torch.argmax(scores).item()
+            regime = regimes[regime_idx]
+
+            if regime in ('RANGING', 'HIGH_VOLATILITY'):
+                if mean_return > 0.04 and up_ratio > 0.54 and vol < 0.55 and z_score > -0.5:
+                    regime = 'TRENDING_UP'
+                elif mean_return < -0.05 and up_ratio < 0.44 and vol < 0.55 and z_score < -0.35:
+                    regime = 'TRENDING_DOWN'
+
+            regime_confidence = probs[regimes.index(regime)] if regime in regimes else max(probs)
 
         elapsed_ms = (time.perf_counter() - t0) * 1000
         stats["total_compute_ms"] += elapsed_ms
 
         return {
-            "regime": regimes[regime_idx],
-            "confidence": round(max(probs), 4),
+            "regime": regime,
+            "confidence": round(regime_confidence, 4),
             "probabilities": {regimes[i]: round(p, 4) for i, p in enumerate(probs)},
             "computeTimeMs": round(elapsed_ms, 2),
-            "backend": "cuda",
+            "backend": BACKEND,
         }
 
     except Exception as e:
@@ -339,8 +442,10 @@ async def gpu_vqc(body: dict):
 @app.post("/gpu/matmul")
 async def gpu_matmul(body: dict):
     """GPU-accelerated matrix multiplication."""
+    if device is None:
+        raise HTTPException(status_code=503, detail="PyTorch not available")
     if not GPU_AVAILABLE:
-        raise HTTPException(status_code=503, detail="GPU not available")
+        logger.warning("MatMul running on CPU — install CUDA PyTorch for GPU acceleration")
 
     stats["requests"]["matmul"] += 1
     t0 = time.perf_counter()
@@ -360,7 +465,7 @@ async def gpu_matmul(body: dict):
         return {
             "result": result,
             "computeTimeMs": round(elapsed_ms, 2),
-            "backend": "cuda",
+            "backend": BACKEND,
         }
 
     except Exception as e:
@@ -376,8 +481,10 @@ async def gpu_matmul(body: dict):
 @app.post("/gpu/var")
 async def gpu_var(body: dict):
     """GPU-accelerated VaR/CVaR calculation."""
+    if device is None:
+        raise HTTPException(status_code=503, detail="PyTorch not available")
     if not GPU_AVAILABLE:
-        raise HTTPException(status_code=503, detail="GPU not available")
+        logger.warning("VaR running on CPU — install CUDA PyTorch for GPU acceleration")
 
     stats["requests"]["var"] += 1
     t0 = time.perf_counter()
@@ -410,7 +517,7 @@ async def gpu_var(body: dict):
             "riskMetrics": results,
             "nObservations": n,
             "computeTimeMs": round(elapsed_ms, 2),
-            "backend": "cuda",
+            "backend": BACKEND,
         }
 
     except Exception as e:
@@ -428,12 +535,15 @@ if __name__ == "__main__":
     print(f"\n{'='*60}")
     print(f"  TURBO-BOT GPU CUDA SERVICE")
     print(f"  PATCH #43: GPU-ONLY Architecture")
+    print(f"  Version: {SERVICE_VERSION}")
     print(f"  Port: {port}")
     if GPU_AVAILABLE:
         print(f"  GPU: {gpu_name}")
         print(f"  VRAM: {vram_total:.1f} GB (limit: 40% = {vram_total*0.4:.1f} GB)")
     else:
-        print(f"  GPU: NOT AVAILABLE (will return 503)")
+        print(f"  GPU: NOT AVAILABLE — CPU fallback active")
+        if GPU_INIT_ERROR:
+            print(f"  Init error: {GPU_INIT_ERROR}")
     print(f"{'='*60}\n")
 
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
