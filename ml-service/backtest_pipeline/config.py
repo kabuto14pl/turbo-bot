@@ -286,6 +286,11 @@ XGBOOST_LABEL_THRESHOLD = 0.001 # Min price change for UP/DOWN label (0.1%)
 # PYTORCH MLP GPU ENGINE (P#176 — XGBoost fallback, 100% GPU)
 # ============================================================================
 GPU_ONLY_BACKTEST = True        # P#183: bypass CPU-heavy classical pipeline; use GPU ML + quantum path only
+GPU_NATIVE_ENGINE = True        # P#184: experimental GPU-native backtest engine foundation
+GPU_NATIVE_EPOCHS = 36          # P#184: local CUDA epochs per retrain window
+GPU_NATIVE_BATCH_SIZE = 1024    # P#184: large GPU batch for tensor training/inference
+GPU_NATIVE_RETRAIN_INTERVAL = 200  # P#184: retrain batched GPU model every 200 candles
+GPU_NATIVE_HIDDEN_DIMS = [512, 256, 128]  # P#184: signal model backbone for raw-indicator GPU engine
 MLP_GPU_ENABLED = True          # Enable PyTorch MLP GPU engine as XGBoost fallback
 MLP_LEARNING_RATE = 1e-3        # AdamW learning rate
 MLP_EPOCHS = 200                # P#182: 80→200 more GPU training epochs

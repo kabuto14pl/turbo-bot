@@ -33,6 +33,15 @@ DEFAULT_JOB_SPECS = [
 ]
 
 
+def gpu_native_engine_enabled() -> bool:
+    try:
+        sys.path.insert(0, str(ROOT_DIR / 'ml-service'))
+        from backtest_pipeline import config as bt_config
+        return bool(getattr(bt_config, 'GPU_NATIVE_ENGINE', False))
+    except Exception:
+        return False
+
+
 def check_remote_health(remote_url: str, timeout_s: float) -> dict:
     request = urllib.request.Request(f'{remote_url.rstrip("/")}/health')
     with urllib.request.urlopen(request, timeout=timeout_s) as response:
@@ -389,6 +398,10 @@ args_for_worker: argparse.Namespace | None = None
 def main() -> int:
     global args_for_worker
     args = parse_args()
+
+    if gpu_native_engine_enabled() and args.max_parallel > 1:
+        print('GPU-native engine enabled in config -> forcing max_parallel=1 to avoid CUDA worker contention')
+        args.max_parallel = 1
 
     if args.worker:
         if not args.job_spec or not args.output:
