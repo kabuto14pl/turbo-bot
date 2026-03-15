@@ -202,8 +202,8 @@ QMC_BULLISH_TP_BOOST = 1.20    # TP × 1.20 if QMC bullish
 QMC_BEARISH_TP_SHRINK = 0.75   # TP × 0.75 if QMC bearish
 
 # QAOA weight optimization interval (in cycles)
-QAOA_WEIGHT_INTERVAL = 30
-QMC_SIM_INTERVAL = 15
+QAOA_WEIGHT_INTERVAL = 10
+QMC_SIM_INTERVAL = 5
 QRA_RISK_INTERVAL = 10
 
 # QDV verification — aligned with PATCH #60 lower floor
@@ -287,10 +287,16 @@ XGBOOST_LABEL_THRESHOLD = 0.001 # Min price change for UP/DOWN label (0.1%)
 # ============================================================================
 GPU_ONLY_BACKTEST = True        # P#183: bypass CPU-heavy classical pipeline; use GPU ML + quantum path only
 GPU_NATIVE_ENGINE = True        # P#184: experimental GPU-native backtest engine foundation
-GPU_NATIVE_EPOCHS = 36          # P#184: local CUDA epochs per retrain window
-GPU_NATIVE_BATCH_SIZE = 1024    # P#184: large GPU batch for tensor training/inference
-GPU_NATIVE_RETRAIN_INTERVAL = 200  # P#184: retrain batched GPU model every 200 candles
-GPU_NATIVE_HIDDEN_DIMS = [512, 256, 128]  # P#184: signal model backbone for raw-indicator GPU engine
+GPU_NATIVE_EPOCHS = 96          # P#185: much heavier CUDA training to drive higher utilization
+GPU_NATIVE_BATCH_SIZE = 4096    # P#185: larger GPU batch for tensor training/inference
+GPU_NATIVE_RETRAIN_INTERVAL = 100  # P#185: retrain more often to keep GPU busy
+GPU_NATIVE_HIDDEN_DIMS = [2048, 1024, 512, 256]  # P#185: wider/deeper local CUDA network
+GPU_NATIVE_TRAIN_REPEAT = 32    # P#185: GPU-side augmentation/repeat factor to enlarge each training window
+REMOTE_GPU_QMC_PATHS = 131072   # P#185: much heavier remote Monte Carlo workload
+REMOTE_GPU_QMC_STEPS = 16       # P#185: longer horizon per QMC launch
+REMOTE_GPU_QAOA_ITERATIONS = 1024  # P#185: heavier remote QAOA optimization
+REMOTE_GPU_QAOA_SAMPLES = 16384    # P#185: much larger QAOA sampling tensor
+REMOTE_GPU_QAOA_LAYERS = 6         # P#185: slightly deeper QAOA simulation
 MLP_GPU_ENABLED = True          # Enable PyTorch MLP GPU engine as XGBoost fallback
 MLP_LEARNING_RATE = 1e-3        # AdamW learning rate
 MLP_EPOCHS = 200                # P#182: 80→200 more GPU training epochs

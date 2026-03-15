@@ -288,8 +288,8 @@ async def gpu_qaoa(body: dict):
             return {"selectedStrategies": [], "weights": {}, "expectedUtility": 0}
 
         n_qubits = min(n, 8)
-        n_layers = 4
-        n_iterations = 200
+        n_layers = min(int(body.get("layers", 4)), 12)
+        n_iterations = min(int(body.get("iterations", 200)), 4096)
 
         h = torch.zeros(n_qubits, device=device)
         for i in range(n_qubits):
@@ -298,7 +298,7 @@ async def gpu_qaoa(body: dict):
 
         best_energy = float('-inf')
         best_state = 0
-        n_samples = 4096
+        n_samples = min(int(body.get("samples", 4096)), 65536)
 
         with torch.no_grad():
             for iteration in range(n_iterations):

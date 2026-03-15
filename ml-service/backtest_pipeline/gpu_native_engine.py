@@ -63,6 +63,7 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             'enabled': True,
             'device': 'none',
             'n_features': 0,
+            'train_repeat': 1,
             'retrain_count': 0,
             'epochs_last': 0,
             'train_accuracy_last': 0.0,
@@ -159,7 +160,7 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         upper_wick = (high - torch.maximum(open_, close)) / close
         lower_wick = (torch.minimum(open_, close) - low) / close
 
-        features = torch.stack([
+        base_features = torch.stack([
             (close - open_) / close,
             candle_range / close,
             upper_wick,
@@ -183,6 +184,11 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             inputs['supertrend_dir'],
         ], dim=1)
 
+        features = torch.cat([
+            base_features,
+            base_features.square(),
+            torch.abs(base_features),
+        ], dim=1)
         features = torch.nan_to_num(features, nan=0.0, posinf=0.0, neginf=0.0)
         return features
 
@@ -233,6 +239,12 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         y_train = y[:split]
         X_val = X[split:] if split < X.shape[0] else X[:0]
         y_val = y[split:] if split < y.shape[0] else y[:0]
+
+        repeat_count = max(1, int(getattr(config, 'GPU_NATIVE_TRAIN_REPEAT', 1)))
+        if repeat_count > 1:
+            X_train = X_train.repeat((repeat_count, 1))
+            y_train = y_train.repeat(repeat_count)
+            X_train = X_train + torch.randn_like(X_train) * 0.01
 
         model = _GpuSignalMLP(X.shape[1], getattr(config, 'GPU_NATIVE_HIDDEN_DIMS', [512, 256, 128])).to(device)
         optimizer = torch.optim.AdamW(model.parameters(), lr=getattr(config, 'MLP_LEARNING_RATE', 1e-3), weight_decay=getattr(config, 'MLP_WEIGHT_DECAY', 1e-4))
@@ -287,6 +299,7 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         stats = {
             'mean': mean,
             'std': std,
+            'train_repeat': repeat_count,
             'train_accuracy': train_acc,
             'val_accuracy': val_acc,
             'epochs_used': epochs_used,
@@ -336,6 +349,7 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 return {'error': f'GPU-native model could not train at cursor={cursor}'}
 
             self.gpu_native_stats['retrain_count'] += 1
+            self.gpu_native_stats['train_repeat'] = train_stats['train_repeat']
             self.gpu_native_stats['epochs_last'] = train_stats['epochs_used']
             self.gpu_native_stats['train_accuracy_last'] = round(train_stats['train_accuracy'], 4)
             self.gpu_native_stats['val_accuracy_last'] = round(train_stats['val_accuracy'], 4)

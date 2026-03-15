@@ -194,8 +194,8 @@ class _RemoteQuantumMixin:
         mu = float(np.mean(returns)) if len(returns) else 0.0
         sigma = float(np.std(returns)) if len(returns) else 0.0
         return {
-            'nPaths': int(self.options.get('qmc_paths', 4000)),
-            'nSteps': int(self.options.get('qmc_steps', 5)),
+            'nPaths': int(self.options.get('qmc_paths', getattr(config, 'REMOTE_GPU_QMC_PATHS', 4000))),
+            'nSteps': int(self.options.get('qmc_steps', getattr(config, 'REMOTE_GPU_QMC_STEPS', 5))),
             'currentPrice': 1.0,
             'mu': mu * 252,
             'sigma': sigma * np.sqrt(252),
@@ -228,6 +228,9 @@ class _RemoteQuantumMixin:
             payload = {
                 'strategyMetrics': build_strategy_metrics(target_weights, signals),
                 'maxStrategies': min(self.max_strategies, len(target_weights) or self.max_strategies),
+                'iterations': int(self.options.get('qaoa_iterations', getattr(config, 'REMOTE_GPU_QAOA_ITERATIONS', 200))),
+                'samples': int(self.options.get('qaoa_samples', getattr(config, 'REMOTE_GPU_QAOA_SAMPLES', 4096))),
+                'layers': int(self.options.get('qaoa_layers', getattr(config, 'REMOTE_GPU_QAOA_LAYERS', 4))),
             }
             response = self._remote_client.qaoa(payload)
             self._remote_stats['remote_qaoa_calls'] += 1
