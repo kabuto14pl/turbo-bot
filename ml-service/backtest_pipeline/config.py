@@ -285,6 +285,7 @@ XGBOOST_LABEL_THRESHOLD = 0.001 # Min price change for UP/DOWN label (0.1%)
 # ============================================================================
 # PYTORCH MLP GPU ENGINE (P#176 — XGBoost fallback, 100% GPU)
 # ============================================================================
+GPU_ONLY_BACKTEST = True        # P#183: bypass CPU-heavy classical pipeline; use GPU ML + quantum path only
 MLP_GPU_ENABLED = True          # Enable PyTorch MLP GPU engine as XGBoost fallback
 MLP_LEARNING_RATE = 1e-3        # AdamW learning rate
 MLP_EPOCHS = 200                # P#182: 80→200 more GPU training epochs
@@ -329,7 +330,7 @@ SENTIMENT_CONTRARIAN_EXTREME_GREED_SELL_BOOST = 1.10  # SELL confidence boost in
 # ============================================================================
 # EXTERNAL SIGNALS SIMULATION (PATCH #152C)
 # ============================================================================
-EXTERNAL_SIGNALS_ENABLED = True         # Enable external signals in backtest
+EXTERNAL_SIGNALS_ENABLED = False        # P#183: disabled in GPU-only mode — CPU-only signal simulator
 
 # ============================================================================
 # LIVE RETRAIN SCHEDULER (PATCH #58 — 7-day cycle on GPU)

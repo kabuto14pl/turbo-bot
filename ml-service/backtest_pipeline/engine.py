@@ -70,6 +70,8 @@ class FullPipelineEngine:
         self.quantum_backend = quantum_backend
         self.quantum_backend_options = quantum_backend_options or {}
         self.gate_profile = getattr(config, 'PIPELINE_GATE_PROFILE', 'full_pipeline')
+        self._gpu_only_backtest = getattr(config, 'GPU_ONLY_BACKTEST', False)
+        self._gpu_only_last_regime = 'RANGING'
         
         # P#178: Extract GPU URL for ML engines
         gpu_url = self.quantum_backend_options.get('remote_url')
@@ -260,8 +262,12 @@ class FullPipelineEngine:
             # PHASE 2: NEURAL AI — REGIME DETECTION
             # ============================================================
             self.phase_stats['phase_2'] += 1
-            regime_result = self.regime.detect(row, history)
-            current_regime = regime_result['regime']
+            if self._gpu_only_backtest:
+                regime_result = {'regime': self._gpu_only_last_regime, 'confidence': 0.5, 'probabilities': {}}
+                current_regime = self._gpu_only_last_regime
+            else:
+                regime_result = self.regime.detect(row, history)
+                current_regime = regime_result['regime']
             
             # ============================================================
             # PHASE 3: QUANTUM PRE-PROCESSING (QFM)
@@ -274,16 +280,19 @@ class FullPipelineEngine:
             # ============================================================
             self.phase_stats['phase_4'] += 1
             
-            # 4a. Classical strategies
-            signals = run_all_strategies(row, history)
-            
-            # 4a2. PATCH #152C: External signals (F&G, whale, macro, sentiment, COT)
-            if self.external_signals.enabled:
-                ext_signal = self.external_signals.generate_signal(row, history, current_regime)
-                if ext_signal and ext_signal.get('action') != 'HOLD':
-                    signals['ExternalSignals'] = ext_signal
-                elif ext_signal:
-                    signals['ExternalSignals'] = ext_signal  # HOLD still participates in voting
+            if self._gpu_only_backtest:
+                signals = {}
+            else:
+                # 4a. Classical strategies
+                signals = run_all_strategies(row, history)
+                
+                # 4a2. PATCH #152C: External signals (F&G, whale, macro, sentiment, COT)
+                if self.external_signals.enabled:
+                    ext_signal = self.external_signals.generate_signal(row, history, current_regime)
+                    if ext_signal and ext_signal.get('action') != 'HOLD':
+                        signals['ExternalSignals'] = ext_signal
+                    elif ext_signal:
+                        signals['ExternalSignals'] = ext_signal  # HOLD still participates in voting
             
             # 4b. ML prediction — PATCH #58: XGBoost as ADVISORY layer
             # XGBoost only used when it has proven edge (CV > threshold)
@@ -302,27 +311,32 @@ class FullPipelineEngine:
                 # P#176: XGBoost has no edge — try MLP GPU fallback
                 mlp_signal = self.mlp_gpu.predict(row, history, current_regime, candle_idx=i, df=df)
                 mlp_has_edge = (
-                    mlp_signal.get('source') == 'TorchMLP' and
+                    mlp_signal.get('source') in ('TorchMLP', 'MLP-GPU') and
                     self.mlp_gpu.cv_scores and
                     np.mean(self.mlp_gpu.cv_scores) >= getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55)
                 )
                 if mlp_has_edge:
                     ml_signal = mlp_signal
+                elif self._gpu_only_backtest:
+                    ml_signal = {'action': 'HOLD', 'confidence': 0.0, 'source': 'GPU_ONLY_HOLD'}
                 else:
                     ml_signal = self.ml.predict(row, history, current_regime)
                 # Store XGBoost prediction for learning only
                 if xgb_signal.get('source') == 'XGBoost':
                     xgb_signal['_advisory_only'] = True
             else:
-                # No proven edge — use heuristic (which was tuned and working)
-                ml_signal = self.ml.predict(row, history, current_regime)
+                # No proven edge — GPU-only mode stays flat instead of falling back to CPU heuristic
+                if self._gpu_only_backtest:
+                    ml_signal = {'action': 'HOLD', 'confidence': 0.0, 'source': 'GPU_ONLY_HOLD'}
+                else:
+                    ml_signal = self.ml.predict(row, history, current_regime)
                 # Store XGBoost prediction for learning only (not ensemble)
                 if xgb_signal.get('source') == 'XGBoost':
                     xgb_signal['_advisory_only'] = True
             
             # 4c. ML veto logic — ONLY apply when ML source has proven edge
             # Prevents random XGBoost from vetoing good strategy signals
-            if xgb_has_edge or ml_signal.get('source') != 'XGBoost':
+            if (not self._gpu_only_backtest) and (xgb_has_edge or ml_signal.get('source') != 'XGBoost'):
                 signals = self.xgb_ml.apply_ml_veto(signals, ml_signal)
             
             # 4d. PATCH #58: XGBoost sliding window retrain
@@ -336,9 +350,12 @@ class FullPipelineEngine:
             # PHASE 14: SENTIMENT ANALYSIS (PATCH #58)
             # ============================================================
             self.phase_stats['phase_14'] += 1
-            sentiment_result = self.sentiment.analyze(
-                row, history, current_regime
-            )
+            if self._gpu_only_backtest:
+                sentiment_result = {}
+            else:
+                sentiment_result = self.sentiment.analyze(
+                    row, history, current_regime
+                )
             
             # ============================================================
             # PHASE 5: QUANTUM BOOST
@@ -348,6 +365,13 @@ class FullPipelineEngine:
                 row, history, current_regime, signals, 
                 self.pm.capital
             )
+
+            if self._gpu_only_backtest:
+                quantum_stats = self.quantum.get_stats()
+                remote_regime = quantum_stats.get('last_remote_regime')
+                if remote_regime in getattr(config, 'REGIMES', []):
+                    current_regime = remote_regime
+                    self._gpu_only_last_regime = remote_regime
             
             # Apply QAOA weights to ensemble
             if q_result['qaoa_weights']:
@@ -489,6 +513,52 @@ class FullPipelineEngine:
             if self.pm.position is None:
                 self.phase_stats['phase_6'] += 1
                 drawdown = self.pm.get_current_drawdown()
+                if self._gpu_only_backtest:
+                    effective_floor = config.CONFIDENCE_FLOOR
+                    final_action = ml_signal.get('action', 'HOLD')
+                    final_confidence = float(ml_signal.get('confidence', 0.0) or 0.0)
+                    final_confidence += float(q_result.get('quantum_confidence_boost', 0.0) or 0.0)
+                    final_confidence = min(config.CONFIDENCE_CLAMP_MAX, max(0.0, final_confidence))
+
+                    if final_action == 'HOLD' or final_confidence < effective_floor:
+                        self._track_equity(row, candle_time)
+                        continue
+
+                    qdv = self.quantum.verify_decision(
+                        final_action, final_confidence,
+                        current_regime, q_result['qra_risk_score']
+                    )
+                    if not qdv['verified']:
+                        self._block(f'QDV: {qdv["reason"]}')
+                        self._track_equity(row, candle_time)
+                        continue
+
+                    runtime_risk = apply_runtime_risk_check(final_action, final_confidence, drawdown)
+                    if not runtime_risk['approved']:
+                        self._block(f'Runtime risk: {runtime_risk["reason"]}')
+                        self._track_equity(row, candle_time)
+                        continue
+                    final_confidence = runtime_risk['confidence']
+
+                    self.phase_stats['phase_9'] += 1
+                    atr = row.get('atr', row['close'] * 0.01)
+                    side = 'LONG' if final_action == 'BUY' else 'SHORT'
+                    opened = self.pm.open_position(
+                        side=side,
+                        price=row['close'],
+                        atr=atr,
+                        time=candle_time,
+                        regime=current_regime,
+                        sl_adjust=q_result['sl_adjust'],
+                        tp_adjust=q_result['tp_adjust'],
+                        risk_multiplier=1.0,
+                        confidence=final_confidence,
+                    )
+                    if not opened:
+                        self._block('Execution failed (fee gate / sizing)')
+                    self._track_equity(row, candle_time)
+                    continue
+
                 if self._runtime_parity_enabled():
                     self.phase_stats['phase_8'] += 1
                     runtime_history = df.iloc[max(0, i - warmup):i + 1]
@@ -1084,6 +1154,8 @@ class FullPipelineEngine:
         
         # PATCH #152C: External signals reset
         self.external_signals = ExternalSignalsSimulator()
+        self._gpu_only_backtest = getattr(config, 'GPU_ONLY_BACKTEST', False)
+        self._gpu_only_last_regime = 'RANGING'
         
     def _block(self, reason):
         """Record a blocked trade reason."""
