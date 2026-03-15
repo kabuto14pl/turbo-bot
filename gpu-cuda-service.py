@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PATCH #43/#178/#179: GPU-ONLY CUDA Service  RTX 5070 Ti @ 40% Utilization
+PATCH #43/#178/#179: GPU-ONLY CUDA Service  RTX 5070 Ti @ 60% Utilization
 
 Runs on LOCAL PC (Windows) with RTX 5070 Ti GPU.
 VPS bot connects via SSH tunnel: VPS:4001  LocalPC:4000
@@ -83,14 +83,14 @@ try:
     else:
         GPU_AVAILABLE = True
         #  40% GPU memory limit 
-        torch.cuda.set_per_process_memory_fraction(0.4, 0)
+        torch.cuda.set_per_process_memory_fraction(0.6, 0)
         device = torch.device('cuda:0')
         gpu_name = torch.cuda.get_device_name(0)
         vram_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         BACKEND = "cuda"
         print(f"")
         print(f"  ✅ GPU ACTIVE: {gpu_name}")
-        print(f"  ✅ VRAM: {vram_total:.1f} GB | Limit: 40% ({vram_total*0.4:.1f} GB)")
+        print(f"  ✅ VRAM: {vram_total:.1f} GB | Limit: 60% ({vram_total*0.6:.1f} GB)")
         print(f"")
 except Exception as init_error:
     GPU_AVAILABLE = False
@@ -123,7 +123,7 @@ app = FastAPI(title="Turbo-Bot GPU Service", version=SERVICE_VERSION)
 stats = {
     "start_time": time.time(),
     "requests": {"qmc": 0, "qaoa": 0, "vqc": 0, "matmul": 0, "var": 0,
-                 "xgb_train": 0, "xgb_predict": 0, "mlp_train": 0},
+                 "xgb_train": 0, "xgb_predict": 0, "mlp_train": 0, "mlp_predict": 0},
     "total_compute_ms": 0,
     "errors": 0,
 }
@@ -153,11 +153,11 @@ def get_gpu_info() -> dict:
         "vram_free_gb": 0,
         "utilization_pct": 0,
         "temperature_c": 0,
-        "memory_limit_pct": 40,
+        "memory_limit_pct": 60,
     }
     if GPU_AVAILABLE:
         info["vram_used_gb"] = round(torch.cuda.memory_allocated(0) / (1024**3), 3)
-        info["vram_free_gb"] = round((vram_total * 0.4) - info["vram_used_gb"], 3)
+        info["vram_free_gb"] = round((vram_total * 0.6) - info["vram_used_gb"], 3)
     if NVML_OK:
         try:
             util = pynvml.nvmlDeviceGetUtilizationRates(nvml_handle)
@@ -548,6 +548,8 @@ async def gpu_var(body: dict):
 # ═══════════════════════════════════════════════════════════════════
 
 # Server-side model store for XGBoost (keyed by symbol)
+# P#182: MLP model store for GPU-side prediction
+_mlp_models: dict = {}  # { symbol: {'model': nn.Module, 'mean': ndarray, 'std': ndarray} }
 _xgb_models: dict = {}  # { symbol: {'clf': Booster, 'reg': Booster} }
 
 @app.post("/gpu/xgboost-train")
@@ -873,6 +875,13 @@ async def gpu_mlp_train(body: dict):
         stats["total_compute_ms"] += elapsed_ms
         up_ratio = float(np.mean(y_dir == 1)) if HAS_NUMPY else 0
 
+        # P#182: Store model server-side for GPU-accelerated prediction
+        _mlp_models[symbol] = {
+            'model': model,  # stays on GPU device
+            'mean': mean if HAS_NUMPY else None,
+            'std': std if HAS_NUMPY else None,
+        }
+
         logger.info(f"MLP-TRAIN [{symbol}]: {n_samples}x{n_features} → {epochs_used} epochs, "
                     f"val_acc={val_acc:.3f} in {elapsed_ms:.0f}ms device={device}")
 
@@ -893,6 +902,66 @@ async def gpu_mlp_train(body: dict):
         stats["errors"] += 1
         logger.error(f"MLP-TRAIN error: {e}")
         traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════
+# MLP PREDICT — GPU-accelerated PyTorch MLP prediction (P#182)
+# ═══════════════════════════════════════════════════════════════════
+
+@app.post("/gpu/mlp-predict")
+async def gpu_mlp_predict(body: dict):
+    """
+    Batch MLP prediction on GPU using server-side stored model.
+    Request: { symbol: "BTCUSDT", X: [[...]], use_normalization: true }
+    Response: { proba_up, proba_down, expected_returns, predict_ms, backend }
+    """
+    if device is None:
+        raise HTTPException(status_code=503, detail="PyTorch not available")
+
+    symbol = body.get('symbol', 'UNKNOWN')
+    models = _mlp_models.get(symbol)
+    if not models or not models.get('model'):
+        raise HTTPException(status_code=404, detail=f"No trained MLP model for {symbol}")
+
+    t0 = time.perf_counter()
+    try:
+        X = np.array(body['X'], dtype=np.float32) if HAS_NUMPY else None
+        if X is None:
+            raise HTTPException(status_code=503, detail="NumPy not available")
+
+        model = models['model']
+        mean = models.get('mean')
+        std = models.get('std')
+
+        # Normalize if normalization params available
+        if mean is not None and std is not None and body.get('use_normalization', True):
+            X = (X - mean) / (std + 1e-8)
+
+        model.eval()
+        with torch.no_grad():
+            X_t = torch.tensor(X, dtype=torch.float32, device=device)
+            logits, ret_pred = model(X_t)
+            proba = torch.softmax(logits, dim=1).cpu().numpy()
+            expected_returns = ret_pred.cpu().numpy().tolist()
+
+        elapsed_ms = (time.perf_counter() - t0) * 1000
+        logger.info(f"MLP-PREDICT [{symbol}]: {len(X)} samples in {elapsed_ms:.1f}ms")
+
+        return {
+            "proba_up": proba[:, 1].tolist(),
+            "proba_down": proba[:, 0].tolist(),
+            "expected_returns": expected_returns,
+            "n_samples": len(X),
+            "predict_ms": round(elapsed_ms, 2),
+            "backend": BACKEND,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        stats["errors"] += 1
+        logger.error(f"MLP-PREDICT error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -920,7 +989,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print(f"  GPU: {gpu_name}")
-    print(f"  VRAM: {vram_total:.1f} GB (limit: 40% = {vram_total*0.4:.1f} GB)")
+    print(f"  VRAM: {vram_total:.1f} GB (limit: 60% = {vram_total*0.6:.1f} GB)")
     print(f"{'='*60}\n")
 
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
