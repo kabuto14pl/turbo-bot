@@ -383,13 +383,27 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             return np.full(len(df), default, dtype=np.float32)
 
         close = column('close', 0.0)
+        cl0 = float(close[0]) if len(close) else 0.0
+        rsi = column('rsi_14', 50.0)
         return {
             'close': close,
-            'high': column('high', float(close[0]) if len(close) else 0.0),
-            'low': column('low', float(close[0]) if len(close) else 0.0),
+            'high': column('high', cl0),
+            'low': column('low', cl0),
             'atr': column('atr', 0.0),
-            'open': column('open', float(close[0]) if len(close) else 0.0),   # P#187: needed by ExternalSignals whale proxy
-            'volume': column('volume', 1.0),                                    # P#187: needed by ExternalSignals whale/COT proxies
+            'open': column('open', cl0),
+            'volume': column('volume', 1.0),
+            # P#188: indicator columns for GridV2, MomentumHTF, FundingArb, NewsFilter
+            'adx': column('adx', 20.0),
+            'rsi_14': rsi,
+            'rsi': rsi,                        # alias — momentum_htf uses 'rsi' key
+            'bb_pctb': column('bb_pctb', 0.5),
+            'bb_upper': column('bb_upper', 0.0),   # safe default 0.0; strategies fall back to close*1.02
+            'bb_lower': column('bb_lower', 0.0),
+            'volume_ratio': column('volume_ratio', 1.0),
+            'macd_histogram': column('macd_hist', 0.0),  # momentum_htf uses 'macd_histogram' key
+            'macd_hist': column('macd_hist', 0.0),
+            'ema_21': column('ema_21', cl0),
+            'sma_50': column('sma_50', cl0),
         }
 
     def _build_ext_signals_plan(self, df, warmup: int, regimes):
@@ -568,6 +582,10 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         # P#187: Pre-compute ExternalSignals plan (pure numpy, runs once before hot loop)
         ext_plan = self._build_ext_signals_plan(df, warmup, regimes)
 
+        # P#188: funding interval (32 candles on 15m, 8 on 1h, 2 on 4h)
+        _tf = str(timeframe or '15m').lower()
+        funding_interval = 32 if '15m' in _tf else (8 if '1h' in _tf else 2)
+
         probas = torch.zeros((len(df), 2), device=device)
         cursor = warmup
         while cursor < len(df) - 1:
@@ -594,8 +612,20 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 'high': float(row_buffers['high'][i]),
                 'low': float(row_buffers['low'][i]),
                 'atr': float(row_buffers['atr'][i]),
-                'open': float(row_buffers['open'][i]),    # P#187
-                'volume': float(row_buffers['volume'][i]),  # P#187
+                'open': float(row_buffers['open'][i]),
+                'volume': float(row_buffers['volume'][i]),
+                # P#188: indicators needed by GridV2, MomentumHTF, FundingArb, NewsFilter
+                'adx': float(row_buffers['adx'][i]),
+                'rsi_14': float(row_buffers['rsi_14'][i]),
+                'rsi': float(row_buffers['rsi'][i]),
+                'bb_pctb': float(row_buffers['bb_pctb'][i]),
+                'bb_upper': float(row_buffers['bb_upper'][i]) or float(row_buffers['close'][i]) * 1.02,
+                'bb_lower': float(row_buffers['bb_lower'][i]) or float(row_buffers['close'][i]) * 0.98,
+                'volume_ratio': float(row_buffers['volume_ratio'][i]),
+                'macd_histogram': float(row_buffers['macd_histogram'][i]),
+                'macd_hist': float(row_buffers['macd_hist'][i]),
+                'ema_21': float(row_buffers['ema_21'][i]) or float(row_buffers['close'][i]),
+                'sma_50': float(row_buffers['sma_50'][i]) or float(row_buffers['close'][i]),
             }
             candle_time = df.index[i]
             current_regime = regimes[i]
@@ -625,6 +655,71 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 exit_result = self.pm.manage_position(row, candle_time, current_regime, q_result)
                 if exit_result and exit_result != 'OPEN':
                     self._learn_from_last_trade(i)
+                    if self.pm.trades and self.pm.trades[-1].get('is_grid_v2', False):
+                        last_t = self.pm.trades[-1]
+                        self.grid_v2.record_grid_trade(last_t['net_pnl'], last_t['fees'])
+                    if self.pm.trades and self.pm.trades[-1].get('is_momentum_htf', False):
+                        last_t = self.pm.trades[-1]
+                        self.momentum_htf.record_trade(last_t['net_pnl'], last_t['fees'])
+
+            # P#188: FundingRateArbitrage — delta-neutral income, every funding_interval candles
+            if getattr(config, 'FUNDING_ARB_ENABLED', False) and (i - warmup) % funding_interval == 0:
+                fr_result = self.funding_arb.process_candle(
+                    row, df.iloc[max(0, i - 100):i], current_regime,
+                    self.pm.capital, candle_idx=i, funding_interval=funding_interval
+                )
+                if fr_result.get('funding_collected', 0) > 0:
+                    self.pm.capital += fr_result['funding_collected']
+
+            # P#188: NewsFilter — detect events every candle (builds event history)
+            if getattr(config, 'NEWS_FILTER_ENABLED', False):
+                self.news_filter.detect_events(row, df.iloc[max(0, i - 50):i], i)
+
+            # P#188: GridV2 — RANGING mean-reversion bypass (row-only, no history needed)
+            if self.pm.position is None and getattr(config, 'GRID_V2_ENABLED', False):
+                grid_signal = self.grid_v2.evaluate(
+                    row, df.iloc[max(0, i - 5):i], current_regime,
+                    candle_idx=i, has_position=False
+                )
+                if grid_signal is not None:
+                    self.grid_v2.mark_entry(i)
+                    _atr = row.get('atr', row['close'] * 0.01)
+                    _side = 'LONG' if grid_signal['signal'] == 'BUY' else 'SHORT'
+                    _opened = self.pm.open_position(
+                        side=_side, price=row['close'], atr=_atr,
+                        time=candle_time, regime=current_regime,
+                        sl_adjust=grid_signal['sl_atr'] / max(config.SL_ATR_MULT, 1e-6),
+                        tp_adjust=grid_signal['tp_atr'] / max(config.TP_ATR_MULT, 1e-6),
+                        risk_multiplier=grid_signal['risk_per_trade'] / max(getattr(config, 'RISK_PER_TRADE', 0.015), 1e-6),
+                        confidence=grid_signal['confidence'],
+                    )
+                    if _opened and self.pm.position is not None:
+                        self.pm.position['is_grid_v2'] = True
+                    self._track_equity(row, candle_time)
+                    continue
+
+            # P#188: MomentumHTF — TRENDING pullback bypass
+            if self.pm.position is None and getattr(config, 'MOMENTUM_HTF_ENABLED', False):
+                mtf_signal = self.momentum_htf.evaluate(
+                    row, df.iloc[max(0, i - 250):i], current_regime,
+                    candle_idx=i, has_position=False
+                )
+                if mtf_signal is not None:
+                    self.momentum_htf.mark_entry(i)
+                    _atr = row.get('atr', row['close'] * 0.01)
+                    _side = 'LONG' if mtf_signal['signal'] == 'BUY' else 'SHORT'
+                    _opened = self.pm.open_position(
+                        side=_side, price=row['close'], atr=_atr,
+                        time=candle_time, regime=current_regime,
+                        sl_adjust=mtf_signal['sl_atr'] / max(config.SL_ATR_MULT, 1e-6),
+                        tp_adjust=mtf_signal['tp_atr'] / max(config.TP_ATR_MULT, 1e-6),
+                        risk_multiplier=mtf_signal['risk_per_trade'] / max(getattr(config, 'RISK_PER_TRADE', 0.015), 1e-6),
+                        confidence=mtf_signal['confidence'],
+                    )
+                    if _opened and self.pm.position is not None:
+                        self.pm.position['is_momentum_htf'] = True
+                    self._track_equity(row, candle_time)
+                    continue
 
             if self.pm.position is None:
                 self.phase_stats['phase_6'] += 1
@@ -656,6 +751,15 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 if final_action == 'HOLD' or final_confidence < config.CONFIDENCE_FLOOR:
                     self._track_equity(row, candle_time)
                     continue
+
+                # P#188: NewsFilter — apply signal confidence adjustment/block
+                if getattr(config, 'NEWS_FILTER_ENABLED', False) and final_action in ('BUY', 'SELL'):
+                    _nconf, _nblocked, _nreason = self.news_filter.filter_signal(final_action, final_confidence, i)
+                    if _nblocked:
+                        self._block(f'NewsFilter: {_nreason}')
+                        self._track_equity(row, candle_time)
+                        continue
+                    final_confidence = _nconf
 
                 qdv = self.quantum.verify_decision(final_action, final_confidence, current_regime, q_result['qra_risk_score'])
                 if not qdv['verified']:

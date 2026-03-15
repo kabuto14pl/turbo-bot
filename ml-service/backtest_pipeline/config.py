@@ -349,6 +349,14 @@ SENTIMENT_CONTRARIAN_EXTREME_GREED_SELL_BOOST = 1.10  # SELL confidence boost in
 EXTERNAL_SIGNALS_ENABLED = True         # P#187: re-enabled — ExternalSignalsSimulator is pure numpy (no API calls, ~2ms/candle)
 
 # ============================================================================
+# P#188: OPTIONAL STRATEGY FLAGS (previously missing → all defaulted to False)
+# ============================================================================
+GRID_V2_ENABLED = True          # P#188: GridV2 mean-reversion in RANGING (BB bands + RSI)
+MOMENTUM_HTF_ENABLED = True     # P#188: Multi-timeframe momentum in TRENDING (SMA alignment + pullback)
+FUNDING_ARB_ENABLED = True      # P#188: Funding rate arbitrage — delta-neutral income every 32 candles (15m)
+NEWS_FILTER_ENABLED = True      # P#188: News/volatility event filter — blocks/adjusts trades on extreme moves
+
+# ============================================================================
 # LIVE RETRAIN SCHEDULER (PATCH #58 — 7-day cycle on GPU)
 # ============================================================================
 RETRAIN_INTERVAL_HOURS = 168     # 7 days
