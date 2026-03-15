@@ -404,12 +404,23 @@ def main() -> int:
 
         status = str(health.get('status', 'unknown'))
         gpu_active = health.get('gpu_active', False)
-        if status == 'online-cpu':
-            print(f'\n⚠️  WARNING: GPU service is running on CPU fallback at {args.remote_url}')
-            print(f'⚠️  Quantum computations will be SLOW (no CUDA acceleration)')
-            print(f'⚠️  Fix: pip install torch --index-url https://download.pytorch.org/whl/cu124\n')
-        elif status != 'online':
+        backend = health.get('backend', 'unknown')
+
+        if status != 'online':
             raise SystemExit(f'Remote GPU is not online at {args.remote_url} (status={status})')
+
+        if not gpu_active or backend != 'cuda':
+            raise SystemExit(
+                f'\n❌ BLOCKED: GPU service at {args.remote_url} has NO CUDA active!\n'
+                f'   status O={status} gpu_active={gpu_active} backend={backend}\n'
+                f'   Fix: pip install torch --index-url https://download.pytorch.org/whl/cu128\n'
+                f'   Then restart gpu-cuda-service.py\n'
+            )
+
+        gpu_info = health.get('gpu', {})
+        gpu_device = gpu_info.get('device', 'unknown')
+        vram = gpu_info.get('vram_total_gb', 0)
+        print(f'\n✅ GPU service ONLINE: {gpu_device} | VRAM: {vram} GB | backend: {backend}')
 
     run_dir = Path(args.results_dir) / f'remote_gpu_full_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
     run_dir.mkdir(parents=True, exist_ok=True)

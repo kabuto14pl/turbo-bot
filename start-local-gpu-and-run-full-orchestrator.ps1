@@ -66,16 +66,21 @@ if (-not $ShowHelp -and -not $SkipHealthCheck) {
         Write-Host "[WARN] MaxParallel=$MaxParallel can destabilize the local CUDA service on Windows host runs. Prefer 1 for authoritative manifests." -ForegroundColor Yellow
     }
 
-    if ($health -and ($health.status -eq "online" -or $health.status -eq "online-cpu")) {
-        if ($health.status -eq "online-cpu") {
+    if ($health -and $health.status -eq "online") {
+        $gpuActive = $health.gpu_active -eq $true
+        $backend = $health.backend
+        if (-not $gpuActive -or $backend -ne "cuda") {
             Write-Host ""
-            Write-Host "  =====================================================" -ForegroundColor Yellow
-            Write-Host "  WARNING: GPU service running on CPU fallback!" -ForegroundColor Yellow
-            Write-Host "  Backtests will be SLOW without GPU acceleration." -ForegroundColor Yellow
-            Write-Host "  Fix: pip install torch --index-url https://download.pytorch.org/whl/cu124" -ForegroundColor Yellow
-            Write-Host "  =====================================================" -ForegroundColor Yellow
+            Write-Host "  =====================================================" -ForegroundColor Red
+            Write-Host "  BLOCKED: GPU service has NO CUDA active!" -ForegroundColor Red
+            Write-Host "  gpu_active=$gpuActive backend=$backend" -ForegroundColor Red
+            Write-Host "  Fix: pip install torch --index-url https://download.pytorch.org/whl/cu128" -ForegroundColor Red
+            Write-Host "  Then restart gpu-cuda-service.py" -ForegroundColor Red
+            Write-Host "  =====================================================" -ForegroundColor Red
             Write-Host ""
+            exit 1
         }
+        Write-Host "  GPU active: $($health.gpu.device) | backend: $backend" -ForegroundColor Green
         Write-Host "[1/2] Reusing local CUDA service ($($health.status)): $($health.gpu.device)" -ForegroundColor Green
     } else {
         $gpuArgs = @(
@@ -106,12 +111,16 @@ if (-not $ShowHelp -and -not $SkipHealthCheck) {
                 continue
             }
 
-            if ($health.status -eq "online" -or $health.status -eq "online-cpu") {
-                if ($health.status -eq "online-cpu") {
+            if ($health.status -eq "online") {
+                $gpuActive2 = $health.gpu_active -eq $true
+                $backend2 = $health.backend
+                if (-not $gpuActive2 -or $backend2 -ne "cuda") {
                     Write-Host ""
-                    Write-Host "  [WARN] GPU service running on CPU - no CUDA detected!" -ForegroundColor Yellow
-                    Write-Host "  Fix: pip install torch --index-url https://download.pytorch.org/whl/cu124" -ForegroundColor Yellow
+                    Write-Host "  [BLOCKED] GPU service has NO CUDA active!" -ForegroundColor Red
+                    Write-Host "  gpu_active=$gpuActive2 backend=$backend2" -ForegroundColor Red
+                    Write-Host "  Fix: pip install torch --index-url https://download.pytorch.org/whl/cu128" -ForegroundColor Red
                     Write-Host ""
+                    exit 1
                 }
                 Write-Host "[OK] Local CUDA health is $($health.status): $($health.gpu.device)" -ForegroundColor Green
                 break
@@ -124,7 +133,7 @@ if (-not $ShowHelp -and -not $SkipHealthCheck) {
             }
         }
 
-        if (-not $health -or ($health.status -ne "online" -and $health.status -ne "online-cpu")) {
+        if (-not $health -or $health.status -ne "online") {
             Write-Host "[ERROR] Local CUDA health did not become online before orchestrator start." -ForegroundColor Red
             exit 70
         }

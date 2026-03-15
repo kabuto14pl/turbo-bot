@@ -71,7 +71,7 @@ try {
         Write-Host "[OK] $cudaCheck" -ForegroundColor Green
     } else {
         Write-Host "[ERROR] PyTorch CUDA not available: $cudaCheck" -ForegroundColor Red
-        Write-Host "        Install: pip install torch --index-url https://download.pytorch.org/whl/cu124" -ForegroundColor DarkGray
+        Write-Host "        Install: pip install torch --index-url https://download.pytorch.org/whl/cu128" -ForegroundColor DarkGray
         Read-Host "Press Enter to exit"
         exit 1
     }
@@ -195,10 +195,11 @@ function Wait-CudaOnline {
         }
 
         $health = Get-CudaHealth
-        if ($health -and ($health.status -eq "online" -or $health.status -eq "online-cpu")) {
-            if ($health.status -eq "online-cpu") {
-                Write-Host "  [WARN] GPU service running on CPU fallback (no CUDA detected)" -ForegroundColor Yellow
-                Write-Host "  Fix: pip install torch --index-url https://download.pytorch.org/whl/cu124" -ForegroundColor Yellow
+        if ($health -and $health.status -eq "online") {
+            $gpuOk = $health.gpu_active -eq $true
+            if (-not $gpuOk -or $health.backend -ne "cuda") {
+                Write-Host "  [BLOCKED] GPU service has NO CUDA! gpu_active=$gpuOk backend=$($health.backend)" -ForegroundColor Red
+                return $null
             }
             return $health
         }
@@ -253,7 +254,7 @@ function Restart-CudaService {
     Write-Host "  Restarted CUDA (PID: $($script:cudaProc.Id))" -ForegroundColor Green
     Write-WatchdogLog -Message "Restarted CUDA service as PID $($script:cudaProc.Id). Waiting for health recovery."
     $health = Wait-CudaOnline -TimeoutSec 45
-    if ($health -and ($health.status -eq "online" -or $health.status -eq "online-cpu")) {
+    if ($health -and $health.status -eq "online" -and $health.gpu_active -eq $true) {
         Write-WatchdogLog -Message "CUDA health restored after restart (PID: $($script:cudaProc.Id))."
         Write-Host "[OK] CUDA health restored: $($health.gpu.device)" -ForegroundColor Green
         return $health
@@ -286,16 +287,13 @@ $cudaFailureReason = $null
 $existingCudaHealth = Get-CudaHealth
 $existingPortOwners = Get-Port4000Owners
 
-if ($existingCudaHealth -and ($existingCudaHealth.status -eq "online" -or $existingCudaHealth.status -eq "online-cpu")) {
+if ($existingCudaHealth -and $existingCudaHealth.status -eq "online" -and $existingCudaHealth.gpu_active -eq $true -and $existingCudaHealth.backend -eq "cuda") {
     $reusedExistingCuda = $true
     $cudaReady = $true
     $cudaHealth = $existingCudaHealth
     $ownerText = if ($existingPortOwners.Count -gt 0) { Describe-Process -ProcessId $existingPortOwners[0] } else { "existing listener" }
     Write-WatchdogLog -Message "Reusing existing CUDA service on port 4000 ($ownerText)."
     Write-Host "  Reusing existing CUDA service on port 4000 ($ownerText)" -ForegroundColor DarkGray
-    if ($existingCudaHealth.status -eq "online-cpu") {
-        Write-Host "  [WARN] Service is on CPU fallback - no GPU acceleration!" -ForegroundColor Yellow
-    }
     Write-Host "[OK] GPU CUDA: $($existingCudaHealth.gpu.device) | VRAM: $($existingCudaHealth.gpu.vram_total_gb)GB" -ForegroundColor Green
 } else {
     foreach ($ownerId in $existingPortOwners) {
@@ -331,13 +329,15 @@ if ($existingCudaHealth -and ($existingCudaHealth.status -eq "online" -or $exist
         $h = Get-CudaHealth
         if ($null -ne $h) {
             $cudaHealth = $h
-            if ($h.status -eq "online" -or $h.status -eq "online-cpu") {
+            if ($h.status -eq "online") {
+                $gpuOk2 = $h.gpu_active -eq $true
+                if (-not $gpuOk2 -or $h.backend -ne "cuda") {
+                    Write-Host "  [BLOCKED] GPU service has NO CUDA! gpu_active=$gpuOk2 backend=$($h.backend)" -ForegroundColor Red
+                    Write-Host "  Fix: pip install torch --index-url https://download.pytorch.org/whl/cu128" -ForegroundColor Red
+                    exit 1
+                }
                 $cudaReady = $true
                 Write-WatchdogLog -Message "CUDA health reached $($h.status) state for PID $($cudaProc.Id)."
-                if ($h.status -eq "online-cpu") {
-                    Write-Host "  [WARN] GPU service is on CPU fallback - no CUDA!" -ForegroundColor Yellow
-                    Write-Host "  Fix: pip install torch --index-url https://download.pytorch.org/whl/cu124" -ForegroundColor Yellow
-                }
                 Write-Host "[OK] GPU CUDA: $($h.gpu.device) | VRAM: $($h.gpu.vram_total_gb)GB" -ForegroundColor Green
                 break
             }
@@ -456,7 +456,7 @@ try {
             Write-Host "[WARN] Process PID $($d.Id) died - restarting..." -ForegroundColor Yellow
             if ($manageCudaProcess -and $cudaProc -and $d.Id -eq $cudaProc.Id) {
                 $cudaHealth = Restart-CudaService -Reason "process exited"
-                if ($cudaHealth -and ($cudaHealth.status -eq "online" -or $cudaHealth.status -eq "online-cpu")) {
+                if ($cudaHealth -and $cudaHealth.status -eq "online" -and $cudaHealth.gpu_active -eq $true) {
                     $cudaProc = $script:cudaProc
                     $bgProcesses = $script:bgProcesses
                     $consecutiveCudaHealthFailures = 0
@@ -491,7 +491,7 @@ try {
                             "liveness endpoint unavailable"
                     }
                     $restoredHealth = Restart-CudaService -Reason $restartReason
-                    if ($restoredHealth -and ($restoredHealth.status -eq "online" -or $restoredHealth.status -eq "online-cpu")) {
+                    if ($restoredHealth -and $restoredHealth.status -eq "online" -and $restoredHealth.gpu_active -eq $true) {
                         $cudaProc = $script:cudaProc
                         $bgProcesses = $script:bgProcesses
                         $consecutiveCudaHealthFailures = 0
