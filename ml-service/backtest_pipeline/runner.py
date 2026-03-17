@@ -44,9 +44,15 @@ RUNTIME_PARITY_OVERRIDES = {
 
 
 def build_engine(initial_capital=None, symbol='BTCUSDT', quantum_backend='simulated', quantum_backend_options=None):
-    engine_cls = GpuNativeBacktestEngine if getattr(config, 'GPU_NATIVE_ENGINE', False) else FullPipelineEngine
-    if engine_cls is GpuNativeBacktestEngine:
-        print("  🚧 Using GPU-native experimental engine")
+    use_remote_quantum = quantum_backend in ('remote-gpu', 'hybrid-verify')
+    if use_remote_quantum:
+        engine_cls = FullPipelineEngine
+        if getattr(config, 'GPU_NATIVE_ENGINE', False):
+            print("  📡 Remote quantum backend requested -> forcing FullPipelineEngine")
+    else:
+        engine_cls = GpuNativeBacktestEngine if getattr(config, 'GPU_NATIVE_ENGINE', False) else FullPipelineEngine
+        if engine_cls is GpuNativeBacktestEngine:
+            print("  🚧 Using GPU-native experimental engine")
     return engine_cls(
         initial_capital=initial_capital,
         symbol=symbol,
