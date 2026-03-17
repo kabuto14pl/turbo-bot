@@ -43,9 +43,24 @@ def gpu_native_engine_enabled() -> bool:
 
 
 def check_remote_health(remote_url: str, timeout_s: float) -> dict:
+    # Bypass system proxy (VPN/corporate) -- loopback must never go via proxy
+    no_proxy_opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     request = urllib.request.Request(f'{remote_url.rstrip("/")}/health')
-    with urllib.request.urlopen(request, timeout=timeout_s) as response:
+    with no_proxy_opener.open(request, timeout=timeout_s) as response:
         return json.loads(response.read().decode('utf-8'))
+
+
+def check_remote_health_with_retry(remote_url: str, timeout_s: float, retries: int = 3) -> dict:
+    """Retry wrapper -- handles slow Windows TCP stack on first connection."""
+    last_exc: Exception = RuntimeError('no attempts')
+    for attempt in range(retries):
+        try:
+            return check_remote_health(remote_url, timeout_s=timeout_s)
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
+            last_exc = exc
+            if attempt < retries - 1:
+                time.sleep(1.0)
+    raise last_exc
 
 
 def wait_remote_health(remote_url: str, timeout_s: float, poll_s: float = 2.0) -> dict | None:
@@ -411,8 +426,8 @@ def main() -> int:
 
     if not args.skip_health_check:
         try:
-            health = check_remote_health(args.remote_url, timeout_s=min(args.gpu_timeout_s, 5.0))
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+            health = check_remote_health_with_retry(args.remote_url, timeout_s=args.gpu_timeout_s, retries=3)
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
             raise SystemExit(f'Remote GPU health check failed for {args.remote_url}: {exc}') from exc
 
         status = str(health.get('status', 'unknown'))
