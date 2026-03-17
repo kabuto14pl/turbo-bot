@@ -286,6 +286,17 @@ class FullPipelineEngine:
                 # 4a. Classical strategies
                 signals = run_all_strategies(row, history)
 
+                # 4a1. P#189: Regime-aware routing — suppress inactive strategies
+                _routing = getattr(config, 'STRATEGY_ROUTING', None)
+                if _routing and current_regime in _routing:
+                    for _strat in _routing[current_regime].get('inactive', []):
+                        signals.pop(_strat, None)
+                # P#189: Per-pair strategy map — suppress strategies not in map
+                _pair_map = getattr(config, 'PAIR_STRATEGY_MAP', None)
+                if _pair_map and self.symbol in _pair_map:
+                    _allowed = _pair_map[self.symbol]
+                    signals = {k: v for k, v in signals.items() if k in _allowed}
+
             # 4a2. P#187: ExternalSignals — pure numpy simulator (no API calls).
             # Runs in BOTH gpu-only and full-pipeline modes. Weight: 0.10 (STATIC_WEIGHTS).
             if self.external_signals.enabled:

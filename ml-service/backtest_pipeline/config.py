@@ -6,15 +6,15 @@ All thresholds, parameters, and constants from production bot.
 # ============================================================================
 # POSITION MANAGEMENT (PATCH #60 — game-changer overhaul)
 # ============================================================================
-# PATCH #60 GC3: TP lowered to 3.0×SL = 3.0×2.0 = 6.0 ATR → but clamped to 4.5
-# This makes TP reachable: at 3.0 ATR, ~23% of windows reach it
-# Combined with trailing, winners can ride beyond TP
+# P#189: TP lowered 4.0→2.5 ATR — advisory board (Khalil): 4.0 ATR unreachable on 15m
+# At 4.0 ATR ~4% price move needed; 2.5 ATR is achievable with current momentum structure
+# Combined with trailing, winners can ride well beyond the base TP level
 SL_ATR_MULT = 1.5          # P#153 PARITY: aligned with live execution-engine.js (was 1.75)
-TP_ATR_MULT = 4.0          # P#153 PARITY: aligned with live execution-engine.js (was 2.5)
+TP_ATR_MULT = 2.5          # P#189: lowered 4.0→2.5 — achievable R:R target on 15m (was 4.0)
 SL_CLAMP_MIN = 0.8         # Min SL = 0.8 × ATR
 SL_CLAMP_MAX = 2.5         # Max SL = 2.5 × ATR
-TP_CLAMP_MIN = 2.0         # Min TP = 2.0 × ATR
-TP_CLAMP_MAX = 6.0          # P#153 PARITY: widened for TP=4.0 ATR to work (was 4.5)
+TP_CLAMP_MIN = 1.5         # P#189: lowered 2.0→1.5 to match new partial L1 level
+TP_CLAMP_MAX = 4.5         # P#189: lowered 6.0→4.5 (was 6.0 for TP=4.0 ATR)
 
 # PATCH #64: Dynamic SL base per-regime (applied BEFORE VQC regime adjust)
 # In ranging: no momentum → tighter SL saves capital on failures
@@ -74,9 +74,9 @@ BE_PROFIT_BUFFER_ATR = 0.45    # Lock more realized profit once BE is armed
 # P#153 PARITY: Partial TP aligned with live execution-engine.js (2-level system)
 # Live uses: L1 @2.5×ATR (25%), L2 @4.0×ATR (25%), remainder runs as runner
 USE_PARTIAL_TP = True          # P#153: Enabled to match live (was False)
-PARTIAL_TP_ATR_L1 = 2.5       # P#153: Level 1 at 2.5×ATR (was 1.25 via PARTIAL_TP_R=2.0)
+PARTIAL_TP_ATR_L1 = 1.5       # P#189: Level 1 at 1.5×ATR — early partial before full TP (was 2.5)
 PARTIAL_TP_PCT_L1 = 0.25      # P#153: Close 25% at L1
-PARTIAL_TP_ATR_L2 = 4.0       # P#153: Level 2 at 4.0×ATR
+PARTIAL_TP_ATR_L2 = 2.5       # P#189: Level 2 = full TP at 2.5×ATR (was 4.0 — unreachable)
 PARTIAL_TP_PCT_L2 = 0.25      # P#153: Close 25% at L2
 # Legacy (kept for backward compat — not used when USE_PARTIAL_TP=True)
 PARTIAL_TP_R = 2.0
@@ -96,8 +96,9 @@ TIME_EXIT_UNDERWATER_H = 36    # Close if underwater > 0.5 × ATR after 36h
 # ============================================================================
 # GC1: Real risk sizing — 1.5% risk per trade (was 2% but capped to 0.13%)
 # GC2: Fee aligned with live tradingFeeRate (config.js + bundle.json)
-FEE_RATE = 0.0002              # P#174: 0.02% maker-only — aligned with live Kraken maker fee (was 0.0005)
-SLIPPAGE_RATE = 0.0001         # P#74: 0.01% slippage on SL exits only (market orders)
+FEE_RATE = 0.0002              # P#174: 0.02% maker rate — limit TP/BE exits
+FEE_RATE_TAKER = 0.0005        # P#189: 0.05% taker rate — SL/TRAIL/TIME exits (market orders)
+SLIPPAGE_RATE = 0.0002         # P#189: 0.02% slippage on SL exits — realistic for fast closes (was 0.0001)
 
 # PATCH #67: Volatility Pause — adaptive sizing after loss streaks
 # After N consecutive signal-level losses → reduce sizing to X%
@@ -477,3 +478,63 @@ INITIAL_CAPITAL = 10000
 # True = use real Kraken Futures historical funding rates (cached locally)
 # False = simulate funding from price action (legacy)
 FUNDING_USE_REAL_DATA = True
+
+# ============================================================================
+# P#189: WALK-FORWARD VALIDATION — 5-FOLD EXPANDING (Advisory Board rec.)
+# ============================================================================
+# Single 70/30 split is statistically meaningless — need min 5 OOS windows
+WALK_FORWARD_WINDOWS = 5            # Number of expanding OOS windows
+WALK_FORWARD_TRAIN_PCT = 0.75       # Initial train fraction (was 0.70)
+
+# ============================================================================
+# P#189: MOMENTUM HTF UPGRADED PARAMETERS (Advisory Board rec.)
+# ============================================================================
+# ADX_MIN 20→28: prevents entry in ranging market masquerading as trending
+# SMA_TREND 200→100: 200 warmup candles consumed 1/4 of data; 100 is enough
+# VOL_CONFIRM 2.0×: require real volume confirmation (was implicit 1.2×)
+MTF_ADX_MIN = 28                    # ADX gate — was 20 (too permissive)
+MTF_SMA_TREND = 100                 # Trend lookback period — was 200
+MTF_VOL_CONFIRM = 2.0               # Volume ratio required for entry — was 1.2
+
+# ============================================================================
+# P#189: GRID V2 PER-PAIR CONTROL (Advisory Board rec.)
+# ============================================================================
+# Grid SL=0.60 ATR gets hit by BTC wicks. Grid works better on altcoins.
+GRID_V2_ENABLED_PAIRS = ['ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT']
+
+# ============================================================================
+# P#189: REGIME-AWARE STRATEGY ROUTING (Advisory Board rec.)
+# ============================================================================
+# Correlated strategies cancel each other's signal — mutual dilution.
+# Route dynamically: trending = momentum on, MR off; ranging = grid on, trend off.
+STRATEGY_ROUTING = {
+    'TRENDING_UP': {
+        'active': ['AdvancedAdaptive', 'MACrossover', 'MomentumHTF', 'ExternalSignals'],
+        'inactive': ['BollingerMR', 'GridV2'],
+    },
+    'TRENDING_DOWN': {
+        'active': ['AdvancedAdaptive', 'RSITurbo', 'MomentumHTF', 'ExternalSignals'],
+        'inactive': ['BollingerMR', 'GridV2'],
+    },
+    'RANGING': {
+        'active': ['GridV2', 'BollingerMR', 'ExternalSignals'],
+        'inactive': ['MomentumHTF', 'MACrossover', 'SuperTrend'],
+    },
+    'HIGH_VOLATILITY': {
+        'active': ['FundingArb', 'ExternalSignals'],
+        'inactive': ['GridV2', 'MomentumHTF', 'MACrossover'],
+        'position_size_mult': 0.3,
+    },
+}
+
+# ============================================================================
+# P#189: PER-PAIR STRATEGY MAP (Advisory Board rec.)
+# ============================================================================
+# BTC: trend-following / funding only. ETH/SOL/BNB/XRP: grid + funding.
+PAIR_STRATEGY_MAP = {
+    'BTCUSDT':  ['MomentumHTF', 'AdvancedAdaptive', 'FundingArb'],
+    'ETHUSDT':  ['GridV2', 'FundingArb', 'ExternalSignals'],
+    'SOLUSDT':  ['MomentumHTF', 'GridV2', 'FundingArb'],
+    'BNBUSDT':  ['GridV2', 'BollingerMR'],
+    'XRPUSDT':  ['GridV2', 'ExternalSignals'],
+}

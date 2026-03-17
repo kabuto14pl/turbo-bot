@@ -1419,3 +1419,28 @@ Partial: OFF          (neutral — keep system simple)
 - NeuronAI `consecutiveLosses` (4) and Skynet `consecutiveLosses` (8) both appeared in prompt without labels
 - LLM picked the higher number and wrote "8 consecutive losses" in personality text
 - **Never send ambiguous duplicate metrics to LLM — label clearly or deduplicate**
+
+### L189.1: TP=4.0×ATR unreachable on BTC 15m — real R:R was ≈0.8 (P#189)
+- 4.0 ATR = ~$2,400 continuous move on BTC; only ~15% of trades reached it
+- Most trades closed via trailing SL at 1.5-2.0 ATR → R:R worse than SL distance
+- **Fix: TP_ATR_MULT=2.5, PARTIAL_TP L1=1.5, L2=2.5 — achievable and still RR≥2.5**
+
+### L189.2: Single 70/30 walk-forward split is statistically meaningless (P#189)
+- One lucky OOS window can make a curve-fitted system appear robust
+- Advisory Board minimum: 5 expanding OOS windows to catch regime-dependent over-fit
+- **Fix: WALK_FORWARD_WINDOWS=5, WALK_FORWARD_TRAIN_PCT=0.75 — need 3/5 windows profitable for ROBUST verdict**
+
+### L189.3: Correlated strategy ensemble causes mutual signal cancellation (P#189)
+- Trend-following (MomentumHTF) + mean-reversion (BollingerMR/GridV2) active simultaneously
+- Opposing signals reduce ensemble confidence below entry floor → 0 trades in mixed regimes
+- **Fix: STRATEGY_ROUTING per regime — activate trend strategies in TRENDING, grid in RANGING**
+
+### L189.4: MomentumHTF firing on weak ADX=20 catches ranging markets (P#189)
+- ADX 20 is the minimum threshold for any directional bias — not strong trending
+- Vol_ratio 1.2× is barely above average — not a volume surge confirming trend
+- **Fix: MTF_ADX_MIN=28, MTF_VOL_CONFIRM=2.0× — only fire in strong, volume-confirmed trends**
+
+### L189.5: Grid V2 on BTC gets stopped out by wicks (P#189)
+- BTC 15m wick size often 0.4-0.8 ATR → Grid SL=0.60×ATR hit routinely by noise
+- Grid mean-reversion works better on lower-volatility altcoins (ETH/SOL/BNB/XRP)
+- **Fix: GRID_V2_ENABLED_PAIRS excludes BTCUSDT; PAIR_STRATEGY_MAP routes BTC to momentum-only**

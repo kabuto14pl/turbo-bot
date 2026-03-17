@@ -735,39 +735,47 @@ def run_single(timeframe='15m', verbose=True, show_trades=False, quantum_backend
     return results
 
 
-def run_walk_forward(timeframe='15m', train_pct=0.70, use_pair_config=True, quantum_backend='simulated', quantum_backend_options=None):
+def run_walk_forward(timeframe='15m', train_pct=None, use_pair_config=True, quantum_backend='simulated', quantum_backend_options=None):
     """
-    P#70: Walk-forward validation — train on first X% of data, test on remaining.
-    Validates that edge persists in unseen data (not just curve-fitted).
-    
+    P#189: 5-fold expanding walk-forward validation (Advisory Board rec.).
+
+    Replaces single 70/30 split with WALK_FORWARD_WINDOWS expanding OOS windows.
+    Each window: training grows from [0..train_end], test = fixed next slice.
+    Provides statistically sound OOS evidence across the full dataset tail.
+
     Args:
         timeframe: Candle timeframe
-        train_pct: Percentage of data for training (default 70%)
+        train_pct: Starting train fraction (default WALK_FORWARD_TRAIN_PCT=0.75)
         use_pair_config: Use per-pair config overrides
     """
+    n_windows = getattr(config, 'WALK_FORWARD_WINDOWS', 5)
+    if train_pct is None:
+        train_pct = getattr(config, 'WALK_FORWARD_TRAIN_PCT', 0.75)
+    test_total_pct = 1.0 - train_pct
+    window_pct = test_total_pct / n_windows   # each OOS slice size
+
     if use_pair_config:
         pairs = get_active_pairs()
     else:
         pairs = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT']
-    
+
     print(f"\n{'═'*90}")
-    print(f"  🔬 WALK-FORWARD VALIDATION — Train {train_pct*100:.0f}% / Test {(1-train_pct)*100:.0f}%")
+    print(f"  🔬 WALK-FORWARD VALIDATION — {n_windows}-Fold Expanding")
+    print(f"     Initial train: {train_pct*100:.0f}%  |  Windows: {n_windows} × {window_pct*100:.1f}% each")
     print(f"{'═'*90}")
     
     # P#70: Use fast XGBoost retrain for walk-forward (much faster)
     original_retrain = config.XGBOOST_RETRAIN_INTERVAL
     fast_interval = getattr(config, 'XGBOOST_RETRAIN_INTERVAL_FAST', 2000)
     config.XGBOOST_RETRAIN_INTERVAL = fast_interval
-    
-    all_train = {}
-    all_test = {}
-    
+
+    all_windows = {}   # symbol → list of window dicts {window, train, test}
+
     for symbol in pairs:
         df = load_pair_data(symbol, timeframe)
         if df is None:
             continue
-        
-        # Apply pair overrides
+
         originals = {}
         pair_capital = config.INITIAL_CAPITAL
         if use_pair_config:
@@ -777,153 +785,120 @@ def run_walk_forward(timeframe='15m', train_pct=0.70, use_pair_config=True, quan
             if overrides.get('PAIR_BLACKLISTED', False):
                 restore_config(originals)
                 continue
-        
-        # Split data
-        split_idx = int(len(df) * train_pct)
-        df_train = df.iloc[:split_idx].copy()
-        df_test = df.iloc[split_idx:].copy()
-        
+
+        N = len(df)
+        windows = []
+
         print(f"\n{'─'*80}")
-        print(f"  📊 {symbol} — Total: {len(df)} candles")
-        print(f"     TRAIN: {len(df_train)} candles ({df_train.index[0]} → {df_train.index[-1]})")
-        print(f"     TEST:  {len(df_test)} candles ({df_test.index[0]} → {df_test.index[-1]})")
+        print(f"  📊 {symbol} — {N} candles | {n_windows}-fold expanding walk-forward")
         print(f"{'─'*80}")
-        
-        # Run TRAIN period
-        engine_train = build_engine(
-            initial_capital=pair_capital,
-            symbol=symbol,
-            quantum_backend=quantum_backend,
-            quantum_backend_options=quantum_backend_options,
-        )
-        results_train = engine_train.run(df_train, timeframe)
-        results_train['symbol'] = symbol
-        results_train['pair_capital'] = pair_capital
-        results_train['quantum_backend'] = quantum_backend
-        all_train[symbol] = results_train
-        
-        # Run TEST period  
-        engine_test = build_engine(
-            initial_capital=pair_capital,
-            symbol=symbol,
-            quantum_backend=quantum_backend,
-            quantum_backend_options=quantum_backend_options,
-        )
-        results_test = engine_test.run(df_test, timeframe)
-        results_test['symbol'] = symbol
-        results_test['pair_capital'] = pair_capital
-        results_test['quantum_backend'] = quantum_backend
-        all_test[symbol] = results_test
-        
+
+        for w in range(n_windows):
+            train_end = int(N * (train_pct + w * window_pct))
+            test_end  = int(N * (train_pct + (w + 1) * window_pct))
+            df_train = df.iloc[:train_end].copy()
+            df_test  = df.iloc[train_end:test_end].copy()
+
+            if len(df_test) < 50:
+                continue   # skip degenerate windows
+
+            print(f"\n  Window {w+1}/{n_windows}:")
+            print(f"     TRAIN: {len(df_train)} candles ({df_train.index[0]} → {df_train.index[-1]})")
+            print(f"     TEST:  {len(df_test)}  candles ({df_test.index[0]} → {df_test.index[-1]})")
+
+            engine_train = build_engine(
+                initial_capital=pair_capital,
+                symbol=symbol,
+                quantum_backend=quantum_backend,
+                quantum_backend_options=quantum_backend_options,
+            )
+            res_train = engine_train.run(df_train, timeframe)
+            res_train['symbol'] = symbol
+            res_train['pair_capital'] = pair_capital
+            res_train['window'] = w + 1
+            res_train['quantum_backend'] = quantum_backend
+
+            engine_test = build_engine(
+                initial_capital=pair_capital,
+                symbol=symbol,
+                quantum_backend=quantum_backend,
+                quantum_backend_options=quantum_backend_options,
+            )
+            res_test = engine_test.run(df_test, timeframe)
+            res_test['symbol'] = symbol
+            res_test['pair_capital'] = pair_capital
+            res_test['window'] = w + 1
+            res_test['quantum_backend'] = quantum_backend
+
+            windows.append({'window': w + 1, 'train': res_train, 'test': res_test})
+
+            for label, r in [('TRAIN', res_train), ('TEST', res_test)]:
+                if r.get('error'):
+                    print(f"    ❌ W{w+1} {label}: {r['error']}")
+                    continue
+                t   = r.get('total_trades', 0)
+                pf  = r.get('profit_factor', 0)
+                wr  = r.get('win_rate', 0)
+                ret = r.get('total_return_pct', 0)
+                dd  = r.get('max_drawdown', 0)
+                pnl = r.get('net_profit', 0) + r.get('funding_arb_pnl', 0)
+                emoji = '✅' if pnl > 0 else '❌'
+                q_line = _format_quantum_summary(r.get('quantum_summary'))
+                qs = f"  ⚛️  {q_line}" if q_line else ""
+                print(f"    {emoji} W{w+1} {label:>5}: {t:>3} trades | PF {pf:.3f} | "
+                      f"WR {wr:.1f}% | Return {ret:+.2f}% | MaxDD {dd:.1f}% | ${pnl:+.2f}{qs}")
+
+        all_windows[symbol] = windows
         if use_pair_config:
             restore_config(originals)
-        
-        # Print comparison
-        for label, r in [('TRAIN', results_train), ('TEST', results_test)]:
-            if r.get('error'):
-                print(f"  ❌ {label}: {r['error']}")
-                continue
-            t = r.get('total_trades', 0)
-            pf = r.get('profit_factor', 0)
-            wr = r.get('win_rate', 0)
-            ret = r.get('total_return_pct', 0)
-            dd = r.get('max_drawdown', 0)
-            pnl = r.get('net_profit', 0)
-            fr_pnl = r.get('funding_arb_pnl', 0)
-            combined = pnl + fr_pnl
-            emoji = '✅' if combined > 0 else '❌'
-            fund_str = f" (Fund ${fr_pnl:+.2f})" if fr_pnl != 0 else ""
-            print(f"  {emoji} {label:>5}: {t:>3} trades | PF {pf:.3f} | WR {wr:.1f}% | "
-                  f"Return {ret:+.2f}% | MaxDD {dd:.1f}% | ${combined:+.2f}{fund_str}")
-            q_line = _format_quantum_summary(r.get('quantum_summary'))
-            if q_line:
-                print(f"         ⚛️  {q_line}")
-    
-    # Summary comparison table
-    if all_train and all_test:
-        # P#70: Restore XGBoost retrain interval
-        config.XGBOOST_RETRAIN_INTERVAL = original_retrain
-        
+
+    config.XGBOOST_RETRAIN_INTERVAL = original_retrain
+
+    # ── Aggregate summary ─────────────────────────────────────────────────────
+    if all_windows:
         print(f"\n{'═'*90}")
-        print(f"  📊 WALK-FORWARD SUMMARY — Train vs Test")
+        print(f"  📊 WALK-FORWARD SUMMARY — {n_windows}-Fold Aggregate OOS Results")
         print(f"{'═'*90}")
-        print(f"  {'Symbol':<10} {'Period':>6} {'QB':>4} {'Rmt':>7} {'QChk':>8} {'Trades':>7} {'WR':>7} {'PF':>7} "
-              f"{'Return':>9} {'MaxDD':>7} {'NetPnL':>10}")
-        print(f"  {'─'*96}")
-        
-        for symbol in pairs:
-            if symbol not in all_train or symbol not in all_test:
+
+        for symbol, windows in all_windows.items():
+            if not windows:
                 continue
-            for label, results in [('TRAIN', all_train[symbol]), ('TEST', all_test[symbol])]:
-                if results.get('error'):
-                    continue
-                pnl = results.get('net_profit', 0)
-                fr_pnl = results.get('funding_arb_pnl', 0)
-                combined = pnl + fr_pnl
-                emoji = '✅' if combined > 0 else '❌'
-                combined_return = combined / results.get('pair_capital', config.INITIAL_CAPITAL) * 100 if results.get('pair_capital') else 0
-                q_summary = results.get('quantum_summary', {})
-                q_backend = _quantum_backend_short(q_summary.get('backend', results.get('quantum_backend', 'simulated')))
-                remote_status = str(q_summary.get('remote_status', 'n/a')).upper()[:7]
-                if q_summary.get('verify_enabled') and q_summary.get('verify_qmc_match_rate') is not None:
-                    q_check = f"{q_summary.get('verify_qmc_match_rate', 0) * 100:.0f}%"
-                elif q_summary.get('remote_enabled'):
-                    q_check = f"{q_summary.get('remote_failures', 0)}F"
-                else:
-                    q_check = '-'
-                print(f"  {emoji} {symbol if label=='TRAIN' else '':>8} {label:>6} "
-                      f"{q_backend:>4} {remote_status:>7} {q_check:>8} "
-                      f"{results.get('total_trades',0):>7} "
-                      f"{results.get('win_rate',0):>6.1f}% "
-                      f"{results.get('profit_factor',0):>7.3f} "
-                      f"{combined_return:>+8.2f}% "
-                      f"{results.get('max_drawdown',0):>6.1f}% "
-                      f"${combined:>+9.2f}")
-        
-        # Validation verdict
-        print(f"\n  🔬 VALIDATION VERDICT:")
-        for symbol in pairs:
-            if symbol not in all_train or symbol not in all_test:
+            ok_windows = [w for w in windows if not w['test'].get('error')]
+            if not ok_windows:
                 continue
-            train_pf = all_train[symbol].get('profit_factor', 0)
-            test_pf = all_test[symbol].get('profit_factor', 0)
-            train_ret = all_train[symbol].get('total_return_pct', 0)
-            test_ret = all_test[symbol].get('total_return_pct', 0)
-            # P#72: Include funding in return comparison
-            train_fr = all_train[symbol].get('funding_arb_pnl', 0)
-            test_fr = all_test[symbol].get('funding_arb_pnl', 0)
-            train_cap = all_train[symbol].get('pair_capital', config.INITIAL_CAPITAL)
-            test_cap = all_test[symbol].get('pair_capital', config.INITIAL_CAPITAL)
-            train_combined_ret = ((all_train[symbol].get('net_profit', 0) + train_fr) / train_cap * 100) if train_cap else 0
-            test_combined_ret = ((all_test[symbol].get('net_profit', 0) + test_fr) / test_cap * 100) if test_cap else 0
-            
-            # P#72: Funding-only pairs use combined return for verdict
-            is_funding_only = all_test[symbol].get('total_trades', 0) == 0 and test_fr > 0
-            
-            if is_funding_only:
-                # Funding-only: judge by whether funding income is positive in test
-                if test_combined_ret > 5:
-                    verdict = "✅ ROBUST — Funding income strong in test period"
-                elif test_combined_ret > 0:
-                    verdict = "⚠️  MARGINAL — Some funding income in test"
-                else:
-                    verdict = "❌ CURVE-FIT — Funding negative in test"
-                pf_info = f"Return {train_combined_ret:+.1f}%→{test_combined_ret:+.1f}%"
-            elif test_pf >= 1.0 and test_combined_ret > 0:
-                verdict = "✅ ROBUST — Edge persists in test period"
-                pf_info = f"PF {train_pf:.3f}→{test_pf:.3f}"
-            elif test_pf >= 0.8 and test_pf >= train_pf * 0.5:
-                verdict = "⚠️  MARGINAL — Edge weakens but present"
-                pf_info = f"PF {train_pf:.3f}→{test_pf:.3f}"
-            elif test_combined_ret > 0:
-                verdict = "⚠️  MARGINAL — Directional weak, funding helps"
-                pf_info = f"PF {train_pf:.3f}→{test_pf:.3f}, Fund ${test_fr:+.0f}"
+
+            test_pfs  = [w['test'].get('profit_factor', 0) for w in ok_windows]
+            test_pnls = [(w['test'].get('net_profit', 0) + w['test'].get('funding_arb_pnl', 0))
+                         for w in ok_windows]
+            test_dds  = [w['test'].get('max_drawdown', 0) for w in ok_windows]
+
+            avg_pf    = sum(test_pfs)  / len(test_pfs)
+            total_pnl = sum(test_pnls)
+            avg_dd    = sum(test_dds)  / len(test_dds)
+            robust_n  = sum(1 for pf in test_pfs if pf >= 1.0)
+
+            if robust_n >= len(ok_windows) * 0.6:
+                verdict = "✅ ROBUST"
+            elif robust_n >= len(ok_windows) * 0.4:
+                verdict = "⚠️  MARGINAL"
             else:
-                verdict = "❌ CURVE-FIT — Edge does NOT persist"
-                pf_info = f"PF {train_pf:.3f}→{test_pf:.3f}"
-            
-            print(f"     {symbol}: {verdict} ({pf_info})")
-    
+                verdict = "❌ CURVE-FIT"
+
+            print(f"\n  {symbol}: {verdict} — {robust_n}/{len(ok_windows)} OOS windows profitable")
+            print(f"     Avg OOS PF: {avg_pf:.3f} | Total OOS PnL: ${total_pnl:+.2f} | Avg MaxDD: {avg_dd:.1f}%")
+
+            for w in ok_windows:
+                pnl = w['test'].get('net_profit', 0) + w['test'].get('funding_arb_pnl', 0)
+                pf  = w['test'].get('profit_factor', 0)
+                wr  = w['test'].get('win_rate', 0)
+                t   = w['test'].get('total_trades', 0)
+                emoji = '✅' if pnl > 0 else '❌'
+                print(f"     {emoji} W{w['window']}: {t:>3} trades | PF {pf:.3f} | WR {wr:.1f}% | ${pnl:+.2f}")
+
+    # ── Backward-compatible return (last window for train, last for test) ─────
+    all_train = {sym: ws[0]['train']  for sym, ws in all_windows.items() if ws}
+    all_test  = {sym: ws[-1]['test']  for sym, ws in all_windows.items() if ws}
+
     return all_train, all_test
 
 
