@@ -414,7 +414,8 @@ def run_job(args, job: dict, run_dir: Path) -> dict:
         print('\n'.join(preflight_lines), flush=True)
 
     # Force UTF-8 encoding for worker processes to handle emoji in runner output on Windows
-    worker_env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
+    # NO_PROXY ensures urllib bypasses any system proxy for localhost; belt-and-suspenders with ProxyHandler({})
+    worker_env = {**os.environ, 'PYTHONIOENCODING': 'utf-8', 'NO_PROXY': '*', 'no_proxy': '*'}
     if health is None:
         worker_env['QUANTUM_REMOTE_PRECHECK'] = 'unreachable'
     print(f"[RUNNING] {job['spec']} worker launched; stdout/stderr -> {log_path}", flush=True)
@@ -484,8 +485,8 @@ def parse_args() -> argparse.Namespace:
                         help='Maximum concurrent worker processes. Keep low for remote-gpu.')
     parser.add_argument('--remote-url', default=DEFAULT_REMOTE_URL,
                         help='Remote QuantumGPU base URL')
-    parser.add_argument('--gpu-timeout-s', type=float, default=15.0,
-                        help='Remote QuantumGPU timeout per request')
+    parser.add_argument('--gpu-timeout-s', type=float, default=120.0,
+                        help='Remote QuantumGPU timeout per request (high default for CUDA JIT warmup)')
     parser.add_argument('--job-start-health-timeout-s', type=float, default=90.0,
                         help='How long to wait for /health to recover before starting each worker job')
     parser.add_argument('--skip-health-check', action='store_true',

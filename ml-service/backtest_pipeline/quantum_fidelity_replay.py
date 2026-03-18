@@ -57,7 +57,7 @@ class RemoteGPUReplayClient:
     def __init__(self, remote_url: str, timeout_s: float = 5.0):
         self.remote_url = remote_url.rstrip('/')
         self.timeout_s = timeout_s
-        self.retry_attempts = max(1, int(os.environ.get('QUANTUM_GPU_RETRY_ATTEMPTS', '6')))
+        self.retry_attempts = max(1, int(os.environ.get('QUANTUM_GPU_RETRY_ATTEMPTS', '2')))
         self.retry_backoff_s = max(0.25, float(os.environ.get('QUANTUM_GPU_RETRY_BACKOFF_S', '1.0')))
 
     @staticmethod
