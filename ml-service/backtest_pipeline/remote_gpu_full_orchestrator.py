@@ -11,6 +11,7 @@ import argparse
 import json
 import math
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -19,6 +20,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -66,32 +68,79 @@ def check_remote_ping(remote_url: str, timeout_s: float) -> dict:
     }
 
 
-def check_remote_health_with_retry(remote_url: str, timeout_s: float, retries: int = 3) -> dict:
-    """Retry wrapper — handles slow Windows TCP stack on first connection."""
+def tcp_port_open(host: str, port: int, timeout_s: float = 3.0) -> bool:
+    """Raw socket test — bypasses HTTP, proxies, AV inspection."""
+    try:
+        with socket.create_connection((host, port), timeout=timeout_s) as s:
+            return True
+    except (OSError, TimeoutError):
+        return False
+
+
+def diagnose_connectivity(remote_url: str) -> dict:
+    """Run connectivity diagnostics and return a result dict."""
+    parsed = urlparse(remote_url)
+    host = parsed.hostname or '127.0.0.1'
+    port = parsed.port or 4000
+
+    result = {'host': host, 'port': port, 'tcp_open': False, 'http_ok': False, 'ping_ok': False}
+
+    print(f'  [DIAG] Testing raw TCP connection to {host}:{port} ...', flush=True)
+    result['tcp_open'] = tcp_port_open(host, port, timeout_s=3.0)
+    print(f'  [DIAG] TCP port {port}: {"OPEN" if result["tcp_open"] else "BLOCKED/CLOSED"}', flush=True)
+
+    if result['tcp_open']:
+        print(f'  [DIAG] Testing HTTP /ping ...', flush=True)
+        try:
+            check_remote_ping(remote_url, timeout_s=5.0)
+            result['ping_ok'] = True
+            print(f'  [DIAG] HTTP /ping: OK', flush=True)
+        except Exception as e:
+            print(f'  [DIAG] HTTP /ping: FAILED ({e})', flush=True)
+
+        if result['ping_ok']:
+            print(f'  [DIAG] Testing HTTP /health ...', flush=True)
+            try:
+                check_remote_health(remote_url, timeout_s=10.0)
+                result['http_ok'] = True
+                print(f'  [DIAG] HTTP /health: OK', flush=True)
+            except Exception as e:
+                print(f'  [DIAG] HTTP /health: FAILED ({e})', flush=True)
+
+    return result
+
+
+def check_remote_health_with_retry(remote_url: str, timeout_s: float, retries: int = 2) -> dict:
+    """Retry wrapper — short timeouts to fail fast on Windows."""
+    fast_timeout = min(timeout_s, 5.0)
     last_exc: Exception = RuntimeError('no attempts')
     for attempt in range(retries):
+        if attempt > 0:
+            print(f'  [HEALTH] Retry {attempt + 1}/{retries} ...', flush=True)
         try:
-            return check_remote_health(remote_url, timeout_s=timeout_s)
+            return check_remote_health(remote_url, timeout_s=fast_timeout)
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
             last_exc = exc
             try:
-                return check_remote_ping(remote_url, timeout_s=max(1.0, min(timeout_s, 3.0)))
+                return check_remote_ping(remote_url, timeout_s=min(3.0, fast_timeout))
             except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as ping_exc:
                 last_exc = ping_exc
             if attempt < retries - 1:
-                time.sleep(1.0)
+                time.sleep(0.5)
     raise last_exc
 
 
 def wait_remote_health(remote_url: str, timeout_s: float, poll_s: float = 2.0) -> dict | None:
+    """Quick poll — each attempt uses short timeout so we don't burn 90s on one probe."""
     deadline = time.time() + max(0.0, timeout_s)
+    fast_timeout = min(3.0, max(1.0, poll_s))
 
     while True:
         try:
-            health = check_remote_health(remote_url, timeout_s=min(max(poll_s, 1.0), max(5.0, poll_s)))
+            health = check_remote_health(remote_url, timeout_s=fast_timeout)
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
             try:
-                health = check_remote_ping(remote_url, timeout_s=max(1.0, min(poll_s, 3.0)))
+                health = check_remote_ping(remote_url, timeout_s=min(2.0, fast_timeout))
             except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
                 health = None
 
@@ -103,7 +152,7 @@ def wait_remote_health(remote_url: str, timeout_s: float, poll_s: float = 2.0) -
         if time.time() >= deadline:
             return None
 
-        time.sleep(max(0.25, poll_s))
+        time.sleep(max(0.25, min(poll_s, 1.0)))
 
 
 def parse_job_spec(spec: str) -> dict:
@@ -338,11 +387,13 @@ def run_job(args, job: dict, run_dir: Path) -> dict:
 
     started_at = time.time()
     health = None
+    # Use short precheck: if the main health check already failed, don't waste 90s per job
+    precheck_timeout = min(args.job_start_health_timeout_s, 10.0)
     if args.job_start_health_timeout_s > 0 and not args.skip_health_check:
         preflight_lines.append(
-            f"[PRECHECK] Waiting for remote health before {job['spec']} (timeout={args.job_start_health_timeout_s:.1f}s)"
+            f"[PRECHECK] Waiting for remote health before {job['spec']} (timeout={precheck_timeout:.1f}s)"
         )
-        health = wait_remote_health(args.remote_url, timeout_s=args.job_start_health_timeout_s)
+        health = wait_remote_health(args.remote_url, timeout_s=precheck_timeout)
         if health is None:
             preflight_lines.append(
                 f"[WARN] Remote GPU health probe unreachable before starting {job['spec']}"
@@ -491,15 +542,34 @@ def main() -> int:
     if not args.skip_health_check:
         print(f'Checking remote GPU health at {args.remote_url} ...', flush=True)
         try:
-            health = check_remote_health_with_retry(args.remote_url, timeout_s=args.gpu_timeout_s, retries=3)
+            health = check_remote_health_with_retry(args.remote_url, timeout_s=args.gpu_timeout_s, retries=2)
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
-            print(
-                f'\n⚠️  Remote GPU health probe unreachable at {args.remote_url}: {exc}'
-                '\n   Continuing anyway because Windows loopback can be blocked by proxy/firewall while uvicorn is already running.'
-                '\n   If worker requests also fail, allow TCP 4000 in Windows Firewall.'
-                '\n'
-            )
-            health = None
+            print(f'\n⚠️  HTTP health check failed: {exc}', flush=True)
+            print('  Running connectivity diagnostics ...', flush=True)
+            diag = diagnose_connectivity(args.remote_url)
+
+            if not diag['tcp_open']:
+                print(
+                    f'\n❌ TCP port {diag["port"]} is NOT reachable on {diag["host"]}.'
+                    f'\n   The GPU service may not be running, or Windows Firewall is blocking it.'
+                    f'\n   Fix options:'
+                    f'\n   1. Make sure gpu-cuda-service.py is running in another terminal'
+                    f'\n   2. Add firewall rule (admin PowerShell):'
+                    f'\n      New-NetFirewallRule -DisplayName "TurboBot GPU" -Direction Inbound -Protocol TCP -LocalPort {diag["port"]} -Action Allow'
+                    f'\n   3. Temporarily disable firewall: Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False'
+                    f'\n'
+                )
+                raise SystemExit(1)
+            elif not diag['ping_ok']:
+                print(
+                    f'\n⚠️  TCP port {diag["port"]} is OPEN but HTTP requests fail.'
+                    f'\n   Likely cause: antivirus/proxy intercepting HTTP on localhost.'
+                    f'\n   Fix: add 127.0.0.1 and localhost to proxy exclusions.'
+                    f'\n   Continuing anyway — GPU calls may still work ...\n'
+                )
+                health = None
+            else:
+                health = None
 
         if health is not None:
             status = str(health.get('status', 'unknown'))
