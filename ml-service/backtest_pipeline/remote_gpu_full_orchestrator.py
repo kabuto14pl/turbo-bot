@@ -33,6 +33,10 @@ DEFAULT_JOB_SPECS = [
 ]
 
 
+def _build_no_proxy_opener():
+    return urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
 def gpu_native_engine_enabled() -> bool:
     try:
         sys.path.insert(0, str(ROOT_DIR / 'ml-service'))
@@ -43,21 +47,37 @@ def gpu_native_engine_enabled() -> bool:
 
 
 def check_remote_health(remote_url: str, timeout_s: float) -> dict:
-    # Bypass system proxy (VPN/corporate) -- loopback must never go via proxy
-    no_proxy_opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     request = urllib.request.Request(f'{remote_url.rstrip("/")}/health')
-    with no_proxy_opener.open(request, timeout=timeout_s) as response:
+    with _build_no_proxy_opener().open(request, timeout=timeout_s) as response:
         return json.loads(response.read().decode('utf-8'))
 
 
+def check_remote_ping(remote_url: str, timeout_s: float) -> dict:
+    request = urllib.request.Request(f'{remote_url.rstrip("/")}/ping')
+    with _build_no_proxy_opener().open(request, timeout=timeout_s) as response:
+        payload = json.loads(response.read().decode('utf-8'))
+
+    return {
+        'status': 'reachable',
+        'ping_only': True,
+        'service': payload.get('service', 'unknown'),
+        'version': payload.get('version', 'unknown'),
+        'uptime_s': payload.get('uptime_s'),
+    }
+
+
 def check_remote_health_with_retry(remote_url: str, timeout_s: float, retries: int = 3) -> dict:
-    """Retry wrapper -- handles slow Windows TCP stack on first connection."""
+    """Retry wrapper — handles slow Windows TCP stack on first connection."""
     last_exc: Exception = RuntimeError('no attempts')
     for attempt in range(retries):
         try:
             return check_remote_health(remote_url, timeout_s=timeout_s)
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
             last_exc = exc
+            try:
+                return check_remote_ping(remote_url, timeout_s=max(1.0, min(timeout_s, 3.0)))
+            except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as ping_exc:
+                last_exc = ping_exc
             if attempt < retries - 1:
                 time.sleep(1.0)
     raise last_exc
@@ -68,12 +88,17 @@ def wait_remote_health(remote_url: str, timeout_s: float, poll_s: float = 2.0) -
 
     while True:
         try:
-            health = check_remote_health(remote_url, timeout_s=min(max(poll_s, 1.0), 5.0))
+            health = check_remote_health(remote_url, timeout_s=min(max(poll_s, 1.0), max(5.0, poll_s)))
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
+            try:
+                health = check_remote_ping(remote_url, timeout_s=max(1.0, min(poll_s, 3.0)))
+            except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
+                health = None
+
+        if health is not None:
             status = str(health.get('status', 'unknown'))
-            if status in ('online', 'online-cpu'):
+            if status in ('online', 'online-cpu', 'reachable'):
                 return health
-        except (urllib.error.URLError, TimeoutError, ConnectionError):
-            pass
 
         if time.time() >= deadline:
             return None
@@ -122,6 +147,21 @@ def build_worker_command(args, job: dict, output_path: Path) -> list[str]:
         command.append('--trades')
 
     return command
+
+
+def _read_log_tail(log_path: Path, max_lines: int = 40) -> str | None:
+    if not log_path.exists():
+        return None
+
+    try:
+        lines = log_path.read_text(encoding='utf-8', errors='replace').splitlines()
+    except OSError:
+        return None
+
+    if not lines:
+        return None
+
+    return '\n'.join(lines[-max_lines:])
 
 
 def _single_summary(result: dict, timeframe: str) -> dict:
@@ -292,7 +332,12 @@ def run_job(args, job: dict, run_dir: Path) -> dict:
     command = build_worker_command(args, job, artifact_path)
     preflight_lines = []
 
+    print(f"\n[START] {job['spec']}", flush=True)
+    print(f"        log: {log_path}", flush=True)
+    print(f"   artifact: {artifact_path}", flush=True)
+
     started_at = time.time()
+    health = None
     if args.job_start_health_timeout_s > 0 and not args.skip_health_check:
         preflight_lines.append(
             f"[PRECHECK] Waiting for remote health before {job['spec']} (timeout={args.job_start_health_timeout_s:.1f}s)"
@@ -300,24 +345,28 @@ def run_job(args, job: dict, run_dir: Path) -> dict:
         health = wait_remote_health(args.remote_url, timeout_s=args.job_start_health_timeout_s)
         if health is None:
             preflight_lines.append(
-                f"[ERROR] Remote GPU did not return online before starting {job['spec']}"
+                f"[WARN] Remote GPU health probe unreachable before starting {job['spec']}"
             )
-            log_path.write_text('\n'.join(preflight_lines) + '\n', encoding='utf-8')
-            return {
-                'job': job,
-                'artifact_path': str(artifact_path),
-                'log_path': str(log_path),
-                'exit_code': 1,
-                'elapsed_s': round(time.time() - started_at, 2),
-                'artifact': None,
-            }
+            preflight_lines.append(
+                '[WARN] Continuing anyway because local Windows loopback can be blocked by proxy/firewall while the service is still alive'
+            )
+        else:
+            preflight_lines.append(
+                f"[PRECHECK] Remote GPU online: status={health.get('status', 'unknown')}"
+            )
+            if health.get('ping_only'):
+                preflight_lines.append(
+                    '[PRECHECK] /health timed out, but /ping responded — continuing and letting real GPU calls verify the service'
+                )
 
-        preflight_lines.append(
-            f"[PRECHECK] Remote GPU online: status={health.get('status', 'unknown')}"
-        )
+    if preflight_lines:
+        print('\n'.join(preflight_lines), flush=True)
 
     # Force UTF-8 encoding for worker processes to handle emoji in runner output on Windows
     worker_env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
+    if health is None:
+        worker_env['QUANTUM_REMOTE_PRECHECK'] = 'unreachable'
+    print(f"[RUNNING] {job['spec']} worker launched; stdout/stderr -> {log_path}", flush=True)
     with open(log_path, 'w', encoding='utf-8') as log_handle:
         if preflight_lines:
             log_handle.write('\n'.join(preflight_lines) + '\n\n')
@@ -344,6 +393,9 @@ def run_job(args, job: dict, run_dir: Path) -> dict:
         result['artifact'] = json.loads(artifact_path.read_text(encoding='utf-8'))
     else:
         result['artifact'] = None
+
+    if process.returncode != 0:
+        result['log_tail'] = _read_log_tail(log_path)
 
     return result
 
@@ -404,7 +456,11 @@ def print_job_line(job_result: dict):
     status = 'OK' if job_result['exit_code'] == 0 else 'FAIL'
     backend = summary.get('backend', 'n/a')
     remote_status = str(summary.get('remote_status', 'n/a')).upper()
-    print(f"[{status}] {job['spec']:<18} backend={backend:<10} remote={remote_status:<7} time={job_result['elapsed_s']:>7.2f}s")
+    print(f"[{status}] {job['spec']:<18} backend={backend:<10} remote={remote_status:<7} time={job_result['elapsed_s']:>7.2f}s", flush=True)
+    print(f"       log: {job_result['log_path']}", flush=True)
+    if job_result['exit_code'] != 0 and job_result.get('log_tail'):
+        print('       last log lines:', flush=True)
+        print(job_result['log_tail'], flush=True)
 
 
 args_for_worker: argparse.Namespace | None = None
@@ -414,8 +470,16 @@ def main() -> int:
     global args_for_worker
     args = parse_args()
 
-    if gpu_native_engine_enabled() and args.max_parallel > 1:
-        print('GPU-native engine enabled in config -> forcing max_parallel=1 to avoid CUDA worker contention')
+    print('\n=== REMOTE GPU FULL-PIPELINE ORCHESTRATOR ===', flush=True)
+    print(f'Remote URL: {args.remote_url}', flush=True)
+    print('Worker output is written to per-job log files while jobs run.', flush=True)
+    print('Requested jobs: ' + ', '.join(args.jobs), flush=True)
+
+    if args.max_parallel > 1:
+        if gpu_native_engine_enabled():
+            print('Remote GPU orchestrator + GPU-native config detected -> forcing max_parallel=1 to avoid worker contention', flush=True)
+        else:
+            print('Remote GPU orchestrator -> forcing max_parallel=1 to avoid service contention', flush=True)
         args.max_parallel = 1
 
     if args.worker:
@@ -425,17 +489,15 @@ def main() -> int:
         return worker(parse_job_spec(args.job_spec), Path(args.output), show_trades=args.trades)
 
     if not args.skip_health_check:
+        print(f'Checking remote GPU health at {args.remote_url} ...', flush=True)
         try:
             health = check_remote_health_with_retry(args.remote_url, timeout_s=args.gpu_timeout_s, retries=3)
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
-            # Connection timeout = Windows Firewall blocking loopback/VPN proxy.
-            # GPU service confirmed running (uvicorn up) — auto-proceed without health check.
             print(
-                f'\n⚠️  Health check unreachable ({exc.__class__.__name__}: {exc})'
-                f'\n   GPU service port 4000 appears UP but OS is blocking health probe.'
-                '\n   Fix (PowerShell as Admin):'
-                '\n   New-NetFirewallRule -DisplayName "TurboBot GPU 4000" -Direction Inbound -Protocol TCP -LocalPort 4000 -Action Allow'
-                f'\n   Auto-continuing without health check...\n'
+                f'\n⚠️  Remote GPU health probe unreachable at {args.remote_url}: {exc}'
+                '\n   Continuing anyway because Windows loopback can be blocked by proxy/firewall while uvicorn is already running.'
+                '\n   If worker requests also fail, allow TCP 4000 in Windows Firewall.'
+                '\n'
             )
             health = None
 
@@ -443,11 +505,12 @@ def main() -> int:
             status = str(health.get('status', 'unknown'))
             gpu_active = health.get('gpu_active', False)
             backend = health.get('backend', 'unknown')
+            ping_only = bool(health.get('ping_only'))
 
-            if status != 'online':
+            if status not in ('online', 'reachable'):
                 raise SystemExit(f'Remote GPU is not online at {args.remote_url} (status={status})')
 
-            if not gpu_active or backend != 'cuda':
+            if (not ping_only) and (not gpu_active or backend != 'cuda'):
                 raise SystemExit(
                     f'\n❌ BLOCKED: GPU service at {args.remote_url} has NO CUDA active!\n'
                     f'   status={status} gpu_active={gpu_active} backend={backend}\n'
@@ -455,20 +518,24 @@ def main() -> int:
                     f'   Then restart gpu-cuda-service.py\n'
                 )
 
-            gpu_info = health.get('gpu', {})
-            gpu_device = gpu_info.get('device', 'unknown')
-            vram = gpu_info.get('vram_total_gb', 0)
-            print(f'\n✅ GPU service ONLINE: {gpu_device} | VRAM: {vram} GB | backend: {backend}')
+            if ping_only:
+                print(
+                    '\n⚠️  /health timed out, but /ping responded. Continuing without strict startup CUDA verification.',
+                    flush=True,
+                )
+            else:
+                gpu_info = health.get('gpu', {})
+                gpu_device = gpu_info.get('device', 'unknown')
+                vram = gpu_info.get('vram_total_gb', 0)
+                print(f'\n✅ GPU service ONLINE: {gpu_device} | VRAM: {vram} GB | backend: {backend}', flush=True)
 
     run_dir = Path(args.results_dir) / f'remote_gpu_full_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
     run_dir.mkdir(parents=True, exist_ok=True)
     jobs = [parse_job_spec(spec) for spec in args.jobs]
 
-    print('\n=== REMOTE GPU FULL-PIPELINE ORCHESTRATOR ===')
-    print(f'Run dir: {run_dir}')
-    print(f'Remote URL: {args.remote_url}')
-    print(f'Max parallel: {args.max_parallel}')
-    print('Jobs: ' + ', '.join(job['spec'] for job in jobs))
+    print(f'Run dir: {run_dir}', flush=True)
+    print(f'Max parallel: {args.max_parallel}', flush=True)
+    print('Jobs: ' + ', '.join(job['spec'] for job in jobs), flush=True)
 
     job_results = []
     if max(1, args.max_parallel) == 1:
@@ -489,7 +556,7 @@ def main() -> int:
 
     job_results.sort(key=lambda item: item['job']['spec'])
     manifest_path = aggregate_results(run_dir, job_results, args)
-    print(f'\nAggregate manifest: {manifest_path}')
+    print(f'\nAggregate manifest: {manifest_path}', flush=True)
 
     failed = [result for result in job_results if result['exit_code'] != 0]
     return 1 if failed else 0

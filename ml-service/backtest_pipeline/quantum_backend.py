@@ -117,15 +117,28 @@ class _RemoteQuantumMixin:
             return default
 
     def _probe_remote_health(self):
+        """Single-attempt fast probe — no retries, short timeout."""
         self._remote_stats['health_checks'] += 1
+        probe_timeout = min(5.0, self.remote_timeout_s)
         try:
-            health = self._remote_client.health()
+            health = self._remote_client.health_fast(timeout_s=probe_timeout)
             status = health.get('status', 'unknown')
             self._remote_stats['health_status'] = status
             return health, None
-        except Exception as exc:
-            self._remote_stats['health_status'] = 'offline'
-            return None, exc
+        except Exception as health_exc:
+            try:
+                ping = self._remote_client.ping_fast(timeout_s=min(3.0, probe_timeout))
+                self._remote_stats['health_status'] = 'reachable'
+                return {
+                    'status': 'reachable',
+                    'ping_only': True,
+                    'service': ping.get('service', 'unknown'),
+                    'version': ping.get('version', 'unknown'),
+                    'uptime_s': ping.get('uptime_s'),
+                }, health_exc
+            except Exception as ping_exc:
+                self._remote_stats['health_status'] = 'offline'
+                return None, ping_exc
 
     def _wait_for_remote_online(self, timeout_s: float, context: str):
         deadline = time.monotonic() + max(0.0, timeout_s)
@@ -135,7 +148,7 @@ class _RemoteQuantumMixin:
             health, probe_error = self._probe_remote_health()
             if health is not None:
                 status = health.get('status', 'unknown')
-                if status in ('online', 'online-cpu'):
+                if status in ('online', 'online-cpu', 'reachable'):
                     return health
                 last_problem = RuntimeError(f"status={status}")
             elif probe_error is not None:
@@ -155,7 +168,7 @@ class _RemoteQuantumMixin:
         health, probe_error = self._probe_remote_health()
         if health is not None:
             status = health.get('status', 'unknown')
-            if status in ('online', 'online-cpu') or not strict:
+            if status in ('online', 'online-cpu', 'reachable') or not strict:
                 return health
             probe_error = RuntimeError(f"Remote GPU backend not online at {self.remote_url} (status={status})")
 
@@ -307,7 +320,13 @@ class RemoteGpuQuantumBackend(QuantumBackend, _RemoteQuantumMixin):
         super().__init__('remote-gpu', options=options)
         self._simulator = QuantumPipelineSimulator()
         self._init_remote_support()
-        self._check_remote_health(strict=True, context='remote-gpu backend init')
+
+        precheck = os.environ.get('QUANTUM_REMOTE_PRECHECK', '')
+        if precheck == 'unreachable':
+            print('[WARN] Orchestrator pre-check already found remote GPU unreachable — skipping redundant worker health check', flush=True)
+            self._remote_stats['health_status'] = 'precheck-unreachable'
+        else:
+            self._check_remote_health(strict=True, context='remote-gpu backend init')
 
     def process_cycle(self, row, history_df, regime, signals, portfolio_value):
         result = self._simulator.process_cycle(row, history_df, regime, signals, portfolio_value)

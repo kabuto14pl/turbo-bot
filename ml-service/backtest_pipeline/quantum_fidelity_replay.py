@@ -88,8 +88,24 @@ class RemoteGPUReplayClient:
 
         raise last_exc
 
+    def _probe(self, path: str, timeout_s: float = 3.0) -> dict:
+        """Single-attempt GET with custom timeout — for health/liveness checks."""
+        url = self.remote_url + path
+        req = urllib.request.Request(url, method='GET')
+        with self._build_no_proxy_opener().open(req, timeout=timeout_s) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+
     def health(self) -> dict:
         return self._request('/health')
+
+    def health_fast(self, timeout_s: float = 3.0) -> dict:
+        return self._probe('/health', timeout_s=timeout_s)
+
+    def ping(self) -> dict:
+        return self._request('/ping')
+
+    def ping_fast(self, timeout_s: float = 3.0) -> dict:
+        return self._probe('/ping', timeout_s=timeout_s)
 
     def qmc(self, payload: dict) -> dict:
         return self._request('/gpu/qmc', payload)
