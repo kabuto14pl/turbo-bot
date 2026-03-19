@@ -622,9 +622,19 @@ async def gpu_xgboost_train(body: dict):
             )
             reg.fit(X, y_ret)
 
-        # --- Serialize models ---
-        clf_raw = clf.get_booster().save_raw('ubj')
-        reg_raw = reg.get_booster().save_raw('ubj') if reg else b''
+        # --- Serialize models (full XGBClassifier format for classes_ compat) ---
+        import tempfile as _tf
+        with _tf.NamedTemporaryFile(suffix='.ubj', delete=False) as f:
+            clf.save_model(f.name)
+            clf_raw = open(f.name, 'rb').read()
+            os.unlink(f.name)
+        if reg:
+            with _tf.NamedTemporaryFile(suffix='.ubj', delete=False) as f:
+                reg.save_model(f.name)
+                reg_raw = open(f.name, 'rb').read()
+                os.unlink(f.name)
+        else:
+            reg_raw = b''
 
         # Store server-side for potential batch predict
         _xgb_models[symbol] = {'clf': clf, 'reg': reg}

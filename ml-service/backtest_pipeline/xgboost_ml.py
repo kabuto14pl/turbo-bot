@@ -463,23 +463,35 @@ class XGBoostMLEngine:
                 result = json.loads(resp.read().decode('utf-8'))
 
             # Deserialize models from remote
+            # Use tempfile + load_model on XGBClassifier to preserve all
+            # metadata (classes_, _le, etc.) — avoids read-only property
+            # errors in XGBoost >= 2.1 where classes_ has no setter.
+            import tempfile, os as _os
             clf_bytes = base64.b64decode(result['clf_model_b64'])
-            booster_clf = xgb.Booster()
-            booster_clf.load_model(bytearray(clf_bytes))
-            self._booster_clf = booster_clf
-
-            self.model_clf = xgb.XGBClassifier()
-            self.model_clf._Booster = booster_clf
-            self.model_clf.classes_ = np.array([0, 1])
-            self.model_clf._le = type('', (), {'classes_': np.array([0, 1])})()
+            with tempfile.NamedTemporaryFile(suffix='.ubj', delete=False) as f:
+                f.write(clf_bytes)
+                clf_tmp = f.name
+            try:
+                self.model_clf = xgb.XGBClassifier()
+                self.model_clf.load_model(clf_tmp)
+            finally:
+                _os.unlink(clf_tmp)
+            # Ensure classes_ is set for predict_proba
+            try:
+                _ = self.model_clf.classes_
+            except (AttributeError, TypeError):
+                self.model_clf._le = type('', (), {'classes_': np.array([0, 1])})()
 
             if result.get('reg_model_b64'):
                 reg_bytes = base64.b64decode(result['reg_model_b64'])
-                booster_reg = xgb.Booster()
-                booster_reg.load_model(bytearray(reg_bytes))
-                self._booster_reg = booster_reg
-                self.model_reg = xgb.XGBRegressor()
-                self.model_reg._Booster = booster_reg
+                with tempfile.NamedTemporaryFile(suffix='.ubj', delete=False) as f:
+                    f.write(reg_bytes)
+                    reg_tmp = f.name
+                try:
+                    self.model_reg = xgb.XGBRegressor()
+                    self.model_reg.load_model(reg_tmp)
+                finally:
+                    _os.unlink(reg_tmp)
 
             self.cv_scores = result.get('cv_scores', [])
             self.trained = True
