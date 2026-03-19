@@ -225,11 +225,11 @@ class FullPipelineEngine:
             self._mlp_initialized = False  # Keep False — mlp_gpu.predict won't be called
         
         # PATCH #58: Initialize XGBoost with walk-forward training
+        xgb_warmup = min(
+            getattr(config, 'XGBOOST_WARMUP_CANDLES', 500),
+            int(len(df) * 0.6)  # Use up to 60% of data for initial training
+        )
         if not self._xgb_initialized:
-            xgb_warmup = min(
-                getattr(config, 'XGBOOST_WARMUP_CANDLES', 500),
-                int(len(df) * 0.6)  # Use up to 60% of data for initial training
-            )
             print(f"  🧠 Training XGBoost on first {xgb_warmup} candles...")
             self.xgb_ml.train_initial(df, xgb_warmup)
             self._xgb_initialized = True
