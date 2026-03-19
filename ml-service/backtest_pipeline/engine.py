@@ -72,6 +72,8 @@ class FullPipelineEngine:
         self.gate_profile = getattr(config, 'PIPELINE_GATE_PROFILE', 'full_pipeline')
         self._gpu_only_backtest = getattr(config, 'GPU_ONLY_BACKTEST', False)
         self._gpu_only_last_regime = 'RANGING'
+        # P#193: Strategy-only mode — skip ML training, run all strategies + quantum
+        self._strategy_only = getattr(config, 'STRATEGY_ONLY_MODE', False)
         
         # P#178: Extract GPU URL for ML engines
         gpu_url = self.quantum_backend_options.get('remote_url')
@@ -216,6 +218,12 @@ class FullPipelineEngine:
         else:
             self.candle_hours = 0.25
         
+        # P#193: Strategy-only mode — skip all ML training (XGBoost + MLP)
+        if self._strategy_only:
+            print(f"  ⚡ STRATEGY-ONLY MODE — skipping ML training, running all strategies + quantum")
+            self._xgb_initialized = True  # Mark as done so predict() returns heuristic
+            self._mlp_initialized = False  # Keep False — mlp_gpu.predict won't be called
+        
         # PATCH #58: Initialize XGBoost with walk-forward training
         if not self._xgb_initialized:
             xgb_warmup = min(
@@ -292,8 +300,9 @@ class FullPipelineEngine:
                     for _strat in _routing[current_regime].get('inactive', []):
                         signals.pop(_strat, None)
                 # P#189: Per-pair strategy map — suppress strategies not in map
+                # P#193: Skip pair filtering in strategy-only mode (test ALL strategies on ALL pairs)
                 _pair_map = getattr(config, 'PAIR_STRATEGY_MAP', None)
-                if _pair_map and self.symbol in _pair_map:
+                if _pair_map and self.symbol in _pair_map and not self._strategy_only:
                     _allowed = _pair_map[self.symbol]
                     signals = {k: v for k, v in signals.items() if k in _allowed}
 
@@ -307,55 +316,62 @@ class FullPipelineEngine:
                     signals['ExternalSignals'] = ext_signal  # HOLD still participates in voting
             
             # 4b. ML prediction — PATCH #58: XGBoost as ADVISORY layer
-            # XGBoost only used when it has proven edge (CV > threshold)
-            # Otherwise heuristic is primary to avoid random-model corruption
-            xgb_signal = self.xgb_ml.predict(row, history, current_regime, candle_idx=i, df=df)
-            xgb_has_edge = (
-                xgb_signal.get('source') == 'XGBoost' and
-                self.xgb_ml.cv_scores and
-                np.mean(self.xgb_ml.cv_scores) >= getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55)
-            )
-            
-            if xgb_has_edge:
-                # XGBoost has demonstrated edge — use as primary ML signal
-                ml_signal = xgb_signal
-            elif self._mlp_initialized:
-                # P#176: XGBoost has no edge — try MLP GPU fallback
-                mlp_signal = self.mlp_gpu.predict(row, history, current_regime, candle_idx=i, df=df)
-                mlp_has_edge = (
-                    mlp_signal.get('source') in ('TorchMLP', 'MLP-GPU') and
-                    self.mlp_gpu.cv_scores and
-                    np.mean(self.mlp_gpu.cv_scores) >= getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55)
-                )
-                if mlp_has_edge:
-                    ml_signal = mlp_signal
-                elif self._gpu_only_backtest:
-                    ml_signal = {'action': 'HOLD', 'confidence': 0.0, 'source': 'GPU_ONLY_HOLD'}
-                else:
-                    ml_signal = self.ml.predict(row, history, current_regime)
-                # Store XGBoost prediction for learning only
-                if xgb_signal.get('source') == 'XGBoost':
-                    xgb_signal['_advisory_only'] = True
+            # P#193: Strategy-only mode — skip ML entirely, use heuristic
+            if self._strategy_only:
+                ml_signal = self.ml.predict(row, history, current_regime)
+                xgb_has_edge = False
             else:
-                # No proven edge — GPU-only mode stays flat instead of falling back to CPU heuristic
-                if self._gpu_only_backtest:
-                    ml_signal = {'action': 'HOLD', 'confidence': 0.0, 'source': 'GPU_ONLY_HOLD'}
+                # XGBoost only used when it has proven edge (CV > threshold)
+                # Otherwise heuristic is primary to avoid random-model corruption
+                xgb_signal = self.xgb_ml.predict(row, history, current_regime, candle_idx=i, df=df)
+                xgb_has_edge = (
+                    xgb_signal.get('source') == 'XGBoost' and
+                    self.xgb_ml.cv_scores and
+                    np.mean(self.xgb_ml.cv_scores) >= getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55)
+                )
+                
+                if xgb_has_edge:
+                    # XGBoost has demonstrated edge — use as primary ML signal
+                    ml_signal = xgb_signal
+                elif self._mlp_initialized:
+                    # P#176: XGBoost has no edge — try MLP GPU fallback
+                    mlp_signal = self.mlp_gpu.predict(row, history, current_regime, candle_idx=i, df=df)
+                    mlp_has_edge = (
+                        mlp_signal.get('source') in ('TorchMLP', 'MLP-GPU') and
+                        self.mlp_gpu.cv_scores and
+                        np.mean(self.mlp_gpu.cv_scores) >= getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55)
+                    )
+                    if mlp_has_edge:
+                        ml_signal = mlp_signal
+                    elif self._gpu_only_backtest:
+                        ml_signal = {'action': 'HOLD', 'confidence': 0.0, 'source': 'GPU_ONLY_HOLD'}
+                    else:
+                        ml_signal = self.ml.predict(row, history, current_regime)
+                    # Store XGBoost prediction for learning only
+                    if xgb_signal.get('source') == 'XGBoost':
+                        xgb_signal['_advisory_only'] = True
                 else:
-                    ml_signal = self.ml.predict(row, history, current_regime)
-                # Store XGBoost prediction for learning only (not ensemble)
-                if xgb_signal.get('source') == 'XGBoost':
-                    xgb_signal['_advisory_only'] = True
+                    # No proven edge — GPU-only mode stays flat instead of falling back to CPU heuristic
+                    if self._gpu_only_backtest:
+                        ml_signal = {'action': 'HOLD', 'confidence': 0.0, 'source': 'GPU_ONLY_HOLD'}
+                    else:
+                        ml_signal = self.ml.predict(row, history, current_regime)
+                    # Store XGBoost prediction for learning only (not ensemble)
+                    if xgb_signal.get('source') == 'XGBoost':
+                        xgb_signal['_advisory_only'] = True
             
             # 4c. ML veto logic — ONLY apply when ML source has proven edge
             # Prevents random XGBoost from vetoing good strategy signals
-            if (not self._gpu_only_backtest) and (xgb_has_edge or ml_signal.get('source') != 'XGBoost'):
+            if (not self._gpu_only_backtest) and not self._strategy_only and (xgb_has_edge or ml_signal.get('source') != 'XGBoost'):
                 signals = self.xgb_ml.apply_ml_veto(signals, ml_signal)
             
             # 4d. PATCH #58: XGBoost sliding window retrain
-            self.xgb_ml.maybe_retrain(df, i)
+            # P#193: Skip retraining in strategy-only mode
+            if not self._strategy_only:
+                self.xgb_ml.maybe_retrain(df, i)
             
             # P#176: MLP GPU retrain
-            if self._mlp_initialized:
+            if self._mlp_initialized and not self._strategy_only:
                 self.mlp_gpu.maybe_retrain(df, i)
             
             # ============================================================
@@ -1168,6 +1184,8 @@ class FullPipelineEngine:
         self.external_signals = ExternalSignalsSimulator()
         self._gpu_only_backtest = getattr(config, 'GPU_ONLY_BACKTEST', False)
         self._gpu_only_last_regime = 'RANGING'
+        # P#193: Strategy-only mode
+        self._strategy_only = getattr(config, 'STRATEGY_ONLY_MODE', False)
         
     def _block(self, reason):
         """Record a blocked trade reason."""

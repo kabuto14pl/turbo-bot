@@ -27,11 +27,9 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 RESULTS_DIR = ROOT_DIR / 'ml-service' / 'results'
 DEFAULT_REMOTE_URL = os.environ.get('QUANTUM_GPU_REMOTE_URL') or os.environ.get('GPU_REMOTE_URL') or 'http://127.0.0.1:4001'
 DEFAULT_JOB_SPECS = [
-    'single:15m',
-    'single:1h',
-    'single:4h',
     'multi:15m',
-    'walkforward:15m',
+    'multi:1h',
+    'multi:4h',
 ]
 
 
@@ -193,6 +191,9 @@ def build_worker_command(args, job: dict, output_path: Path) -> list[str]:
     if args.trades:
         command.append('--trades')
 
+    if getattr(args, 'strategy_only', False) and not getattr(args, 'full_pipeline', False):
+        command.append('--strategy-only')
+
     return command
 
 
@@ -302,6 +303,15 @@ def _walkforward_summary(train_results: dict, test_results: dict, timeframe: str
 
 def worker(job: dict, output_path: Path, show_trades: bool) -> int:
     sys.path.insert(0, str(ROOT_DIR / 'ml-service'))
+
+    # P#193: Apply strategy-only mode to config before runner imports engine
+    strategy_only = getattr(args_for_worker, 'strategy_only', False) and not getattr(args_for_worker, 'full_pipeline', False)
+    if strategy_only:
+        from backtest_pipeline import config as bt_config
+        bt_config.STRATEGY_ONLY_MODE = True
+        bt_config.GPU_ONLY_BACKTEST = False
+        print(f"  ⚡ Worker: STRATEGY_ONLY_MODE=True (skip ML, all strategies)", flush=True)
+
     from backtest_pipeline.runner import run_all_timeframes, run_multi_pair, run_single, run_walk_forward
 
     quantum_backend_options = {
@@ -491,6 +501,10 @@ def parse_args() -> argparse.Namespace:
                         help='Skip strict /health check before dispatching jobs')
     parser.add_argument('--trades', action='store_true',
                         help='Enable trade table / CSV export inside worker jobs')
+    parser.add_argument('--strategy-only', action='store_true', default=True,
+                        help='P#193: Skip ML training, run all strategies + quantum (default: True)')
+    parser.add_argument('--full-pipeline', action='store_true',
+                        help='P#193: Run full pipeline with ML training (overrides --strategy-only)')
     parser.add_argument('--results-dir', default=str(RESULTS_DIR),
                         help='Directory for per-run orchestrator artifacts')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
@@ -520,7 +534,14 @@ def main() -> int:
     global args_for_worker
     args = parse_args()
 
+    # P#193: Resolve strategy-only vs full-pipeline flags
+    if args.full_pipeline:
+        args.strategy_only = False
+
+    mode_label = 'STRATEGY-ONLY (all strategies + quantum, no ML)' if args.strategy_only else 'FULL PIPELINE (ML + strategies + quantum)'
+
     print('\n=== REMOTE GPU FULL-PIPELINE ORCHESTRATOR ===', flush=True)
+    print(f'Mode: {mode_label}', flush=True)
     print(f'Remote URL: {args.remote_url}', flush=True)
     print('Worker output is written to per-job log files while jobs run.', flush=True)
     print('Requested jobs: ' + ', '.join(args.jobs), flush=True)

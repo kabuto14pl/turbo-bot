@@ -286,7 +286,12 @@ XGBOOST_LABEL_THRESHOLD = 0.001 # Min price change for UP/DOWN label (0.1%)
 # ============================================================================
 # PYTORCH MLP GPU ENGINE (P#176 — XGBoost fallback, 100% GPU)
 # ============================================================================
-GPU_ONLY_BACKTEST = True        # P#183: bypass CPU-heavy classical pipeline; use GPU ML + quantum path only
+# P#193: STRATEGY-ONLY BACKTEST MODE
+# When True: skip XGBoost/MLP training (slow), run ALL classical strategies + quantum
+# Use for fast strategy testing across all pairs and timeframes with GPU quantum
+STRATEGY_ONLY_MODE = True
+
+GPU_ONLY_BACKTEST = False       # P#193: Must be False so classical strategies run (was True for ML-only P#183)
 GPU_NATIVE_ENGINE = True        # P#184: experimental GPU-native backtest engine foundation
 GPU_NATIVE_EPOCHS = 96          # P#185: much heavier CUDA training to drive higher utilization
 GPU_NATIVE_BATCH_SIZE = 4096    # P#185: larger GPU batch for tensor training/inference
