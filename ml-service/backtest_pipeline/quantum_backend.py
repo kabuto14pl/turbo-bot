@@ -201,7 +201,7 @@ class _RemoteQuantumMixin:
 
         raise RuntimeError(f"Remote GPU {label} call failed: {last_exc}") from last_exc
 
-    def _build_qmc_payload(self, history_df):
+    def _build_qmc_payload(self, history_df, summary_only=True):
         close_history = history_df['close'].astype(float).to_numpy()
         returns = np.diff(close_history) / np.maximum(close_history[:-1], 1e-9)
         mu = float(np.mean(returns)) if len(returns) else 0.0
@@ -216,25 +216,42 @@ class _RemoteQuantumMixin:
             'jumpIntensity': 0.03 if sigma > 0.01 else 0.0,
             'jumpMean': 0.0,
             'jumpStd': sigma * 2.5,
+            'summaryOnly': summary_only,
         }
 
     def _remote_qmc_result(self, row, history_df, strict: bool):
         def operation():
-            response = self._remote_client.qmc(self._build_qmc_payload(history_df))
+            response = self._remote_client.qmc(self._build_qmc_payload(history_df, summary_only=True))
             self._remote_stats['remote_qmc_calls'] += 1
             self._remote_stats['remote_qmc_compute_ms'] += self._safe_float(response.get('computeTimeMs'), 0.0)
-            final_prices = response.get('finalPrices', [])
-            bullish_prob = qmc_prob_positive_from_remote(final_prices, current_price=1.0)
-            var_proxy = var_proxy_from_remote(final_prices)
-            return {
-                'outlook': qmc_bias_from_remote(final_prices, current_price=1.0),
-                'var': round(float(row['close']) * var_proxy, 2),
-                'bullish_prob': round(float(bullish_prob), 4) if bullish_prob is not None else 0.5,
-                'remote_prob_positive': None if bullish_prob is None else round(float(bullish_prob), 4),
-                'remote_var_proxy': var_proxy,
-            }
+            return self._parse_qmc_response(response, row)
 
         return self._execute_remote_call('QMC', strict, operation)
+
+    def _parse_qmc_response(self, qmc_resp, row):
+        """P#193.2: Parse QMC response — use server-side summary stats if available, fall back to full array."""
+        prob_positive = qmc_resp.get('probPositive')
+        if prob_positive is not None:
+            # Server returned summary stats — no 500K float transfer
+            var_5pct = float(qmc_resp.get('var5pct', 0.0))
+            if prob_positive > 0.60:
+                outlook = 'BULLISH'
+            elif prob_positive < 0.40:
+                outlook = 'BEARISH'
+            else:
+                outlook = 'NEUTRAL'
+            return {
+                'outlook': outlook,
+                'var': round(float(row['close']) * var_5pct, 2),
+                'bullish_prob': round(float(prob_positive), 4),
+            }
+        # Fallback: legacy full-array response
+        final_prices = qmc_resp.get('finalPrices', [])
+        return {
+            'outlook': qmc_bias_from_remote(final_prices, current_price=1.0),
+            'var': round(float(row['close']) * var_proxy_from_remote(final_prices), 2),
+            'bullish_prob': round(float(qmc_prob_positive_from_remote(final_prices, current_price=1.0) or 0.5), 4),
+        }
 
     def _remote_qaoa_result(self, target_weights, signals, strict: bool):
         def operation():
@@ -332,14 +349,19 @@ class RemoteGpuQuantumBackend(QuantumBackend, _RemoteQuantumMixin):
         result = self._simulator.process_cycle(row, history_df, regime, signals, portfolio_value)
         cycle_count = self._simulator.cycle_count
 
-        do_qmc = (cycle_count % config.QMC_SIM_INTERVAL == 0)
-        do_qaoa = (cycle_count % config.QAOA_WEIGHT_INTERVAL == 0 and result.get('qaoa_weights'))
+        # P#193.2: Use wider intervals when in strategy-only mode
+        _strategy_only = getattr(config, 'STRATEGY_ONLY_MODE', False)
+        qmc_interval = getattr(config, 'STRATEGY_ONLY_QMC_INTERVAL', 10) if _strategy_only else config.QMC_SIM_INTERVAL
+        qaoa_interval = getattr(config, 'STRATEGY_ONLY_QAOA_INTERVAL', 20) if _strategy_only else config.QAOA_WEIGHT_INTERVAL
+
+        do_qmc = (cycle_count % qmc_interval == 0)
+        do_qaoa = (cycle_count % qaoa_interval == 0 and result.get('qaoa_weights'))
 
         # P#192: Batch QMC+VQC+QAOA into single HTTP call when multiple fire
         if do_qmc or do_qaoa:
             ops = []
             if do_qmc:
-                ops.append({**self._build_qmc_payload(history_df), 'type': 'qmc'})
+                ops.append({**self._build_qmc_payload(history_df, summary_only=True), 'type': 'qmc'})
                 features = build_features(history_df['close'].astype(float).to_numpy())
                 ops.append({'type': 'vqc', 'features': features})
             if do_qaoa:
@@ -365,12 +387,8 @@ class RemoteGpuQuantumBackend(QuantumBackend, _RemoteQuantumMixin):
                 if 'error' not in qmc_resp:
                     self._remote_stats['remote_qmc_calls'] += 1
                     self._remote_stats['remote_qmc_compute_ms'] += self._safe_float(qmc_resp.get('computeTimeMs'), 0.0)
-                    final_prices = qmc_resp.get('finalPrices', [])
-                    remote_qmc = {
-                        'outlook': qmc_bias_from_remote(final_prices, current_price=1.0),
-                        'var': round(float(row['close']) * var_proxy_from_remote(final_prices), 2),
-                        'bullish_prob': round(float(qmc_prob_positive_from_remote(final_prices, current_price=1.0) or 0.5), 4),
-                    }
+                    # P#193.2: Use server-side summary stats if available
+                    remote_qmc = self._parse_qmc_response(qmc_resp, row)
                     local_outlook = result['qmc_outlook']
                     self._apply_remote_qmc_override(result, local_outlook, remote_qmc)
 

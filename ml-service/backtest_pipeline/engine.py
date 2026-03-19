@@ -389,10 +389,17 @@ class FullPipelineEngine:
             # PHASE 5: QUANTUM BOOST
             # ============================================================
             self.phase_stats['phase_5'] += 1
-            q_result = self.quantum.process_cycle(
-                row, history, current_regime, signals, 
-                self.pm.capital
-            )
+            # P#193.2: Skip quantum when strategy-only + all signals are HOLD (no position open)
+            _all_hold = self._strategy_only and self.pm.position is None and all(
+                s.get('action') == 'HOLD' for s in signals.values()
+            ) if signals else True
+            if _all_hold and self._strategy_only:
+                q_result = self._simulator_default_q_result()
+            else:
+                q_result = self.quantum.process_cycle(
+                    row, history, current_regime, signals,
+                    self.pm.capital
+                )
 
             if self._gpu_only_backtest:
                 quantum_stats = self.quantum.get_stats()
@@ -1190,6 +1197,17 @@ class FullPipelineEngine:
     def _block(self, reason):
         """Record a blocked trade reason."""
         self.blocked_reasons[reason] = self.blocked_reasons.get(reason, 0) + 1
+    
+    def _simulator_default_q_result(self):
+        """P#193.2: Default quantum result when skipping quantum call (all-HOLD candle)."""
+        return {
+            'qaoa_weights': None,
+            'qmc_outlook': 'NEUTRAL',
+            'qra_risk_score': 0.5,
+            'sl_adjust': 1.0,
+            'tp_adjust': 1.0,
+            'quantum_confidence_boost': 0.0,
+        }
         
     def _track_equity(self, row, time):
         """Track equity curve."""

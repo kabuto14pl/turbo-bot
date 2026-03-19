@@ -43,16 +43,33 @@ RUNTIME_PARITY_OVERRIDES = {
 }
 
 
+def _local_cuda_ready_for_gpu_native():
+    try:
+        import torch
+    except ImportError:
+        return False, 'PyTorch not installed'
+
+    if not torch.cuda.is_available():
+        return False, 'local CUDA not available'
+
+    return True, None
+
+
 def build_engine(initial_capital=None, symbol='BTCUSDT', quantum_backend='simulated', quantum_backend_options=None):
     use_remote_quantum = quantum_backend in ('remote-gpu', 'hybrid-verify')
+    gpu_native_requested = bool(getattr(config, 'GPU_NATIVE_ENGINE', False))
+    gpu_native_ready, gpu_native_reason = _local_cuda_ready_for_gpu_native()
+
     if use_remote_quantum:
         engine_cls = FullPipelineEngine
-        if getattr(config, 'GPU_NATIVE_ENGINE', False):
+        if gpu_native_requested:
             print("  📡 Remote quantum backend requested -> forcing FullPipelineEngine")
     else:
-        engine_cls = GpuNativeBacktestEngine if getattr(config, 'GPU_NATIVE_ENGINE', False) else FullPipelineEngine
+        engine_cls = GpuNativeBacktestEngine if gpu_native_requested and gpu_native_ready else FullPipelineEngine
         if engine_cls is GpuNativeBacktestEngine:
             print("  🚧 Using GPU-native experimental engine")
+        elif gpu_native_requested and not gpu_native_ready:
+            print(f"  ⚠️ GPU-native engine requested but {gpu_native_reason} -> using FullPipelineEngine")
     return engine_cls(
         initial_capital=initial_capital,
         symbol=symbol,

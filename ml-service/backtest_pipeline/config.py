@@ -206,6 +206,9 @@ QMC_BEARISH_TP_SHRINK = 0.75   # TP × 0.75 if QMC bearish
 QAOA_WEIGHT_INTERVAL = 3        # P#192: 10→3 more frequent QAOA for GPU utilization
 QMC_SIM_INTERVAL = 2            # P#192: 5→2 more frequent QMC
 QRA_RISK_INTERVAL = 5           # P#192: 10→5 more frequent risk assessment
+# P#193.2: Wider intervals for strategy-only backtests (no ML, just strategies + quantum)
+STRATEGY_ONLY_QMC_INTERVAL = 10    # QMC every 10 candles — 5× less HTTP overhead
+STRATEGY_ONLY_QAOA_INTERVAL = 20   # QAOA every 20 candles — strategies don't change fast
 
 # QDV verification — aligned with PATCH #60 lower floor
 QDV_MIN_CONFIDENCE = 0.25              # was 0.30 — aligned with new floor
