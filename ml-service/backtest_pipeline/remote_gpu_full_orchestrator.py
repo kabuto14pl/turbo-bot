@@ -25,6 +25,7 @@ from urllib.parse import urlparse
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 RESULTS_DIR = ROOT_DIR / 'ml-service' / 'results'
+DATA_DIR = ROOT_DIR / 'ml-service' / 'data'
 DEFAULT_REMOTE_URL = os.environ.get('QUANTUM_GPU_REMOTE_URL') or os.environ.get('GPU_REMOTE_URL') or 'http://127.0.0.1:4001'
 DEFAULT_JOB_SPECS = [
     'multi:15m',
@@ -32,9 +33,26 @@ DEFAULT_JOB_SPECS = [
     'multi:4h',
 ]
 
+ALL_PAIRS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT']
+
 
 def _build_no_proxy_opener():
     return urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
+def check_data_availability(jobs: list[dict]) -> dict[str, list[str]]:
+    """Check which data files exist for each job's timeframe. Returns {tf: [missing_pairs]}."""
+    timeframes = sorted({j['timeframe'] for j in jobs if j.get('timeframe')})
+    missing = {}
+    for tf in timeframes:
+        tf_missing = []
+        for pair in ALL_PAIRS:
+            csv_path = DATA_DIR / f'{pair.lower()}_{tf}.csv'
+            if not csv_path.exists():
+                tf_missing.append(pair)
+        if tf_missing:
+            missing[tf] = tf_missing
+    return missing
 
 
 def gpu_native_engine_enabled() -> bool:
@@ -507,6 +525,8 @@ def parse_args() -> argparse.Namespace:
                         help='P#193: Run full pipeline with ML training (overrides --strategy-only)')
     parser.add_argument('--results-dir', default=str(RESULTS_DIR),
                         help='Directory for per-run orchestrator artifacts')
+    parser.add_argument('--download-data', action='store_true',
+                        help='P#193.2: Auto-download missing data files from Binance before starting')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--job-spec', default=None, help=argparse.SUPPRESS)
     parser.add_argument('--output', default=None, help=argparse.SUPPRESS)
@@ -623,13 +643,41 @@ def main() -> int:
     run_dir.mkdir(parents=True, exist_ok=True)
     jobs = [parse_job_spec(spec) for spec in args.jobs]
 
+    # P#193.2: Check data availability before starting jobs
+    missing_data = check_data_availability(jobs)
+    if missing_data:
+        print('\n⚠️  MISSING DATA FILES:', flush=True)
+        for tf, pairs in sorted(missing_data.items()):
+            print(f'   {tf}: {", ".join(pairs)} — these pairs will be SKIPPED for this timeframe', flush=True)
+        if getattr(args, 'download_data', False):
+            print('\n📥 Auto-downloading missing data...', flush=True)
+            sys.path.insert(0, str(ROOT_DIR / 'ml-service'))
+            from backtest_pipeline.data_downloader import download_all_timeframes
+            download_all_timeframes(force=False)
+            missing_data = check_data_availability(jobs)
+            if missing_data:
+                print('⚠️  Still missing after download:', flush=True)
+                for tf, pairs in sorted(missing_data.items()):
+                    print(f'   {tf}: {", ".join(pairs)}', flush=True)
+            else:
+                print('✅ All data files now available!', flush=True)
+        else:
+            print('   Fix: run data download first:', flush=True)
+            print('   cd ml-service && python -m backtest_pipeline.data_downloader', flush=True)
+            print('   Or add --download-data flag to auto-download\n', flush=True)
+
     print(f'Run dir: {run_dir}', flush=True)
     print(f'Max parallel: {args.max_parallel}', flush=True)
     print('Jobs: ' + ', '.join(job['spec'] for job in jobs), flush=True)
 
+    orchestrator_start = time.time()
     job_results = []
+    total_jobs = len(jobs)
     if max(1, args.max_parallel) == 1:
-        for job in jobs:
+        for idx, job in enumerate(jobs, 1):
+            print(f'\n{"="*60}', flush=True)
+            print(f'  📋 Job {idx}/{total_jobs}: {job["spec"]}', flush=True)
+            print(f'{"="*60}', flush=True)
             job_result = run_job(args, job, run_dir)
             job_results.append(job_result)
             print_job_line(job_result)
@@ -646,7 +694,16 @@ def main() -> int:
 
     job_results.sort(key=lambda item: item['job']['spec'])
     manifest_path = aggregate_results(run_dir, job_results, args)
+
+    orchestrator_elapsed = time.time() - orchestrator_start
+    print(f'\n{"="*60}', flush=True)
+    print(f'  ✅ ALL {total_jobs} JOBS COMPLETED in {orchestrator_elapsed:.1f}s', flush=True)
+    print(f'{"="*60}', flush=True)
+    for jr in job_results:
+        status = '✅' if jr['exit_code'] == 0 else '❌'
+        print(f'  {status} {jr["job"]["spec"]:<18} {jr["elapsed_s"]:.1f}s', flush=True)
     print(f'\nAggregate manifest: {manifest_path}', flush=True)
+    print(f'Results dir: {run_dir}', flush=True)
 
     failed = [result for result in job_results if result['exit_code'] != 0]
     return 1 if failed else 0
