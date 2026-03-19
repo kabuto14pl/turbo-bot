@@ -54,66 +54,75 @@ def test_tcp():
 def test_raw_http():
     """Send raw HTTP bytes through a plain socket — no urllib, no http.client."""
     print(f'\n[2/6] RAW socket HTTP GET /ping (bypasses ALL Python HTTP libs)')
-    try:
-        t0 = time.time()
-        with socket.create_connection((HOST, PORT), timeout=10) as s:
-            raw_request = f'GET /ping HTTP/1.1\r\nHost: {HOST}:{PORT}\r\nConnection: close\r\n\r\n'
-            s.sendall(raw_request.encode('ascii'))
-            print(f'      Sent {len(raw_request)} bytes, waiting for response ...', flush=True)
-            
-            chunks = []
-            while True:
-                try:
-                    chunk = s.recv(4096)
-                    if not chunk:
-                        break
-                    chunks.append(chunk)
-                except socket.timeout:
-                    break
-            
-            elapsed = time.time() - t0
-            response = b''.join(chunks).decode('utf-8', errors='replace')
-            
-            if not response:
-                print(f'      FAIL: empty response after {elapsed*1000:.0f}ms')
-                return False
-            
-            # Parse status line
-            first_line = response.split('\r\n')[0]
-            print(f'      Response: {first_line} ({elapsed*1000:.0f}ms)')
-            
-            # Try to extract JSON body
-            if '\r\n\r\n' in response:
-                body = response.split('\r\n\r\n', 1)[1]
-                # Handle chunked transfer encoding
-                if 'transfer-encoding: chunked' in response.lower():
-                    # Simple chunked decode: skip size lines
-                    lines = body.split('\r\n')
-                    body_parts = []
-                    i = 0
-                    while i < len(lines):
-                        try:
-                            size = int(lines[i], 16)
-                            if size == 0:
-                                break
-                            if i + 1 < len(lines):
-                                body_parts.append(lines[i + 1])
-                            i += 2
-                        except ValueError:
-                            body_parts.append(lines[i])
-                            i += 1
-                    body = ''.join(body_parts)
+    # Try HTTP/1.0 first (simpler, no chunked), then HTTP/1.1
+    for http_ver in ('1.0', '1.1'):
+        try:
+            t0 = time.time()
+            with socket.create_connection((HOST, PORT), timeout=15) as s:
+                if http_ver == '1.0':
+                    raw_request = f'GET /ping HTTP/1.0\r\nHost: {HOST}\r\n\r\n'
+                else:
+                    raw_request = f'GET /ping HTTP/1.1\r\nHost: {HOST}:{PORT}\r\nConnection: close\r\n\r\n'
+                s.sendall(raw_request.encode('ascii'))
+                print(f'      [{http_ver}] Sent {len(raw_request)} bytes, waiting ...', flush=True)
                 
-                try:
-                    data = json.loads(body.strip())
-                    print(f'      Body: {json.dumps(data)}')
-                except Exception:
-                    print(f'      Body (raw): {body[:200]}')
-            
-            return '200' in first_line
-    except Exception as e:
-        print(f'      FAIL: {e}')
-        return False
+                chunks = []
+                while True:
+                    try:
+                        chunk = s.recv(4096)
+                        if not chunk:
+                            break
+                        chunks.append(chunk)
+                    except socket.timeout:
+                        break
+                
+                elapsed = time.time() - t0
+                response = b''.join(chunks).decode('utf-8', errors='replace')
+                
+                if not response:
+                    print(f'      [{http_ver}] Empty response after {elapsed*1000:.0f}ms', flush=True)
+                    continue
+                
+                first_line = response.split('\r\n')[0]
+                print(f'      [{http_ver}] Response: {first_line} ({elapsed*1000:.0f}ms)')
+                
+                if '\r\n\r\n' in response:
+                    body = response.split('\r\n\r\n', 1)[1]
+                    if 'transfer-encoding: chunked' in response.lower():
+                        lines = body.split('\r\n')
+                        body_parts = []
+                        i = 0
+                        while i < len(lines):
+                            try:
+                                size = int(lines[i], 16)
+                                if size == 0:
+                                    break
+                                if i + 1 < len(lines):
+                                    body_parts.append(lines[i + 1])
+                                i += 2
+                            except ValueError:
+                                body_parts.append(lines[i])
+                                i += 1
+                        body = ''.join(body_parts)
+                    
+                    try:
+                        data = json.loads(body.strip())
+                        print(f'      [{http_ver}] Body: {json.dumps(data)}')
+                    except Exception:
+                        print(f'      [{http_ver}] Body (raw): {body[:200]}')
+                
+                return '200' in first_line
+        except Exception as e:
+            print(f'      [{http_ver}] FAIL: {e}')
+    
+    # Both HTTP versions failed — try alternate port 4001
+    print(f'\n      All HTTP versions failed on port {PORT}.')
+    print(f'      This usually means antivirus/security software is intercepting HTTP on loopback.')
+    print(f'      Try starting gpu-cuda-service.py on a different port:')
+    print(f'        $env:GPU_PORT=4001; py -3 gpu-cuda-service.py')
+    print(f'      Then test:')
+    print(f'        py -3 test-gpu-connection.py http://127.0.0.1:4001')
+    return False
 
 
 def test_http_client():
