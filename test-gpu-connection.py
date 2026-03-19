@@ -9,6 +9,7 @@ Usage (Linux):
     python3 test-gpu-connection.py
 """
 
+import http.client
 import json
 import os
 import socket
@@ -18,8 +19,12 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlparse
 
-os.environ.setdefault('NO_PROXY', '*')
-os.environ.setdefault('no_proxy', '*')
+os.environ['NO_PROXY'] = '*'
+os.environ['no_proxy'] = '*'
+os.environ['HTTP_PROXY'] = ''
+os.environ['HTTPS_PROXY'] = ''
+os.environ['http_proxy'] = ''
+os.environ['https_proxy'] = ''
 
 URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:4000'
 parsed = urlparse(URL)
@@ -32,20 +37,107 @@ def opener():
 
 
 def test_tcp():
-    print(f'\n[1/4] TCP socket test -> {HOST}:{PORT}')
+    print(f'\n[1/6] TCP socket test -> {HOST}:{PORT}')
     try:
         t0 = time.time()
         with socket.create_connection((HOST, PORT), timeout=5) as s:
             elapsed = time.time() - t0
-            print(f'      OK  ({elapsed*1000:.0f}ms)')
+            local = s.getsockname()
+            remote = s.getpeername()
+            print(f'      OK  ({elapsed*1000:.0f}ms)  local={local[0]}:{local[1]} -> remote={remote[0]}:{remote[1]}')
             return True
     except Exception as e:
         print(f'      FAIL: {e}')
         return False
 
 
-def test_ping():
-    print(f'\n[2/4] HTTP GET /ping -> {URL}/ping')
+def test_raw_http():
+    """Send raw HTTP bytes through a plain socket — no urllib, no http.client."""
+    print(f'\n[2/6] RAW socket HTTP GET /ping (bypasses ALL Python HTTP libs)')
+    try:
+        t0 = time.time()
+        with socket.create_connection((HOST, PORT), timeout=10) as s:
+            raw_request = f'GET /ping HTTP/1.1\r\nHost: {HOST}:{PORT}\r\nConnection: close\r\n\r\n'
+            s.sendall(raw_request.encode('ascii'))
+            print(f'      Sent {len(raw_request)} bytes, waiting for response ...', flush=True)
+            
+            chunks = []
+            while True:
+                try:
+                    chunk = s.recv(4096)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+                except socket.timeout:
+                    break
+            
+            elapsed = time.time() - t0
+            response = b''.join(chunks).decode('utf-8', errors='replace')
+            
+            if not response:
+                print(f'      FAIL: empty response after {elapsed*1000:.0f}ms')
+                return False
+            
+            # Parse status line
+            first_line = response.split('\r\n')[0]
+            print(f'      Response: {first_line} ({elapsed*1000:.0f}ms)')
+            
+            # Try to extract JSON body
+            if '\r\n\r\n' in response:
+                body = response.split('\r\n\r\n', 1)[1]
+                # Handle chunked transfer encoding
+                if 'transfer-encoding: chunked' in response.lower():
+                    # Simple chunked decode: skip size lines
+                    lines = body.split('\r\n')
+                    body_parts = []
+                    i = 0
+                    while i < len(lines):
+                        try:
+                            size = int(lines[i], 16)
+                            if size == 0:
+                                break
+                            if i + 1 < len(lines):
+                                body_parts.append(lines[i + 1])
+                            i += 2
+                        except ValueError:
+                            body_parts.append(lines[i])
+                            i += 1
+                    body = ''.join(body_parts)
+                
+                try:
+                    data = json.loads(body.strip())
+                    print(f'      Body: {json.dumps(data)}')
+                except Exception:
+                    print(f'      Body (raw): {body[:200]}')
+            
+            return '200' in first_line
+    except Exception as e:
+        print(f'      FAIL: {e}')
+        return False
+
+
+def test_http_client():
+    """Use http.client directly — lighter than urllib."""
+    print(f'\n[3/6] http.client GET /ping (no urllib)')
+    try:
+        t0 = time.time()
+        conn = http.client.HTTPConnection(HOST, PORT, timeout=10)
+        conn.request('GET', '/ping', headers={'Host': f'{HOST}:{PORT}'})
+        resp = conn.getresponse()
+        body = resp.read().decode('utf-8')
+        elapsed = time.time() - t0
+        conn.close()
+        
+        data = json.loads(body)
+        print(f'      OK  ({elapsed*1000:.0f}ms): status={resp.status} body={json.dumps(data)}')
+        return resp.status == 200
+    except Exception as e:
+        print(f'      FAIL: {e}')
+        return False
+
+
+def test_urllib_ping():
+    print(f'\n[4/6] urllib GET /ping (full Python HTTP stack + ProxyHandler)')
     try:
         t0 = time.time()
         req = urllib.request.Request(f'{URL}/ping', method='GET')
@@ -59,8 +151,8 @@ def test_ping():
         return False
 
 
-def test_health():
-    print(f'\n[3/4] HTTP GET /health -> {URL}/health')
+def test_urllib_health():
+    print(f'\n[5/6] urllib GET /health')
     try:
         t0 = time.time()
         req = urllib.request.Request(f'{URL}/health', method='GET')
@@ -77,8 +169,8 @@ def test_health():
         return False
 
 
-def test_qmc():
-    print(f'\n[4/4] HTTP POST /gpu/qmc (minimal payload)')
+def test_urllib_qmc():
+    print(f'\n[6/6] urllib POST /gpu/qmc')
     payload = json.dumps({
         'currentPrice': 100000.0,
         'mu': 0.05,
@@ -110,38 +202,49 @@ def test_qmc():
 
 
 if __name__ == '__main__':
-    print(f'=== GPU Service Connectivity Test ===')
+    print(f'=== GPU Service Connectivity Test v2 ===')
     print(f'Target: {URL}')
     print(f'Host: {HOST}  Port: {PORT}')
-    print(f'NO_PROXY={os.environ.get("NO_PROXY", "")}')
+    print(f'Python: {sys.version}')
+    print(f'Platform: {sys.platform}')
+    
+    # Show proxy env
+    for key in ('HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'NO_PROXY', 'no_proxy'):
+        val = os.environ.get(key, '')
+        if val:
+            print(f'  {key}={val}')
 
-    tcp_ok = test_tcp()
-    if not tcp_ok:
+    results = {}
+
+    results['tcp'] = test_tcp()
+    if not results['tcp']:
         print(f'\n BLOCKED: TCP port {PORT} is not reachable.')
         print(f'   1. Is gpu-cuda-service.py running?')
         print(f'   2. Firewall: New-NetFirewallRule -DisplayName "TurboBot GPU" -Direction Inbound -Protocol TCP -LocalPort {PORT} -Action Allow')
         sys.exit(1)
 
-    ping_ok = test_ping()
-    health_ok = test_health()
-    qmc_ok = test_qmc()
+    results['raw_http'] = test_raw_http()
+    results['http_client'] = test_http_client()
+    results['urllib_ping'] = test_urllib_ping()
+    results['urllib_health'] = test_urllib_health()
+    results['urllib_qmc'] = test_urllib_qmc()
 
     print(f'\n=== Summary ===')
-    print(f'  TCP:    {"OK" if tcp_ok else "FAIL"}')
-    print(f'  /ping:  {"OK" if ping_ok else "FAIL"}')
-    print(f'  /health: {"OK" if health_ok else "FAIL"}')
-    print(f'  /gpu/qmc: {"OK" if qmc_ok else "FAIL"}')
+    for name, ok in results.items():
+        print(f'  {name:20s}: {"OK" if ok else "FAIL"}')
 
-    if all([tcp_ok, ping_ok, health_ok, qmc_ok]):
-        print(f'\n ALL TESTS PASSED — GPU service is fully reachable.')
-        print(f'  You can now run the backtest:')
+    if all(results.values()):
+        print(f'\n ALL TESTS PASSED — GPU service fully reachable.')
         print(f'  py -3 .\\ml-service\\backtest_pipeline\\remote_gpu_full_orchestrator.py --jobs single:15m --remote-url {URL}')
-    elif tcp_ok and not ping_ok:
-        print(f'\n TCP works but HTTP fails.')
-        print(f'  Likely cause: antivirus/proxy intercepting HTTP traffic.')
-        print(f'  Fix: add 127.0.0.1 to proxy exclusions or disable HTTPS inspection for localhost.')
-    elif tcp_ok and ping_ok and not qmc_ok:
-        print(f'\n Service reachable but GPU endpoint fails.')
-        print(f'  Check gpu-cuda-service.py terminal for errors.')
+    elif results['tcp'] and results['raw_http'] and not results['urllib_ping']:
+        print(f'\n Raw HTTP works but urllib fails! Python proxy/SSL stack is blocking.')
+        print(f'  Check: Windows proxy settings, antivirus HTTP inspection, IE proxy config')
+        print(f'  Try: set HTTP_PROXY= && set HTTPS_PROXY= && set NO_PROXY=*')
+    elif results['tcp'] and not results['raw_http']:
+        print(f'\n TCP connects but HTTP response never arrives.')
+        print(f'  Likely: antivirus deep packet inspection blocking HTTP on loopback.')
+        print(f'  Fix: add 127.0.0.1 to AV exclusions, or disable HTTP inspection for localhost.')
+    elif results['tcp'] and results['raw_http'] and results['http_client'] and results['urllib_ping'] and not results['urllib_qmc']:
+        print(f'\n Service reachable but GPU endpoint fails — check gpu-cuda-service.py logs.')
 
-    sys.exit(0 if all([tcp_ok, ping_ok, qmc_ok]) else 1)
+    sys.exit(0 if all(results.values()) else 1)
