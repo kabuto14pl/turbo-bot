@@ -14,6 +14,7 @@ import math
 import os
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Dict, List, Optional
@@ -59,29 +60,67 @@ class RemoteGPUReplayClient:
         self.timeout_s = timeout_s
         self.retry_attempts = max(1, int(os.environ.get('QUANTUM_GPU_RETRY_ATTEMPTS', '2')))
         self.retry_backoff_s = max(0.25, float(os.environ.get('QUANTUM_GPU_RETRY_BACKOFF_S', '1.0')))
+        # P#192: HTTP keep-alive connection pooling
+        self._conn = None
+        self._conn_host = None
+        self._conn_port = None
+        parsed = urllib.parse.urlparse(remote_url)
+        self._parsed_host = parsed.hostname or '127.0.0.1'
+        self._parsed_port = parsed.port or 4001
+
+    def _get_conn(self):
+        """Get or create a keep-alive HTTP connection."""
+        import http.client
+        if (self._conn is None or
+            self._conn_host != self._parsed_host or
+            self._conn_port != self._parsed_port):
+            if self._conn:
+                try:
+                    self._conn.close()
+                except Exception:
+                    pass
+            self._conn = http.client.HTTPConnection(
+                self._parsed_host, self._parsed_port,
+                timeout=self.timeout_s)
+            self._conn_host = self._parsed_host
+            self._conn_port = self._parsed_port
+        return self._conn
+
+    def _reset_conn(self):
+        if self._conn:
+            try:
+                self._conn.close()
+            except Exception:
+                pass
+            self._conn = None
 
     @staticmethod
     def _build_no_proxy_opener():
         return urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     def _request(self, path: str, payload: Optional[dict] = None) -> dict:
-        url = self.remote_url + path
-        data = None
-        headers = {'Content-Type': 'application/json'}
-        if payload is not None:
-            data = json.dumps(payload).encode('utf-8')
-
-        req = urllib.request.Request(url, data=data, headers=headers, method='POST' if data is not None else 'GET')
+        data = json.dumps(payload).encode('utf-8') if payload is not None else None
+        method = 'POST' if data is not None else 'GET'
+        headers = {'Content-Type': 'application/json'} if data else {}
         last_exc = None
 
         for attempt in range(1, self.retry_attempts + 1):
             try:
-                with self._build_no_proxy_opener().open(req, timeout=self.timeout_s) as resp:
-                    return json.loads(resp.read().decode('utf-8'))
+                conn = self._get_conn()
+                conn.request(method, path, body=data, headers=headers)
+                resp = conn.getresponse()
+                body_bytes = resp.read()
+                if resp.status >= 400:
+                    raise urllib.error.HTTPError(
+                        self.remote_url + path, resp.status, resp.reason,
+                        dict(resp.getheaders()), None)
+                return json.loads(body_bytes.decode('utf-8'))
             except urllib.error.HTTPError:
+                self._reset_conn()
                 raise
-            except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
+            except (TimeoutError, ConnectionError, OSError, Exception) as exc:
                 last_exc = exc
+                self._reset_conn()
                 if attempt >= self.retry_attempts:
                     raise
                 time.sleep(self.retry_backoff_s * attempt)
@@ -115,6 +154,11 @@ class RemoteGPUReplayClient:
 
     def vqc(self, payload: dict) -> dict:
         return self._request('/gpu/vqc-regime', payload)
+
+    def batch_quantum(self, ops: list) -> list:
+        """P#192: Send multiple QMC/VQC/QAOA ops in one HTTP call."""
+        result = self._request('/gpu/batch-quantum', {'ops': ops})
+        return result.get('results', [])
 
 
 def load_csv(csv_path: str) -> pd.DataFrame:

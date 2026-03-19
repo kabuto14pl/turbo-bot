@@ -332,16 +332,74 @@ class RemoteGpuQuantumBackend(QuantumBackend, _RemoteQuantumMixin):
         result = self._simulator.process_cycle(row, history_df, regime, signals, portfolio_value)
         cycle_count = self._simulator.cycle_count
 
-        if cycle_count % config.QMC_SIM_INTERVAL == 0:
-            local_outlook = result['qmc_outlook']
-            remote_qmc = self._remote_qmc_result(row, history_df, strict=True)
-            self._apply_remote_qmc_override(result, local_outlook, remote_qmc)
-            self._remote_vqc_result(history_df, strict=False)
+        do_qmc = (cycle_count % config.QMC_SIM_INTERVAL == 0)
+        do_qaoa = (cycle_count % config.QAOA_WEIGHT_INTERVAL == 0 and result.get('qaoa_weights'))
 
-        if cycle_count % config.QAOA_WEIGHT_INTERVAL == 0 and result.get('qaoa_weights'):
-            remote_qaoa = self._remote_qaoa_result(result['qaoa_weights'], signals, strict=True)
-            result['qaoa_weights'] = remote_qaoa['weights']
-            self._simulator.last_qaoa_weights = remote_qaoa['weights']
+        # P#192: Batch QMC+VQC+QAOA into single HTTP call when multiple fire
+        if do_qmc or do_qaoa:
+            ops = []
+            if do_qmc:
+                ops.append({**self._build_qmc_payload(history_df), 'type': 'qmc'})
+                features = build_features(history_df['close'].astype(float).to_numpy())
+                ops.append({'type': 'vqc', 'features': features})
+            if do_qaoa:
+                ops.append({
+                    'type': 'qaoa',
+                    'strategyMetrics': build_strategy_metrics(result['qaoa_weights'], signals),
+                    'maxStrategies': min(self.max_strategies, len(result['qaoa_weights']) or self.max_strategies),
+                    'iterations': int(self.options.get('qaoa_iterations', getattr(config, 'REMOTE_GPU_QAOA_ITERATIONS', 200))),
+                    'samples': int(self.options.get('qaoa_samples', getattr(config, 'REMOTE_GPU_QAOA_SAMPLES', 4096))),
+                    'layers': int(self.options.get('qaoa_layers', getattr(config, 'REMOTE_GPU_QAOA_LAYERS', 4))),
+                })
+
+            try:
+                batch_results = self._remote_client.batch_quantum(ops)
+            except Exception:
+                # Fallback to individual calls
+                batch_results = None
+
+            op_idx = 0
+            if do_qmc and batch_results and op_idx < len(batch_results):
+                qmc_resp = batch_results[op_idx]
+                op_idx += 1
+                if 'error' not in qmc_resp:
+                    self._remote_stats['remote_qmc_calls'] += 1
+                    self._remote_stats['remote_qmc_compute_ms'] += self._safe_float(qmc_resp.get('computeTimeMs'), 0.0)
+                    final_prices = qmc_resp.get('finalPrices', [])
+                    remote_qmc = {
+                        'outlook': qmc_bias_from_remote(final_prices, current_price=1.0),
+                        'var': round(float(row['close']) * var_proxy_from_remote(final_prices), 2),
+                        'bullish_prob': round(float(qmc_prob_positive_from_remote(final_prices, current_price=1.0) or 0.5), 4),
+                    }
+                    local_outlook = result['qmc_outlook']
+                    self._apply_remote_qmc_override(result, local_outlook, remote_qmc)
+
+                vqc_resp = batch_results[op_idx] if op_idx < len(batch_results) else None
+                op_idx += 1
+                if vqc_resp and 'error' not in vqc_resp:
+                    self._remote_stats['remote_vqc_calls'] += 1
+                    self._remote_stats['remote_vqc_compute_ms'] += self._safe_float(vqc_resp.get('computeTimeMs'), 0.0)
+                    self._remote_stats['last_remote_regime'] = vqc_resp.get('regime')
+                    self._remote_stats['last_remote_regime_confidence'] = vqc_resp.get('confidence')
+            elif do_qmc:
+                # Fallback: individual calls
+                local_outlook = result['qmc_outlook']
+                remote_qmc = self._remote_qmc_result(row, history_df, strict=True)
+                self._apply_remote_qmc_override(result, local_outlook, remote_qmc)
+                self._remote_vqc_result(history_df, strict=False)
+
+            if do_qaoa and batch_results and op_idx < len(batch_results):
+                qaoa_resp = batch_results[op_idx]
+                if 'error' not in qaoa_resp:
+                    self._remote_stats['remote_qaoa_calls'] += 1
+                    self._remote_stats['remote_qaoa_compute_ms'] += self._safe_float(qaoa_resp.get('computeTimeMs'), 0.0)
+                    weights = qaoa_resp.get('weights', {}) or result['qaoa_weights']
+                    result['qaoa_weights'] = weights
+                    self._simulator.last_qaoa_weights = weights
+            elif do_qaoa:
+                remote_qaoa = self._remote_qaoa_result(result['qaoa_weights'], signals, strict=True)
+                result['qaoa_weights'] = remote_qaoa['weights']
+                self._simulator.last_qaoa_weights = remote_qaoa['weights']
 
         return result
 

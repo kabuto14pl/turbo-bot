@@ -203,9 +203,9 @@ QMC_BULLISH_TP_BOOST = 1.20    # TP × 1.20 if QMC bullish
 QMC_BEARISH_TP_SHRINK = 0.75   # TP × 0.75 if QMC bearish
 
 # QAOA weight optimization interval (in cycles)
-QAOA_WEIGHT_INTERVAL = 10
-QMC_SIM_INTERVAL = 5
-QRA_RISK_INTERVAL = 10
+QAOA_WEIGHT_INTERVAL = 3        # P#192: 10→3 more frequent QAOA for GPU utilization
+QMC_SIM_INTERVAL = 2            # P#192: 5→2 more frequent QMC
+QRA_RISK_INTERVAL = 5           # P#192: 10→5 more frequent risk assessment
 
 # QDV verification — aligned with PATCH #60 lower floor
 QDV_MIN_CONFIDENCE = 0.25              # was 0.30 — aligned with new floor
@@ -298,15 +298,15 @@ GPU_NATIVE_LOCAL_QMC_PATHS = 32768  # P#186: large local CUDA Monte Carlo batch 
 GPU_NATIVE_LOCAL_QMC_STEPS = 16     # P#186: keep local QMC horizon aligned with heavy remote path
 GPU_NATIVE_LOCAL_QMC_LOOKBACK = 200 # P#186: history window for local quantum drift/volatility estimate
 GPU_NATIVE_LOCAL_QMC_BATCH = 32     # P#186: number of scheduled windows processed per CUDA QMC launch
-REMOTE_GPU_QMC_PATHS = 131072   # P#185: much heavier remote Monte Carlo workload
-REMOTE_GPU_QMC_STEPS = 16       # P#185: longer horizon per QMC launch
-REMOTE_GPU_QAOA_ITERATIONS = 1024  # P#185: heavier remote QAOA optimization
-REMOTE_GPU_QAOA_SAMPLES = 16384    # P#185: much larger QAOA sampling tensor
-REMOTE_GPU_QAOA_LAYERS = 6         # P#185: slightly deeper QAOA simulation
+REMOTE_GPU_QMC_PATHS = 500000   # P#192: 131K→500K heavy Monte Carlo for real GPU utilization
+REMOTE_GPU_QMC_STEPS = 64       # P#192: 16→64 longer horizon per QMC launch
+REMOTE_GPU_QAOA_ITERATIONS = 4096  # P#192: 1024→4096 heavier QAOA optimization
+REMOTE_GPU_QAOA_SAMPLES = 65536    # P#192: 16K→65K max QAOA sampling tensor
+REMOTE_GPU_QAOA_LAYERS = 8         # P#192: 6→8 deeper QAOA simulation
 MLP_GPU_ENABLED = True          # Enable PyTorch MLP GPU engine as XGBoost fallback
 MLP_LEARNING_RATE = 1e-3        # AdamW learning rate
-MLP_EPOCHS = 200                # P#182: 80→200 more GPU training epochs
-MLP_BATCH_SIZE = 256            # P#182: 64→256 larger batches = better GPU utilization
+MLP_EPOCHS = 300                # P#192: 200→300 more GPU training epochs
+MLP_BATCH_SIZE = 512            # P#192: 256→512 larger batches = better GPU utilization
 MLP_WEIGHT_DECAY = 1e-4         # L2 regularization
 MLP_PATIENCE = 20               # P#182: 10→20 patience for longer training
 MLP_HIDDEN_DIMS = [512, 256, 128, 64]  # P#182: [128,64,32]→[512,256,128,64] 4-layer deep network

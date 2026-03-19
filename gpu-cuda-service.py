@@ -219,8 +219,8 @@ async def gpu_qmc(body: dict):
     t0 = time.perf_counter()
 
     try:
-        n_paths = min(int(body.get("nPaths", 8000)), 500000)
-        n_steps = min(int(body.get("nSteps", 5)), 252)
+        n_paths = min(int(body.get("nPaths", 8000)), 1000000)  # P#192: cap 500K→1M
+        n_steps = min(int(body.get("nSteps", 5)), 512)  # P#192: cap 252→512
         current_price = float(body.get("currentPrice", 1.0))
         mu = float(body.get("mu", 0.05))
         sigma = float(body.get("sigma", 0.2))
@@ -289,7 +289,7 @@ async def gpu_qaoa(body: dict):
 
         n_qubits = min(n, 8)
         n_layers = min(int(body.get("layers", 4)), 12)
-        n_iterations = min(int(body.get("iterations", 200)), 4096)
+        n_iterations = min(int(body.get("iterations", 200)), 8192)  # P#192: cap 4096→8192
 
         h = torch.zeros(n_qubits, device=device)
         for i in range(n_qubits):
@@ -298,21 +298,39 @@ async def gpu_qaoa(body: dict):
 
         best_energy = float('-inf')
         best_state = 0
-        n_samples = min(int(body.get("samples", 4096)), 65536)
+        n_samples = min(int(body.get("samples", 4096)), 131072)  # P#192: cap 65K→131K
 
         with torch.no_grad():
-            for iteration in range(n_iterations):
-                samples = torch.randint(0, 2, (n_samples, n_qubits), device=device, dtype=torch.float32)
-                energies = torch.matmul(samples, h.unsqueeze(1)).squeeze()
-                counts = samples.sum(dim=1)
-                penalty = 2.0 * (counts - max_strategies) ** 2
-                energies = energies - penalty
-                best_idx = torch.argmax(energies).item()
-                if energies[best_idx].item() > best_energy:
-                    best_energy = energies[best_idx].item()
-                    best_state = int(samples[best_idx].cpu().numpy().dot(
+            # P#192: Vectorized QAOA with VRAM-safe chunking
+            # Each chunk: chunk_iters × n_samples × n_qubits × 4 bytes
+            # Target ~1GB per chunk to stay within VRAM limit
+            max_elements_per_chunk = 256 * 1024 * 1024 // 4  # ~256M float32 = ~1GB
+            elements_per_iter = n_samples * n_qubits
+            chunk_iters = max(1, min(n_iterations, max_elements_per_chunk // max(elements_per_iter, 1)))
+
+            best_energy = float('-inf')
+            best_state = 0
+
+            for chunk_start in range(0, n_iterations, chunk_iters):
+                chunk_size = min(chunk_iters, n_iterations - chunk_start)
+                samples = torch.randint(0, 2, (chunk_size, n_samples, n_qubits),
+                                        device=device, dtype=torch.float32)
+                energies = torch.matmul(samples, h.unsqueeze(1)).squeeze(-1)
+                counts = samples.sum(dim=2)
+                penalties = 2.0 * (counts - max_strategies) ** 2
+                energies = energies - penalties
+                flat_energies = energies.reshape(-1)
+                best_flat_idx = torch.argmax(flat_energies).item()
+                chunk_best_energy = flat_energies[best_flat_idx].item()
+                if chunk_best_energy > best_energy:
+                    best_energy = chunk_best_energy
+                    iter_idx = best_flat_idx // n_samples
+                    sample_idx = best_flat_idx % n_samples
+                    best_sample = samples[iter_idx, sample_idx]
+                    best_state = int(best_sample.cpu().numpy().dot(
                         [2**i for i in range(n_qubits)]
                     ))
+                del samples, energies, counts, penalties, flat_energies
 
         selected = [strategies[i] for i in range(n_qubits) if (best_state >> i) & 1]
         if len(selected) == 0:
@@ -450,6 +468,56 @@ async def gpu_vqc(body: dict):
         stats["errors"] += 1
         logger.error(f"VQC error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════
+# BATCH QUANTUM — process N×(QMC+VQC+QAOA) in one HTTP call (P#192)
+# ═══════════════════════════════════════════════════════════════════
+
+@app.post("/gpu/batch-quantum")
+async def gpu_batch_quantum(body: dict):
+    """
+    Batch quantum endpoint: process multiple QMC, VQC, QAOA calls in one HTTP round-trip.
+    Request: { "ops": [ {"type": "qmc", ...}, {"type": "vqc", ...}, {"type": "qaoa", ...} ] }
+    Response: { "results": [ {qmc_result}, {vqc_result}, {qaoa_result} ], "total_ms": ... }
+    """
+    if not GPU_AVAILABLE:
+        raise HTTPException(status_code=503, detail="GPU not available")
+
+    t0 = time.perf_counter()
+    ops = body.get("ops", [])
+    if not ops or len(ops) > 50:
+        raise HTTPException(status_code=400, detail=f"ops must be 1-50 items, got {len(ops)}")
+
+    results = []
+    for op in ops:
+        op_type = op.get("type", "").lower()
+        try:
+            if op_type == "qmc":
+                result = await gpu_qmc(op)
+            elif op_type == "vqc":
+                result = await gpu_vqc(op)
+            elif op_type == "qaoa":
+                result = await gpu_qaoa(op)
+            else:
+                result = {"error": f"unknown op type: {op_type}"}
+        except HTTPException as he:
+            result = {"error": he.detail}
+        except Exception as e:
+            result = {"error": str(e)}
+        results.append(result)
+
+    elapsed_ms = (time.perf_counter() - t0) * 1000
+    stats["requests"]["batch_quantum"] = stats["requests"].get("batch_quantum", 0) + 1
+    stats["total_compute_ms"] += elapsed_ms
+    logger.info(f"BATCH-QUANTUM: {len(ops)} ops in {elapsed_ms:.1f}ms")
+
+    return {
+        "results": results,
+        "n_ops": len(ops),
+        "total_ms": round(elapsed_ms, 2),
+        "backend": BACKEND,
+    }
 
 
 # 
