@@ -624,15 +624,23 @@ async def gpu_xgboost_train(body: dict):
 
         # --- Serialize models (full XGBClassifier format for classes_ compat) ---
         import tempfile as _tf
-        with _tf.NamedTemporaryFile(suffix='.ubj', delete=False) as f:
-            clf.save_model(f.name)
-            clf_raw = open(f.name, 'rb').read()
-            os.unlink(f.name)
+        clf_tmp = _tf.mktemp(suffix='.ubj')
+        clf.save_model(clf_tmp)
+        with open(clf_tmp, 'rb') as fh:
+            clf_raw = fh.read()
+        try:
+            os.unlink(clf_tmp)
+        except OSError:
+            pass
         if reg:
-            with _tf.NamedTemporaryFile(suffix='.ubj', delete=False) as f:
-                reg.save_model(f.name)
-                reg_raw = open(f.name, 'rb').read()
-                os.unlink(f.name)
+            reg_tmp = _tf.mktemp(suffix='.ubj')
+            reg.save_model(reg_tmp)
+            with open(reg_tmp, 'rb') as fh:
+                reg_raw = fh.read()
+            try:
+                os.unlink(reg_tmp)
+            except OSError:
+                pass
         else:
             reg_raw = b''
 
