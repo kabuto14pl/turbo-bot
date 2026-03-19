@@ -25,7 +25,7 @@ from urllib.parse import urlparse
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 RESULTS_DIR = ROOT_DIR / 'ml-service' / 'results'
-DEFAULT_REMOTE_URL = os.environ.get('QUANTUM_GPU_REMOTE_URL') or os.environ.get('GPU_REMOTE_URL') or 'http://127.0.0.1:4000'
+DEFAULT_REMOTE_URL = os.environ.get('QUANTUM_GPU_REMOTE_URL') or os.environ.get('GPU_REMOTE_URL') or 'http://127.0.0.1:4001'
 DEFAULT_JOB_SPECS = [
     'single:15m',
     'single:1h',
@@ -81,7 +81,7 @@ def diagnose_connectivity(remote_url: str) -> dict:
     """Run connectivity diagnostics and return a result dict."""
     parsed = urlparse(remote_url)
     host = parsed.hostname or '127.0.0.1'
-    port = parsed.port or 4000
+    port = parsed.port or 4001
 
     result = {'host': host, 'port': port, 'tcp_open': False, 'http_ok': False, 'ping_ok': False}
 
@@ -173,8 +173,6 @@ def parse_job_spec(spec: str) -> dict:
         'timeframe': timeframe,
         'name': name,
     }
-
-
 def build_worker_command(args, job: dict, output_path: Path) -> list[str]:
     command = [
         sys.executable,

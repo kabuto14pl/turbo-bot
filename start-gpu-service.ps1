@@ -1,12 +1,12 @@
 # PATCH #43: GPU-ONLY Architecture - Start GPU + SSH Tunnel Services
 #
 # Starts 1 service + 2 SSH tunnels:
-#   1. Python CUDA Service    (port 4000) - RTX 5070 Ti @ 40% utilization
-#   2. SSH tunnel GPU          (VPS:4001 -> Local:4000)
+#   1. Python CUDA Service    (port 4001) - RTX 5070 Ti @ 40% utilization
+#   2. SSH tunnel GPU          (VPS:4001 -> Local:4001)
 #   3. SSH tunnel Ollama       (VPS:11434 -> Local:11434)
 #
 # Architecture: VPS bot -> SSH tunnel -> Python FastAPI -> RTX 5070 Ti CUDA
-# NO Node.js gateway. Direct Python CUDA on port 4000.
+# Port 4001 avoids Windows AV Deep Packet Inspection on port 4000.
 #
 # Usage:
 #   .\start-gpu-service.ps1              -- Start everything
@@ -146,14 +146,14 @@ function Start-CudaService {
 }
 
 function Get-Port4000Owners {
-    return @(Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue |
+    return @(Get-NetTCPConnection -LocalPort 4001 -State Listen -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty OwningProcess -Unique |
         Where-Object { $_ -gt 0 })
 }
 
 function Get-CudaHealth {
     try {
-        return (Invoke-WebRequest -Uri http://localhost:4000/health -UseBasicParsing -TimeoutSec $ProbeTimeoutSec -ErrorAction Stop).Content | ConvertFrom-Json
+        return (Invoke-WebRequest -Uri http://localhost:4001/health -UseBasicParsing -TimeoutSec $ProbeTimeoutSec -ErrorAction Stop).Content | ConvertFrom-Json
     } catch {
         return $null
     }
@@ -161,7 +161,7 @@ function Get-CudaHealth {
 
 function Get-CudaPing {
     try {
-        return (Invoke-WebRequest -Uri http://localhost:4000/ping -UseBasicParsing -TimeoutSec $ProbeTimeoutSec -ErrorAction Stop).Content | ConvertFrom-Json
+        return (Invoke-WebRequest -Uri http://localhost:4001/ping -UseBasicParsing -TimeoutSec $ProbeTimeoutSec -ErrorAction Stop).Content | ConvertFrom-Json
     } catch {
         return $null
     }
@@ -236,7 +236,7 @@ function Restart-CudaService {
 
     if (-not (Wait-Port4000Released -TimeoutSec 15)) {
         $remainingOwners = (Get-Port4000Owners | ForEach-Object { Describe-Process -ProcessId $_ }) -join ", "
-        Write-Host "[ERROR] Port 4000 did not release before CUDA restart." -ForegroundColor Red
+        Write-Host "[ERROR] Port 4001 did not release before CUDA restart." -ForegroundColor Red
         if ($remainingOwners) {
             Write-Host "        Owners: $remainingOwners" -ForegroundColor Red
         }
@@ -278,8 +278,8 @@ function Restart-CudaService {
 
 Register-EngineEvent PowerShell.Exiting -Action { Stop-AllServices } -ErrorAction SilentlyContinue | Out-Null
 
-# STEP 1: Python CUDA Service (port 4000)
-Write-Host "[1/3] Starting Python CUDA Service (port 4000)..." -ForegroundColor Cyan
+# STEP 1: Python CUDA Service (port 4001)
+Write-Host "[1/3] Starting Python CUDA Service (port 4001)..." -ForegroundColor Cyan
 
 $cudaReady = $false
 $cudaHealth = $null
@@ -292,18 +292,18 @@ if ($existingCudaHealth -and $existingCudaHealth.status -eq "online" -and $exist
     $cudaReady = $true
     $cudaHealth = $existingCudaHealth
     $ownerText = if ($existingPortOwners.Count -gt 0) { Describe-Process -ProcessId $existingPortOwners[0] } else { "existing listener" }
-    Write-WatchdogLog -Message "Reusing existing CUDA service on port 4000 ($ownerText)."
-    Write-Host "  Reusing existing CUDA service on port 4000 ($ownerText)" -ForegroundColor DarkGray
+    Write-WatchdogLog -Message "Reusing existing CUDA service on port 4001 ($ownerText)."
+    Write-Host "  Reusing existing CUDA service on port 4001 ($ownerText)" -ForegroundColor DarkGray
     Write-Host "[OK] GPU CUDA: $($existingCudaHealth.gpu.device) | VRAM: $($existingCudaHealth.gpu.vram_total_gb)GB" -ForegroundColor Green
 } else {
     foreach ($ownerId in $existingPortOwners) {
         Stop-Process -Id $ownerId -Force -ErrorAction SilentlyContinue
-        Write-Host "  Killed old $(Describe-Process -ProcessId $ownerId) on port 4000" -ForegroundColor DarkGray
+        Write-Host "  Killed old $(Describe-Process -ProcessId $ownerId) on port 4001" -ForegroundColor DarkGray
     }
 
     if ($existingPortOwners.Count -gt 0 -and -not (Wait-Port4000Released)) {
         $remainingOwners = (Get-Port4000Owners | ForEach-Object { Describe-Process -ProcessId $_ }) -join ", "
-        Write-Host "[ERROR] Port 4000 is still busy after attempting cleanup." -ForegroundColor Red
+        Write-Host "[ERROR] Port 4001 is still busy after attempting cleanup." -ForegroundColor Red
         if ($remainingOwners) {
             Write-Host "        Owners: $remainingOwners" -ForegroundColor Red
         }
@@ -378,10 +378,10 @@ if (-not $cudaReady) {
 }
 
 if (-not $LocalOnly) {
-    # STEP 2: SSH Tunnel - GPU (VPS:4001 -> Local:4000)
+    # STEP 2: SSH Tunnel - GPU (VPS:4001 -> Local:4001)
     Write-Host ""
-    Write-Host "[2/3] Opening SSH tunnel: VPS:4001 -> Local:4000 (GPU)..." -ForegroundColor Cyan
-    $gpuTunnel = Start-Process -FilePath "ssh" -ArgumentList "-R 4001:127.0.0.1:4000 $VPS -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes" -PassThru -WindowStyle Hidden
+    Write-Host "[2/3] Opening SSH tunnel: VPS:4001 -> Local:4001 (GPU)..." -ForegroundColor Cyan
+    $gpuTunnel = Start-Process -FilePath "ssh" -ArgumentList "-R 4001:127.0.0.1:4001 $VPS -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes" -PassThru -WindowStyle Hidden
     $bgProcesses += $gpuTunnel
     Write-Host "  PID: $($gpuTunnel.Id)" -ForegroundColor DarkGray
     Start-Sleep -Seconds 3
@@ -429,9 +429,9 @@ if (-not $LocalOnly) {
 # Status summary
 Write-Host ""
 Write-Host "  GPU-ONLY SERVICE RUNNING (PATCH #43)" -ForegroundColor Green
-Write-Host "  Python CUDA:    http://localhost:4000  (RTX 5070 Ti @ 40%)" -ForegroundColor White
+Write-Host "  Python CUDA:    http://localhost:4001  (RTX 5070 Ti @ 40%)" -ForegroundColor White
 if (-not $LocalOnly) {
-    Write-Host "  GPU Tunnel:     VPS:4001 -> Local:4000" -ForegroundColor White
+    Write-Host "  GPU Tunnel:     VPS:4001 -> Local:4001" -ForegroundColor White
     if (-not $NoOllama) {
         Write-Host "  Ollama Tunnel:  VPS:11434 -> Local:11434" -ForegroundColor White
     }
@@ -439,7 +439,7 @@ if (-not $LocalOnly) {
     Write-Host "  Dashboard:      http://64.226.70.149:8080" -ForegroundColor White
 } else {
     Write-Host "  Mode:           LOCAL BACKTEST / REPLAY ONLY" -ForegroundColor White
-    Write-Host "  Replay URL:     http://127.0.0.1:4000" -ForegroundColor White
+    Write-Host "  Replay URL:     http://127.0.0.1:4001" -ForegroundColor White
 }
 Write-Host ""
 Write-Host "  Press Ctrl+C to stop all services" -ForegroundColor DarkGray
@@ -463,7 +463,7 @@ try {
                 }
             }
             elseif (-not $LocalOnly -and $d.Id -eq $gpuTunnel.Id) {
-                $gpuTunnel = Start-Process -FilePath "ssh" -ArgumentList "-R 4001:127.0.0.1:4000 $VPS -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes" -PassThru -WindowStyle Hidden
+                $gpuTunnel = Start-Process -FilePath "ssh" -ArgumentList "-R 4001:127.0.0.1:4001 $VPS -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes" -PassThru -WindowStyle Hidden
                 $bgProcesses = @($bgProcesses | Where-Object { $_.Id -ne $d.Id }) + $gpuTunnel
                 Write-Host "  Restarted GPU tunnel (PID: $($gpuTunnel.Id))" -ForegroundColor Green
             }

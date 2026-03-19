@@ -1444,3 +1444,11 @@ Partial: OFF          (neutral — keep system simple)
 - BTC 15m wick size often 0.4-0.8 ATR → Grid SL=0.60×ATR hit routinely by noise
 - Grid mean-reversion works better on lower-volatility altcoins (ETH/SOL/BNB/XRP)
 - **Fix: GRID_V2_ENABLED_PAIRS excludes BTCUSDT; PAIR_STRATEGY_MAP routes BTC to momentum-only**
+
+## 2026-03-19: PATCH #190 — Port 4000→4001 Migration (Windows AV DPI Bypass)
+
+### L190.1: Windows antivirus Deep Packet Inspection silently kills HTTP on loopback port 4000
+TCP handshake succeeds in ~15ms but raw HTTP bytes sent through the socket receive empty response after timeout. This is NOT a Python, urllib, proxy, or firewall issue. Port 4001 works perfectly. All pipeline defaults changed from 4000 to 4001.
+
+### L190.2: Layered socket diagnostics are essential for Windows networking issues
+test-gpu-connection.py v3 (6-layer: TCP→RAW HTTP→http.client→urllib ping/health/qmc) pinpointed the exact failure layer: TCP OK but RAW HTTP dead. Without this, debugging would have gone in circles blaming Python or proxies.

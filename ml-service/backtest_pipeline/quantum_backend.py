@@ -28,7 +28,7 @@ from .quantum_sim import QuantumPipelineSimulator
 
 
 SUPPORTED_QUANTUM_BACKENDS = ('simulated', 'remote-gpu', 'hybrid-verify')
-DEFAULT_REMOTE_URL = os.environ.get('QUANTUM_GPU_REMOTE_URL') or os.environ.get('GPU_REMOTE_URL') or 'http://127.0.0.1:4000'
+DEFAULT_REMOTE_URL = os.environ.get('QUANTUM_GPU_REMOTE_URL') or os.environ.get('GPU_REMOTE_URL') or 'http://127.0.0.1:4001'
 DEFAULT_REMOTE_TIMEOUT_S = float(os.environ.get('QUANTUM_GPU_TIMEOUT_S', '5.0'))
 DEFAULT_VERIFY_SAMPLE_RATE = float(os.environ.get('QUANTUM_VERIFY_SAMPLE_RATE', '0.1'))
 DEFAULT_REMOTE_INIT_WAIT_S = float(os.environ.get('QUANTUM_GPU_INIT_WAIT_S', '90.0'))

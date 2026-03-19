@@ -970,7 +970,7 @@ async def gpu_mlp_predict(body: dict):
 # 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("GPU_PORT", 4000))
+    port = int(os.environ.get("GPU_PORT", 4001))  # 4001 avoids Windows AV DPI on 4000
     print(f"\n{'='*60}")
     print(f"  TURBO-BOT GPU CUDA SERVICE")
     print(f"  PATCH #43: GPU-ONLY Architecture")

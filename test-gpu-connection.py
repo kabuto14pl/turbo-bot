@@ -26,10 +26,10 @@ os.environ['HTTPS_PROXY'] = ''
 os.environ['http_proxy'] = ''
 os.environ['https_proxy'] = ''
 
-URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:4000'
+URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:4001'
 parsed = urlparse(URL)
 HOST = parsed.hostname or '127.0.0.1'
-PORT = parsed.port or 4000
+PORT = parsed.port or 4001
 
 
 def opener():
