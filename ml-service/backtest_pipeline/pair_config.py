@@ -250,3 +250,26 @@ def restore_config(originals):
                 delattr(cfg, param)
         else:
             setattr(cfg, param, original_value)
+
+
+# ============================================================================
+# P#197 FAZA 2.6: TIMEFRAME HIERARCHY OVERRIDES
+# ============================================================================
+
+def apply_timeframe_overrides(timeframe):
+    """
+    Apply per-TF overrides from config.TIMEFRAME_OVERRIDES.
+    Returns dict of {param: original_value} for restoration.
+    """
+    from . import config as cfg
+    tf_overrides = getattr(cfg, 'TIMEFRAME_OVERRIDES', {}).get(timeframe, {})
+    originals = {}
+
+    for param, value in tf_overrides.items():
+        if hasattr(cfg, param):
+            originals[param] = getattr(cfg, param)
+        else:
+            originals[param] = None
+        setattr(cfg, param, value)
+
+    return originals

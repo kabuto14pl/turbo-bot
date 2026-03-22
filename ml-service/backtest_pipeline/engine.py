@@ -662,6 +662,15 @@ class FullPipelineEngine:
                         self._track_equity(row, candle_time)
                         continue
 
+                    # P#197 Faza 2.5: Block ensemble directional in TRENDING_UP
+                    # MC P#196: TRENDING_UP = 18 trades, -$19.41, p=0.705
+                    # GridV2/MomentumHTF bypasses still fire. Only ensemble blocked.
+                    if current_regime == 'TRENDING_UP' and not getattr(
+                            config, 'TRENDING_UP_ENSEMBLE_DIRECTIONAL_ENABLED', True):
+                        self._block('P#197: TRENDING_UP ensemble directional blocked')
+                        self._track_equity(row, candle_time)
+                        continue
+
                     # P#195 Faza 2: Track consensus strategies for attribution
                     self._consensus_strategies = consensus.get('strategies', [])
 
@@ -673,7 +682,9 @@ class FullPipelineEngine:
                     if is_ranging_grid and getattr(config, 'RANGING_BYPASS_ENABLED', False):
                         effective_floor = getattr(config, 'RANGING_CONFIDENCE_FLOOR', 0.12)
                     else:
-                        effective_floor = config.CONFIDENCE_FLOOR
+                        # P#197 Faza 2.5: Higher floor for ensemble directional
+                        effective_floor = getattr(config, 'ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR',
+                                                  config.CONFIDENCE_FLOOR)
 
                     # ============================================================
                     # PHASE 7: POST-ENSEMBLE GATES (PRIME)

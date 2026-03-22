@@ -19,7 +19,8 @@ from backtest_pipeline import config
 from backtest_pipeline.quantum_backend import SUPPORTED_QUANTUM_BACKENDS
 from backtest_pipeline.pair_config import (
     get_pair_overrides, get_pair_capital, get_active_pairs,
-    apply_pair_overrides, restore_config, PORTFOLIO_CAPITAL,
+    apply_pair_overrides, restore_config, apply_timeframe_overrides,
+    PORTFOLIO_CAPITAL,
     PAIR_CAPITAL_ALLOCATION,
 )
 
@@ -572,6 +573,9 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
         pairs = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT']
     all_results = {}
     
+    # P#197 Faza 2.6: Apply timeframe hierarchy overrides
+    tf_originals = apply_timeframe_overrides(timeframe)
+    
     # P#70: Use fast XGBoost retrain for multi-pair (2.5× faster)
     original_retrain = config.XGBOOST_RETRAIN_INTERVAL
     fast_interval = getattr(config, 'XGBOOST_RETRAIN_INTERVAL_FAST', 2000)
@@ -681,6 +685,8 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
     if len(all_results) > 1:
         # P#70: Restore XGBoost retrain interval
         config.XGBOOST_RETRAIN_INTERVAL = original_retrain
+        # P#197 Faza 2.6: Restore timeframe overrides
+        restore_config(tf_originals)
         
         print(f"\n{'═'*90}")
         print(f"  📊 MULTI-PAIR SUMMARY {'(P#72 Adaptive+Funding+Grid)' if use_pair_config else ''}")

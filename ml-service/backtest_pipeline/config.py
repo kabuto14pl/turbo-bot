@@ -121,9 +121,9 @@ STATIC_WEIGHTS = {
     'RSITurbo': 0.11,
     'SuperTrend': 0.14,
     'MACrossover': 0.18,
-    'MomentumPro': 0.07,
+    'MomentumPro': 0.03,     # P#197 Faza 2.5: was 0.07 — MC shows -$5 edge, worst performer
     'NeuralAI': 0.07,
-    'PythonML': 0.04,
+    'PythonML': 0.02,           # P#197 Faza 2.5: was 0.04 — MC shows -$5 edge, always in losing combos
     'BollingerMR': 0.14,        # P#66: Bollinger Mean-Reversion for RANGING
     'ExternalSignals': 0.10,    # P#152C: whale/macro/F&G/calendar/COT
 }
@@ -140,10 +140,19 @@ CONFIDENCE_CLAMP_MAX = 0.95
 ENSEMBLE_COUNTER_TREND_CONF_MULT = 0.65     # P#196: 0.50 was too harsh (regressed), 0.72 was too lenient. Middle ground.
 ENSEMBLE_TREND_ALIGNED_CONF_MULT = 1.10     # P#195: was 1.05 — stronger boost for trend-aligned
 
+# P#197 Faza 2.5: Ensemble confidence floor for directional
+# MC P#196: ensemble directional = 18 trades, -$19.41 (NET NEGATIVE)
+# Only GridV2 ($+52) and MomentumHTF ($+8) have edge. Raise floor to filter weak signals.
+ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR = 0.45  # was using CONFIDENCE_FLOOR=0.30
+
 # P#195 Faza 2: TRENDING_DOWN directional block
-# MC test shows TRENDING_DOWN = -$51 on 1h (6 trades, catastrophic losses)
-# Block all directional trading in TRENDING_DOWN regime
+# MC test shows TRENDING_DOWN = -$51 on 1h (catastrophic losses)
 TRENDING_DOWN_DIRECTIONAL_ENABLED = False
+
+# P#197 Faza 2.5: TRENDING_UP ensemble directional guard
+# MC P#196: TRENDING_UP = 18 trades, -$19.41, p=0.705 — NO edge
+# GridV2/MomentumHTF bypasses still work. Only blocks ensemble directional.
+TRENDING_UP_ENSEMBLE_DIRECTIONAL_ENABLED = False
 
 # ==========================================================================
 # RUNTIME PARITY PROFILE
@@ -561,4 +570,32 @@ PAIR_STRATEGY_MAP = {
     'SOLUSDT':  ['MomentumHTF', 'GridV2', 'FundingArb'],
     'BNBUSDT':  ['GridV2', 'BollingerMR'],
     'XRPUSDT':  ['GridV2', 'ExternalSignals'],
+}
+
+# ============================================================================
+# P#197 FAZA 2.6: TIMEFRAME HIERARCHY — Per-TF Config Overrides
+# ============================================================================
+# Higher TFs get more trust, lower TFs get more restrictions.
+# 4h = primary signal source (most profitable: +$332)
+# 1h = secondary, filtered by regime blocks (TRENDING_DOWN/UP blocked)
+# 15m = funding-only (directional disabled since P#194)
+#
+# Applied at engine startup via apply_timeframe_overrides(tf)
+TIMEFRAME_OVERRIDES = {
+    '4h': {
+        # 4h is most reliable — allow trend-following, lighter filters
+        'TRENDING_UP_ENSEMBLE_DIRECTIONAL_ENABLED': True,  # 4h TRENDING_UP is +$16.64
+        'ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR': 0.35,     # Lower floor — 4h signals are cleaner
+        'RISK_PER_TRADE': 0.018,                           # Slightly more risk ok on 4h
+    },
+    '1h': {
+        # 1h needs strict filtering — TRENDING regimes are net negative
+        'TRENDING_UP_ENSEMBLE_DIRECTIONAL_ENABLED': False,  # 1h TRENDING_UP = -$36 (blocked)
+        'ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR': 0.45,     # High bar for ensemble signals
+        'RISK_PER_TRADE': 0.015,                           # Standard risk
+    },
+    '15m': {
+        # 15m = funding only (DIRECTIONAL_15M_ENABLED = False already)
+        'RISK_PER_TRADE': 0.010,                           # Minimal risk for funding
+    },
 }
