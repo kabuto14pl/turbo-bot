@@ -218,11 +218,20 @@ class FullPipelineEngine:
         else:
             self.candle_hours = 0.25
         
+        # P#194: Store timeframe for gate bypass logic
+        self._timeframe = timeframe
+        self._is_higher_tf = timeframe in ('1h', '4h')
+        self._directional_disabled = (
+            timeframe == '15m' and not getattr(config, 'DIRECTIONAL_15M_ENABLED', True)
+        )
+        if self._directional_disabled:
+            print(f"  🚫 DIRECTIONAL DISABLED on {timeframe} — funding-only mode (P#194)")
+        
         # P#193: Strategy-only mode — skip all ML training (XGBoost + MLP)
         if self._strategy_only:
             print(f"  ⚡ STRATEGY-ONLY MODE — skipping ML training, running all strategies + quantum")
             self._xgb_initialized = True  # Mark as done so predict() returns heuristic
-            self._mlp_initialized = False  # Keep False — mlp_gpu.predict won't be called
+            self._mlp_initialized = True  # Mark as done — skip MLP training too
         
         # PATCH #58: Initialize XGBoost with walk-forward training
         xgb_warmup = min(
@@ -455,6 +464,16 @@ class FullPipelineEngine:
             # ============================================================
             if getattr(config, 'NEWS_FILTER_ENABLED', False):
                 self.news_filter.detect_events(row, history, i)
+            
+            # ============================================================
+            # P#194: DIRECTIONAL SKIP — funding-only mode on 15m
+            # When DIRECTIONAL_15M_ENABLED=False, skip all directional
+            # phases (Grid, Momentum, Ensemble, Execution) on 15m.
+            # Funding arb (Phase 22) still runs above.
+            # ============================================================
+            if self._directional_disabled:
+                self._track_equity(row, candle_time)
+                continue
             
             # ============================================================
             # P#71 PHASE 23: GRID V2 — BYPASS ENSEMBLE (RANGING only)
@@ -731,58 +750,66 @@ class FullPipelineEngine:
 
                     # ============================================================
                     # PHASE 17: ENTRY QUALITY FILTER (PATCH #59)
+                    # P#194: Bypass on 1h/4h — reduces gate cascade on cleaner signals
                     # ============================================================
-                    self.phase_stats['phase_17'] = self.phase_stats.get('phase_17', 0) + 1
+                    _bypass_eq = self._is_higher_tf and getattr(config, 'BYPASS_EQ_FILTER_HIGHER_TF', False)
+                    eq_result = {'pass': True, 'score': 1.0, 'confidence_adj': 1.0}
+                    if not _bypass_eq:
+                        self.phase_stats['phase_17'] = self.phase_stats.get('phase_17', 0) + 1
 
-                    eq_result = self.entry_filter.evaluate(
-                        row, history, final_action, current_regime
-                    )
+                        eq_result = self.entry_filter.evaluate(
+                            row, history, final_action, current_regime
+                        )
 
-                    if not eq_result['pass']:
-                        self._block(f'EQ-SR blocked: score {eq_result["score"]:.2f}')
-                        self._track_equity(row, candle_time)
-                        continue
+                        if not eq_result['pass']:
+                            self._block(f'EQ-SR blocked: score {eq_result["score"]:.2f}')
+                            self._track_equity(row, candle_time)
+                            continue
 
-                    final_confidence *= eq_result['confidence_adj']
+                        final_confidence *= eq_result['confidence_adj']
 
-                    if final_confidence < effective_floor:
-                        self._block(f'Post-EQ confidence {final_confidence:.3f} < floor {effective_floor}')
-                        self._track_equity(row, candle_time)
-                        continue
+                        if final_confidence < effective_floor:
+                            self._block(f'Post-EQ confidence {final_confidence:.3f} < floor {effective_floor}')
+                            self._track_equity(row, candle_time)
+                            continue
 
                     # ============================================================
                     # PHASE 18: PRICE ACTION GATE (PATCH #62)
+                    # P#194: Bypass on 1h/4h — PA noise filtering hurts more than helps on HTF
                     # ============================================================
-                    self.phase_stats['phase_18'] = self.phase_stats.get('phase_18', 0) + 1
+                    _bypass_pa = self._is_higher_tf and getattr(config, 'BYPASS_PA_GATE_HIGHER_TF', False)
+                    pa_result = {'score': 1.0, 'structure': 'NEUTRAL', 'entry_type': 'bypass'}
+                    if not _bypass_pa:
+                        self.phase_stats['phase_18'] = self.phase_stats.get('phase_18', 0) + 1
 
-                    pa_result = self.price_action.analyze(
-                        row, history, final_action, current_regime
-                    )
-
-                    pa_min_score = getattr(config, 'PA_MIN_SCORE', 0.25)
-                    if pa_result['score'] < pa_min_score:
-                        self._block(
-                            f'PA blocked: {pa_result["entry_type"]} score '
-                            f'{pa_result["score"]:.2f} < {pa_min_score}'
+                        pa_result = self.price_action.analyze(
+                            row, history, final_action, current_regime
                         )
-                        self._track_equity(row, candle_time)
-                        continue
 
-                    pa_score = pa_result['score']
-                    if pa_score >= 0.60:
-                        final_confidence *= 1.10
-                    elif pa_score < 0.25:
-                        final_confidence *= 0.85
+                        pa_min_score = getattr(config, 'PA_MIN_SCORE', 0.25)
+                        if pa_result['score'] < pa_min_score:
+                            self._block(
+                                f'PA blocked: {pa_result["entry_type"]} score '
+                                f'{pa_result["score"]:.2f} < {pa_min_score}'
+                            )
+                            self._track_equity(row, candle_time)
+                            continue
 
-                    if pa_result['structure'] != 'RANGING':
-                        if (final_action == 'BUY' and pa_result['structure'] == 'BEARISH') or \
-                           (final_action == 'SELL' and pa_result['structure'] == 'BULLISH'):
-                            final_confidence *= 0.80
+                        pa_score = pa_result['score']
+                        if pa_score >= 0.60:
+                            final_confidence *= 1.10
+                        elif pa_score < 0.25:
+                            final_confidence *= 0.85
 
-                    if final_confidence < effective_floor:
-                        self._block(f'Post-PA confidence {final_confidence:.3f} < floor {effective_floor}')
-                        self._track_equity(row, candle_time)
-                        continue
+                        if pa_result['structure'] != 'RANGING':
+                            if (final_action == 'BUY' and pa_result['structure'] == 'BEARISH') or \
+                               (final_action == 'SELL' and pa_result['structure'] == 'BULLISH'):
+                                final_confidence *= 0.80
+
+                        if final_confidence < effective_floor:
+                            self._block(f'Post-PA confidence {final_confidence:.3f} < floor {effective_floor}')
+                            self._track_equity(row, candle_time)
+                            continue
 
                 runtime_risk = apply_runtime_risk_check(final_action, final_confidence, drawdown)
                 if (not runtime_risk['approved'] and
@@ -1193,6 +1220,10 @@ class FullPipelineEngine:
         self._gpu_only_last_regime = 'RANGING'
         # P#193: Strategy-only mode
         self._strategy_only = getattr(config, 'STRATEGY_ONLY_MODE', False)
+        # P#194: Timeframe-dependent flags (set properly in run())
+        self._timeframe = '15m'
+        self._is_higher_tf = False
+        self._directional_disabled = False
         
     def _block(self, reason):
         """Record a blocked trade reason."""

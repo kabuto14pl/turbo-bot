@@ -54,8 +54,8 @@ PHASE_1_MIN_R = 0.7            # Brain P#64 iter4: 1.0→0.7 (earlier trailing s
 PHASE_2_BE_R = 1.0             # Phase 2 BE at 1.0R
 PHASE_3_LOCK_R = 1.5           # Phase 3 lock at 1.5R
 PHASE_4_LOCK_R = 2.0           # Phase 4 lock at 2.0R
-PHASE_5_CHANDELIER_R = 2.5     # Phase 5 Chandelier at 2.5R
-TRAILING_DISTANCE_ATR = 2.0    # P#153 PARITY: aligned with live Chandelier Ph5 width (was 1.0)
+PHASE_5_CHANDELIER_R = 2.0     # P#194: 2.5→2.0 — lock profit earlier (trail was giving back >1R)
+TRAILING_DISTANCE_ATR = 1.0    # P#194: 2.0→1.0 — trail MUST be tighter than SL (1.5 ATR). Was 2.0 = wider than SL = destroyed edge
 PHASE3_TRAIL_ATR = 1.0         # Phase 3: lock highest - 1.0 ATR
 PHASE4_TRAIL_ATR = 0.75        # Phase 4: lock highest - 0.75 ATR
 
@@ -76,8 +76,8 @@ BE_PROFIT_BUFFER_ATR = 0.45    # Lock more realized profit once BE is armed
 USE_PARTIAL_TP = True          # P#153: Enabled to match live (was False)
 PARTIAL_TP_ATR_L1 = 1.5       # P#189: Level 1 at 1.5×ATR — early partial before full TP (was 2.5)
 PARTIAL_TP_PCT_L1 = 0.25      # P#153: Close 25% at L1
-PARTIAL_TP_ATR_L2 = 2.5       # P#189: Level 2 = full TP at 2.5×ATR (was 4.0 — unreachable)
-PARTIAL_TP_PCT_L2 = 0.25      # P#153: Close 25% at L2
+PARTIAL_TP_ATR_L2 = 2.0       # P#194: 2.5→2.0 ATR — lock profit before Chandelier trail at 2.0R (was 2.5)
+PARTIAL_TP_PCT_L2 = 0.35      # P#194: 0.25→0.35 — close 35% at L2 to lock more profit before trail
 # Legacy (kept for backward compat — not used when USE_PARTIAL_TP=True)
 PARTIAL_TP_R = 2.0
 PARTIAL_TP_PCT = 0.5
@@ -293,6 +293,17 @@ XGBOOST_LABEL_THRESHOLD = 0.001 # Min price change for UP/DOWN label (0.1%)
 # When True: skip XGBoost/MLP training (slow), run ALL classical strategies + quantum
 # Use for fast strategy testing across all pairs and timeframes with GPU quantum
 STRATEGY_ONLY_MODE = True
+
+# P#194 FAZA 1: Disable directional trading on 15m — funding only
+# Advisory Board: directional 15m was -$110.85, funding was +$23.91.
+# Directional trading is net negative on 15m. Keep it on 1h/4h only.
+DIRECTIONAL_15M_ENABLED = False
+
+# P#194 FAZA 1: Bypass heavy gate cascade on higher timeframes
+# Advisory Board (Khalil): 15 sequential gates kill 96.5% of signals.
+# PA gate + EQ filter add noise on 1h/4h where signals are cleaner.
+BYPASS_PA_GATE_HIGHER_TF = True    # Skip PA gate (Phase 18) on 1h/4h
+BYPASS_EQ_FILTER_HIGHER_TF = True  # Skip EQ filter (Phase 17) on 1h/4h
 
 GPU_ONLY_BACKTEST = False       # P#193: Must be False so classical strategies run (was True for ML-only P#183)
 GPU_NATIVE_ENGINE = True        # P#184: experimental GPU-native backtest engine foundation
