@@ -1,0 +1,15 @@
+{
+  "approved": true,
+  "findings": [],
+  "evaluated_at": "2026-03-09T16:20:53.821349Z",
+  "manifest_path": "ml-service/results/remote_gpu_full_20260309_154224/aggregate_manifest.json",
+  "criteria": {
+    "require_remote_online": true,
+    "max_remote_failures": 0,
+    "min_single_sharpe": 1.2,
+    "max_single_drawdown": 15.0,
+    "min_single_profit_factor": 1.05,
+    "min_multi_positive_pair_ratio": 0.6,
+    "min_walkforward_positive_pair_ratio": 0.5
+  }
+}

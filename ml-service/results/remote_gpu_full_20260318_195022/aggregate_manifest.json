@@ -1,0 +1,21 @@
+{
+  "created_at": "2026-03-18T18:58:48.667268Z",
+  "remote_url": "http://127.0.0.1:4000",
+  "mode": "full_pipeline_remote_gpu",
+  "max_parallel": 1,
+  "jobs": [
+    {
+      "job": {
+        "spec": "single:15m",
+        "mode": "single",
+        "timeframe": "15m",
+        "name": "single_15m"
+      },
+      "exit_code": 1,
+      "elapsed_s": 506.56,
+      "artifact_path": "C:\\Users\\dudzi\\turbo-bot-local\\ml-service\\results\\remote_gpu_full_20260318_195022\\single_15m.json",
+      "log_path": "C:\\Users\\dudzi\\turbo-bot-local\\ml-service\\results\\remote_gpu_full_20260318_195022\\single_15m.log",
+      "summary": null
+    }
+  ]
+}

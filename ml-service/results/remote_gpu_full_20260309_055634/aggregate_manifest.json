@@ -1,0 +1,129 @@
+{
+  "created_at": "2026-03-09T05:11:29.657033Z",
+  "remote_url": "http://127.0.0.1:4000",
+  "mode": "full_pipeline_remote_gpu",
+  "max_parallel": 2,
+  "jobs": [
+    {
+      "job": {
+        "spec": "multi:15m",
+        "mode": "multi",
+        "timeframe": "15m",
+        "name": "multi_15m"
+      },
+      "exit_code": 0,
+      "elapsed_s": 633.64,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\multi_15m.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\multi_15m.log",
+      "summary": {
+        "mode": "multi",
+        "timeframe": "15m",
+        "backend": "remote-gpu",
+        "remote_status": "online",
+        "remote_failures": 0,
+        "total_pairs": 5,
+        "positive_pairs": 1,
+        "total_net_profit": -445.66
+      }
+    },
+    {
+      "job": {
+        "spec": "single:15m",
+        "mode": "single",
+        "timeframe": "15m",
+        "name": "single_15m"
+      },
+      "exit_code": 0,
+      "elapsed_s": 290.12,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\single_15m.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\single_15m.log",
+      "summary": {
+        "mode": "single",
+        "timeframe": "15m",
+        "backend": "remote-gpu",
+        "remote_status": "online",
+        "remote_failures": 0,
+        "net_profit": 8.14,
+        "total_return_pct": 0.08,
+        "profit_factor": 1.345,
+        "sharpe_ratio": 3.766,
+        "max_drawdown": 0.25,
+        "total_trades": 4
+      }
+    },
+    {
+      "job": {
+        "spec": "single:1h",
+        "mode": "single",
+        "timeframe": "1h",
+        "name": "single_1h"
+      },
+      "exit_code": 0,
+      "elapsed_s": 183.39,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\single_1h.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\single_1h.log",
+      "summary": {
+        "mode": "single",
+        "timeframe": "1h",
+        "backend": "remote-gpu",
+        "remote_status": "online",
+        "remote_failures": 0,
+        "net_profit": -222.93,
+        "total_return_pct": -2.23,
+        "profit_factor": 0.053,
+        "sharpe_ratio": -4.114,
+        "max_drawdown": 2.28,
+        "total_trades": 5
+      }
+    },
+    {
+      "job": {
+        "spec": "single:4h",
+        "mode": "single",
+        "timeframe": "4h",
+        "name": "single_4h"
+      },
+      "exit_code": 0,
+      "elapsed_s": 46.49,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\single_4h.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\single_4h.log",
+      "summary": {
+        "mode": "single",
+        "timeframe": "4h",
+        "backend": "remote-gpu",
+        "remote_status": "online",
+        "remote_failures": 0,
+        "net_profit": 0.0,
+        "total_return_pct": 0.0,
+        "profit_factor": 0.0,
+        "sharpe_ratio": 0.0,
+        "max_drawdown": 0.0,
+        "total_trades": 0
+      }
+    },
+    {
+      "job": {
+        "spec": "walkforward:15m",
+        "mode": "walkforward",
+        "timeframe": "15m",
+        "name": "walkforward_15m"
+      },
+      "exit_code": 0,
+      "elapsed_s": 604.62,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\walkforward_15m.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_055634\\walkforward_15m.log",
+      "summary": {
+        "mode": "walkforward",
+        "timeframe": "15m",
+        "backend": "remote-gpu",
+        "remote_status": "online",
+        "remote_failures": 0,
+        "total_pairs": 5,
+        "positive_test_pairs": 3,
+        "total_test_net_profit": -47.98,
+        "train_pairs": 5,
+        "test_pairs": 5
+      }
+    }
+  ]
+}

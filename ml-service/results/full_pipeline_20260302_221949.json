@@ -1,0 +1,603 @@
+{
+  "15m": {
+    "timeframe": "15m",
+    "data_candles": 14201,
+    "data_days": 147.9,
+    "data_range": "2025-10-04 20:45:00 \u2192 2026-03-01 18:45:00",
+    "total_trades": 31,
+    "winning_trades": 21,
+    "losing_trades": 10,
+    "win_rate": 67.7,
+    "profit_factor": 0.665,
+    "sharpe_ratio": 1.621,
+    "max_drawdown": 1.58,
+    "net_profit": -71.22,
+    "total_return_pct": -0.71,
+    "initial_capital": 10000,
+    "final_capital": 9909.75,
+    "avg_trade_pnl": -2.3,
+    "avg_win": 6.75,
+    "avg_loss": -21.29,
+    "win_loss_ratio": 0.32,
+    "largest_win": 28.75,
+    "largest_loss": -38.97,
+    "avg_hold_hours": 4.3,
+    "total_fees": 38.06,
+    "fees_pct_of_pnl": 53.4,
+    "trades_per_day": 0.2,
+    "wasted_winners": 1,
+    "wasted_pct": 3.2,
+    "long_trades": 12,
+    "long_win_rate": 75.0,
+    "long_pnl": -20.31,
+    "short_trades": 19,
+    "short_win_rate": 63.2,
+    "short_pnl": -50.92,
+    "exit_reasons": {
+      "PARTIAL_L1": 8,
+      "PARTIAL_L2": 4,
+      "BE": 9,
+      "SL": 10
+    },
+    "phase_exits": {
+      "phase_1": 22,
+      "phase_3": 8,
+      "phase_2": 1
+    },
+    "regime_distribution": {
+      "TRENDING_UP": 24.5,
+      "TRENDING_DOWN": 28.2,
+      "RANGING": 47.2,
+      "HIGH_VOLATILITY": 0.1
+    },
+    "regime_trades": {
+      "TRENDING_DOWN": {
+        "count": 19,
+        "pnl": -50.92,
+        "wins": 12,
+        "win_rate": 63.2
+      },
+      "TRENDING_UP": {
+        "count": 12,
+        "pnl": -20.31,
+        "wins": 9,
+        "win_rate": 75.0
+      }
+    },
+    "ensemble_stats": {
+      "total_votes": 13703,
+      "consensus": 32,
+      "no_consensus": 13671,
+      "conflicts": 0,
+      "consensus_rate": 0.2,
+      "current_weights": {
+        "AdvancedAdaptive": 0.203,
+        "RSITurbo": 0.129,
+        "SuperTrend": 0.172,
+        "MACrossover": 0.223,
+        "MomentumPro": 0.101,
+        "NeuralAI": 0.101,
+        "PythonML": 0.071
+      }
+    },
+    "quantum_stats": {
+      "total_cycles": 14001,
+      "qmc_bullish": 217,
+      "qmc_bearish": 235,
+      "qdv_verified": 20,
+      "qdv_rejected": 5,
+      "qdv_pass_rate": 80.0,
+      "last_qra_score": 35
+    },
+    "ml_stats": {
+      "total_predictions": 4600,
+      "trades_evaluated": 19,
+      "overall_accuracy": 47.4,
+      "recent_accuracy": 47.4,
+      "veto_hard": 0,
+      "veto_soft": 0
+    },
+    "neuron_stats": {
+      "total_decisions": 25,
+      "overrides": 0,
+      "holds": 0,
+      "trades": 19,
+      "win_rate": 47.4,
+      "loss_streak_max": 4,
+      "defense_activations": 2,
+      "prime_rejections": {
+        "drawdown": 0,
+        "duplicate": 2,
+        "counter_trend": 0,
+        "defense_mode": 0,
+        "loss_streak": 0
+      },
+      "evolution_count": 3,
+      "risk_multiplier": 1.103,
+      "aggression": 1.061,
+      "confidence_threshold": 0.345
+    },
+    "xgboost_stats": {
+      "engine": "XGBoost",
+      "total_predictions": 14001,
+      "trades_evaluated": 0,
+      "overall_accuracy": 0.0,
+      "recent_accuracy": 0,
+      "veto_hard": 2,
+      "veto_soft": 251,
+      "retrain_count": 70,
+      "cv_scores": [
+        0.566,
+        0.482,
+        0.554
+      ],
+      "features_count": 43,
+      "top_features": {
+        "volatility_5": 0.03615659475326538,
+        "price_ema9_ratio": 0.030324315652251244,
+        "close_position": 0.02999076247215271,
+        "vol_ratio_20": 0.029874399304389954,
+        "is_bullish": 0.029841620475053787,
+        "price_ema21_ratio": 0.029778990894556046,
+        "return_50": 0.02918633259832859,
+        "return_20": 0.02839094027876854,
+        "price_sma50_zscore": 0.028086544945836067,
+        "bb_pctb": 0.02751685306429863
+      },
+      "gpu_enabled": false
+    },
+    "llm_stats": {
+      "calls": 0,
+      "successes": 0,
+      "failures": 0,
+      "timeouts": 0,
+      "agrees": 11,
+      "disagrees": 4,
+      "vetoes": 0,
+      "boosts": 11,
+      "avg_latency_ms": 0,
+      "cache_hits": 5,
+      "fallback_used": 15,
+      "agreement_rate": 73.3,
+      "veto_rate": 0.0,
+      "is_available": false,
+      "enabled": true,
+      "model": "mistral:7b-instruct",
+      "cache_size": 15
+    },
+    "sentiment_stats": {
+      "total_analyses": 14001,
+      "signal_boosts": 0,
+      "signal_dampens": 0,
+      "vetoes": 0,
+      "avg_sentiment": -0.0027,
+      "current_sentiment": -0.0999,
+      "regime_distribution": {
+        "EXTREME_FEAR": 0.0,
+        "FEAR": 6.0,
+        "NEUTRAL": 88.9,
+        "GREED": 5.1,
+        "EXTREME_GREED": 0.0
+      },
+      "enabled": true
+    },
+    "entry_quality_stats": {
+      "total_evaluated": 19,
+      "sr_boosts": 18,
+      "sr_penalties": 1,
+      "sr_blocks": 0,
+      "volume_confirms": 15,
+      "mtf_aligns": 5,
+      "mtf_conflicts": 9
+    },
+    "blocked_reasons": {
+      "Confidence 0.29 < floor 0.3": 2,
+      "QDV: Confidence 0.27 < 0.3": 2,
+      "Confidence 0.30 < floor 0.3": 2,
+      "Confidence 0.28 < floor 0.3": 1,
+      "QDV: Confidence 0.28 < 0.3": 3,
+      "Duplicate prevention: 3 candles since last trade": 1,
+      "Post-sentiment confidence 0.266 < floor": 1,
+      "Duplicate prevention: 0 candles since last trade": 1
+    },
+    "total_blocked": 13,
+    "qpm_adjustments": 0,
+    "partials_executed": 12,
+    "avg_health_score": 67.8
+  },
+  "1h": {
+    "timeframe": "1h",
+    "data_candles": 8561,
+    "data_days": 356.7,
+    "data_range": "2025-03-10 02:00:00 \u2192 2026-03-01 18:00:00",
+    "total_trades": 12,
+    "winning_trades": 2,
+    "losing_trades": 10,
+    "win_rate": 16.7,
+    "profit_factor": 0.696,
+    "sharpe_ratio": 0.365,
+    "max_drawdown": 0.94,
+    "net_profit": -51.1,
+    "total_return_pct": -0.51,
+    "initial_capital": 10000,
+    "final_capital": 9937.94,
+    "avg_trade_pnl": -4.26,
+    "avg_win": 58.57,
+    "avg_loss": -16.82,
+    "win_loss_ratio": 3.48,
+    "largest_win": 97.71,
+    "largest_loss": -26.31,
+    "avg_hold_hours": 13.1,
+    "total_fees": 21.87,
+    "fees_pct_of_pnl": 42.8,
+    "trades_per_day": 0.0,
+    "wasted_winners": 1,
+    "wasted_pct": 8.3,
+    "long_trades": 5,
+    "long_win_rate": 0.0,
+    "long_pnl": -83.64,
+    "short_trades": 7,
+    "short_win_rate": 28.6,
+    "short_pnl": 32.54,
+    "exit_reasons": {
+      "TIME_UNDERWATER": 1,
+      "RANGING_STALE": 2,
+      "SL": 7,
+      "PARTIAL_L1": 1,
+      "BE": 1
+    },
+    "phase_exits": {
+      "phase_1": 10,
+      "phase_3": 2
+    },
+    "regime_distribution": {
+      "TRENDING_UP": 27.9,
+      "TRENDING_DOWN": 29.1,
+      "RANGING": 43.0,
+      "HIGH_VOLATILITY": 0.0
+    },
+    "regime_trades": {
+      "TRENDING_DOWN": {
+        "count": 7,
+        "pnl": 32.54,
+        "wins": 2,
+        "win_rate": 28.6
+      },
+      "TRENDING_UP": {
+        "count": 5,
+        "pnl": -83.64,
+        "wins": 0,
+        "win_rate": 0.0
+      }
+    },
+    "ensemble_stats": {
+      "total_votes": 8230,
+      "consensus": 18,
+      "no_consensus": 8212,
+      "conflicts": 0,
+      "consensus_rate": 0.2,
+      "current_weights": {
+        "AdvancedAdaptive": 0.203,
+        "RSITurbo": 0.129,
+        "SuperTrend": 0.172,
+        "MACrossover": 0.223,
+        "MomentumPro": 0.101,
+        "NeuralAI": 0.101,
+        "PythonML": 0.071
+      }
+    },
+    "quantum_stats": {
+      "total_cycles": 8361,
+      "qmc_bullish": 153,
+      "qmc_bearish": 148,
+      "qdv_verified": 13,
+      "qdv_rejected": 4,
+      "qdv_pass_rate": 76.5,
+      "last_qra_score": 40
+    },
+    "ml_stats": {
+      "total_predictions": 2045,
+      "trades_evaluated": 11,
+      "overall_accuracy": 9.1,
+      "recent_accuracy": 9.1,
+      "veto_hard": 0,
+      "veto_soft": 0
+    },
+    "neuron_stats": {
+      "total_decisions": 17,
+      "overrides": 0,
+      "holds": 0,
+      "trades": 11,
+      "win_rate": 9.1,
+      "loss_streak_max": 6,
+      "defense_activations": 0,
+      "prime_rejections": {
+        "drawdown": 0,
+        "duplicate": 0,
+        "counter_trend": 0,
+        "defense_mode": 0,
+        "loss_streak": 0
+      },
+      "evolution_count": 2,
+      "risk_multiplier": 0.846,
+      "aggression": 0.902,
+      "confidence_threshold": 0.36
+    },
+    "xgboost_stats": {
+      "engine": "XGBoost",
+      "total_predictions": 8361,
+      "trades_evaluated": 0,
+      "overall_accuracy": 0.0,
+      "recent_accuracy": 0,
+      "veto_hard": 9,
+      "veto_soft": 267,
+      "retrain_count": 43,
+      "cv_scores": [
+        0.495,
+        0.495,
+        0.524
+      ],
+      "features_count": 43,
+      "top_features": {
+        "consec_down": 0.04039037227630615,
+        "price_sma50_zscore": 0.030126245692372322,
+        "consec_up": 0.028832944110035896,
+        "upper_shadow": 0.02852538600564003,
+        "volatility_50": 0.028319740667939186,
+        "price_ema21_ratio": 0.02831452712416649,
+        "volatility_20": 0.028176240622997284,
+        "vol_ratio": 0.027716081589460373,
+        "vol_trend": 0.02731737308204174,
+        "macd_hist": 0.026994923129677773
+      },
+      "gpu_enabled": false
+    },
+    "llm_stats": {
+      "calls": 0,
+      "successes": 0,
+      "failures": 0,
+      "timeouts": 0,
+      "agrees": 6,
+      "disagrees": 5,
+      "vetoes": 0,
+      "boosts": 6,
+      "avg_latency_ms": 0,
+      "cache_hits": 2,
+      "fallback_used": 11,
+      "agreement_rate": 54.5,
+      "veto_rate": 0.0,
+      "is_available": false,
+      "enabled": true,
+      "model": "mistral:7b-instruct",
+      "cache_size": 11
+    },
+    "sentiment_stats": {
+      "total_analyses": 8361,
+      "signal_boosts": 0,
+      "signal_dampens": 0,
+      "vetoes": 0,
+      "avg_sentiment": -0.0172,
+      "current_sentiment": -0.0219,
+      "regime_distribution": {
+        "EXTREME_FEAR": 0.0,
+        "FEAR": 7.6,
+        "NEUTRAL": 83.9,
+        "GREED": 8.5,
+        "EXTREME_GREED": 0.0
+      },
+      "enabled": true
+    },
+    "entry_quality_stats": {
+      "total_evaluated": 11,
+      "sr_boosts": 11,
+      "sr_penalties": 0,
+      "sr_blocks": 0,
+      "volume_confirms": 8,
+      "mtf_aligns": 1,
+      "mtf_conflicts": 4
+    },
+    "blocked_reasons": {
+      "QDV: Confidence 0.29 < 0.3": 1,
+      "QDV: Confidence 0.26 < 0.3": 1,
+      "QDV: Confidence 0.25 < 0.3": 1,
+      "Post-sentiment confidence 0.270 < floor": 1,
+      "Post-sentiment confidence 0.277 < floor": 1,
+      "Confidence 0.29 < floor 0.3": 1,
+      "QDV: Confidence 0.28 < 0.3": 1
+    },
+    "total_blocked": 7,
+    "qpm_adjustments": 2,
+    "partials_executed": 1,
+    "avg_health_score": 63.0
+  },
+  "4h": {
+    "timeframe": "4h",
+    "data_candles": 1991,
+    "data_days": 331.7,
+    "data_range": "2025-04-04 00:00:00 \u2192 2026-03-01 16:00:00",
+    "total_trades": 4,
+    "winning_trades": 2,
+    "losing_trades": 2,
+    "win_rate": 50.0,
+    "profit_factor": 0.467,
+    "sharpe_ratio": -0.222,
+    "max_drawdown": 0.58,
+    "net_profit": -47.4,
+    "total_return_pct": -0.47,
+    "initial_capital": 10000,
+    "final_capital": 9949.6,
+    "avg_trade_pnl": -11.85,
+    "avg_win": 20.77,
+    "avg_loss": -44.47,
+    "win_loss_ratio": 0.47,
+    "largest_win": 31.95,
+    "largest_loss": -56.85,
+    "avg_hold_hours": 27.0,
+    "total_fees": 5.97,
+    "fees_pct_of_pnl": 12.6,
+    "trades_per_day": 0.0,
+    "wasted_winners": 0,
+    "wasted_pct": 0.0,
+    "long_trades": 4,
+    "long_win_rate": 50.0,
+    "long_pnl": -47.4,
+    "short_trades": 0,
+    "short_win_rate": 0.0,
+    "short_pnl": 0,
+    "exit_reasons": {
+      "TIME_UNDERWATER": 2,
+      "PARTIAL_L1": 1,
+      "BE": 1
+    },
+    "phase_exits": {
+      "phase_1": 2,
+      "phase_2": 1,
+      "phase_3": 1
+    },
+    "regime_distribution": {
+      "TRENDING_UP": 28.0,
+      "TRENDING_DOWN": 34.6,
+      "RANGING": 37.3,
+      "HIGH_VOLATILITY": 0.1
+    },
+    "regime_trades": {
+      "TRENDING_UP": {
+        "count": 4,
+        "pnl": -47.4,
+        "wins": 2,
+        "win_rate": 50.0
+      }
+    },
+    "ensemble_stats": {
+      "total_votes": 1770,
+      "consensus": 3,
+      "no_consensus": 1767,
+      "conflicts": 0,
+      "consensus_rate": 0.2,
+      "current_weights": {
+        "AdvancedAdaptive": 0.203,
+        "RSITurbo": 0.129,
+        "SuperTrend": 0.172,
+        "MACrossover": 0.223,
+        "MomentumPro": 0.101,
+        "NeuralAI": 0.101,
+        "PythonML": 0.071
+      }
+    },
+    "quantum_stats": {
+      "total_cycles": 1791,
+      "qmc_bullish": 45,
+      "qmc_bearish": 42,
+      "qdv_verified": 3,
+      "qdv_rejected": 0,
+      "qdv_pass_rate": 100.0,
+      "last_qra_score": 55
+    },
+    "ml_stats": {
+      "total_predictions": 566,
+      "trades_evaluated": 3,
+      "overall_accuracy": 33.3,
+      "recent_accuracy": 33.3,
+      "veto_hard": 0,
+      "veto_soft": 0
+    },
+    "neuron_stats": {
+      "total_decisions": 3,
+      "overrides": 0,
+      "holds": 0,
+      "trades": 3,
+      "win_rate": 33.3,
+      "loss_streak_max": 1,
+      "defense_activations": 0,
+      "prime_rejections": {
+        "drawdown": 0,
+        "duplicate": 0,
+        "counter_trend": 0,
+        "defense_mode": 0,
+        "loss_streak": 0
+      },
+      "evolution_count": 0,
+      "risk_multiplier": 1.0,
+      "aggression": 1.0,
+      "confidence_threshold": 0.35
+    },
+    "xgboost_stats": {
+      "engine": "XGBoost",
+      "total_predictions": 1791,
+      "trades_evaluated": 0,
+      "overall_accuracy": 0.0,
+      "recent_accuracy": 0,
+      "veto_hard": 6,
+      "veto_soft": 96,
+      "retrain_count": 10,
+      "cv_scores": [
+        0.5,
+        0.463,
+        0.417
+      ],
+      "features_count": 43,
+      "top_features": {
+        "price_ema21_ratio": 0.03396008908748627,
+        "adx": 0.02873796597123146,
+        "return_10": 0.028681237250566483,
+        "rsi_14": 0.028636815026402473,
+        "hurst_proxy": 0.02828906662762165,
+        "return_5": 0.02805609442293644,
+        "vol_ratio_20": 0.027647092938423157,
+        "ema21_sma50_ratio": 0.026513615623116493,
+        "consec_up": 0.026106758043169975,
+        "price_sma20_zscore": 0.02606355771422386
+      },
+      "gpu_enabled": false
+    },
+    "llm_stats": {
+      "calls": 0,
+      "successes": 0,
+      "failures": 0,
+      "timeouts": 0,
+      "agrees": 2,
+      "disagrees": 1,
+      "vetoes": 0,
+      "boosts": 2,
+      "avg_latency_ms": 0,
+      "cache_hits": 0,
+      "fallback_used": 3,
+      "agreement_rate": 66.7,
+      "veto_rate": 0.0,
+      "is_available": false,
+      "enabled": true,
+      "model": "mistral:7b-instruct",
+      "cache_size": 3
+    },
+    "sentiment_stats": {
+      "total_analyses": 1791,
+      "signal_boosts": 0,
+      "signal_dampens": 0,
+      "vetoes": 0,
+      "avg_sentiment": -0.0819,
+      "current_sentiment": 0.0451,
+      "regime_distribution": {
+        "EXTREME_FEAR": 0.0,
+        "FEAR": 12.3,
+        "NEUTRAL": 76.9,
+        "GREED": 10.8,
+        "EXTREME_GREED": 0.0
+      },
+      "enabled": true
+    },
+    "entry_quality_stats": {
+      "total_evaluated": 3,
+      "sr_boosts": 3,
+      "sr_penalties": 0,
+      "sr_blocks": 0,
+      "volume_confirms": 1,
+      "mtf_aligns": 0,
+      "mtf_conflicts": 1
+    },
+    "blocked_reasons": {},
+    "total_blocked": 0,
+    "qpm_adjustments": 0,
+    "partials_executed": 1,
+    "avg_health_score": 65.9
+  }
+}

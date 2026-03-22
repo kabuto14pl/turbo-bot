@@ -1,0 +1,7 @@
+{
+  "xgb_clf": "/workspaces/turbo-bot-local/ml-service/models/turbo_4h_xgb_clf_20260301_185303.json",
+  "lgb_clf": "/workspaces/turbo-bot-local/ml-service/models/turbo_4h_lgb_clf_20260301_185303.pkl",
+  "xgb_reg": "/workspaces/turbo-bot-local/ml-service/models/turbo_4h_xgb_reg_20260301_185303.json",
+  "meta": "/workspaces/turbo-bot-local/ml-service/models/turbo_4h_meta_20260301_185303.json",
+  "timestamp": "20260301_185303"
+}

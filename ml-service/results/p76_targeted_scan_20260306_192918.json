@@ -1,0 +1,180 @@
+{
+  "timestamp": "2026-03-06T19:23:45.303959",
+  "timeframe": "15m",
+  "train_pct": 0.7,
+  "results": [
+    {
+      "symbol": "BTCUSDT",
+      "experiment": "BTC funding + ultra-selective shorts",
+      "baseline_full": {
+        "trades": 0,
+        "win_rate": 0,
+        "profit_factor": 0,
+        "max_drawdown": 0,
+        "directional_pnl": 0,
+        "funding_pnl": 10.621540724214995,
+        "total_pnl": 10.621540724214995,
+        "return_pct": 1.517362960602142
+      },
+      "candidate_full": {
+        "trades": 1,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "max_drawdown": 0,
+        "directional_pnl": -0.8,
+        "funding_pnl": 9.56790563155884,
+        "total_pnl": 8.76790563155884,
+        "return_pct": 1.2525579473655484
+      },
+      "baseline_test": {
+        "trades": 0,
+        "win_rate": 0,
+        "profit_factor": 0,
+        "max_drawdown": 0,
+        "directional_pnl": 0,
+        "funding_pnl": 1.9802985130236088,
+        "total_pnl": 1.9802985130236088,
+        "return_pct": 0.2828997875748012
+      },
+      "candidate_test": {
+        "trades": 1,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "max_drawdown": 0.08,
+        "directional_pnl": -0.78,
+        "funding_pnl": 2.002938209290101,
+        "total_pnl": 1.222938209290101,
+        "return_pct": 0.17470545847001442
+      },
+      "verdict": "NO-GO",
+      "full_delta": -1.8536350926561553,
+      "test_delta": -0.7573603037335077,
+      "overrides": {
+        "BTC_DIRECTION_FILTER_ENABLED": true,
+        "BTC_LONG_BLOCK_ALL": true,
+        "CONFIDENCE_FLOOR": 0.32,
+        "QDV_MIN_CONFIDENCE": 0.3,
+        "PA_MIN_SCORE": 0.35,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.25,
+        "PRE_ENTRY_MOMENTUM_MIN_ALIGNED": 3,
+        "RISK_PER_TRADE": 0.003,
+        "GRID_V2_ENABLED": false,
+        "FUNDING_ARB_ENABLED": true
+      }
+    },
+    {
+      "symbol": "ETHUSDT",
+      "experiment": "ETH soft directional reactivation",
+      "baseline_full": {
+        "trades": 0,
+        "win_rate": 0,
+        "profit_factor": 0,
+        "max_drawdown": 0,
+        "directional_pnl": 0,
+        "funding_pnl": 10.848200067641177,
+        "total_pnl": 10.848200067641177,
+        "return_pct": 1.5497428668058821
+      },
+      "candidate_full": {
+        "trades": 17,
+        "win_rate": 70.6,
+        "profit_factor": 1.277,
+        "max_drawdown": 0.05,
+        "directional_pnl": 2.35,
+        "funding_pnl": 13.773136332552827,
+        "total_pnl": 16.12313633255283,
+        "return_pct": 2.3033051903646897
+      },
+      "baseline_test": {
+        "trades": 0,
+        "win_rate": 0,
+        "profit_factor": 0,
+        "max_drawdown": 0,
+        "directional_pnl": 0,
+        "funding_pnl": -0.4954749378702328,
+        "total_pnl": -0.4954749378702328,
+        "return_pct": -0.07078213398146181
+      },
+      "candidate_test": {
+        "trades": 0,
+        "win_rate": 0,
+        "profit_factor": 0,
+        "max_drawdown": 0,
+        "directional_pnl": 0,
+        "funding_pnl": 0.06096518061040879,
+        "total_pnl": 0.06096518061040879,
+        "return_pct": 0.008709311515772682
+      },
+      "verdict": "NO-GO",
+      "full_delta": 5.274936264911652,
+      "test_delta": 0.5564401184806416,
+      "overrides": {
+        "CONFIDENCE_FLOOR": 0.3,
+        "QDV_MIN_CONFIDENCE": 0.3,
+        "PA_MIN_SCORE": 0.35,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.25,
+        "PRE_ENTRY_MOMENTUM_MIN_ALIGNED": 3,
+        "RISK_PER_TRADE": 0.005,
+        "GRID_V2_ENABLED": false,
+        "FUNDING_ARB_ENABLED": true
+      }
+    },
+    {
+      "symbol": "XRPUSDT",
+      "experiment": "XRP soft directional reactivation",
+      "baseline_full": {
+        "trades": 0,
+        "win_rate": 0,
+        "profit_factor": 0,
+        "max_drawdown": 0,
+        "directional_pnl": 0,
+        "funding_pnl": 9.37902682102197,
+        "total_pnl": 9.37902682102197,
+        "return_pct": 1.563171136836995
+      },
+      "candidate_full": {
+        "trades": 8,
+        "win_rate": 87.5,
+        "profit_factor": 2.897,
+        "max_drawdown": 0.05,
+        "directional_pnl": 2.0,
+        "funding_pnl": 10.806625045359073,
+        "total_pnl": 12.806625045359073,
+        "return_pct": 2.134437507559846
+      },
+      "baseline_test": {
+        "trades": 0,
+        "win_rate": 0,
+        "profit_factor": 0,
+        "max_drawdown": 0,
+        "directional_pnl": 0,
+        "funding_pnl": 0.3942975248008427,
+        "total_pnl": 0.3942975248008427,
+        "return_pct": 0.06571625413347378
+      },
+      "candidate_test": {
+        "trades": 0,
+        "win_rate": 0,
+        "profit_factor": 0,
+        "max_drawdown": 0,
+        "directional_pnl": 0,
+        "funding_pnl": 0.7792442537466728,
+        "total_pnl": 0.7792442537466728,
+        "return_pct": 0.12987404229111213
+      },
+      "verdict": "NO-GO",
+      "full_delta": 3.4275982243371033,
+      "test_delta": 0.38494672894583015,
+      "overrides": {
+        "CONFIDENCE_FLOOR": 0.3,
+        "QDV_MIN_CONFIDENCE": 0.3,
+        "PA_MIN_SCORE": 0.35,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.25,
+        "PRE_ENTRY_MOMENTUM_MIN_ALIGNED": 3,
+        "RISK_PER_TRADE": 0.0045,
+        "GRID_V2_ENABLED": false,
+        "FUNDING_ARB_ENABLED": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "degradation": {
+    "cv_accuracy": 0.521,
+    "val_accuracy": 0.5225,
+    "holdout_accuracy": 0.5225,
+    "cv_val_gap": -0.0015,
+    "cv_holdout_gap": -0.0015,
+    "pass": true
+  },
+  "permutation": {
+    "real_accuracy": 0.5225,
+    "null_mean": 0.4978,
+    "null_std": 0.0208,
+    "null_max": 0.5577,
+    "p_value": 0.1,
+    "n_permutations": 30,
+    "pass": false
+  },
+  "feature_stability": {
+    "n_folds": 5,
+    "avg_jaccard_similarity": 0.2821,
+    "stable_features": [
+      "upper_shadow",
+      "up_down_vol_ratio",
+      "vol_ratio_20",
+      "vol_momentum",
+      "price_acceleration",
+      "buying_pressure_trend",
+      "macd_hist",
+      "body_ratio",
+      "buying_pressure_avg",
+      "atr_pct"
+    ],
+    "n_stable": 10,
+    "all_features_seen": [
+      "volatility_10",
+      "upper_shadow",
+      "up_down_vol_ratio",
+      "vol_ratio_20",
+      "vol_momentum",
+      "return_5",
+      "price_sma50_ratio",
+      "price_acceleration",
+      "buying_pressure_trend",
+      "macd_hist",
+      "body_ratio",
+      "buying_pressure_avg",
+      "atr_pct",
+      "lower_shadow",
+      "stoch_rsi",
+      "vol_trend",
+      "return_10",
+      "rsi_14",
+      "hurst",
+      "range_expansion",
+      "adx_14"
+    ],
+    "pass": false
+  },
+  "holdout": {
+    "holdout_samples": 983,
+    "trades": 666,
+    "accuracy": 0.5225,
+    "win_rate": 0.2793,
+    "total_pnl_pct": -135.3246,
+    "avg_pnl_per_trade_pct": -0.20319,
+    "sharpe_estimate": -88.2305,
+    "pass": false
+  },
+  "verdict": {
+    "pass": false,
+    "score": 25,
+    "passed_tests": 1,
+    "total_tests": 4,
+    "notes": [
+      {
+        "test": "Degradation",
+        "pass": true,
+        "detail": "CV\u2192holdout gap: -0.1%"
+      },
+      {
+        "test": "Permutation",
+        "pass": false,
+        "detail": "p-value: 0.100"
+      },
+      {
+        "test": "Feature Stability",
+        "pass": false,
+        "detail": "Jaccard: 0.282"
+      },
+      {
+        "test": "Holdout",
+        "pass": false,
+        "detail": "PnL: -135.32%, Sharpe: -88.23"
+      }
+    ]
+  }
+}

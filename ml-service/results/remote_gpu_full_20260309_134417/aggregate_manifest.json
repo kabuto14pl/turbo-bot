@@ -1,0 +1,85 @@
+{
+  "created_at": "2026-03-09T12:47:23.502878Z",
+  "remote_url": "http://127.0.0.1:4000",
+  "mode": "full_pipeline_remote_gpu",
+  "max_parallel": 2,
+  "jobs": [
+    {
+      "job": {
+        "spec": "multi:15m",
+        "mode": "multi",
+        "timeframe": "15m",
+        "name": "multi_15m"
+      },
+      "exit_code": 1,
+      "elapsed_s": 3.61,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\multi_15m.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\multi_15m.log",
+      "summary": null
+    },
+    {
+      "job": {
+        "spec": "single:15m",
+        "mode": "single",
+        "timeframe": "15m",
+        "name": "single_15m"
+      },
+      "exit_code": 1,
+      "elapsed_s": 182.05,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\single_15m.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\single_15m.log",
+      "summary": null
+    },
+    {
+      "job": {
+        "spec": "single:1h",
+        "mode": "single",
+        "timeframe": "1h",
+        "name": "single_1h"
+      },
+      "exit_code": 0,
+      "elapsed_s": 157.73,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\single_1h.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\single_1h.log",
+      "summary": {
+        "mode": "single",
+        "timeframe": "1h",
+        "backend": "remote-gpu",
+        "remote_status": "online",
+        "remote_failures": 0,
+        "net_profit": -222.93,
+        "total_return_pct": -2.23,
+        "profit_factor": 0.053,
+        "sharpe_ratio": -4.114,
+        "max_drawdown": 2.28,
+        "total_trades": 5
+      }
+    },
+    {
+      "job": {
+        "spec": "single:4h",
+        "mode": "single",
+        "timeframe": "4h",
+        "name": "single_4h"
+      },
+      "exit_code": 1,
+      "elapsed_s": 23.42,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\single_4h.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\single_4h.log",
+      "summary": null
+    },
+    {
+      "job": {
+        "spec": "walkforward:15m",
+        "mode": "walkforward",
+        "timeframe": "15m",
+        "name": "walkforward_15m"
+      },
+      "exit_code": 1,
+      "elapsed_s": 3.52,
+      "artifact_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\walkforward_15m.json",
+      "log_path": "ml-service\\results\\remote_gpu_full_20260309_134417\\walkforward_15m.log",
+      "summary": null
+    }
+  ]
+}

@@ -25,8 +25,14 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash"
-      }
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "chat.agent.enabled": true,
+        "chat.autopilot.enabled": true
+      },
+      "extensions": [
+        "github.copilot",
+        "github.copilot-chat"
+      ]
     }
   }
 }

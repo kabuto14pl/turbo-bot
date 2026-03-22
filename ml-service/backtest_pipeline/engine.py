@@ -251,14 +251,20 @@ class FullPipelineEngine:
         )
         if not self._xgb_initialized:
             print(f"  🧠 Training XGBoost on first {xgb_warmup} candles...")
-            self.xgb_ml.train_initial(df, xgb_warmup)
-            self._xgb_initialized = True
+            xgb_ok = self.xgb_ml.train_initial(df, xgb_warmup)
+            if xgb_ok:
+                self._xgb_initialized = True
+            else:
+                print(f"  ⚠️ XGBoost training failed — will retry on next run")
         
         # P#176: Initialize MLP GPU engine
         if not self._mlp_initialized and getattr(config, 'MLP_GPU_ENABLED', True):
             print(f"  🔥 Training PyTorch MLP on first {xgb_warmup} candles (GPU)...")
-            self.mlp_gpu.train_initial(df, xgb_warmup)
-            self._mlp_initialized = True
+            mlp_ok = self.mlp_gpu.train_initial(df, xgb_warmup)
+            if mlp_ok:
+                self._mlp_initialized = True
+            else:
+                print(f"  ⚠️ MLP training failed — will retry on next run")
         
         # PATCH #58: Check LLM availability
         self.llm.check_availability()

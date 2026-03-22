@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 ML Service Dashboard — Turbo-Bot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0e17;
+            color: #e0e6ed;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+            border-bottom: 1px solid #30363d;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #58a6ff;
+        }
+        .header h1 span { color: #7ee787; }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-online { background: #0d1f0d; color: #3fb950; border: 1px solid #238636; }
+        .status-offline { background: #2d1215; color: #f85149; border: 1px solid #da3633; }
+        .refresh-info {
+            font-size: 11px;
+            color: #8b949e;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .card h2 {
+            font-size: 14px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card h2 .icon { font-size: 18px; }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #21262d;
+        }
+        .metric:last-child { border-bottom: none; }
+        .metric-label { color: #8b949e; font-size: 13px; }
+        .metric-value { font-size: 15px; font-weight: 600; color: #e6edf3; font-family: 'JetBrains Mono', monospace; }
+        .metric-value.green { color: #3fb950; }
+        .metric-value.red { color: #f85149; }
+        .metric-value.blue { color: #58a6ff; }
+        .metric-value.yellow { color: #d29922; }
+        .metric-value.purple { color: #bc8cff; }
+
+        .big-number {
+            font-size: 36px;
+            font-weight: 700;
+            text-align: center;
+            padding: 10px 0;
+        }
+        .big-label {
+            text-align: center;
+            font-size: 12px;
+            color: #8b949e;
+        }
+
+        .regime-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .regime-TRENDING_UP { background: #0d2818; color: #3fb950; border: 1px solid #238636; }
+        .regime-TRENDING_DOWN { background: #2d1215; color: #f85149; border: 1px solid #da3633; }
+        .regime-RANGING { background: #1c1d21; color: #d29922; border: 1px solid #9e6a03; }
+        .regime-HIGH_VOLATILITY { background: #271030; color: #bc8cff; border: 1px solid #8b5cf6; }
+        .regime-UNKNOWN { background: #1c1d21; color: #8b949e; border: 1px solid #30363d; }
+
+        .feature-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+        .feature-name {
+            font-size: 11px;
+            color: #8b949e;
+            width: 130px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .feature-bar-bg {
+            flex: 1;
+            height: 14px;
+            background: #21262d;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .feature-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1f6feb, #58a6ff);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .feature-value {
+            font-size: 11px;
+            color: #58a6ff;
+            width: 40px;
+            font-family: monospace;
+        }
+
+        .log-area {
+            background: #0d1117;
+            border: 1px solid #21262d;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+        .log-entry { color: #8b949e; }
+        .log-entry .time { color: #484f58; }
+        .log-entry .dir-UP { color: #3fb950; font-weight: 600; }
+        .log-entry .dir-DOWN { color: #f85149; font-weight: 600; }
+        .log-entry .dir-NEUTRAL { color: #d29922; }
+
+        .ollama-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .dot-green { background: #3fb950; box-shadow: 0 0 6px #3fb950; }
+        .dot-red { background: #f85149; box-shadow: 0 0 6px #f85149; }
+        .dot-yellow { background: #d29922; box-shadow: 0 0 6px #d29922; }
+
+        .card.wide { grid-column: span 2; }
+        @media (max-width: 700px) { .card.wide { grid-column: span 1; } }
+
+        .test-btn {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .test-btn:hover { background: #2ea043; }
+        .test-btn:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧠 ML Service <span>Dashboard</span></h1>
+        <div style="display:flex;align-items:center;gap:16px;">
+            <span id="statusBadge" class="status-badge status-offline">OFFLINE</span>
+            <span class="refresh-info">Auto-refresh: <span id="refreshTimer">5s</span></span>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- Service Health -->
+        <div class="card">
+            <h2><span class="icon">💚</span> Service Health</h2>
+            <div class="metric">
+                <span class="metric-label">Status</span>
+                <span class="metric-value" id="svcStatus">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Model Trained</span>
+                <span class="metric-value" id="modelTrained">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Uptime</span>
+                <span class="metric-value blue" id="uptime">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Feature Count</span>
+                <span class="metric-value" id="featureCount">—</span>
+            </div>
+        </div>
+
+        <!-- Predictions -->
+        <div class="card">
+            <h2><span class="icon">📊</span> Predictions</h2>
+            <div class="big-number blue" id="predCount">0</div>
+            <div class="big-label">Total Predictions</div>
+            <div class="metric" style="margin-top:12px">
+                <span class="metric-label">Avg Latency</span>
+                <span class="metric-value green" id="avgLatency">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Last Prediction</span>
+                <span class="metric-value" id="lastPred">—</span>
+            </div>
+        </div>
+
+        <!-- Market Regime -->
+        <div class="card">
+            <h2><span class="icon">🎯</span> Market Regime</h2>
+            <div style="text-align:center;padding:12px 0;">
+                <span id="regimeBadge" class="regime-badge regime-UNKNOWN">UNKNOWN</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Confidence</span>
+                <span class="metric-value purple" id="regimeConf">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">ADX</span>
+                <span class="metric-value" id="regimeADX">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Hurst</span>
+                <span class="metric-value" id="regimeHurst">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Trend R²</span>
+                <span class="metric-value" id="regimeTrendR2">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Vol Ratio</span>
+                <span class="metric-value" id="regimeVolRatio">—</span>
+            </div>
+        </div>
+
+        <!-- Ollama Validator -->
+        <div class="card">
+            <h2><span class="icon">🤖</span> Ollama Validator</h2>
+            <div class="metric">
+                <span class="metric-label">Status</span>
+                <span class="ollama-status">
+                    <span id="ollamaDot" class="dot dot-red"></span>
+                    <span class="metric-value" id="ollamaStatus">Offline</span>
+                </span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Model</span>
+                <span class="metric-value" id="ollamaModel">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Calls / Success</span>
+                <span class="metric-value" id="ollamaCalls">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Agreement Rate</span>
+                <span class="metric-value green" id="ollamaAgree">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Avg Latency</span>
+                <span class="metric-value" id="ollamaLatency">—</span>
+            </div>
+        </div>
+
+        <!-- Training Metrics -->
+        <div class="card">
+            <h2><span class="icon">🎓</span> Training Metrics</h2>
+            <div class="metric">
+                <span class="metric-label">Training Samples</span>
+                <span class="metric-value blue" id="trainSamples">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Features</span>
+                <span class="metric-value" id="trainFeatures">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">CV Accuracy</span>
+                <span class="metric-value green" id="trainCV">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Train Accuracy</span>
+                <span class="metric-value" id="trainAcc">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">UP Ratio</span>
+                <span class="metric-value" id="trainUpRatio">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Trained At</span>
+                <span class="metric-value" id="trainedAt">—</span>
+            </div>
+        </div>
+
+        <!-- Top Features -->
+        <div class="card">
+            <h2><span class="icon">⚡</span> Top Feature Importance</h2>
+            <div id="featureBars"></div>
+        </div>
+
+        <!-- Prediction Log -->
+        <div class="card wide">
+            <h2><span class="icon">📜</span> Prediction Log</h2>
+            <div class="log-area" id="predLog">
+                <div class="log-entry"><span class="time">[waiting]</span> No predictions yet...</div>
+            </div>
+        </div>
+
+        <!-- Test Prediction -->
+        <div class="card">
+            <h2><span class="icon">🧪</span> Test Prediction</h2>
+            <p style="font-size:12px;color:#8b949e;margin-bottom:10px;">
+                Send a test prediction request using latest stored BTC/USDT data.
+            </p>
+            <button class="test-btn" id="testBtn" onclick="sendTestPrediction()">
+                🚀 Send Test Prediction
+            </button>
+            <div class="test-result" id="testResult"></div>
+        </div>
+
+        <!-- Test Regime Detection -->
+        <div class="card">
+            <h2><span class="icon">🔍</span> Test Regime Detection</h2>
+            <p style="font-size:12px;color:#8b949e;margin-bottom:10px;">
+                Detect current market regime from stored 15m data.
+            </p>
+            <button class="test-btn" id="regimeBtn" onclick="sendTestRegime()">
+                🎯 Detect Regime
+            </button>
+            <div class="test-result" id="regimeResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://127.0.0.1:4000'
+            : window.location.origin.replace(/:\d+$/, ':4000');
+
+        const ML_URL = BASE_URL;
+        let predictionLog = [];
+        let refreshInterval = 5000;
+        let countdown = 5;
+
+        function formatUptime(seconds) {
+            if (!seconds) return '—';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) return h + 'h ' + m + 'm ' + s + 's';
+            if (m > 0) return m + 'm ' + s + 's';
+            return s + 's';
+        }
+
+        function formatTime(iso) {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso);
+                return d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            } catch { return iso; }
+        }
+
+        async function fetchData() {
+            try {
+                // Health
+                const healthResp = await fetch(ML_URL + '/health', { signal: AbortSignal.timeout(3000) });
+                const health = await healthResp.json();
+
+                document.getElementById('statusBadge').className = 'status-badge status-online';
+                document.getElementById('statusBadge').textContent = 'ONLINE';
+                document.getElementById('svcStatus').textContent = health.status || 'ok';
+                document.getElementById('svcStatus').className = 'metric-value green';
+                document.getElementById('modelTrained').textContent = health.model_trained ? '✅ Yes' : '❌ No';
+                document.getElementById('modelTrained').className = 'metric-value ' + (health.model_trained ? 'green' : 'red');
+                document.getElementById('uptime').textContent = formatUptime(health.uptime_seconds);
+                document.getElementById('predCount').textContent = health.predictions_count || 0;
+                document.getElementById('avgLatency').textContent = (health.avg_latency_ms || 0).toFixed(1) + ' ms';
+                document.getElementById('featureCount').textContent = health.feature_count || 0;
+
+                // Metrics
+                const metricsResp = await fetch(ML_URL + '/metrics', { signal: AbortSignal.timeout(3000) });
+                const metrics = await metricsResp.json();
+
+                // Training
+                const tm = metrics.training_metrics || {};
+                document.getElementById('trainSamples').textContent = (tm.samples || 0).toLocaleString();
+                document.getElementById('trainFeatures').textContent = tm.features || 0;
+                document.getElementById('trainCV').textContent = ((tm.cv_mean_accuracy || 0) * 100).toFixed(1) + '% ± ' + ((tm.cv_std || 0) * 100).toFixed(1) + '%';
+                document.getElementById('trainAcc').textContent = ((tm.train_accuracy || 0) * 100).toFixed(1) + '%';
+                document.getElementById('trainUpRatio').textContent = ((tm.up_ratio || 0) * 100).toFixed(1) + '%';
+                document.getElementById('trainedAt').textContent = formatTime(tm.trained_at);
+
+                // Service stats
+                const ss = metrics.service_stats || {};
+                document.getElementById('lastPred').textContent = ss.last_prediction ? formatTime(ss.last_prediction) : 'never';
+
+                // Regime
+                const regime = metrics.current_regime || 'UNKNOWN';
+                const regimeConf = metrics.regime_confidence || 0;
+                const rs = metrics.regime_stats || {};
+                document.getElementById('regimeBadge').textContent = regime;
+                document.getElementById('regimeBadge').className = 'regime-badge regime-' + regime;
+                document.getElementById('regimeConf').textContent = (regimeConf * 100).toFixed(1) + '%';
+                document.getElementById('regimeADX').textContent = rs.adx != null ? rs.adx.toFixed(1) : '—';
+                document.getElementById('regimeHurst').textContent = rs.hurst != null ? rs.hurst.toFixed(3) : '—';
+                document.getElementById('regimeTrendR2').textContent = rs.trend_r2 != null ? rs.trend_r2.toFixed(3) : '—';
+                document.getElementById('regimeVolRatio').textContent = rs.vol_ratio != null ? rs.vol_ratio.toFixed(2) : '—';
+
+                // Ollama
+                const os = metrics.ollama_stats || {};
+                const ollamaUp = os.is_available || false;
+                document.getElementById('ollamaDot').className = 'dot ' + (ollamaUp ? 'dot-green' : 'dot-red');
+                document.getElementById('ollamaStatus').textContent = ollamaUp ? 'Online' : 'Offline';
+                document.getElementById('ollamaStatus').className = 'metric-value ' + (ollamaUp ? 'green' : 'red');
+                document.getElementById('ollamaModel').textContent = os.model || '—';
+                document.getElementById('ollamaCalls').textContent = (os.calls || 0) + ' / ' + (os.successes || 0);
+                document.getElementById('ollamaAgree').textContent = (os.agreement_rate * 100 || 0).toFixed(0) + '%';
+                document.getElementById('ollamaLatency').textContent = (os.avg_latency_ms || 0).toFixed(0) + ' ms';
+
+                // Feature importance
+                const fi = metrics.feature_importance || {};
+                const entries = Object.entries(fi).sort((a,b) => b[1] - a[1]).slice(0, 10);
+                const maxVal = entries.length > 0 ? entries[0][1] : 1;
+                const barsHtml = entries.map(([name, val]) => {
+                    const pct = (val / maxVal * 100).toFixed(0);
+                    return `<div class="feature-bar">
+                        <span class="feature-name">${name}</span>
+                        <div class="feature-bar-bg"><div class="feature-bar-fill" style="width:${pct}%"></div></div>
+                        <span class="feature-value">${val.toFixed(0)}</span>
+                    </div>`;
+                }).join('');
+                document.getElementById('featureBars').innerHTML = barsHtml || '<div style="color:#484f58;font-size:12px;">No data</div>';
+
+            } catch (e) {
+                document.getElementById('statusBadge').className = 'status-badge status-offline';
+                document.getElementById('statusBadge').textContent = 'OFFLINE';
+                document.getElementById('svcStatus').textContent = 'unreachable';
+                document.getElementById('svcStatus').className = 'metric-value red';
+            }
+        }
+
+        function addLogEntry(direction, confidence, latency, regime) {
+            const now = new Date().toLocaleTimeString('pl-PL', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            const entry = `<div class="log-entry"><span class="time">[${now}]</span> <span class="dir-${direction}">${direction}</span> conf=${(confidence*100).toFixed(1)}% latency=${latency.toFixed(1)}ms regime=${regime || '?'}</div>`;
+            predictionLog.unshift(entry);
+            if (predictionLog.length > 50) predictionLog.pop();
+            document.getElementById('predLog').innerHTML = predictionLog.join('');
+        }
+
+        async function sendTestPrediction() {
+            const btn = document.getElementById('testBtn');
+            const result = document.getElementById('testResult');
+            btn.disabled = true;
+            btn.textContent = '⏳ Predicting...';
+            result.style.display = 'block';
+            result.textContent = 'Sending request...';
+
+            try {
+                // Generate realistic test candles
+                const candles = [];
+                let price = 85000 + Math.random() * 5000;
+                const now = Date.now();
+                for (let i = 199; i >= 0; i--) {
+                    const change = (Math.random() - 0.5) * 0.003;
+                    const open = price;
+                    const close = price * (1 + change);
+                    const high = Math.max(open, close) * (1 + Math.random() * 0.002);
+                    const low = Math.min(open, close) * (1 - Math.random() * 0.002);
+                    const volume = 50 + Math.random() * 200;
+                    candles.push({
+                        timestamp: now - i * 15 * 60 * 1000,
+                        open, high, low, close, volume
+                    });
+                    price = close;
+                }
+
+                const resp = await fetch(ML_URL + '/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        candles,
+                        portfolio_value: 10000,
+                        has_position: false,
+                        current_regime: 'UNKNOWN',
+                        strategy_consensus: 'NEUTRAL'
+                    }),
+                    signal: AbortSignal.timeout(10000)
+                });
+                const data = await resp.json();
+                result.textContent = JSON.stringify(data, null, 2);
+                result.style.color = data.direction === 'UP' ? '#3fb950' : data.direction === 'DOWN' ? '#f85149' : '#d29922';
+
+                addLogEntry(data.direction, data.confidence, data.inference_ms, data.regime_detected);
+                fetchData(); // Refresh dashboard
+            } catch (e) {
+                result.textContent = 'Error: ' + e.message;
+                result.style.color = '#f85149';
+            }
+            btn.disabled = false;
+            btn.textContent = '🚀 Send Test Prediction';
+        }
+
+        async function sendTestRegime() {
+            const btn = document.getElementById('regimeBtn');
+            const result = document.getElementById('regimeResult');
+            btn.disabled = true;
+            btn.textContent = '⏳ Detecting...';
+            result.style.display = 'block';
+            result.textContent = 'Sending request...';
+
+            try {
+                // Generate test candles
+                const candles = [];
+                let price = 85000 + Math.random() * 5000;
+                const now = Date.now();
+                for (let i = 199; i >= 0; i--) {
+                    const change = (Math.random() - 0.5) * 0.004;
+                    const open = price;
+                    const close = price * (1 + change);
+                    const high = Math.max(open, close) * (1 + Math.random() * 0.003);
+                    const low = Math.min(open, close) * (1 - Math.random() * 0.003);
+                    const volume = 50 + Math.random() * 200;
+                    candles.push({
+                        timestamp: now - i * 15 * 60 * 1000,
+                        open, high, low, close, volume
+                    });
+                    price = close;
+                }
+
+                const resp = await fetch(ML_URL + '/regime', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ candles }),
+                    signal: AbortSignal.timeout(5000)
+                });
+                const data = await resp.json();
+                result.textContent = JSON.stringify(data, null, 2);
+                result.style.color = '#58a6ff';
+                fetchData();
+            } catch (e) {
+                result.textContent = 'Error: ' + e.message;
+                result.style.color = '#f85149';
+            }
+            btn.disabled = false;
+            btn.textContent = '🎯 Detect Regime';
+        }
+
+        // Auto-refresh
+        setInterval(() => {
+            countdown--;
+            document.getElementById('refreshTimer').textContent = countdown + 's';
+            if (countdown <= 0) {
+                countdown = 5;
+                fetchData();
+            }
+        }, 1000);
+
+        // Initial
+        fetchData();
+    </script>
+</body>
+</html>

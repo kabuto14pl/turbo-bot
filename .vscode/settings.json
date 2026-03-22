@@ -5,8 +5,11 @@
   "workbench.startupEditor": "none",
   
   // 🚨 OPTYMALIZACJA COPILOT CHAT - Redukcja Tools
+  // ✅ AUTOPILOT/AGENT MODE ENABLED (VS Code 1.111+)
+  "chat.agent.enabled": true,
+  "chat.autopilot.enabled": true,
+  "github.copilot.chat.agent.enabled": true,
   "github.copilot.advanced": {
-    "debug.overrideEngine": "gpt-4",
     "debug.useNodeFetcher": true
   },
   

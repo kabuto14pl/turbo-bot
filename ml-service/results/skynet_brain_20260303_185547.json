@@ -1,0 +1,486 @@
+{
+  "best_iteration": 2,
+  "best_score": 36.41,
+  "best_config": {
+    "RISK_PER_TRADE": 0.015,
+    "MAX_POSITION_VALUE_PCT": 1.0,
+    "FEE_RATE": 0.0002,
+    "FEE_GATE_MULTIPLIER": 1.5,
+    "SL_ATR_MULT": 1.75,
+    "TP_ATR_MULT": 2.5,
+    "SL_CLAMP_MIN": 0.8,
+    "SL_CLAMP_MAX": 2.5,
+    "TP_CLAMP_MIN": 2.0,
+    "TP_CLAMP_MAX": 4.5,
+    "PHASE_1_MIN_R": 1.0,
+    "PHASE_2_BE_R": 1.0,
+    "PHASE_3_LOCK_R": 1.5,
+    "PHASE_4_LOCK_R": 2.0,
+    "PHASE_5_CHANDELIER_R": 2.5,
+    "TRAILING_DISTANCE_ATR": 1.5,
+    "PARTIAL_ATR_L1_PCT": 0.4,
+    "PARTIAL_ATR_L1_MULT": 1.5,
+    "PARTIAL_ATR_L2_PCT": 0.3,
+    "PARTIAL_ATR_L2_MULT": 1.5,
+    "PARTIAL_ATR_L3_PCT": 0.0,
+    "PARTIAL_ATR_L3_MULT": 2.5,
+    "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+    "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+    "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+    "CONFIDENCE_FLOOR": 0.25,
+    "CONFIDENCE_CLAMP_MIN": 0.15,
+    "CONFIDENCE_CLAMP_MAX": 0.95,
+    "QDV_MIN_CONFIDENCE": 0.25,
+    "QDV_STARVATION_CYCLES": 120,
+    "BE_PROFIT_BUFFER_ATR": 0.3
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "score": 29.74,
+      "trades": 68,
+      "pf": 0.544,
+      "wr": 76.5,
+      "wl": 0.17,
+      "dd": 7.99,
+      "return_pct": -6.13,
+      "tp_exits": 0,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 2.0,
+        "TP_ATR_MULT": 3.0,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 1.0,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.5,
+        "PARTIAL_ATR_L1_PCT": 0.4,
+        "PARTIAL_ATR_L1_MULT": 1.0,
+        "PARTIAL_ATR_L2_PCT": 0.3,
+        "PARTIAL_ATR_L2_MULT": 1.5,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 2.5,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3
+      },
+      "timestamp": "2026-03-03T18:49:01.929278",
+      "status": "NEW_BEST",
+      "changes": [
+        [
+          "TP_ATR_MULT",
+          3.0,
+          2.5,
+          "TP exits 0% \u2014 lower TP from 3.0 ATR"
+        ],
+        [
+          "PARTIAL_ATR_L1_MULT",
+          1.0,
+          1.5,
+          "W/L 0.17 with 47% partials \u2014 L1 too early, move to 1.5 ATR"
+        ],
+        [
+          "SL_ATR_MULT",
+          2.0,
+          1.75,
+          "Avg loss $84 too large \u2014 tighten SL to 1.75 ATR"
+        ]
+      ],
+      "changes_params": [
+        [
+          "TP_ATR_MULT",
+          "down"
+        ],
+        [
+          "PARTIAL_ATR_L1_MULT",
+          "up"
+        ],
+        [
+          "SL_ATR_MULT",
+          "down"
+        ]
+      ]
+    },
+    {
+      "iteration": 2,
+      "score": 36.41,
+      "trades": 64,
+      "pf": 0.655,
+      "wr": 71.9,
+      "wl": 0.26,
+      "dd": 5.69,
+      "return_pct": -4.75,
+      "tp_exits": 0,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.75,
+        "TP_ATR_MULT": 2.5,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 1.0,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.5,
+        "PARTIAL_ATR_L1_PCT": 0.4,
+        "PARTIAL_ATR_L1_MULT": 1.5,
+        "PARTIAL_ATR_L2_PCT": 0.3,
+        "PARTIAL_ATR_L2_MULT": 1.5,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 2.5,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3
+      },
+      "timestamp": "2026-03-03T18:50:26.626847",
+      "status": "NEW_BEST",
+      "changes": [
+        [
+          "TP_ATR_MULT",
+          2.5,
+          2.0,
+          "TP exits 0% \u2014 lower TP from 2.5 ATR"
+        ],
+        [
+          "PARTIAL_ATR_L1_MULT",
+          1.5,
+          2.0,
+          "W/L 0.26 with 44% partials \u2014 L1 too early, move to 2.0 ATR"
+        ],
+        [
+          "SL_ATR_MULT",
+          1.75,
+          1.5,
+          "Avg loss $77 too large \u2014 tighten SL to 1.5 ATR"
+        ]
+      ],
+      "changes_params": [
+        [
+          "TP_ATR_MULT",
+          "down"
+        ],
+        [
+          "PARTIAL_ATR_L1_MULT",
+          "up"
+        ],
+        [
+          "SL_ATR_MULT",
+          "down"
+        ]
+      ]
+    },
+    {
+      "iteration": 3,
+      "score": 24.83,
+      "trades": 43,
+      "pf": 0.474,
+      "wr": 51.2,
+      "wl": 0.45,
+      "dd": 7.8,
+      "return_pct": -7.1,
+      "tp_exits": 0,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.5,
+        "TP_ATR_MULT": 2.0,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 1.0,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.5,
+        "PARTIAL_ATR_L1_PCT": 0.4,
+        "PARTIAL_ATR_L1_MULT": 2.0,
+        "PARTIAL_ATR_L2_PCT": 0.3,
+        "PARTIAL_ATR_L2_MULT": 1.5,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 2.5,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3
+      },
+      "timestamp": "2026-03-03T18:51:47.584248",
+      "status": "NO_IMPROVEMENT",
+      "changes": [
+        [
+          "TP_ATR_MULT",
+          2.5,
+          2.0,
+          "TP exits 0% \u2014 lower TP from 2.5 ATR"
+        ],
+        [
+          "PHASE_1_MIN_R",
+          1.0,
+          0.7,
+          "Phase 1 exits 53% \u2014 lower Phase 1 threshold for earlier trail"
+        ],
+        [
+          "TRAILING_DISTANCE_ATR",
+          1.5,
+          1.25,
+          "W/L 0.45 \u2014 tighten trailing to lock more profit"
+        ]
+      ],
+      "changes_params": [
+        [
+          "TP_ATR_MULT",
+          "down"
+        ],
+        [
+          "PHASE_1_MIN_R",
+          "down"
+        ],
+        [
+          "TRAILING_DISTANCE_ATR",
+          "down"
+        ]
+      ]
+    },
+    {
+      "iteration": 4,
+      "score": 36.41,
+      "trades": 64,
+      "pf": 0.655,
+      "wr": 71.9,
+      "wl": 0.26,
+      "dd": 5.69,
+      "return_pct": -4.75,
+      "tp_exits": 0,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.75,
+        "TP_ATR_MULT": 2.0,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 0.7,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.25,
+        "PARTIAL_ATR_L1_PCT": 0.4,
+        "PARTIAL_ATR_L1_MULT": 1.5,
+        "PARTIAL_ATR_L2_PCT": 0.3,
+        "PARTIAL_ATR_L2_MULT": 1.5,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 2.5,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3
+      },
+      "timestamp": "2026-03-03T18:53:06.137616",
+      "status": "NO_IMPROVEMENT",
+      "changes": [
+        [
+          "TP_ATR_MULT",
+          2.5,
+          2.0,
+          "TP exits 0% \u2014 lower TP from 2.5 ATR"
+        ],
+        [
+          "PARTIAL_ATR_L1_MULT",
+          1.5,
+          2.0,
+          "W/L 0.26 with 44% partials \u2014 L1 too early, move to 2.0 ATR"
+        ],
+        [
+          "SL_ATR_MULT",
+          1.75,
+          1.5,
+          "Avg loss $77 too large \u2014 tighten SL to 1.5 ATR"
+        ]
+      ],
+      "changes_params": [
+        [
+          "TP_ATR_MULT",
+          "down"
+        ],
+        [
+          "PARTIAL_ATR_L1_MULT",
+          "up"
+        ],
+        [
+          "SL_ATR_MULT",
+          "down"
+        ]
+      ]
+    },
+    {
+      "iteration": 5,
+      "score": 24.83,
+      "trades": 43,
+      "pf": 0.474,
+      "wr": 51.2,
+      "wl": 0.45,
+      "dd": 7.8,
+      "return_pct": -7.1,
+      "tp_exits": 0,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.5,
+        "TP_ATR_MULT": 2.0,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 1.0,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.5,
+        "PARTIAL_ATR_L1_PCT": 0.4,
+        "PARTIAL_ATR_L1_MULT": 2.0,
+        "PARTIAL_ATR_L2_PCT": 0.3,
+        "PARTIAL_ATR_L2_MULT": 1.5,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 2.5,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3
+      },
+      "timestamp": "2026-03-03T18:54:26.098170",
+      "status": "NO_IMPROVEMENT",
+      "changes": [
+        [
+          "TP_ATR_MULT",
+          2.5,
+          2.0,
+          "TP exits 0% \u2014 lower TP from 2.5 ATR"
+        ],
+        [
+          "PHASE_1_MIN_R",
+          1.0,
+          0.7,
+          "Phase 1 exits 53% \u2014 lower Phase 1 threshold for earlier trail"
+        ],
+        [
+          "TRAILING_DISTANCE_ATR",
+          1.5,
+          1.25,
+          "W/L 0.45 \u2014 tighten trailing to lock more profit"
+        ]
+      ],
+      "changes_params": [
+        [
+          "TP_ATR_MULT",
+          "down"
+        ],
+        [
+          "PHASE_1_MIN_R",
+          "down"
+        ],
+        [
+          "TRAILING_DISTANCE_ATR",
+          "down"
+        ]
+      ]
+    },
+    {
+      "iteration": 6,
+      "score": 36.41,
+      "trades": 64,
+      "pf": 0.655,
+      "wr": 71.9,
+      "wl": 0.26,
+      "dd": 5.69,
+      "return_pct": -4.75,
+      "tp_exits": 0,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.75,
+        "TP_ATR_MULT": 2.0,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 0.7,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.25,
+        "PARTIAL_ATR_L1_PCT": 0.4,
+        "PARTIAL_ATR_L1_MULT": 1.5,
+        "PARTIAL_ATR_L2_PCT": 0.3,
+        "PARTIAL_ATR_L2_MULT": 1.5,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 2.5,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3
+      },
+      "timestamp": "2026-03-03T18:55:47.899282",
+      "status": "NO_IMPROVEMENT"
+    }
+  ],
+  "timeframe": "15m"
+}

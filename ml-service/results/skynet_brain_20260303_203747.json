@@ -1,0 +1,508 @@
+{
+  "best_iteration": 4,
+  "best_score": 51.22,
+  "best_config": {
+    "RISK_PER_TRADE": 0.015,
+    "MAX_POSITION_VALUE_PCT": 1.0,
+    "FEE_RATE": 0.0002,
+    "FEE_GATE_MULTIPLIER": 1.5,
+    "SL_ATR_MULT": 1.75,
+    "TP_ATR_MULT": 2.5,
+    "SL_CLAMP_MIN": 0.8,
+    "SL_CLAMP_MAX": 2.5,
+    "TP_CLAMP_MIN": 2.0,
+    "TP_CLAMP_MAX": 4.5,
+    "PHASE_1_MIN_R": 0.7,
+    "PHASE_2_BE_R": 1.0,
+    "PHASE_3_LOCK_R": 1.5,
+    "PHASE_4_LOCK_R": 2.0,
+    "PHASE_5_CHANDELIER_R": 2.5,
+    "TRAILING_DISTANCE_ATR": 1.0,
+    "PHASE3_TRAIL_ATR": 1.0,
+    "PHASE4_TRAIL_ATR": 0.75,
+    "PARTIAL_ATR_L1_PCT": 0.2,
+    "PARTIAL_ATR_L1_MULT": 1.25,
+    "PARTIAL_ATR_L2_PCT": 0.45,
+    "PARTIAL_ATR_L2_MULT": 2.0,
+    "PARTIAL_ATR_L3_PCT": 0.0,
+    "PARTIAL_ATR_L3_MULT": 3.0,
+    "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+    "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+    "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+    "CONFIDENCE_FLOOR": 0.25,
+    "CONFIDENCE_CLAMP_MIN": 0.15,
+    "CONFIDENCE_CLAMP_MAX": 0.95,
+    "QDV_MIN_CONFIDENCE": 0.25,
+    "QDV_STARVATION_CYCLES": 120,
+    "BE_PROFIT_BUFFER_ATR": 0.3,
+    "PA_MIN_SCORE": 0.39999999999999997,
+    "PA_GATE_MIN_SCORE": 0.25,
+    "PA_BOOST_THRESHOLD": 0.65,
+    "LONG_COUNTER_TREND_PENALTY": 0.75
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "score": 39.05,
+      "trades": 57,
+      "pf": 0.557,
+      "wr": 73.7,
+      "wl": 0.2,
+      "dd": 6.82,
+      "return_pct": -5.83,
+      "tp_exits": 1,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.75,
+        "TP_ATR_MULT": 2.5,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 1.0,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.5,
+        "PHASE3_TRAIL_ATR": 1.0,
+        "PHASE4_TRAIL_ATR": 0.75,
+        "PARTIAL_ATR_L1_PCT": 0.25,
+        "PARTIAL_ATR_L1_MULT": 1.25,
+        "PARTIAL_ATR_L2_PCT": 0.45,
+        "PARTIAL_ATR_L2_MULT": 2.0,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 3.0,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3,
+        "PA_MIN_SCORE": 0.3,
+        "PA_GATE_MIN_SCORE": 0.25,
+        "PA_BOOST_THRESHOLD": 0.65,
+        "LONG_COUNTER_TREND_PENALTY": 0.75
+      },
+      "timestamp": "2026-03-03T20:35:22.685328",
+      "status": "NEW_BEST",
+      "changes": [
+        [
+          "TP_ATR_MULT",
+          2.5,
+          2.0,
+          "TP exits 2% \u2014 lower TP from 2.5 ATR"
+        ],
+        [
+          "PARTIAL_ATR_L1_MULT",
+          1.25,
+          1.75,
+          "W/L 0.20 with 46% partials \u2014 L1 too early, move to 1.75 ATR"
+        ],
+        [
+          "SL_ATR_MULT",
+          1.75,
+          1.5,
+          "Avg loss $88 too large \u2014 tighten SL to 1.5 ATR"
+        ]
+      ],
+      "changes_params": [
+        [
+          "TP_ATR_MULT",
+          "down"
+        ],
+        [
+          "PARTIAL_ATR_L1_MULT",
+          "up"
+        ],
+        [
+          "SL_ATR_MULT",
+          "down"
+        ]
+      ]
+    },
+    {
+      "iteration": 2,
+      "score": 34.89,
+      "trades": 50,
+      "pf": 0.511,
+      "wr": 66.0,
+      "wl": 0.26,
+      "dd": 7.56,
+      "return_pct": -6.97,
+      "tp_exits": 2,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.5,
+        "TP_ATR_MULT": 2.0,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 1.0,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.5,
+        "PHASE3_TRAIL_ATR": 1.0,
+        "PHASE4_TRAIL_ATR": 0.75,
+        "PARTIAL_ATR_L1_PCT": 0.25,
+        "PARTIAL_ATR_L1_MULT": 1.75,
+        "PARTIAL_ATR_L2_PCT": 0.45,
+        "PARTIAL_ATR_L2_MULT": 2.0,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 3.0,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3,
+        "PA_MIN_SCORE": 0.3,
+        "PA_GATE_MIN_SCORE": 0.25,
+        "PA_BOOST_THRESHOLD": 0.65,
+        "LONG_COUNTER_TREND_PENALTY": 0.75
+      },
+      "timestamp": "2026-03-03T20:35:48.997352",
+      "status": "NO_IMPROVEMENT",
+      "changes": [
+        [
+          "TRAILING_DISTANCE_ATR",
+          1.5,
+          1.25,
+          "W/L 0.26 \u2014 tighten trailing to lock more profit"
+        ],
+        [
+          "PARTIAL_ATR_L1_PCT",
+          0.25,
+          0.2,
+          "Avg win $22 < 30% of avg loss $84 \u2014 reduce L1 partial size"
+        ],
+        [
+          "PA_MIN_SCORE",
+          0.3,
+          0.35,
+          "WR 66% but PF<1 \u2014 tighten PA gate to filter no-pattern entries"
+        ]
+      ],
+      "changes_params": [
+        [
+          "TRAILING_DISTANCE_ATR",
+          "down"
+        ],
+        [
+          "PARTIAL_ATR_L1_PCT",
+          "down"
+        ],
+        [
+          "PA_MIN_SCORE",
+          "up"
+        ]
+      ]
+    },
+    {
+      "iteration": 3,
+      "score": 39.09,
+      "trades": 57,
+      "pf": 0.558,
+      "wr": 73.7,
+      "wl": 0.2,
+      "dd": 6.8,
+      "return_pct": -5.82,
+      "tp_exits": 1,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.75,
+        "TP_ATR_MULT": 2.5,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 1.0,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.25,
+        "PHASE3_TRAIL_ATR": 1.0,
+        "PHASE4_TRAIL_ATR": 0.75,
+        "PARTIAL_ATR_L1_PCT": 0.2,
+        "PARTIAL_ATR_L1_MULT": 1.25,
+        "PARTIAL_ATR_L2_PCT": 0.45,
+        "PARTIAL_ATR_L2_MULT": 2.0,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 3.0,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3,
+        "PA_MIN_SCORE": 0.35,
+        "PA_GATE_MIN_SCORE": 0.25,
+        "PA_BOOST_THRESHOLD": 0.65,
+        "LONG_COUNTER_TREND_PENALTY": 0.75
+      },
+      "timestamp": "2026-03-03T20:36:19.178247",
+      "status": "NEW_BEST",
+      "changes": [
+        [
+          "PHASE_1_MIN_R",
+          1.0,
+          0.7,
+          "Phase 1 exits 72% \u2014 lower Phase 1 threshold for earlier trail"
+        ],
+        [
+          "TRAILING_DISTANCE_ATR",
+          1.25,
+          1.0,
+          "W/L 0.20 \u2014 tighten trailing to lock more profit"
+        ],
+        [
+          "PA_MIN_SCORE",
+          0.35,
+          0.39999999999999997,
+          "WR 74% but PF<1 \u2014 tighten PA gate to filter no-pattern entries"
+        ]
+      ],
+      "changes_params": [
+        [
+          "PHASE_1_MIN_R",
+          "down"
+        ],
+        [
+          "TRAILING_DISTANCE_ATR",
+          "down"
+        ],
+        [
+          "PA_MIN_SCORE",
+          "up"
+        ]
+      ]
+    },
+    {
+      "iteration": 4,
+      "score": 51.22,
+      "trades": 15,
+      "pf": 0.658,
+      "wr": 73.3,
+      "wl": 0.24,
+      "dd": 3.24,
+      "return_pct": -1.45,
+      "tp_exits": 0,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.75,
+        "TP_ATR_MULT": 2.5,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 0.7,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.0,
+        "PHASE3_TRAIL_ATR": 1.0,
+        "PHASE4_TRAIL_ATR": 0.75,
+        "PARTIAL_ATR_L1_PCT": 0.2,
+        "PARTIAL_ATR_L1_MULT": 1.25,
+        "PARTIAL_ATR_L2_PCT": 0.45,
+        "PARTIAL_ATR_L2_MULT": 2.0,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 3.0,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3,
+        "PA_MIN_SCORE": 0.39999999999999997,
+        "PA_GATE_MIN_SCORE": 0.25,
+        "PA_BOOST_THRESHOLD": 0.65,
+        "LONG_COUNTER_TREND_PENALTY": 0.75
+      },
+      "timestamp": "2026-03-03T20:36:48.519556",
+      "status": "NEW_BEST",
+      "changes": [
+        [
+          "PHASE_1_MIN_R",
+          0.7,
+          0.5,
+          "Phase 1 exits 60% \u2014 lower Phase 1 threshold for earlier trail"
+        ],
+        [
+          "ENSEMBLE_THRESHOLD_NORMAL",
+          0.22,
+          0.25,
+          "Long WR 0% catastrophic \u2014 raise ensemble threshold"
+        ],
+        [
+          "PA_MIN_SCORE",
+          0.39999999999999997,
+          0.35,
+          "PA blocked 31 trades \u2014 loosen PA gate"
+        ]
+      ],
+      "changes_params": [
+        [
+          "PHASE_1_MIN_R",
+          "down"
+        ],
+        [
+          "ENSEMBLE_THRESHOLD_NORMAL",
+          "up"
+        ],
+        [
+          "PA_MIN_SCORE",
+          "down"
+        ]
+      ]
+    },
+    {
+      "iteration": 5,
+      "score": 48.91,
+      "trades": 44,
+      "pf": 0.649,
+      "wr": 77.3,
+      "wl": 0.19,
+      "dd": 4.68,
+      "return_pct": -3.43,
+      "tp_exits": 1,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.75,
+        "TP_ATR_MULT": 2.5,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 0.5,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.0,
+        "PHASE3_TRAIL_ATR": 1.0,
+        "PHASE4_TRAIL_ATR": 0.75,
+        "PARTIAL_ATR_L1_PCT": 0.2,
+        "PARTIAL_ATR_L1_MULT": 1.25,
+        "PARTIAL_ATR_L2_PCT": 0.45,
+        "PARTIAL_ATR_L2_MULT": 2.0,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 3.0,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.25,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3,
+        "PA_MIN_SCORE": 0.35,
+        "PA_GATE_MIN_SCORE": 0.25,
+        "PA_BOOST_THRESHOLD": 0.65,
+        "LONG_COUNTER_TREND_PENALTY": 0.75
+      },
+      "timestamp": "2026-03-03T20:37:17.693280",
+      "status": "NO_IMPROVEMENT",
+      "changes": [
+        [
+          "PA_MIN_SCORE",
+          0.39999999999999997,
+          0.44999999999999996,
+          "WR 77% but PF<1 \u2014 tighten PA gate to filter no-pattern entries"
+        ]
+      ],
+      "changes_params": [
+        [
+          "PA_MIN_SCORE",
+          "up"
+        ]
+      ]
+    },
+    {
+      "iteration": 6,
+      "score": 51.22,
+      "trades": 15,
+      "pf": 0.658,
+      "wr": 73.3,
+      "wl": 0.24,
+      "dd": 3.24,
+      "return_pct": -1.45,
+      "tp_exits": 0,
+      "config": {
+        "RISK_PER_TRADE": 0.015,
+        "MAX_POSITION_VALUE_PCT": 1.0,
+        "FEE_RATE": 0.0002,
+        "FEE_GATE_MULTIPLIER": 1.5,
+        "SL_ATR_MULT": 1.75,
+        "TP_ATR_MULT": 2.5,
+        "SL_CLAMP_MIN": 0.8,
+        "SL_CLAMP_MAX": 2.5,
+        "TP_CLAMP_MIN": 2.0,
+        "TP_CLAMP_MAX": 4.5,
+        "PHASE_1_MIN_R": 0.7,
+        "PHASE_2_BE_R": 1.0,
+        "PHASE_3_LOCK_R": 1.5,
+        "PHASE_4_LOCK_R": 2.0,
+        "PHASE_5_CHANDELIER_R": 2.5,
+        "TRAILING_DISTANCE_ATR": 1.0,
+        "PHASE3_TRAIL_ATR": 1.0,
+        "PHASE4_TRAIL_ATR": 0.75,
+        "PARTIAL_ATR_L1_PCT": 0.2,
+        "PARTIAL_ATR_L1_MULT": 1.25,
+        "PARTIAL_ATR_L2_PCT": 0.45,
+        "PARTIAL_ATR_L2_MULT": 2.0,
+        "PARTIAL_ATR_L3_PCT": 0.0,
+        "PARTIAL_ATR_L3_MULT": 3.0,
+        "ENSEMBLE_THRESHOLD_NORMAL": 0.22,
+        "ENSEMBLE_THRESHOLD_STRONG": 0.18,
+        "ENSEMBLE_THRESHOLD_CONFLICT": 0.3,
+        "CONFIDENCE_FLOOR": 0.25,
+        "CONFIDENCE_CLAMP_MIN": 0.15,
+        "CONFIDENCE_CLAMP_MAX": 0.95,
+        "QDV_MIN_CONFIDENCE": 0.25,
+        "QDV_STARVATION_CYCLES": 120,
+        "BE_PROFIT_BUFFER_ATR": 0.3,
+        "PA_MIN_SCORE": 0.44999999999999996,
+        "PA_GATE_MIN_SCORE": 0.25,
+        "PA_BOOST_THRESHOLD": 0.65,
+        "LONG_COUNTER_TREND_PENALTY": 0.75
+      },
+      "timestamp": "2026-03-03T20:37:47.266281",
+      "status": "NO_IMPROVEMENT"
+    }
+  ],
+  "timeframe": "15m"
+}

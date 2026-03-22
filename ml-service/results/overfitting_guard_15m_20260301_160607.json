@@ -1,0 +1,96 @@
+{
+  "degradation": {
+    "cv_accuracy": 0.502,
+    "val_accuracy": 0.5227,
+    "holdout_accuracy": 0.5814,
+    "cv_val_gap": -0.0208,
+    "cv_holdout_gap": -0.0794,
+    "pass": true
+  },
+  "permutation": {
+    "real_accuracy": 0.5227,
+    "null_mean": 0.5041,
+    "null_std": 0.0304,
+    "null_max": 0.5515,
+    "p_value": 0.3,
+    "n_permutations": 30,
+    "pass": "False"
+  },
+  "feature_stability": {
+    "n_folds": 5,
+    "avg_jaccard_similarity": 0.4208,
+    "stable_features": [
+      "upper_shadow",
+      "return_5",
+      "volatility_10",
+      "vol_trend",
+      "lower_shadow",
+      "price_sma50_ratio",
+      "up_down_vol_ratio",
+      "atr_pct",
+      "body_ratio",
+      "trend_r2"
+    ],
+    "n_stable": 10,
+    "all_features_seen": [
+      "upper_shadow",
+      "return_5",
+      "volatility_10",
+      "stoch_rsi",
+      "vol_trend",
+      "macd_hist",
+      "lower_shadow",
+      "bb_width",
+      "volatility_50",
+      "price_sma50_ratio",
+      "up_down_vol_ratio",
+      "atr_pct",
+      "body_ratio",
+      "return_10",
+      "return_50",
+      "trend_r2",
+      "volatility_5",
+      "hurst",
+      "adx_14"
+    ],
+    "pass": true
+  },
+  "holdout": {
+    "holdout_samples": 522,
+    "trades": 86,
+    "accuracy": 0.5814,
+    "win_rate": 0.5814,
+    "total_pnl_pct": -9.6847,
+    "avg_pnl_per_trade_pct": -0.112613,
+    "sharpe_estimate": -37.3561,
+    "pass": "False"
+  },
+  "verdict": {
+    "pass": true,
+    "score": 50,
+    "passed_tests": 2,
+    "total_tests": 4,
+    "notes": [
+      {
+        "test": "Degradation",
+        "pass": true,
+        "detail": "CV\u2192holdout gap: -7.9%"
+      },
+      {
+        "test": "Permutation",
+        "pass": "False",
+        "detail": "p-value: 0.300"
+      },
+      {
+        "test": "Feature Stability",
+        "pass": true,
+        "detail": "Jaccard: 0.421"
+      },
+      {
+        "test": "Holdout",
+        "pass": "False",
+        "detail": "PnL: -9.68%, Sharpe: -37.36"
+      }
+    ]
+  }
+}

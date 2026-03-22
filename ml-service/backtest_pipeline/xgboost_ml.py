@@ -356,9 +356,13 @@ class XGBoostMLEngine:
     
     def _train_models(self, X, y_dir, y_ret):
         """Train XGBoost classifier + regressor."""
-        # P#179: When gpu_url is set, ALWAYS use remote GPU. No CPU fallback.
+        # P#179: When gpu_url is set, try remote GPU first, CPU fallback on failure.
         if self.gpu_url:
-            return self._train_models_remote(X, y_dir, y_ret)
+            remote_ok = self._train_models_remote(X, y_dir, y_ret)
+            if remote_ok:
+                return True
+            print(f"  ⚠️ Remote GPU failed — falling back to CPU training")
+            # Fall through to local CPU training below
         
         # XGBoost Classifier (direction prediction)
         self.model_clf = xgb.XGBClassifier(
@@ -724,5 +728,7 @@ class XGBoostMLEngine:
                 self.feature_importance.items(), key=lambda x: -x[1]
             )[:10]) if self.feature_importance else {},
             'gpu_requested': self.gpu_requested,
-            'gpu_enabled': self.use_gpu,
+            'gpu_enabled': self.use_gpu or bool(self.gpu_url),
+            'gpu_remote_url': self.gpu_url or '',
+            'gpu_remote_active': bool(self.gpu_url and self.trained),
         }

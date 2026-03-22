@@ -1,0 +1,39 @@
+{
+  "timeframe": "15m",
+  "horizon": 1,
+  "training_metrics": {
+    "samples": 1707,
+    "features": 37,
+    "cv_mean_accuracy": 0.5204225352112676,
+    "cv_std": 0.029493509283622453,
+    "train_accuracy": 0.9906268306971294,
+    "up_ratio": 0.4844756883421207,
+    "trained_at": "2026-03-01T14:04:18.237374"
+  },
+  "test_results": {
+    "accuracy": 0.5490196078431373,
+    "trades_taken": 51,
+    "total_test_samples": 522,
+    "win_rate": 0.5490196078431373,
+    "total_pnl_pct": -8.050660059246537,
+    "avg_pnl_per_trade_pct": -0.15785607959306935
+  },
+  "top_features": {
+    "vol_ratio_20": 103.01411966886371,
+    "up_down_vol_ratio": 87.51422811951488,
+    "body_ratio": 87.01380711141974,
+    "upper_shadow": 84.51435486320406,
+    "volatility_5": 82.01383646763861,
+    "hurst": 80.5128844352439,
+    "roc_acceleration": 76.01316285599023,
+    "lower_shadow": 75.51451381016523,
+    "stoch_rsi": 69.0139524359256,
+    "vol_ratio": 65.01365998387337,
+    "return_5": 64.01256931107491,
+    "return_20": 56.01441790536046,
+    "bb_width": 55.5143396416679,
+    "adx_14": 55.513300127349794,
+    "return_50": 55.51300347223878
+  },
+  "timestamp": "2026-03-01T14:04:24.206211"
+}

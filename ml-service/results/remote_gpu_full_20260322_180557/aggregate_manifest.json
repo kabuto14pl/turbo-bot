@@ -1,0 +1,74 @@
+{
+  "created_at": "2026-03-22T17:10:54.669736Z",
+  "remote_url": "http://127.0.0.1:4001",
+  "mode": "full_pipeline_remote_gpu",
+  "max_parallel": 1,
+  "jobs": [
+    {
+      "job": {
+        "spec": "multi:15m",
+        "mode": "multi",
+        "timeframe": "15m",
+        "name": "multi_15m"
+      },
+      "exit_code": 0,
+      "elapsed_s": 162.86,
+      "artifact_path": "C:\\Users\\dudzi\\turbo-bot-local\\ml-service\\results\\remote_gpu_full_20260322_180557\\multi_15m.json",
+      "log_path": "C:\\Users\\dudzi\\turbo-bot-local\\ml-service\\results\\remote_gpu_full_20260322_180557\\multi_15m.log",
+      "summary": {
+        "mode": "multi",
+        "timeframe": "15m",
+        "backend": "remote-gpu",
+        "remote_status": "online",
+        "remote_failures": 0,
+        "total_pairs": 5,
+        "positive_pairs": 5,
+        "total_net_profit": 22.29
+      }
+    },
+    {
+      "job": {
+        "spec": "multi:1h",
+        "mode": "multi",
+        "timeframe": "1h",
+        "name": "multi_1h"
+      },
+      "exit_code": 0,
+      "elapsed_s": 104.95,
+      "artifact_path": "C:\\Users\\dudzi\\turbo-bot-local\\ml-service\\results\\remote_gpu_full_20260322_180557\\multi_1h.json",
+      "log_path": "C:\\Users\\dudzi\\turbo-bot-local\\ml-service\\results\\remote_gpu_full_20260322_180557\\multi_1h.log",
+      "summary": {
+        "mode": "multi",
+        "timeframe": "1h",
+        "backend": "remote-gpu",
+        "remote_status": "online",
+        "remote_failures": 0,
+        "total_pairs": 5,
+        "positive_pairs": 5,
+        "total_net_profit": 302.03
+      }
+    },
+    {
+      "job": {
+        "spec": "multi:4h",
+        "mode": "multi",
+        "timeframe": "4h",
+        "name": "multi_4h"
+      },
+      "exit_code": 0,
+      "elapsed_s": 28.86,
+      "artifact_path": "C:\\Users\\dudzi\\turbo-bot-local\\ml-service\\results\\remote_gpu_full_20260322_180557\\multi_4h.json",
+      "log_path": "C:\\Users\\dudzi\\turbo-bot-local\\ml-service\\results\\remote_gpu_full_20260322_180557\\multi_4h.log",
+      "summary": {
+        "mode": "multi",
+        "timeframe": "4h",
+        "backend": "remote-gpu",
+        "remote_status": "online",
+        "remote_failures": 0,
+        "total_pairs": 5,
+        "positive_pairs": 5,
+        "total_net_profit": 338.93
+      }
+    }
+  ]
+}
