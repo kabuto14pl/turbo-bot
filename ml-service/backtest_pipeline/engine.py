@@ -608,6 +608,9 @@ class FullPipelineEngine:
                         risk_multiplier=1.0,
                         confidence=final_confidence,
                     )
+                    # P#195: Inject strategy attribution
+                    if opened and self.pm.position is not None:
+                        self.pm.position['strategies'] = list(self._consensus_strategies)
                     if not opened:
                         self._block('Execution failed (fee gate / sizing)')
                     self._track_equity(row, candle_time)
@@ -643,6 +646,17 @@ class FullPipelineEngine:
                         # No consensus — track equity and continue
                         self._track_equity(row, candle_time)
                         continue
+
+                    # P#195 Faza 2: Block directional in TRENDING_DOWN
+                    # MC test: TRENDING_DOWN = -$51.42 on 1h, catastrophic losses
+                    if current_regime == 'TRENDING_DOWN' and not getattr(
+                            config, 'TRENDING_DOWN_DIRECTIONAL_ENABLED', True):
+                        self._block('P#195: TRENDING_DOWN directional blocked')
+                        self._track_equity(row, candle_time)
+                        continue
+
+                    # P#195 Faza 2: Track consensus strategies for attribution
+                    self._consensus_strategies = consensus.get('strategies', [])
 
                     # PATCH #68: Track if this is a grid signal from RANGING
                     is_ranging_grid = consensus.get('is_grid_signal', False)
@@ -1126,6 +1140,10 @@ class FullPipelineEngine:
                     confidence=final_confidence,
                 )
                 
+                # P#195: Inject strategy attribution into position
+                if opened and self.pm.position is not None:
+                    self.pm.position['strategies'] = list(self._consensus_strategies)
+                
                 if not opened:
                     self._block('Execution failed (fee gate / sizing)')
             
@@ -1224,6 +1242,8 @@ class FullPipelineEngine:
         self._timeframe = '15m'
         self._is_higher_tf = False
         self._directional_disabled = False
+        # P#195: Strategy attribution tracking
+        self._consensus_strategies = []
         
     def _block(self, reason):
         """Record a blocked trade reason."""
@@ -1591,6 +1611,7 @@ class FullPipelineEngine:
                 'phase': t.get('phase', 0),
                 'regime': t.get('regime', 'UNKNOWN'),
                 'confidence': round(t.get('confidence', 0), 3),
+                'strategies': t.get('strategies', []),  # P#195: strategy attribution
             } for i, t in enumerate(trades)],
         }
 
