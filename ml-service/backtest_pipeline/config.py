@@ -306,7 +306,19 @@ XGBOOST_LABEL_THRESHOLD = 0.001 # Min price change for UP/DOWN label (0.1%)
 # P#193: STRATEGY-ONLY BACKTEST MODE
 # When True: skip XGBoost/MLP training (slow), run ALL classical strategies + quantum
 # Use for fast strategy testing across all pairs and timeframes with GPU quantum
-STRATEGY_ONLY_MODE = True
+STRATEGY_ONLY_MODE = False  # P#198: DISABLED — ML pipeline activated with safety gates
+
+# P#198: ML VETO-ONLY MODE — safety gate for first ML activation
+# When True: XGBoost/MLP train and predict, but only VETO (block) bad trades.
+# Heuristic ML stays primary signal for ensemble. XGBoost can only suppress.
+# This prevents untrained ML from generating wrong directional trades.
+# Disable when ML proves edge (CV consistently > 55% across pairs).
+ML_VETO_ONLY = True
+
+# P#198: VQC REGIME OVERRIDE — A/B test GPU-VQC vs classical regime detection
+# When True: use GPU VQC regime classification instead of classical HMM.
+# Run backtest with True vs False to compare performance.
+VQC_REGIME_OVERRIDE = True
 
 # P#194 FAZA 1: Disable directional trading on 15m — funding only
 # Advisory Board: directional 15m was -$110.85, funding was +$23.91.

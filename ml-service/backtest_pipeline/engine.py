@@ -76,6 +76,8 @@ class FullPipelineEngine:
         self._gpu_only_last_regime = 'RANGING'
         # P#193: Strategy-only mode — skip ML training, run all strategies + quantum
         self._strategy_only = getattr(config, 'STRATEGY_ONLY_MODE', False)
+        # P#198: ML veto-only mode — ML can only block trades, not generate them
+        self._ml_veto_only = getattr(config, 'ML_VETO_ONLY', False)
         
         # P#178: Extract GPU URL for ML engines
         gpu_url = self.quantum_backend_options.get('remote_url')
@@ -228,9 +230,13 @@ class FullPipelineEngine:
         self._is_higher_tf = timeframe in ('1h', '4h')
         self._directional_disabled = (
             timeframe == '15m' and not getattr(config, 'DIRECTIONAL_15M_ENABLED', True)
+        ) or (
+            # P#198: Per-pair directional gate (e.g. ETH loses money on directional)
+            not getattr(config, 'DIRECTIONAL_ENABLED', True)
         )
         if self._directional_disabled:
-            print(f"  🚫 DIRECTIONAL DISABLED on {timeframe} — funding-only mode (P#194)")
+            _reason = 'per-pair config' if not getattr(config, 'DIRECTIONAL_ENABLED', True) else f'{timeframe} disabled'
+            print(f"  🚫 DIRECTIONAL DISABLED on {timeframe} — {_reason} (P#198)")
         
         # P#193: Strategy-only mode — skip all ML training (XGBoost + MLP)
         if self._strategy_only:
@@ -331,12 +337,24 @@ class FullPipelineEngine:
             
             # 4b. ML prediction — PATCH #58: XGBoost as ADVISORY layer
             # P#193: Strategy-only mode — skip ML entirely, use heuristic
+            # P#198: ML veto-only — XGBoost trains/predicts but only vetoes, heuristic stays primary
+            _xgb_veto_source = None  # P#198: tracks XGBoost signal for veto-only mode
             if self._strategy_only:
                 ml_signal = self.ml.predict(row, history, current_regime)
                 xgb_has_edge = False
+            elif self._ml_veto_only:
+                # P#198: ML trains and predicts for quality check + veto
+                # Heuristic stays primary signal for ensemble (safe activation)
+                xgb_signal = self.xgb_ml.predict(row, history, current_regime, candle_idx=i, df=df)
+                xgb_has_edge = (
+                    xgb_signal.get('source') == 'XGBoost' and
+                    self.xgb_ml.cv_scores and
+                    np.mean(self.xgb_ml.cv_scores) >= getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55)
+                )
+                ml_signal = self.ml.predict(row, history, current_regime)  # Heuristic for ensemble
+                _xgb_veto_source = xgb_signal if xgb_has_edge else None
             else:
-                # XGBoost only used when it has proven edge (CV > threshold)
-                # Otherwise heuristic is primary to avoid random-model corruption
+                # Full ML mode — XGBoost/MLP can be primary signal
                 xgb_signal = self.xgb_ml.predict(row, history, current_regime, candle_idx=i, df=df)
                 xgb_has_edge = (
                     xgb_signal.get('source') == 'XGBoost' and
@@ -345,10 +363,8 @@ class FullPipelineEngine:
                 )
                 
                 if xgb_has_edge:
-                    # XGBoost has demonstrated edge — use as primary ML signal
                     ml_signal = xgb_signal
                 elif self._mlp_initialized:
-                    # P#176: XGBoost has no edge — try MLP GPU fallback
                     mlp_signal = self.mlp_gpu.predict(row, history, current_regime, candle_idx=i, df=df)
                     mlp_has_edge = (
                         mlp_signal.get('source') in ('TorchMLP', 'MLP-GPU') and
@@ -361,23 +377,24 @@ class FullPipelineEngine:
                         ml_signal = {'action': 'HOLD', 'confidence': 0.0, 'source': 'GPU_ONLY_HOLD'}
                     else:
                         ml_signal = self.ml.predict(row, history, current_regime)
-                    # Store XGBoost prediction for learning only
                     if xgb_signal.get('source') == 'XGBoost':
                         xgb_signal['_advisory_only'] = True
                 else:
-                    # No proven edge — GPU-only mode stays flat instead of falling back to CPU heuristic
                     if self._gpu_only_backtest:
                         ml_signal = {'action': 'HOLD', 'confidence': 0.0, 'source': 'GPU_ONLY_HOLD'}
                     else:
                         ml_signal = self.ml.predict(row, history, current_regime)
-                    # Store XGBoost prediction for learning only (not ensemble)
                     if xgb_signal.get('source') == 'XGBoost':
                         xgb_signal['_advisory_only'] = True
             
             # 4c. ML veto logic — ONLY apply when ML source has proven edge
-            # Prevents random XGBoost from vetoing good strategy signals
-            if (not self._gpu_only_backtest) and not self._strategy_only and (xgb_has_edge or ml_signal.get('source') != 'XGBoost'):
-                signals = self.xgb_ml.apply_ml_veto(signals, ml_signal)
+            # P#198: In veto-only mode, use XGBoost signal exclusively for veto
+            if (not self._gpu_only_backtest) and not self._strategy_only:
+                if self._ml_veto_only and _xgb_veto_source:
+                    # Veto-only: XGBoost can block bad trades but can't drive direction
+                    signals = self.xgb_ml.apply_ml_veto(signals, _xgb_veto_source)
+                elif not self._ml_veto_only and (xgb_has_edge or ml_signal.get('source') != 'XGBoost'):
+                    signals = self.xgb_ml.apply_ml_veto(signals, ml_signal)
             
             # 4d. PATCH #58: XGBoost sliding window retrain
             # P#193: Skip retraining in strategy-only mode
@@ -415,7 +432,8 @@ class FullPipelineEngine:
                     self.pm.capital
                 )
 
-            if self._gpu_only_backtest:
+            if self._gpu_only_backtest or getattr(config, 'VQC_REGIME_OVERRIDE', False):
+                # P#198: Use GPU VQC regime when available (A/B test vs classical)
                 quantum_stats = self.quantum.get_stats()
                 remote_regime = quantum_stats.get('last_remote_regime')
                 if remote_regime in getattr(config, 'REGIMES', []):

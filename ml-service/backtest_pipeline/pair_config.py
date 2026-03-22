@@ -77,7 +77,13 @@ PAIR_OVERRIDES = {
         'GRID_V2_COOLDOWN': 12,        # SOL: faster cooldown (3h on 15m)
         'GRID_V2_MAX_TRADES': 40,
         'GRID_V2_RISK_PER_TRADE': 0.010,
-        'FUNDING_ARB_ENABLED': False,  # P#175: disabled (APR=0.8% too low)
+        # P#198: Re-enable funding arb — diversify income (grid+funding dual)
+        # P#175 disabled at APR=0.8%, but any positive funding adds edge
+        # Lower min_rate threshold captures more funding windows
+        'FUNDING_ARB_ENABLED': True,
+        'FUNDING_MIN_RATE': 0.00005,   # Lower than BNB (0.00008) — SOL funding is smaller
+        'FUNDING_CAPITAL_PCT': 0.20,   # 20% of SOL allocation to funding hedge
+        'FUNDING_MAX_UNREALIZED_LOSS': 0.025,
     },
     
     # ====================================================================
@@ -163,6 +169,9 @@ PAIR_OVERRIDES = {
         'FUNDING_MIN_RATE': 0.00005,
         'FUNDING_CAPITAL_PCT': 0.25,
         'FUNDING_MAX_UNREALIZED_LOSS': 0.025,
+        # P#198: Disable ETH directional — loses -$34, funding makes +$24
+        # WR=40% on 1h, WR=25% on 4h → net negative. Funding-only + Grid V2.
+        'DIRECTIONAL_ENABLED': False,
         
         # P#177: ETH Grid V2 discipline — reduce overtrading (was 152 trades, PF 0.724)
         'GRID_V2_ADX_THRESHOLD': 20,   # Tighter than default 15
