@@ -38,6 +38,8 @@ from .grid_v2 import GridV2Strategy
 from .news_filter import NewsFilter
 # P#175: Momentum HTF/LTF strategy
 from .momentum_htf import MomentumHTFStrategy
+# P#197 Faza 3: Architecture modules
+from .continual_learning import ContinualLearningAgent
 
 # PATCH #152C: External signals simulation (F&G, whale, macro, COT)
 from .external_signals_sim import ExternalSignalsSimulator
@@ -137,6 +139,9 @@ class FullPipelineEngine:
         # P#175: Momentum HTF/LTF
         self.momentum_htf = MomentumHTFStrategy(symbol=symbol)
         self._momentum_htf_trades = 0
+        
+        # P#197 Faza 3c: Continual Learning Agent
+        self.learner = ContinualLearningAgent()
         
         # PATCH #152C: External signals simulator
         self.external_signals = ExternalSignalsSimulator()
@@ -1300,6 +1305,17 @@ class FullPipelineEngine:
         self.neuron.learn_from_trade(pnl, candle_idx)
         self.ml.learn_from_trade(pnl, hold_hours)
         
+        # P#197 Faza 3c: Continual learning — record trade for online adaptation
+        trade_strategies = last_trade.get('strategies', ['UNKNOWN'])
+        trade_regime = last_trade.get('regime', 'UNKNOWN')
+        trade_confidence = last_trade.get('confidence', 0.0)
+        for strat in (trade_strategies or ['UNKNOWN']):
+            self.learner.record_trade(
+                strategy=strat, pair=self.symbol,
+                regime=trade_regime, pnl=pnl,
+                confidence=trade_confidence,
+            )
+        
         # PATCH #67: Volatility Pause — track consecutive signal-level losses
         # Only count when position is FULLY closed (no remaining quantity)
         if self.pm.position is None:
@@ -1369,6 +1385,7 @@ class FullPipelineEngine:
                 'momentum_htf_trades': self._momentum_htf_trades,
                 'news_blocked': self._news_blocked,
                 'funding_arb_pnl': funding_pnl,
+                'learner_summary': self.learner.summary(),  # P#197 Faza 3c
                 # Directional metrics = 0 (no trades), funding tracked separately
                 'net_profit': 0,
                 'total_fees': 0,
@@ -1599,6 +1616,7 @@ class FullPipelineEngine:
             'momentum_htf_trades': self._momentum_htf_trades,
             'news_blocked': self._news_blocked,
             'funding_arb_pnl': self.funding_arb.get_net_pnl() if getattr(config, 'FUNDING_ARB_ENABLED', False) else 0,
+            'learner_summary': self.learner.summary(),  # P#197 Faza 3c
             'gate_profile': self.gate_profile,
             
             # Blocked trades
