@@ -318,7 +318,11 @@ ML_VETO_ONLY = True
 # P#198: VQC REGIME OVERRIDE — A/B test GPU-VQC vs classical regime detection
 # When True: use GPU VQC regime classification instead of classical HMM.
 # Run backtest with True vs False to compare performance.
-VQC_REGIME_OVERRIDE = True
+# A/B TEST: True caused Grid V2 to fire 2.5x more on 1h (17→43 SOL trades)
+#   because VQC reclassifies TRENDING candles as RANGING.
+#   Helped 4h (SOL -$16→+$28) but destroyed 1h (SOL +$44→-$42).
+#   Setting False to test baseline without VQC regime override.
+VQC_REGIME_OVERRIDE = False
 
 # P#194 FAZA 1: Disable directional trading on 15m — funding only
 # Advisory Board: directional 15m was -$110.85, funding was +$23.91.
