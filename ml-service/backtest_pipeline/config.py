@@ -137,7 +137,7 @@ ENSEMBLE_THRESHOLD_RANGING = 0.10      # P#66: lower threshold in RANGING for BB
 CONFIDENCE_FLOOR = 0.30                # PATCH #149B: aligned with live risk-manager.js CONF_FLOOR=0.30
 CONFIDENCE_CLAMP_MIN = 0.15            # was 0.20
 CONFIDENCE_CLAMP_MAX = 0.95
-ENSEMBLE_COUNTER_TREND_CONF_MULT = 0.50     # P#195: was 0.72 — harsher penalty for counter-trend (MC: p=0.38)
+ENSEMBLE_COUNTER_TREND_CONF_MULT = 0.65     # P#196: 0.50 was too harsh (regressed), 0.72 was too lenient. Middle ground.
 ENSEMBLE_TREND_ALIGNED_CONF_MULT = 1.10     # P#195: was 1.05 — stronger boost for trend-aligned
 
 # P#195 Faza 2: TRENDING_DOWN directional block

@@ -517,6 +517,7 @@ class FullPipelineEngine:
                         # Mark this trade as grid V2 for tracking
                         if self.pm.position is not None:
                             self.pm.position['is_grid_v2'] = True
+                            self.pm.position['strategies'] = ['GridV2']  # P#196: strategy attribution
                     
                     self._track_equity(row, candle_time)
                     continue  # Skip ensemble — grid took priority
@@ -527,39 +528,45 @@ class FullPipelineEngine:
             # Fires BEFORE ensemble — if momentum signal, skip ensemble
             # ============================================================
             if self.pm.position is None and getattr(config, 'MOMENTUM_HTF_ENABLED', False):
-                mtf_signal = self.momentum_htf.evaluate(
-                    row, history, current_regime, candle_idx=i,
-                    has_position=(self.pm.position is not None)
-                )
-                
-                if mtf_signal is not None:
-                    self.momentum_htf.mark_entry(i)
-                    self._momentum_htf_trades += 1
-                    
-                    atr = row.get('atr', row['close'] * 0.01)
-                    side = 'LONG' if mtf_signal['signal'] == 'BUY' else 'SHORT'
-                    
-                    mtf_sl_adj = mtf_signal['sl_atr'] / config.SL_ATR_MULT
-                    mtf_tp_adj = mtf_signal['tp_atr'] / config.TP_ATR_MULT
-                    mtf_risk_mult = mtf_signal['risk_per_trade'] / getattr(config, 'RISK_PER_TRADE', 0.015)
-                    
-                    opened = self.pm.open_position(
-                        side=side,
-                        price=row['close'],
-                        atr=atr,
-                        time=candle_time,
-                        regime=current_regime,
-                        sl_adjust=mtf_sl_adj,
-                        tp_adjust=mtf_tp_adj,
-                        risk_multiplier=mtf_risk_mult,
-                        confidence=mtf_signal['confidence'],
+                # P#196: Block Momentum HTF in TRENDING_DOWN (MC: -$42 catastrophic)
+                if current_regime == 'TRENDING_DOWN' and not getattr(
+                        config, 'TRENDING_DOWN_DIRECTIONAL_ENABLED', False):
+                    pass  # blocked by regime
+                else:
+                    mtf_signal = self.momentum_htf.evaluate(
+                        row, history, current_regime, candle_idx=i,
+                        has_position=(self.pm.position is not None)
                     )
+                
+                    if mtf_signal is not None:
+                        self.momentum_htf.mark_entry(i)
+                        self._momentum_htf_trades += 1
                     
-                    if opened and self.pm.position is not None:
-                        self.pm.position['is_momentum_htf'] = True
+                        atr = row.get('atr', row['close'] * 0.01)
+                        side = 'LONG' if mtf_signal['signal'] == 'BUY' else 'SHORT'
                     
-                    self._track_equity(row, candle_time)
-                    continue  # Skip ensemble — momentum took priority
+                        mtf_sl_adj = mtf_signal['sl_atr'] / config.SL_ATR_MULT
+                        mtf_tp_adj = mtf_signal['tp_atr'] / config.TP_ATR_MULT
+                        mtf_risk_mult = mtf_signal['risk_per_trade'] / getattr(config, 'RISK_PER_TRADE', 0.015)
+                    
+                        opened = self.pm.open_position(
+                            side=side,
+                            price=row['close'],
+                            atr=atr,
+                            time=candle_time,
+                            regime=current_regime,
+                            sl_adjust=mtf_sl_adj,
+                            tp_adjust=mtf_tp_adj,
+                            risk_multiplier=mtf_risk_mult,
+                            confidence=mtf_signal['confidence'],
+                        )
+                    
+                        if opened and self.pm.position is not None:
+                            self.pm.position['is_momentum_htf'] = True
+                            self.pm.position['strategies'] = ['MomentumHTF']  # P#196: strategy attribution
+                    
+                        self._track_equity(row, candle_time)
+                        continue  # Skip ensemble — momentum took priority
             
             # ============================================================
             # PHASE 6: ENSEMBLE VOTING (only if no position)
@@ -608,9 +615,9 @@ class FullPipelineEngine:
                         risk_multiplier=1.0,
                         confidence=final_confidence,
                     )
-                    # P#195: Inject strategy attribution
+                    # P#196: Inject strategy attribution (GPU-only path)
                     if opened and self.pm.position is not None:
-                        self.pm.position['strategies'] = list(self._consensus_strategies)
+                        self.pm.position['strategies'] = ['GPU_Direct']
                     if not opened:
                         self._block('Execution failed (fee gate / sizing)')
                     self._track_equity(row, candle_time)
