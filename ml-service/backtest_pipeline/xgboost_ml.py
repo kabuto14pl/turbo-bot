@@ -340,7 +340,11 @@ class XGBoostMLEngine:
         Called once at the start of backtest.
         """
         if not HAS_XGBOOST:
-            print("  ⚠️ XGBoost not installed — falling back to heuristic")
+            if self.gpu_url:
+                print("  ❌ XGBoost not installed locally — cannot use remote GPU models")
+                print("  FIX: pip install xgboost scikit-learn")
+            else:
+                print("  ⚠️ XGBoost not installed — falling back to heuristic")
             return False
         
         X, y_dir, y_ret = self._prepare_training_data(
@@ -361,6 +365,9 @@ class XGBoostMLEngine:
             remote_ok = self._train_models_remote(X, y_dir, y_ret)
             if remote_ok:
                 return True
+            if not HAS_XGBOOST:
+                print(f"  ❌ Remote GPU failed and local XGBoost not available")
+                return False
             print(f"  ⚠️ Remote GPU failed — falling back to CPU training")
             # Fall through to local CPU training below
         

@@ -438,8 +438,13 @@ class FullPipelineEngine:
                     self.pm.capital
                 )
 
-            if self._gpu_only_backtest or getattr(config, 'VQC_REGIME_OVERRIDE', False):
-                # P#198: Use GPU VQC regime when available (A/B test vs classical)
+            # P#198.3: Per-TF VQC regime override (4h only by default)
+            _vqc_override = (
+                self._gpu_only_backtest
+                or getattr(config, 'VQC_REGIME_OVERRIDE', False)
+                or self._timeframe in getattr(config, 'VQC_REGIME_OVERRIDE_TF', [])
+            )
+            if _vqc_override:
                 quantum_stats = self.quantum.get_stats()
                 remote_regime = quantum_stats.get('last_remote_regime')
                 if remote_regime in getattr(config, 'REGIMES', []):
