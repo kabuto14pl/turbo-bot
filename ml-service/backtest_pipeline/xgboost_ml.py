@@ -339,6 +339,7 @@ class XGBoostMLEngine:
         Initial training on warmup data.
         Called once at the start of backtest.
         """
+        print(f"  🔍 XGBoost train_initial: HAS_XGBOOST={HAS_XGBOOST}, HAS_SKLEARN={HAS_SKLEARN}, gpu_url={self.gpu_url}")
         if not HAS_XGBOOST:
             if self.gpu_url:
                 print("  ❌ XGBoost not installed locally — cannot use remote GPU models")
@@ -738,4 +739,6 @@ class XGBoostMLEngine:
             'gpu_enabled': self.use_gpu or bool(self.gpu_url),
             'gpu_remote_url': self.gpu_url or '',
             'gpu_remote_active': bool(self.gpu_url and self.trained),
+            'has_xgboost_lib': HAS_XGBOOST,
+            'has_sklearn_lib': HAS_SKLEARN,
         }
