@@ -519,8 +519,8 @@ def parse_args() -> argparse.Namespace:
                         help='Skip strict /health check before dispatching jobs')
     parser.add_argument('--trades', action='store_true',
                         help='Enable trade table / CSV export inside worker jobs')
-    parser.add_argument('--strategy-only', action='store_true', default=True,
-                        help='P#193: Skip ML training, run all strategies + quantum (default: True)')
+    parser.add_argument('--strategy-only', action='store_true', default=False,
+                        help='P#193: Skip ML training, run all strategies + quantum only')
     parser.add_argument('--full-pipeline', action='store_true',
                         help='P#193: Run full pipeline with ML training (overrides --strategy-only)')
     parser.add_argument('--results-dir', default=str(RESULTS_DIR),
