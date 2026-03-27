@@ -38,7 +38,7 @@ class XGBoostMLEngine:
     
     Training: Walk-forward with sliding window retrain.
     Inference: <1ms per prediction.
-    Features: 45 engineered from OHLCV + technical indicators.
+    Features: 58 engineered from OHLCV + technical indicators + funding + microstructure.
     """
     
     def __init__(self, use_gpu=None, gpu_url=None):
@@ -83,6 +83,42 @@ class XGBoostMLEngine:
         
         # Feature cache
         self._feature_cache = {}
+        # P#199: Funding rate data for ML features
+        self._funding_rates_df = None
+        self._current_symbol = None  # Set by engine.py after construction
+
+    def _load_funding_data(self):
+        """P#199: Load real Kraken funding rates for feature engineering."""
+        if self._funding_rates_df is not None:
+            return  # Already loaded
+        symbol = getattr(self, '_current_symbol', None)
+        if not symbol:
+            return
+        import os
+        data_dir = os.path.join(os.path.dirname(__file__), '..', 'data', 'funding_rates')
+        # Symbol format: BTCUSDT → btcusdt_funding.csv
+        csv_path = os.path.join(data_dir, f'{symbol.lower()}_funding.csv')
+        if os.path.exists(csv_path):
+            try:
+                df = pd.read_csv(csv_path)
+                df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
+                df = df.sort_values('timestamp').reset_index(drop=True)
+                self._funding_rates_df = df
+            except Exception:
+                pass
+
+    def _get_funding_rate_at(self, candle_time):
+        """P#199: Get funding rate at a given candle timestamp."""
+        if self._funding_rates_df is None:
+            return None
+        ts = pd.Timestamp(candle_time)
+        if ts.tz is None:
+            ts = ts.tz_localize('UTC')
+        mask = self._funding_rates_df['timestamp'] <= ts
+        if not mask.any():
+            return None
+        idx = self._funding_rates_df.loc[mask, 'timestamp'].idxmax()
+        return float(self._funding_rates_df.loc[idx, 'funding_rate'])
 
     def _cached_features_for_index(self, df, idx):
         cache_key = int(idx)
@@ -145,8 +181,9 @@ class XGBoostMLEngine:
         
     def _extract_features(self, row, history_df):
         """
-        Extract 45 features from current candle + history.
-        Matches ml_features.py groups but optimized for speed.
+        Extract 58 features from current candle + history.
+        Groups 1-8: price-based (43 features)
+        Groups 9-13: P#199 funding, time, microstructure, cross-pair, OB proxy (15 features)
         """
         close = row['close']
         features = {}
@@ -285,7 +322,108 @@ class XGBoostMLEngine:
             features['revert_speed_10'] = 0
             features['consec_up'] = 0.5
             features['consec_down'] = 0.5
-        
+
+        # === GROUP 9: FUNDING RATE FEATURES (3 features) — P#199 ===
+        self._load_funding_data()
+        candle_time = getattr(row, 'name', None)  # DatetimeIndex timestamp
+        fr = self._get_funding_rate_at(candle_time) if candle_time is not None else None
+        if fr is not None:
+            features['funding_rate_8h'] = fr
+            # Rolling 24h mean (3 x 8h periods) — approximate from nearby rates
+            if self._funding_rates_df is not None and candle_time is not None:
+                ts = pd.Timestamp(candle_time)
+                if ts.tz is None:
+                    ts = ts.tz_localize('UTC')
+                past_24h = ts - pd.Timedelta(hours=24)
+                mask = (self._funding_rates_df['timestamp'] >= past_24h) & (self._funding_rates_df['timestamp'] <= ts)
+                recent_rates = self._funding_rates_df.loc[mask, 'funding_rate']
+                features['funding_rate_mean_24h'] = float(recent_rates.mean()) if len(recent_rates) > 0 else fr
+                features['funding_rate_momentum'] = fr - features['funding_rate_mean_24h']
+            else:
+                features['funding_rate_mean_24h'] = fr
+                features['funding_rate_momentum'] = 0.0
+        else:
+            features['funding_rate_8h'] = 0.0
+            features['funding_rate_mean_24h'] = 0.0
+            features['funding_rate_momentum'] = 0.0
+
+        # === GROUP 10: TIME / SESSION FEATURES (3 features) — P#199 ===
+        if candle_time is not None:
+            try:
+                ts = pd.Timestamp(candle_time)
+                hour = ts.hour
+                features['hour_sin'] = np.sin(2 * np.pi * hour / 24)
+                features['hour_cos'] = np.cos(2 * np.pi * hour / 24)
+                # Session encoding: 0=Asia(00-08), 1=London(08-14), 2=NY(14-21), 3=Late(21-24)
+                if hour < 8:
+                    features['session'] = 0.0
+                elif hour < 14:
+                    features['session'] = 1.0
+                elif hour < 21:
+                    features['session'] = 2.0
+                else:
+                    features['session'] = 3.0
+            except Exception:
+                features['hour_sin'] = 0.0
+                features['hour_cos'] = 1.0
+                features['session'] = 0.0
+        else:
+            features['hour_sin'] = 0.0
+            features['hour_cos'] = 1.0
+            features['session'] = 0.0
+
+        # === GROUP 11: MICROSTRUCTURE / VWAP PROXY (3 features) — P#199 ===
+        if len(closes) >= 20:
+            # Estimated VWAP = sum(typical_price * volume) / sum(volume) over 20 candles
+            typical_prices = (highs[-20:] + lows[-20:] + closes[-20:]) / 3
+            vwap_20 = np.sum(typical_prices * volumes[-20:]) / (np.sum(volumes[-20:]) + 1e-10)
+            features['vwap_ratio'] = close / vwap_20 - 1 if vwap_20 > 0 else 0.0
+            # Volume-price correlation (20 candles)
+            if np.std(volumes[-20:]) > 0 and np.std(closes[-20:]) > 0:
+                features['vol_price_corr'] = float(np.corrcoef(closes[-20:], volumes[-20:])[0, 1])
+            else:
+                features['vol_price_corr'] = 0.0
+            # Tick intensity: range relative to ATR (intra-bar activity proxy)
+            atr_val = features.get('atr_pct', 0) * close
+            features['tick_intensity'] = (row['high'] - row['low']) / (atr_val + 1e-10) if atr_val > 0 else 1.0
+        else:
+            features['vwap_ratio'] = 0.0
+            features['vol_price_corr'] = 0.0
+            features['tick_intensity'] = 1.0
+
+        # === GROUP 12: CROSS-PAIR PROXY (3 features) — P#199 ===
+        # Workers are isolated, so use self-relative metrics as proxy
+        if len(closes) >= 50:
+            ret_20 = close / closes[-20] - 1 if len(closes) >= 20 else 0
+            ret_50 = close / closes[-50] - 1
+            # Relative strength: short vs long return
+            features['relative_strength'] = ret_20 - ret_50 / 2.5
+            # Extended z-score (50-period)
+            features['mean_revert_z50'] = (close - np.mean(closes[-50:])) / (np.std(closes[-50:]) + 1e-10)
+            # Auto-correlation lag-1 of returns
+            rets = np.diff(np.log(closes[-20:]))
+            if len(rets) > 1:
+                features['return_autocorr'] = float(np.corrcoef(rets[:-1], rets[1:])[0, 1])
+            else:
+                features['return_autocorr'] = 0.0
+        else:
+            features['relative_strength'] = 0.0
+            features['mean_revert_z50'] = 0.0
+            features['return_autocorr'] = 0.0
+
+        # === GROUP 13: ORDER BOOK DEPTH PROXY (3 features) — P#199 ===
+        # Approximate OB imbalance from candle data
+        close_pos = features.get('close_position', 0.5)
+        curr_vol = volumes[-1] if len(volumes) > 0 else 0
+        vol_ma = np.mean(volumes[-20:]) if len(volumes) >= 20 else (curr_vol + 1e-10)
+        # Buy pressure: close near high + above-avg volume
+        features['buy_pressure'] = close_pos * (curr_vol / (vol_ma + 1e-10))
+        # Sell pressure: close near low + above-avg volume
+        features['sell_pressure'] = (1 - close_pos) * (curr_vol / (vol_ma + 1e-10))
+        # Liquidity score: high volume + narrow range = deep book
+        candle_range = (row['high'] - row['low']) / (close + 1e-10)
+        features['liquidity_score'] = (curr_vol / (vol_ma + 1e-10)) / (candle_range + 1e-10) if candle_range > 0 else 1.0
+
         return features
     
     def _prepare_training_data(self, df, start_idx, end_idx, horizon=1):
