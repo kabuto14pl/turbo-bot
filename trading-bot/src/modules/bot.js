@@ -285,6 +285,9 @@ class AutonomousTradingBot {
                 gpuRemoteUrl: process.env.GPU_REMOTE_URL || '',
                 gpuTimeoutMs: parseInt(process.env.GPU_TIMEOUT_MS) || 2000,
                 gpuPingIntervalMs: parseInt(process.env.GPU_PING_INTERVAL_MS) || 10000,
+                // P#198.5: Per-TF VQC override — pass from main config
+                timeframe: this.config.timeframe,
+                vqcEnabledTimeframes: this.config.vqcEnabledTimeframes,
             });
             this.hybridPipeline.initialize();
             // PATCH #37+38: Initialize GPU backend for quantum pipeline

@@ -30,6 +30,8 @@ function loadConfig() {
         correlationThreshold: parseFloat(process.env.CORRELATION_THRESHOLD || '0.5'),
         tradingInterval: parseInt(process.env.TRADING_INTERVAL || '30000'),
         tradingFeeRate: parseFloat(process.env.TRADING_FEE_RATE || '0.001'),
+        // P#198.5: VQC per-TF override — backtest proved VQC helps 4h but destroys 1h
+        vqcEnabledTimeframes: (process.env.VQC_ENABLED_TF || '4h').split(',').map(s => s.trim()),
     };
 }
 

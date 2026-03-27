@@ -1923,6 +1923,8 @@ class DecompositionPipeline {
 class HybridQuantumClassicalPipeline {
     constructor(config = {}) {
         this.version = PIPELINE_VERSION;
+        // P#198.5: Store config for per-TF VQC override
+        this._config = config;
 
         // PATCH #38: Remote GPU offload client (local PC RTX via ngrok tunnel)
         this.remoteGPU = getRemoteGPUClient(config);
@@ -2056,6 +2058,10 @@ class HybridQuantumClassicalPipeline {
 
         // 2a. VQC Regime Classification (every cycle — fast)
         // PATCH #38: Try remote GPU → local VQC fallback
+        // P#198.5: Per-TF VQC override — skip VQC on timeframes where it hurts (1h)
+        const _vqcEnabledTFs = this._config.vqcEnabledTimeframes || ['4h'];
+        const _currentTF = this._config.timeframe || '1h';
+        const _vqcEnabled = _vqcEnabledTFs.includes(_currentTF);
         try {
             const returns = [];
             for (let i = Math.max(1, priceHistory.length - 30); i < priceHistory.length; i++) {
@@ -2076,19 +2082,22 @@ class HybridQuantumClassicalPipeline {
                 ].map(f => Math.max(-1, Math.min(1, f)));       // Clip to [-1, 1]
 
                 // PATCH #38: Remote GPU VQC offload → local VQC fallback
+                // P#198.5: Skip VQC regime override on disabled timeframes
                 let vqcResult = null;
-                if (this.remoteGPU) {
-                    try { vqcResult = await this.remoteGPU.offloadVQC(features); } catch (e) {}
-                }
-                if (!vqcResult) vqcResult = this.vqc.classify(features);
-                else this.pipelineMetrics.remoteGpuOffloads++;
+                if (_vqcEnabled) {
+                    if (this.remoteGPU) {
+                        try { vqcResult = await this.remoteGPU.offloadVQC(features); } catch (e) {}
+                    }
+                    if (!vqcResult) vqcResult = this.vqc.classify(features);
+                    else this.pipelineMetrics.remoteGpuOffloads++;
 
-                result.regimeClassification = vqcResult;
-                this.quantumFeedback.lastVQCRegime = result.regimeClassification;
+                    result.regimeClassification = vqcResult;
+                    this.quantumFeedback.lastVQCRegime = result.regimeClassification;
 
-                // PATCH #37: Feed VQC regime to dynamic QDV thresholds
-                if (result.regimeClassification && result.regimeClassification.regime) {
-                    this.verifier.setRegime(result.regimeClassification.regime);
+                    // PATCH #37: Feed VQC regime to dynamic QDV thresholds
+                    if (result.regimeClassification && result.regimeClassification.regime) {
+                        this.verifier.setRegime(result.regimeClassification.regime);
+                    }
                 }
 
                 // Buffer for VQC training

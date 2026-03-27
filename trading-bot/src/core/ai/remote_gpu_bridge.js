@@ -426,7 +426,11 @@ function attach(pipeline, config) {
         if (!result.quantumEnhancements) result.quantumEnhancements = {};
 
         // ─── 1. REMOTE VQC — GPU-accelerated regime classification ─────
-        if (priceHistory && priceHistory.length >= 10) {
+        // P#198.5: Per-TF VQC override — skip on timeframes where VQC hurts
+        const _vqcEnabledTFs = config.vqcEnabledTimeframes || ['4h'];
+        const _currentTF = config.timeframe || '1h';
+        const _vqcEnabled = _vqcEnabledTFs.includes(_currentTF);
+        if (_vqcEnabled && priceHistory && priceHistory.length >= 10) {
             const features = extractVQCFeatures(priceHistory);
             if (features) {
                 const vqcTask = client.offloadVQC(features).then(vqcResult => {
