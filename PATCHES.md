@@ -1842,3 +1842,51 @@ Strategy re-evaluation with open position now every 10 cycles (5 minutes) instea
 - Bot running (cycle #848+), HOLD decisions properly respected
 - Quality gate blocking low-confidence SELL (31.9% < 35% threshold)
 - No positions opened during RANGING regime (correct)
+
+---
+
+## PATCH #198–198.5: ML Pipeline Full Activation + First Real ML Backtest (2026-03-23/27)
+
+**Typ:** ML_PIPELINE — Full XGBoost/MLP activation sequence  
+**Pliki:** `engine.py`, `xgboost_ml.py`, `config.py`, `remote_gpu_full_orchestrator.py`
+
+### Sub-patches:
+| # | Commit | Description | Result |
+|---|--------|-------------|--------|
+| P#198 | dc018ff | ML activation: STRATEGY_ONLY=False, ML_VETO_ONLY=True, SOL funding on, ETH dir off | Baseline |
+| P#198.1 | 69652f8 | VQC_REGIME_OVERRIDE=False A/B test | **$663.26 ATH** |
+| P#198.2 | 9246378 | Fix XGBoost 3 bugs: engine ignoring train_initial(), no CPU fallback, misleading gpu_enabled | $676.84 |
+| P#198.3 | f7280c7 | VQC per-TF override (4h only), data-driven | **$731.63 NEW ATH (+10.3%)** |
+| P#198.3.1 | bb4d291 | XGBoost diagnostics: has_xgboost_lib, has_sklearn_lib in stats | Diagnostic |
+| P#198.4 | 2a1acbe | Fix `--strategy-only default=True` — ROOT CAUSE of all ML being skipped | $702.70 (ML active) |
+| P#198.5 | (pending) | Fix learn_from_trade() never called for XGBoost/MLP + quality gate default fix | Pending backtest |
+
+### P#198.4 Deep Analysis (First Real ML Backtest):
+```
+XGBoost CV Scores (ALL BELOW 0.55 QUALITY GATE):
+  BNB_1h: [0.470, 0.540, 0.520] mean=0.510 FAIL
+  BNB_4h: [0.455, 0.429, 0.464] mean=0.449 FAIL
+  SOL_1h: [0.471, 0.452, 0.471] mean=0.465 FAIL
+  SOL_4h: [0.482, 0.482, 0.447] mean=0.470 FAIL
+
+Impact:  $731.63 (strategy-only) → $702.70 (full ML) = -$28.93 (-4%)
+Cause:   3 spurious hard vetoes during temporary CV spikes (-$15.55)
+         + quantum timing shift on SOL_4h (-$10.47)
+Exec:    ~5min → ~72min (ML training overhead, 14×)
+```
+
+### P#198.5 Fixes:
+1. **learn_from_trade() broken** — engine.py called `self.ml.learn_from_trade()` (heuristic) and `self.neuron.learn_from_trade()` but NEVER `self.xgb_ml.learn_from_trade()` or `self.mlp_gpu.learn_from_trade()`. Result: `trades_evaluated=0` everywhere. Fixed.
+2. **Quality gate default mismatch** — xgboost_ml.py used `0.50` default vs `0.55` in config.py/engine.py. Fixed to `0.55` for consistency.
+
+### Monte Carlo Significance Test (P#198.3, $731.63):
+```
+Combined (45 trades):
+  PnL=$132.26, Sharpe=3.786, PF=1.803, WR=73.3%
+  p(PnL)=0.0608 (borderline), p(WR)=0.0012 (highly significant)
+  Directional edge: borderline significant (need ~60+ trades)
+  Funding ARB ($599.36): deterministic, consistently profitable
+```
+
+### Production Decision:
+**Deploy P#198.3 (strategy-only)** as production baseline. ML adds negative value with current CV scores. Keep ML infrastructure ready for future iteration when data quality improves.

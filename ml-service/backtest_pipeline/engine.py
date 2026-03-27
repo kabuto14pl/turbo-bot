@@ -1333,6 +1333,11 @@ class FullPipelineEngine:
         self.phase_stats['phase_13'] += 1
         self.neuron.learn_from_trade(pnl, candle_idx)
         self.ml.learn_from_trade(pnl, hold_hours)
+        # P#198.5: Feed trade outcome to XGBoost + MLP for accuracy tracking
+        if not self._strategy_only:
+            self.xgb_ml.learn_from_trade(pnl, hold_hours)
+            if self._mlp_initialized:
+                self.mlp_gpu.learn_from_trade(pnl, hold_hours)
         
         # P#197 Faza 3c: Continual learning — record trade for online adaptation
         trade_strategies = last_trade.get('strategies', ['UNKNOWN'])

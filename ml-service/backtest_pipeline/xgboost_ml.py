@@ -418,10 +418,11 @@ class XGBoostMLEngine:
             print(f"  📈 XGBoost CV scores: {[f'{s:.3f}' for s in cv_scores]} "
                   f"(mean={mean_cv:.3f})")
             
-            # Quality gate: only deploy if CV > 52% (better than random)
-            if mean_cv < getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.50):
-                print(f"  ⚠️ CV accuracy {mean_cv:.3f} below threshold — "
-                      f"model may not have edge")
+            # Quality gate: warn if CV below XGBOOST_MIN_CV_ACCURACY (engine enforces veto)
+            if mean_cv < getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55):
+                print(f"  ⚠️ CV accuracy {mean_cv:.3f} below threshold "
+                      f"{getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55)} — "
+                      f"model has no edge, veto disabled")
         
         # Final training on all data
         self.model_clf.fit(X, y_dir)

@@ -1452,3 +1452,20 @@ TCP handshake succeeds in ~15ms but raw HTTP bytes sent through the socket recei
 
 ### L190.2: Layered socket diagnostics are essential for Windows networking issues
 test-gpu-connection.py v3 (6-layer: TCP→RAW HTTP→http.client→urllib ping/health/qmc) pinpointed the exact failure layer: TCP OK but RAW HTTP dead. Without this, debugging would have gone in circles blaming Python or proxies.
+
+## 2026-03-27: PATCH #198–198.5 — ML Pipeline Full Activation
+
+### L198.1: argparse `default=True` with `action='store_true'` is a silent killer
+`parser.add_argument('--strategy-only', action='store_true', default=True)` — ALWAYS True regardless of command line. Every backtest since P#193 ran without ML. Caught only after 5 patches of "why isn't XGBoost training?". **Rule: Never set default=True for store_true args. If you want True default, use store_false + negated flag.**
+
+### L198.2: XGBoost CV 0.45–0.51 = coin flip, quality gate is critical
+First real ML backtest showed ALL models below 0.55 gate (0.449–0.510). Without quality gate in engine.py, ML would have freely vetoed profitable trades. The gate prevented most damage but 3 spurious vetoes during temporary CV spikes still cost $15.55. **Lesson: Quality gate must check CURRENT cv_scores at prediction time, not just at training time.**
+
+### L198.3: learn_from_trade() must be wired to ALL ML engines
+engine.py called `self.ml.learn_from_trade()` (heuristic) but forgot `self.xgb_ml` and `self.mlp_gpu`. Result: `trades_evaluated=0`, no accuracy tracking, no feedback loop. **Rule: When adding a new ML engine, grep for all feedback hooks (learn_from_trade, record_trade) and wire them.**
+
+### L198.4: Strategy-only ($731.63) > Full ML ($702.70) — ML is currently net negative
+XGBoost models on crypto 1h/4h with 43 features achieve ~50% accuracy — no better than random. Current dataset may be too noisy or features insufficiently informative. ML R&D needed: feature engineering (funding rates, order book depth, cross-pair correlation), longer training windows, alternative models.
+
+### L198.5: Monte Carlo p=0.06 with 45 trades = borderline
+Need ~60+ trades for p<0.05 statistical significance. Win rate IS significant (p=0.0012) but PnL isn't yet. More trading days or more pairs needed. Funding ARB ($599/731 = 82%) is the real profit engine — directional is supplementary.
