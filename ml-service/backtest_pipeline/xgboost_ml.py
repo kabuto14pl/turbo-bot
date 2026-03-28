@@ -430,34 +430,75 @@ class XGBoostMLEngine:
         """
         Prepare training data from DataFrame slice.
         
+        P#200d: Supports two label modes:
+        - Legacy (XGBOOST_REGIME_CLASSIFIER=False): UP/DOWN direction labels
+        - Regime (XGBOOST_REGIME_CLASSIFIER=True): GOOD_REGIME/BAD_REGIME quality labels
+        
         Returns:
             X: feature matrix
-            y_dir: direction labels (1=UP, 0=DOWN)
+            y_dir: direction/regime labels (1=UP/GOOD, 0=DOWN/BAD)
             y_ret: future returns
         """
         X_list = []
         y_dir_list = []
         y_ret_list = []
         
-        for i in range(max(start_idx, 50), end_idx - horizon):
+        use_regime_labels = getattr(config, 'XGBOOST_REGIME_CLASSIFIER', False)
+        lookahead = getattr(config, 'XGBOOST_REGIME_LOOKAHEAD', 12)
+        good_mfe_mult = getattr(config, 'XGBOOST_REGIME_GOOD_MFE_ATR', 1.5)
+        bad_mae_mult = getattr(config, 'XGBOOST_REGIME_BAD_MAE_ATR', 2.0)
+        good_mae_cap = getattr(config, 'XGBOOST_REGIME_GOOD_MAE_CAP_ATR', 1.0)
+        
+        effective_horizon = lookahead if use_regime_labels else horizon
+        
+        for i in range(max(start_idx, 50), end_idx - effective_horizon):
             row = df.iloc[i]
             features = self._cached_features_for_index(df, i)
             if not features:
                 continue
             
-            # Label: future return
-            future_close = df.iloc[i + horizon]['close']
             current_close = row['close']
+            
+            # Future return (for regression target — always computed)
+            future_close = df.iloc[i + horizon]['close']
             future_return = (future_close - current_close) / current_close
             
-            # Direction: UP if return > 0.001 (0.1%), DOWN if < -0.001
-            threshold = getattr(config, 'XGBOOST_LABEL_THRESHOLD', 0.001)
-            if future_return > threshold:
-                direction = 1  # UP
-            elif future_return < -threshold:
-                direction = 0  # DOWN
+            if use_regime_labels:
+                # P#200d: Regime quality label — GOOD_REGIME vs BAD_REGIME
+                atr_pct = features.get('atr_pct', 0.01)
+                if atr_pct < 0.0001:
+                    atr_pct = 0.01
+                
+                # Compute max favorable/adverse excursion in lookahead window
+                max_favorable = 0.0
+                max_adverse = 0.0
+                for j in range(1, lookahead + 1):
+                    if i + j >= len(df):
+                        break
+                    fj_close = df.iloc[i + j]['close']
+                    excursion = (fj_close - current_close) / current_close
+                    if excursion > max_favorable:
+                        max_favorable = excursion
+                    if excursion < max_adverse:
+                        max_adverse = excursion
+                
+                # GOOD_REGIME: favorable > threshold AND adverse contained
+                if (max_favorable > atr_pct * good_mfe_mult and
+                        abs(max_adverse) < atr_pct * good_mae_cap):
+                    direction = 1  # GOOD_REGIME
+                elif abs(max_adverse) > atr_pct * bad_mae_mult:
+                    direction = 0  # BAD_REGIME
+                else:
+                    continue  # Skip ambiguous (neutral)
             else:
-                continue  # Skip neutral (too small movement)
+                # Legacy: direction label
+                threshold = getattr(config, 'XGBOOST_LABEL_THRESHOLD', 0.001)
+                if future_return > threshold:
+                    direction = 1  # UP
+                elif future_return < -threshold:
+                    direction = 0  # DOWN
+                else:
+                    continue  # Skip neutral (too small movement)
             
             X_list.append(features)
             y_dir_list.append(direction)
@@ -498,7 +539,11 @@ class XGBoostMLEngine:
         return self._train_models(X, y_dir, y_ret)
     
     def _train_models(self, X, y_dir, y_ret):
-        """Train XGBoost classifier + regressor."""
+        """
+        Train XGBoost classifier + regressor.
+        P#200f: Incremental learning — on retrain, update existing model
+        with new data instead of discarding learned weights.
+        """
         # P#179: When gpu_url is set, try remote GPU first, CPU fallback on failure.
         if self.gpu_url:
             remote_ok = self._train_models_remote(X, y_dir, y_ret)
@@ -510,14 +555,18 @@ class XGBoostMLEngine:
             print(f"  ⚠️ Remote GPU failed — falling back to CPU training")
             # Fall through to local CPU training below
         
-        # XGBoost Classifier (direction prediction)
-        self.model_clf = xgb.XGBClassifier(
-            n_estimators=getattr(config, 'XGBOOST_N_ESTIMATORS', 200),
-            max_depth=getattr(config, 'XGBOOST_MAX_DEPTH', 4),
-            learning_rate=getattr(config, 'XGBOOST_LEARNING_RATE', 0.03),
+        _n_estimators = getattr(config, 'XGBOOST_N_ESTIMATORS', 200)
+        _max_depth = getattr(config, 'XGBOOST_MAX_DEPTH', 4)
+        _lr = getattr(config, 'XGBOOST_LEARNING_RATE', 0.03)
+        _mcw = getattr(config, 'XGBOOST_MIN_CHILD_WEIGHT', 10)
+        
+        _clf_params = dict(
+            n_estimators=_n_estimators,
+            max_depth=_max_depth,
+            learning_rate=_lr,
             subsample=0.75,
             colsample_bytree=0.7,
-            min_child_weight=getattr(config, 'XGBOOST_MIN_CHILD_WEIGHT', 10),
+            min_child_weight=_mcw,
             reg_alpha=0.3,
             reg_lambda=2.0,
             gamma=0.1,
@@ -526,29 +575,17 @@ class XGBoostMLEngine:
             **self._model_kwargs(),
         )
         
-        # XGBoost Regressor (expected return)
-        self.model_reg = xgb.XGBRegressor(
-            n_estimators=150,
-            max_depth=3,
-            learning_rate=0.03,
-            subsample=0.75,
-            colsample_bytree=0.7,
-            min_child_weight=10,
-            gamma=0.1,
-            random_state=42,
-            **self._model_kwargs(),
-        )
-        
-        # Walk-forward CV for quality check
+        # Walk-forward CV for quality check (always do CV)
         if HAS_SKLEARN and len(X) >= 100:
+            _cv_clf = xgb.XGBClassifier(**_clf_params)
             tscv = TimeSeriesSplit(n_splits=3)
             cv_scores = []
             for train_idx, val_idx in tscv.split(X):
                 X_tr, X_val = X.iloc[train_idx], X.iloc[val_idx]
                 y_tr, y_val = y_dir[train_idx], y_dir[val_idx]
                 
-                self.model_clf.fit(X_tr, y_tr)
-                score = self.model_clf.score(X_val, y_val)
+                _cv_clf.fit(X_tr, y_tr)
+                score = _cv_clf.score(X_val, y_val)
                 cv_scores.append(score)
             
             self.cv_scores = cv_scores
@@ -556,15 +593,57 @@ class XGBoostMLEngine:
             print(f"  📈 XGBoost CV scores: {[f'{s:.3f}' for s in cv_scores]} "
                   f"(mean={mean_cv:.3f})")
             
-            # Quality gate: warn if CV below XGBOOST_MIN_CV_ACCURACY (engine enforces veto)
             if mean_cv < getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55):
                 print(f"  ⚠️ CV accuracy {mean_cv:.3f} below threshold "
                       f"{getattr(config, 'XGBOOST_MIN_CV_ACCURACY', 0.55)} — "
                       f"model has no edge, veto disabled")
         
-        # Final training on all data
-        self.model_clf.fit(X, y_dir)
-        self.model_reg.fit(X, y_ret)
+        # P#200f: Incremental learning decision
+        # Retrain count > 0 AND existing model → incremental update
+        # Every 10 retrains → full refit to prevent concept drift accumulation
+        _incremental = (
+            self.retrain_count > 0 and
+            self.model_clf is not None and
+            self.trained and
+            self.retrain_count % 10 != 0  # Full refit every 10th retrain
+        )
+        
+        if _incremental:
+            # P#200f: Incremental — add 100 new trees to existing model
+            try:
+                _inc_rounds = min(100, _n_estimators // 3)
+                self.model_clf.fit(
+                    X, y_dir,
+                    xgb_model=self.model_clf.get_booster(),
+                )
+                # Regressor also incremental
+                if self.model_reg is not None:
+                    self.model_reg.fit(
+                        X, y_ret,
+                        xgb_model=self.model_reg.get_booster(),
+                    )
+                _mode = 'incremental'
+            except Exception as e:
+                print(f"  ⚠️ Incremental training failed ({e}), falling back to full refit")
+                _incremental = False
+        
+        if not _incremental:
+            # Full training from scratch
+            self.model_clf = xgb.XGBClassifier(**_clf_params)
+            self.model_reg = xgb.XGBRegressor(
+                n_estimators=150,
+                max_depth=3,
+                learning_rate=0.03,
+                subsample=0.75,
+                colsample_bytree=0.7,
+                min_child_weight=10,
+                gamma=0.1,
+                random_state=42,
+                **self._model_kwargs(),
+            )
+            self.model_clf.fit(X, y_dir)
+            self.model_reg.fit(X, y_ret)
+            _mode = 'full'
         
         # Feature importance
         imp = self.model_clf.feature_importances_
@@ -575,8 +654,9 @@ class XGBoostMLEngine:
         self.last_retrain_idx = self.train_idx
         
         up_ratio = np.mean(y_dir == 1)
-        print(f"  🧠 XGBoost trained: {len(X)} samples, {len(self.feature_names)} features, "
-              f"UP={up_ratio:.1%}")
+        _label = 'GOOD' if getattr(config, 'XGBOOST_REGIME_CLASSIFIER', False) else 'UP'
+        print(f"  🧠 XGBoost trained ({_mode}): {len(X)} samples, {len(self.feature_names)} features, "
+              f"{_label}={up_ratio:.1%}, retrains={self.retrain_count}")
         
         return True
     
@@ -697,8 +777,12 @@ class XGBoostMLEngine:
         Generate ML prediction using trained XGBoost model.
         Falls back to heuristic if model not trained.
         
+        P#200d: When XGBOOST_REGIME_CLASSIFIER=True, predicts regime quality
+        (GOOD/BAD) and returns sizing_multiplier instead of direction.
+        
         Returns:
-            dict: {action, confidence, source, raw_score, feature_importance}
+            dict: {action, confidence, source, raw_score, feature_importance,
+                   sizing_multiplier (P#200d), regime_quality (P#200d)}
         """
         self.prediction_count += 1
         
@@ -719,51 +803,91 @@ class XGBoostMLEngine:
         
         # Predict
         try:
-            proba = self.model_clf.predict_proba(X)[0]  # [P(DOWN), P(UP)]
+            proba = self.model_clf.predict_proba(X)[0]  # [P(class0), P(class1)]
             expected_return = self.model_reg.predict(X)[0]
         except Exception:
             return self._heuristic_predict(row, history_df, regime)
         
-        # Direction with confidence threshold
-        min_prob = getattr(config, 'XGBOOST_MIN_PROBABILITY', 0.55)
+        use_regime = getattr(config, 'XGBOOST_REGIME_CLASSIFIER', False)
         
-        if proba[1] > min_prob:  # P(UP) > threshold
-            action = 'BUY'
-            confidence = float(proba[1])
-        elif proba[0] > min_prob:  # P(DOWN) > threshold
-            action = 'SELL'
-            confidence = float(proba[0])
+        if use_regime:
+            # P#200d: Regime quality classifier — output sizing multiplier
+            p_good = float(proba[1])  # P(GOOD_REGIME)
+            p_bad = float(proba[0])   # P(BAD_REGIME)
+            
+            # Sizing multiplier based on regime quality confidence
+            if p_good > 0.60:
+                sizing_mult = 0.8 + p_good * 0.5  # 1.1-1.3x for good regime
+            elif p_bad > 0.60:
+                sizing_mult = max(0.3, 1.0 - p_bad * 0.7)  # 0.3-0.7x for bad regime
+            else:
+                sizing_mult = 1.0  # Neutral — no adjustment
+            
+            # Don't override direction — regime classifier modulates size, not action
+            action = 'HOLD'  # Neutral — let strategies decide direction
+            confidence = max(p_good, p_bad)
+            
+            # CV-based trust scaling
+            mean_cv = np.mean(self.cv_scores) if self.cv_scores else 0.5
+            if mean_cv < 0.55:
+                cv_trust = max(0.3, (mean_cv - 0.45) / 0.10)
+                sizing_mult = 1.0 + (sizing_mult - 1.0) * cv_trust  # Dampen the adjustment
+            
+            top_features = dict(sorted(
+                self.feature_importance.items(), key=lambda x: -x[1]
+            )[:5])
+            
+            return {
+                'action': action,
+                'confidence': min(0.95, confidence),
+                'source': 'XGBoost_Regime',
+                'raw_score': float(p_good - p_bad),
+                'expected_return': float(expected_return),
+                'probabilities': {'GOOD': p_good, 'BAD': p_bad},
+                'regime_quality': p_good,
+                'sizing_multiplier': sizing_mult,
+                'feature_importance': top_features,
+            }
         else:
-            action = 'HOLD'
-            confidence = float(max(proba))
-        
-        # CV-based confidence scaling — don't trust model with poor CV
-        mean_cv = np.mean(self.cv_scores) if self.cv_scores else 0.5
-        if mean_cv < 0.55:
-            # Model barely above random — scale down confidence significantly
-            cv_trust = max(0.3, (mean_cv - 0.45) / 0.10)  # 0.3-1.0 scale
-            confidence *= cv_trust
-        
-        # Regime adjustment
-        if regime == 'RANGING':
-            confidence *= 0.85  # Lower confidence in ranging
-        elif regime == 'HIGH_VOLATILITY':
-            confidence *= 0.90
-        
-        # Top features
-        top_features = dict(sorted(
-            self.feature_importance.items(), key=lambda x: -x[1]
-        )[:5])
-        
-        return {
-            'action': action,
-            'confidence': min(0.95, confidence),
-            'source': 'XGBoost',
-            'raw_score': float(proba[1] - proba[0]),
-            'expected_return': float(expected_return),
-            'probabilities': {'UP': float(proba[1]), 'DOWN': float(proba[0])},
-            'feature_importance': top_features,
-        }
+            # Legacy: direction prediction
+            min_prob = getattr(config, 'XGBOOST_MIN_PROBABILITY', 0.55)
+            
+            if proba[1] > min_prob:  # P(UP) > threshold
+                action = 'BUY'
+                confidence = float(proba[1])
+            elif proba[0] > min_prob:  # P(DOWN) > threshold
+                action = 'SELL'
+                confidence = float(proba[0])
+            else:
+                action = 'HOLD'
+                confidence = float(max(proba))
+            
+            # CV-based confidence scaling
+            mean_cv = np.mean(self.cv_scores) if self.cv_scores else 0.5
+            if mean_cv < 0.55:
+                cv_trust = max(0.3, (mean_cv - 0.45) / 0.10)
+                confidence *= cv_trust
+            
+            # Regime adjustment
+            if regime == 'RANGING':
+                confidence *= 0.85
+            elif regime == 'HIGH_VOLATILITY':
+                confidence *= 0.90
+            
+            top_features = dict(sorted(
+                self.feature_importance.items(), key=lambda x: -x[1]
+            )[:5])
+            
+            return {
+                'action': action,
+                'confidence': min(0.95, confidence),
+                'source': 'XGBoost',
+                'raw_score': float(proba[1] - proba[0]),
+                'expected_return': float(expected_return),
+                'probabilities': {'UP': float(proba[1]), 'DOWN': float(proba[0])},
+                'sizing_multiplier': 1.0,
+                'feature_importance': top_features,
+            }
     
     def _heuristic_predict(self, row, history_df, regime):
         """

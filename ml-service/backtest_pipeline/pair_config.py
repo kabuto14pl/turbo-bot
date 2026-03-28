@@ -68,15 +68,15 @@ PAIR_OVERRIDES = {
         # P#175: Grid V2 (replaces funding_rate — SOL APR=0.8% doesn't cover costs)
         'GRID_V2_ENABLED': True,
         'GRID_V2_ADX_THRESHOLD': 22,   # SOL: slightly higher ADX threshold (volatile)
-        'GRID_V2_BB_LOWER_ENTRY': 0.08,  # SOL: tighter BB entry (more volatile)
-        'GRID_V2_BB_UPPER_ENTRY': 0.92,
+        'GRID_V2_BB_LOWER_ENTRY': 0.15,  # P#200c: Relaxed from 0.08 — capture more mean-reversion
+        'GRID_V2_BB_UPPER_ENTRY': 0.85,  # P#200c: Relaxed from 0.92 — more SELL entries
         'GRID_V2_RSI_OVERSOLD': 35,
         'GRID_V2_RSI_OVERBOUGHT': 65,
         'GRID_V2_SL_ATR': 0.80,       # SOL: wider grid SL (volatile)
         'GRID_V2_TP_ATR': 1.40,       # SOL: wider grid TP
-        'GRID_V2_COOLDOWN': 12,        # SOL: faster cooldown (3h on 15m)
-        'GRID_V2_MAX_TRADES': 40,
-        'GRID_V2_RISK_PER_TRADE': 0.010,
+        'GRID_V2_COOLDOWN': 6,         # P#200c: 6 candles = 1.5h on 15m (was 12 = 3h)
+        'GRID_V2_MAX_TRADES': 80,      # P#200c: Double max (was 40)
+        'GRID_V2_RISK_PER_TRADE': 0.008,  # P#200c: Slight reduction per-trade (more trades × lower risk)
         # P#198: Re-enable funding arb — diversify income (grid+funding dual)
         # P#175 disabled at APR=0.8%, but any positive funding adds edge
         # Lower min_rate threshold captures more funding windows
@@ -100,9 +100,10 @@ PAIR_OVERRIDES = {
         'RISK_PER_TRADE': 0.005,
         'GRID_V2_ENABLED': False,
         'MOMENTUM_HTF_ENABLED': False,  # P#175: can't backtest on 15m (needs 4h+15m)
+        'DIRECTIONAL_ENABLED': False,   # P#200a: BTC directional PF=0.131, net negative. Pure funding.
         'FUNDING_ARB_ENABLED': True,
         'FUNDING_MIN_RATE': 0.00005,
-        'FUNDING_CAPITAL_PCT': 0.35,
+        'FUNDING_CAPITAL_PCT': 0.50,    # P#200a: Pure funding → 50% capital on funding (was 35%)
         'FUNDING_MAX_UNREALIZED_LOSS': 0.025,
     },
     
@@ -139,14 +140,14 @@ PAIR_OVERRIDES = {
         # P#71: Grid V2
         'GRID_V2_ENABLED': True,
         'GRID_V2_ADX_THRESHOLD': 18,
-        'GRID_V2_BB_LOWER_ENTRY': 0.07,
-        'GRID_V2_BB_UPPER_ENTRY': 0.93,
+        'GRID_V2_BB_LOWER_ENTRY': 0.12,   # P#200c: Relaxed from 0.07 — more entries
+        'GRID_V2_BB_UPPER_ENTRY': 0.88,   # P#200c: Relaxed from 0.93
         'GRID_V2_RSI_OVERSOLD': 36,
         'GRID_V2_RSI_OVERBOUGHT': 64,
         'GRID_V2_SL_ATR': 0.65,
         'GRID_V2_TP_ATR': 1.20,
-        'GRID_V2_COOLDOWN': 18,
-        'GRID_V2_MAX_TRADES': 22,
+        'GRID_V2_COOLDOWN': 8,             # P#200c: 8 candles = 2h on 15m (was 18 = 4.5h)
+        'GRID_V2_MAX_TRADES': 50,          # P#200c: 50 max (was 22)
         'GRID_V2_RISK_PER_TRADE': 0.005,
         
         # P#71: News filter — Binance ecosystem events
@@ -167,7 +168,7 @@ PAIR_OVERRIDES = {
         'GRID_V2_ENABLED': True,
         'FUNDING_ARB_ENABLED': True,
         'FUNDING_MIN_RATE': 0.00005,
-        'FUNDING_CAPITAL_PCT': 0.25,
+        'FUNDING_CAPITAL_PCT': 0.40,    # P#200a: Pure funding formalized → 40% (was 25%)
         'FUNDING_MAX_UNREALIZED_LOSS': 0.025,
         # P#198: Disable ETH directional — loses -$34, funding makes +$24
         # WR=40% on 1h, WR=25% on 4h → net negative. Funding-only + Grid V2.
@@ -175,10 +176,10 @@ PAIR_OVERRIDES = {
         
         # P#177: ETH Grid V2 discipline — reduce overtrading (was 152 trades, PF 0.724)
         'GRID_V2_ADX_THRESHOLD': 20,   # Tighter than default 15
-        'GRID_V2_BB_LOWER_ENTRY': 0.08,  # Tighter BB band entry
-        'GRID_V2_BB_UPPER_ENTRY': 0.92,
-        'GRID_V2_COOLDOWN': 20,         # 5h on 15m (vs default 16)
-        'GRID_V2_MAX_TRADES': 18,       # Hard cap on grid trades
+        'GRID_V2_BB_LOWER_ENTRY': 0.12,  # P#200c: Relaxed from 0.08 → 0.12
+        'GRID_V2_BB_UPPER_ENTRY': 0.88,  # P#200c: Relaxed from 0.92 → 0.88
+        'GRID_V2_COOLDOWN': 12,         # P#200c: 12 candles = 3h (was 20 = 5h)
+        'GRID_V2_MAX_TRADES': 35,       # P#200c: 35 max (was 18)
         'GRID_V2_RISK_PER_TRADE': 0.005,
         
         # P#71: News filter for ETH
@@ -197,9 +198,10 @@ PAIR_OVERRIDES = {
         'CONFIDENCE_FLOOR': 0.38,
         'RISK_PER_TRADE': 0.004,
         'GRID_V2_ENABLED': False,
+        'DIRECTIONAL_ENABLED': False,   # P#200a: XRP directional PF=0.588, net negative. Pure funding.
         'FUNDING_ARB_ENABLED': True,
         'FUNDING_MIN_RATE': 0.00005,
-        'FUNDING_CAPITAL_PCT': 0.35,
+        'FUNDING_CAPITAL_PCT': 0.50,    # P#200a: Pure funding → 50% capital on funding (was 35%)
         'FUNDING_MAX_UNREALIZED_LOSS': 0.03,
         # News filter — still valuable for funding decisions
         'NEWS_FILTER_ENABLED': True,

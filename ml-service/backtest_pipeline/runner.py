@@ -688,6 +688,20 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
         # P#197 Faza 2.6: Restore timeframe overrides
         restore_config(tf_originals)
         
+        # P#200g: Portfolio Rebalancer — compute optimal allocation from results
+        from .portfolio_rebalancer import PortfolioRebalancer
+        _rebalancer = PortfolioRebalancer(
+            pairs=list(all_results.keys()),
+            base_allocations={s: PAIR_CAPITAL_ALLOCATION.get(s, 0.0) for s in all_results},
+            rebalance_interval=1,  # Force immediate rebalance for post-run analysis
+        )
+        for symbol, r in all_results.items():
+            if r.get('error'):
+                continue
+            # Feed directional + funding PnL
+            combined_pnl = r.get('net_profit', 0) + r.get('funding_arb_pnl', 0)
+            _rebalancer.record_pnl(symbol, combined_pnl)
+        
         print(f"\n{'═'*90}")
         print(f"  📊 MULTI-PAIR SUMMARY {'(P#72 Adaptive+Funding+Grid)' if use_pair_config else ''}")
         print(f"{'═'*90}")
@@ -738,6 +752,17 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
         portfolio_return = (total_pnl / total_capital * 100) if total_capital > 0 else 0
         print(f"  {emoji_t} {'TOTAL':<8} {'':>4} {'':>7} {'':>8} ${total_capital:>6,.0f} {total_trades:>7} {'':>7} {'':>7} "
               f"{portfolio_return:>+8.2f}% {'':>7} ${total_pnl:>+9.2f}")
+        
+        # P#200g: Show rebalancer recommendation
+        _new_alloc = _rebalancer.maybe_rebalance(candle_idx=1)
+        if _new_alloc:
+            print(f"\n  📊 P#200g REBALANCER RECOMMENDATION (Sharpe-weighted):")
+            for _sym in sorted(_new_alloc.keys()):
+                _base = PAIR_CAPITAL_ALLOCATION.get(_sym, 0)
+                _new = _new_alloc[_sym]
+                _delta = _new - _base
+                _arrow = '↑' if _delta > 0.01 else ('↓' if _delta < -0.01 else '→')
+                print(f"    {_sym:<10} {_base*100:5.1f}% → {_new*100:5.1f}% ({_delta*100:+.1f}%) {_arrow}")
     
     return all_results
 

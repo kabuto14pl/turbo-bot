@@ -37,7 +37,7 @@ MOMENTUM_GATE_SL_TIGHTEN = 0.35    # Tighten SL aggressively when momentum never
 # PATCH #66: Pre-Entry Momentum Confirmation
 # Check last N candles before opening — if they don't go in signal direction → SKIP
 # P#65 showed: 16/19 losers had MaxR < 0.40 → no pre-entry momentum
-PRE_ENTRY_MOMENTUM_ENABLED = True
+PRE_ENTRY_MOMENTUM_ENABLED = False  # P#200b: Disabled — blocks reversals needed for Grid V2 mean-reversion
 PRE_ENTRY_MOMENTUM_CANDLES = 3          # Check last 3 candles
 PRE_ENTRY_MOMENTUM_MIN_ALIGNED = 2     # At least 2/3 must align with signal direction
 PRE_ENTRY_MOMENTUM_RANGING_EXEMPT = True  # Skip momentum check in RANGING (choppy candles)
@@ -147,12 +147,15 @@ ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR = 0.45  # was using CONFIDENCE_FLOOR=0.30
 
 # P#195 Faza 2: TRENDING_DOWN directional block
 # MC test shows TRENDING_DOWN = -$51 on 1h (catastrophic losses)
-TRENDING_DOWN_DIRECTIONAL_ENABLED = False
+# P#200b: Re-enabled — allow SHORT in TRENDING_DOWN (natural edge)
+# LONG_BLOCK_IN_DOWNTREND still blocks LONGs. Only SHORT signals pass.
+TRENDING_DOWN_DIRECTIONAL_ENABLED = True
 
 # P#197 Faza 2.5: TRENDING_UP ensemble directional guard
 # MC P#196: TRENDING_UP = 18 trades, -$19.41, p=0.705 — NO edge
-# GridV2/MomentumHTF bypasses still work. Only blocks ensemble directional.
-TRENDING_UP_ENSEMBLE_DIRECTIONAL_ENABLED = False
+# P#200b: Re-enabled — LONG in TRENDING_UP has natural edge (18 trades = too few for stats)
+# GridV2/MomentumHTF bypasses still fire. Ensemble directional now also allowed.
+TRENDING_UP_ENSEMBLE_DIRECTIONAL_ENABLED = True
 
 # ==========================================================================
 # RUNTIME PARITY PROFILE
@@ -298,7 +301,16 @@ XGBOOST_RETRAIN_INTERVAL = 100  # P#182: 200→100 for more GPU training cycles 
 XGBOOST_RETRAIN_INTERVAL_FAST = 250  # P#182: 500→250 fast mode (56 retrains per 14k)
 XGBOOST_MIN_TRAIN_SAMPLES = 150 # Minimum samples for training (labels require movement > threshold)
 XGBOOST_WARMUP_CANDLES = 500    # Initial warmup for first training
-XGBOOST_LABEL_THRESHOLD = 0.001 # Min price change for UP/DOWN label (0.1%)
+XGBOOST_LABEL_THRESHOLD = 0.001 # Min price change for UP/DOWN label (0.1%) — legacy, not used in P#200d
+
+# P#200d: Regime Quality Classifier — predict GOOD_REGIME vs BAD_REGIME instead of direction
+# GOOD_REGIME = trade opened here would be profitable (MFE > threshold, MAE contained)
+# BAD_REGIME = adverse excursion too large (choppy/hostile conditions)
+XGBOOST_REGIME_CLASSIFIER = True        # P#200d: Enable regime quality labels (False = legacy UP/DOWN)
+XGBOOST_REGIME_LOOKAHEAD = 12           # Lookahead window for regime label (candles)
+XGBOOST_REGIME_GOOD_MFE_ATR = 1.5      # Min MFE / ATR% for GOOD label
+XGBOOST_REGIME_BAD_MAE_ATR = 2.0       # Min MAE / ATR% for BAD label
+XGBOOST_REGIME_GOOD_MAE_CAP_ATR = 1.0  # Max MAE / ATR% allowed for GOOD label
 
 # ============================================================================
 # PYTORCH MLP GPU ENGINE (P#176 — XGBoost fallback, 100% GPU)
@@ -436,7 +448,7 @@ LONG_COUNTER_TREND_PENALTY = 0.75  # Confidence * 0.75 for counter-trend longs
 LONG_BLOCK_IN_DOWNTREND = True      # Block LONGs when regime=TRENDING_DOWN
 LONG_EMA_SLOPE_PERIOD = 200         # EMA period for macro slope check
 LONG_EMA_SLOPE_LOOKBACK = 10        # Candles to measure slope over
-LONG_EMA_SLOPE_MIN = -0.003         # Block LONGs if EMA200 slope < -0.3%
+LONG_EMA_SLOPE_MIN = -0.006         # P#200b: Relaxed from -0.3% to -0.6% — less aggressive blocking
 COUNTER_TREND_LONGS_ENABLED = True
 COUNTER_TREND_LONG_MIN_CONFIDENCE = 0.38
 COUNTER_TREND_LONG_MIN_EQ_SCORE = 0.55

@@ -40,6 +40,11 @@ from .news_filter import NewsFilter
 from .momentum_htf import MomentumHTFStrategy
 # P#197 Faza 3: Architecture modules
 from .continual_learning import ContinualLearningAgent
+# P#200e: State persistence
+from .state_persistence import (
+    save_neuron_state, load_neuron_state,
+    save_learner_state, load_learner_state,
+)
 
 # PATCH #152C: External signals simulation (F&G, whale, macro, COT)
 from .external_signals_sim import ExternalSignalsSimulator
@@ -1180,6 +1185,16 @@ class FullPipelineEngine:
                 if getattr(config, 'ADAPTIVE_SIZING_ENABLED', False):
                     risk_mult *= self._adaptive_size_mult
                 
+                # P#200d: ML regime quality sizing multiplier
+                # XGBoost_Regime predicts GOOD/BAD regime → adjust position size
+                if not self._strategy_only:
+                    _ml_sizing = 1.0
+                    if self._ml_veto_only and _xgb_veto_source:
+                        _ml_sizing = _xgb_veto_source.get('sizing_multiplier', 1.0)
+                    elif ml_signal and ml_signal.get('source') in ('XGBoost_Regime', 'XGBoost'):
+                        _ml_sizing = ml_signal.get('sizing_multiplier', 1.0)
+                    risk_mult *= _ml_sizing
+                
                 opened = self.pm.open_position(
                     side=side,
                     price=row['close'],
@@ -1217,6 +1232,12 @@ class FullPipelineEngine:
     
     def _reset(self):
         """Reset all components for fresh run."""
+        # P#194: Timeframe-dependent flags (set early for state persistence)
+        if not hasattr(self, '_timeframe'):
+            self._timeframe = '15m'
+        self._is_higher_tf = False
+        self._directional_disabled = False
+        
         self.regime = RegimeDetector()
         self.quantum = self._create_quantum_backend()
         self.ml = MLSimulator()
@@ -1224,6 +1245,13 @@ class FullPipelineEngine:
         self.ensemble = EnsembleVoter()
         self.pm = PositionManager()
         self.pm.reset(self.initial_capital)
+        
+        # P#200e: Restore NeuronAI state from previous run
+        _neuron_loaded = load_neuron_state(self.symbol, self._timeframe, self.neuron)
+        if _neuron_loaded:
+            _wr = self.neuron.win_count / max(1, self.neuron.win_count + self.neuron.loss_count)
+            print(f"  ♻️ NeuronAI state restored (defense={self.neuron.defense_mode}, "
+                  f"WR={_wr:.0%}, risk_mult={self.neuron.risk_multiplier:.2f})")
         
         # P#178: Extract GPU URL for ML engines
         gpu_url = self.quantum_backend_options.get('remote_url')
@@ -1284,16 +1312,20 @@ class FullPipelineEngine:
         self.momentum_htf = MomentumHTFStrategy(symbol=self.symbol)
         self._momentum_htf_trades = 0
         
+        # P#197 Faza 3c: Continual Learning reset
+        self.learner = ContinualLearningAgent()
+        # P#200e: Restore learner state from previous run
+        _learner_loaded = load_learner_state(self.symbol, self._timeframe, self.learner)
+        if _learner_loaded:
+            _deact = self.learner.get_deactivated_strategies()
+            print(f"  ♻️ Learner state restored (deactivated={_deact})")
+        
         # PATCH #152C: External signals reset
         self.external_signals = ExternalSignalsSimulator()
         self._gpu_only_backtest = getattr(config, 'GPU_ONLY_BACKTEST', False)
         self._gpu_only_last_regime = 'RANGING'
         # P#193: Strategy-only mode
         self._strategy_only = getattr(config, 'STRATEGY_ONLY_MODE', False)
-        # P#194: Timeframe-dependent flags (set properly in run())
-        self._timeframe = '15m'
-        self._is_higher_tf = False
-        self._directional_disabled = False
         # P#195: Strategy attribution tracking
         self._consensus_strategies = []
         
@@ -1397,6 +1429,13 @@ class FullPipelineEngine:
         trades = self.pm.trades
         quantum_stats = self.quantum.get_stats()
         quantum_summary = self._build_quantum_summary(quantum_stats)
+        
+        # P#200e: Persist state for next run (always save, even with 0 trades)
+        try:
+            save_neuron_state(self.symbol, timeframe, self.neuron)
+            save_learner_state(self.symbol, timeframe, self.learner)
+        except Exception as e:
+            print(f"  ⚠️ State save failed: {e}")
         
         if not trades:
             # P#72 FIX: Include funding/grid/news stats even with 0 directional trades

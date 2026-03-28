@@ -34,15 +34,15 @@ from . import config
 # GRID V2 DEFAULT PARAMETERS
 # ============================================================================
 
-GRID_V2_ADX_THRESHOLD = 20       # Max ADX for grid activation (stricter)
+GRID_V2_ADX_THRESHOLD = 23       # P#200c: Wider ranging window (was 20)
 GRID_V2_BB_LOWER_ENTRY = 0.08    # BB%B below this → BUY zone (extreme only)
 GRID_V2_BB_UPPER_ENTRY = 0.92    # BB%B above this → SELL zone (extreme only)
 GRID_V2_RSI_OVERSOLD = 38        # RSI below this for BUY confirmation
 GRID_V2_RSI_OVERBOUGHT = 62      # RSI above this for SELL confirmation
 GRID_V2_SL_ATR = 0.70            # SL (0.7 × ATR)
 GRID_V2_TP_ATR = 1.20            # TP (1.2 × ATR) — covers fees
-GRID_V2_COOLDOWN = 16            # Min candles between grid trades (4h on 15m)
-GRID_V2_MAX_TRADES = 25          # Max grid trades per backtest session
+GRID_V2_COOLDOWN = 8             # P#200c: 8 candles = 2h on 15m (was 16 = 4h)
+GRID_V2_MAX_TRADES = 60          # P#200c: 60 max (was 25)
 GRID_V2_RISK_PER_TRADE = 0.006   # 0.6% risk per grid trade
 GRID_V2_MIN_BB_WIDTH = 0.008     # Min BB width (avoid dead periods)
 

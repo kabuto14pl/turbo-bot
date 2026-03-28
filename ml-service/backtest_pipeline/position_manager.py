@@ -102,7 +102,7 @@ class PositionManager:
             
         # Regime sizing reduction
         if regime == 'RANGING':
-            risk_pct *= 0.70
+            risk_pct *= 0.90  # P#200c: Relaxed from 0.70→0.90 (Grid V2 needs fair sizing in RANGING)
         elif regime == 'HIGH_VOLATILITY':
             risk_pct *= 0.80
             
