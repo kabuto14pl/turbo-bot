@@ -206,6 +206,21 @@ class PositionManager:
         # If trade hasn't shown momentum within N candles, tighten SL
         # P#64 showed: all losers had MaxR < 0.40 → never moved in our favor
         pos['candles_in_trade'] += 1
+
+        # P#201f: HARD MAX LOSS CAP — force close if unrealized loss exceeds cap
+        # Prevents fat-tail losers (e.g. BNB $-31 single loss eating 6+ winners)
+        _max_loss_mult = getattr(config, 'GRID_V2_MAX_LOSS_ATR_MULT', 0)
+        if _max_loss_mult > 0 and pos.get('is_grid_v2', False):
+            _hard_max = _max_loss_mult * pos['initial_sl_distance'] * pos['quantity']
+            if pos['side'] == 'LONG':
+                _unrealized = (low - pos['entry']) * pos['quantity']
+            else:
+                _unrealized = (pos['entry'] - high) * pos['quantity']
+            if _unrealized < -_hard_max:
+                _exit_price = pos['sl']  # Use SL price as exit (worst case)
+                _pnl = -_hard_max
+                self._close_position(_exit_price, _pnl, 'MAX_LOSS', time)
+                return 'MAX_LOSS'
         
         if (getattr(config, 'MOMENTUM_GATE_ENABLED', False) and
             not pos.get('momentum_gate_applied', False)):

@@ -143,7 +143,9 @@ ENSEMBLE_TREND_ALIGNED_CONF_MULT = 1.10     # P#195: was 1.05 — stronger boost
 # P#197 Faza 2.5: Ensemble confidence floor for directional
 # MC P#196: ensemble directional = 18 trades, -$19.41 (NET NEGATIVE)
 # Only GridV2 ($+52) and MomentumHTF ($+8) have edge. Raise floor to filter weak signals.
-ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR = 0.45  # was using CONFIDENCE_FLOOR=0.30
+# P#201g: Lowered from 0.45→0.35 to allow more directional trades through.
+# Board Meeting #3: 0% consensus on most pairs — floor was too restrictive.
+ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR = 0.35  # was 0.45 (P#197)
 
 # P#195 Faza 2: TRENDING_DOWN directional block
 # MC test shows TRENDING_DOWN = -$51 on 1h (catastrophic losses)
@@ -563,6 +565,15 @@ MTF_VOL_CONFIRM = 2.0               # Volume ratio required for entry — was 1.
 # ============================================================================
 # Grid SL=0.60 ATR gets hit by BTC wicks. Grid works better on altcoins.
 GRID_V2_ENABLED_PAIRS = ['ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT']
+
+# P#201e: XGB regime quality gate for Grid V2
+# If XGBoost regime classifier says regime_quality < this threshold, skip grid trade
+GRID_V2_XGB_MIN_REGIME_QUALITY = 0.40  # Block grid when XGB says >60% chance of BAD regime
+
+# P#201f: Hard max loss cap for Grid V2 trades (multiple of initial SL distance)
+# Prevents fat-tail losers from destroying multiple winners
+# e.g. 1.5 = max loss = 1.5× SL distance. 0 = disabled.
+GRID_V2_MAX_LOSS_ATR_MULT = 1.5
 
 # ============================================================================
 # P#189: REGIME-AWARE STRATEGY ROUTING (Advisory Board rec.)

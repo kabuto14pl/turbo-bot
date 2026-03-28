@@ -512,9 +512,19 @@ class FullPipelineEngine:
             # Grid V2 is independent mean-reversion, NOT ensemble directional.
             # Must run even when directional is disabled (ETH, 15m).
             # P#201b: Per-pair TF control via GRID_V2_ALLOWED_TIMEFRAMES
+            # P#201e: XGB regime quality gate — block grid in BAD regime
             # ============================================================
             _grid_tf_allowed = self._timeframe in getattr(config, 'GRID_V2_ALLOWED_TIMEFRAMES', ['15m', '1h', '4h'])
-            if self.pm.position is None and getattr(config, 'GRID_V2_ENABLED', False) and _grid_tf_allowed:
+            _xgb_grid_ok = True
+            if not self._strategy_only and getattr(config, 'XGBOOST_REGIME_CLASSIFIER', False):
+                try:
+                    _xgb_rq = xgb_signal.get('regime_quality', 0.5) if isinstance(xgb_signal, dict) else 0.5
+                except NameError:
+                    _xgb_rq = 0.5
+                _xgb_grid_min = getattr(config, 'GRID_V2_XGB_MIN_REGIME_QUALITY', 0.40)
+                if _xgb_rq < _xgb_grid_min:
+                    _xgb_grid_ok = False
+            if self.pm.position is None and getattr(config, 'GRID_V2_ENABLED', False) and _grid_tf_allowed and _xgb_grid_ok:
                 grid_signal = self.grid_v2.evaluate(
                     row, history, current_regime, candle_idx=i,
                     has_position=(self.pm.position is not None)
