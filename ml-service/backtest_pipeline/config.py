@@ -56,12 +56,8 @@ PHASE_3_LOCK_R = 1.5           # Phase 3 lock at 1.5R
 PHASE_4_LOCK_R = 2.0           # Phase 4 lock at 2.0R
 PHASE_5_CHANDELIER_R = 2.0     # P#194: 2.5→2.0 — lock profit earlier (trail was giving back >1R)
 
-# P#202d: Grid V2 trades use tighter trail phases — grid is mean-reversion,
-#   moves are smaller (1-1.5R), so standard 2.0R trail never activates → 65% BE exits.
-#   Grid trades get earlier trail to capture more TRAIL wins instead of BE.
-GRID_V2_PHASE_3_LOCK_R = 0.8          # Grid: lock at 0.8R (vs 1.5R directional)
-GRID_V2_PHASE_4_LOCK_R = 1.2          # Grid: trail at 1.2R (vs 2.0R directional)
-GRID_V2_PHASE_5_CHANDELIER_R = 1.2    # Grid: chandelier at 1.2R (vs 2.0R)
+# P#203a: REVERTED P#202d grid trailing — tighter phases cut winners short,
+#   BNB 15m PF dropped 1.81→1.14, SOL 4h PF 0.97→0.79. Grid uses standard phases.
 TRAILING_DISTANCE_ATR = 1.0    # P#194: 2.0→1.0 — trail MUST be tighter than SL (1.5 ATR). Was 2.0 = wider than SL = destroyed edge
 PHASE3_TRAIL_ATR = 1.0         # Phase 3: lock highest - 1.0 ATR
 PHASE4_TRAIL_ATR = 0.75        # Phase 4: lock highest - 0.75 ATR
@@ -152,7 +148,7 @@ ENSEMBLE_TREND_ALIGNED_CONF_MULT = 1.10     # P#195: was 1.05 — stronger boost
 # Only GridV2 ($+52) and MomentumHTF ($+8) have edge. Raise floor to filter weak signals.
 # P#201g: Lowered from 0.45→0.35 to allow more directional trades through.
 # Board Meeting #3: 0% consensus on most pairs — floor was too restrictive.
-ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR = 0.35  # was 0.45 (P#197)
+ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR = 0.25  # P#203b: was 0.35 (P#197) — lowered to unblock directional pipeline
 
 # P#195 Faza 2: TRENDING_DOWN directional block
 # MC test shows TRENDING_DOWN = -$51 on 1h (catastrophic losses)
@@ -632,13 +628,13 @@ TIMEFRAME_OVERRIDES = {
     '4h': {
         # 4h is most reliable — allow trend-following, lighter filters
         'TRENDING_UP_ENSEMBLE_DIRECTIONAL_ENABLED': True,  # 4h TRENDING_UP is +$16.64
-        'ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR': 0.35,     # Lower floor — 4h signals are cleaner
+        'ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR': 0.25,     # P#203b: was 0.35 — lowered to unblock pipeline
         'RISK_PER_TRADE': 0.018,                           # Slightly more risk ok on 4h
     },
     '1h': {
         # 1h needs strict filtering — TRENDING regimes are net negative
         'TRENDING_UP_ENSEMBLE_DIRECTIONAL_ENABLED': False,  # 1h TRENDING_UP = -$36 (blocked)
-        'ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR': 0.45,     # High bar for ensemble signals
+        'ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR': 0.25,     # P#203b: was 0.45 — blocked ALL directional (incl 133 BNB signals)
         'RISK_PER_TRADE': 0.015,                           # Standard risk
     },
     '15m': {

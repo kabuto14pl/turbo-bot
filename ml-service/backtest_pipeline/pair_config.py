@@ -143,7 +143,7 @@ PAIR_OVERRIDES = {
         
         # P#71: Grid V2
         'GRID_V2_ENABLED': True,
-        'GRID_V2_ALLOWED_TIMEFRAMES': ['15m'],  # P#201b: BNB grid only on 15m (1h=-$146, 4h=-$321 trading)
+        'GRID_V2_ALLOWED_TIMEFRAMES': ['15m', '1h'],  # P#203c: re-enabled 1h (was -$146 pre-maxloss cap, now protected by GRID_V2_MAX_LOSS_ATR_MULT=1.5)
         'GRID_V2_ADX_THRESHOLD': 18,
         'GRID_V2_BB_LOWER_ENTRY': 0.12,   # P#200c: Relaxed from 0.07 — more entries
         'GRID_V2_BB_UPPER_ENTRY': 0.88,   # P#200c: Relaxed from 0.93

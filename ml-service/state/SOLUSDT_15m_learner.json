@@ -1,5 +1,5 @@
 {
-  "saved_at": "2026-03-28T10:48:09.612963",
+  "saved_at": "2026-03-28T18:50:10.562056",
   "version": "200e",
   "summary": {
     "deactivated": [],
@@ -8,9 +8,9 @@
         "status": "active",
         "trades": 50,
         "win_rate": 0.56,
-        "total_pnl": -17.632685485983473,
-        "avg_pnl": -0.3526537097196695,
-        "sharpe": -0.06283353866641594,
+        "total_pnl": -17.632685485983455,
+        "avg_pnl": -0.3526537097196691,
+        "sharpe": -0.06283353866641588,
         "consecutive_losses": 0,
         "calibrated_confidence": 0.7888687010942703
       }
@@ -19,14 +19,14 @@
       "SOLUSDT": {
         "trades": 50,
         "win_rate": 0.56,
-        "pnl": -17.632685485983473
+        "pnl": -17.632685485983455
       }
     },
     "regimes": {
       "RANGING": {
         "trades": 50,
         "win_rate": 0.56,
-        "pnl": -17.632685485983473
+        "pnl": -17.632685485983455
       }
     }
   },

@@ -1,5 +1,5 @@
 {
-  "saved_at": "2026-03-28T10:40:19.874335",
+  "saved_at": "2026-03-28T18:40:16.570451",
   "version": "200e",
   "summary": {
     "deactivated": [],
@@ -8,9 +8,9 @@
         "status": "active",
         "trades": 50,
         "win_rate": 0.58,
-        "total_pnl": 0.17658299998104776,
-        "avg_pnl": 0.0035316599996209554,
-        "sharpe": 0.004603309828327334,
+        "total_pnl": 0.17658299998104687,
+        "avg_pnl": 0.0035316599996209376,
+        "sharpe": 0.00460330982832731,
         "consecutive_losses": 1,
         "calibrated_confidence": 0.6165412120170158
       }
@@ -19,14 +19,14 @@
       "ETHUSDT": {
         "trades": 50,
         "win_rate": 0.58,
-        "pnl": 0.17658299998104776
+        "pnl": 0.17658299998104687
       }
     },
     "regimes": {
       "RANGING": {
         "trades": 50,
         "win_rate": 0.58,
-        "pnl": 0.17658299998104776
+        "pnl": 0.17658299998104687
       }
     }
   },
