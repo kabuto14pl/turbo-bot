@@ -505,19 +505,9 @@ class FullPipelineEngine:
                 self.news_filter.detect_events(row, history, i)
             
             # ============================================================
-            # P#194: DIRECTIONAL SKIP — funding-only mode on 15m
-            # When DIRECTIONAL_15M_ENABLED=False, skip all directional
-            # phases (Grid, Momentum, Ensemble, Execution) on 15m.
-            # Funding arb (Phase 22) still runs above.
-            # ============================================================
-            if self._directional_disabled:
-                self._track_equity(row, candle_time)
-                continue
-            
-            # ============================================================
-            # P#71 PHASE 23: GRID V2 — BYPASS ENSEMBLE (RANGING only)
-            # Dedicated mean-reversion: BB bands + RSI in RANGING regime
-            # Fires BEFORE ensemble — if grid signal, skip ensemble entirely
+            # P#200: GRID V2 — fires BEFORE directional check
+            # Grid V2 is independent mean-reversion, NOT ensemble directional.
+            # Must run even when directional is disabled (ETH, 15m).
             # ============================================================
             if self.pm.position is None and getattr(config, 'GRID_V2_ENABLED', False):
                 grid_signal = self.grid_v2.evaluate(
@@ -560,6 +550,16 @@ class FullPipelineEngine:
                     
                     self._track_equity(row, candle_time)
                     continue  # Skip ensemble — grid took priority
+            
+            # ============================================================
+            # P#194/P#200: DIRECTIONAL SKIP — funding+grid only mode
+            # When directional disabled (per-pair or 15m), skip ensemble
+            # and momentum phases. Funding (above) and Grid V2 (above)
+            # still run independently.
+            # ============================================================
+            if self._directional_disabled:
+                self._track_equity(row, candle_time)
+                continue
             
             # ============================================================
             # P#175 PHASE 23.5: MOMENTUM HTF/LTF — BYPASS ENSEMBLE

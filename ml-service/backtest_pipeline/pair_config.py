@@ -120,7 +120,7 @@ PAIR_OVERRIDES = {
         'BNB_LONG_BLOCK_IN_TRENDING_DOWN': False,
         
         # P#70: Lower confidence floor for BNB SHORTs
-        'CONFIDENCE_FLOOR': 0.24,
+        'CONFIDENCE_FLOOR': 0.15,       # P#200: Was 0.24 — blocked 108/118 signals on 1h
         
         # P#72: Slightly more aggressive (ROBUST pair)
         'RISK_PER_TRADE': 0.014,
