@@ -114,6 +114,57 @@ except Exception:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [GPU] %(message)s')
 logger = logging.getLogger(__name__)
 
+
+# ═══════════════════════════════════════════════════════════════════
+# CUDA ERROR RECOVERY — reset context after CUDA errors (P#200)
+# ═══════════════════════════════════════════════════════════════════
+_cuda_error_count = 0
+_cuda_last_recovery = 0
+
+def _recover_cuda_context(error_msg: str = ""):
+    """Attempt to recover CUDA context after an error.
+    
+    CUDA 'unknown error' poisons the entire context — all subsequent ops fail.
+    This function tries to flush and recover before the service becomes a zombie.
+    """
+    global _cuda_error_count, _cuda_last_recovery
+    _cuda_error_count += 1
+    
+    if not GPU_AVAILABLE or device is None:
+        return
+    
+    try:
+        # Step 1: Synchronize — flush all pending CUDA operations
+        torch.cuda.synchronize()
+    except Exception:
+        pass  # May itself fail if context is dead
+    
+    try:
+        # Step 2: Release all cached GPU memory
+        torch.cuda.empty_cache()
+    except Exception:
+        pass
+    
+    try:
+        # Step 3: Reset accumulated memory stats
+        torch.cuda.reset_peak_memory_stats()
+    except Exception:
+        pass
+    
+    now = time.time()
+    if _cuda_error_count % 10 == 1 or (now - _cuda_last_recovery) > 60:
+        logger.warning(f"CUDA recovery attempt #{_cuda_error_count} (trigger: {error_msg[:120]})")
+        _cuda_last_recovery = now
+    
+    # Smoke test: try a trivial CUDA operation to see if recovery worked
+    try:
+        _test = torch.zeros(1, device=device)
+        del _test
+        return True  # recovered
+    except Exception:
+        logger.error(f"CUDA context DEAD after recovery attempt #{_cuda_error_count} — service restart required")
+        return False  # context is truly dead
+
 #  FastAPI App 
 SERVICE_VERSION = "2.0.0-ML-GPU"
 
@@ -199,6 +250,20 @@ async def health():
         "init_error": GPU_INIT_ERROR,
         "gpu": get_gpu_info(),
         "stats": stats,
+        "cuda_errors": _cuda_error_count,
+    }
+
+
+@app.post("/gpu/reset-cuda")
+async def reset_cuda():
+    """P#200: Force CUDA context recovery. Call this after 'unknown error' spam."""
+    if not GPU_AVAILABLE:
+        raise HTTPException(status_code=503, detail="GPU not available")
+    recovered = _recover_cuda_context("manual reset via /gpu/reset-cuda")
+    return {
+        "status": "recovered" if recovered else "dead",
+        "cuda_errors_total": _cuda_error_count,
+        "action": "Service restart recommended" if not recovered else "CUDA context flushed",
     }
 
 
@@ -281,6 +346,8 @@ async def gpu_qmc(body: dict):
     except Exception as e:
         stats["errors"] += 1
         logger.error(f"QMC error: {e}")
+        if 'CUDA' in str(e):
+            _recover_cuda_context(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -393,6 +460,8 @@ async def gpu_qaoa(body: dict):
     except Exception as e:
         stats["errors"] += 1
         logger.error(f"QAOA error: {e}")
+        if 'CUDA' in str(e):
+            _recover_cuda_context(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -488,6 +557,8 @@ async def gpu_vqc(body: dict):
     except Exception as e:
         stats["errors"] += 1
         logger.error(f"VQC error: {e}")
+        if 'CUDA' in str(e):
+            _recover_cuda_context(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -764,6 +835,8 @@ async def gpu_xgboost_train(body: dict):
         stats["errors"] += 1
         logger.error(f"XGB-TRAIN error: {e}")
         traceback.print_exc()
+        if 'CUDA' in str(e):
+            _recover_cuda_context(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -828,6 +901,8 @@ async def gpu_xgboost_predict(body: dict):
     except Exception as e:
         stats["errors"] += 1
         logger.error(f"XGB-PREDICT error: {e}")
+        if 'CUDA' in str(e):
+            _recover_cuda_context(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1009,6 +1084,8 @@ async def gpu_mlp_train(body: dict):
         stats["errors"] += 1
         logger.error(f"MLP-TRAIN error: {e}")
         traceback.print_exc()
+        if 'CUDA' in str(e):
+            _recover_cuda_context(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1069,6 +1146,8 @@ async def gpu_mlp_predict(body: dict):
     except Exception as e:
         stats["errors"] += 1
         logger.error(f"MLP-PREDICT error: {e}")
+        if 'CUDA' in str(e):
+            _recover_cuda_context(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
