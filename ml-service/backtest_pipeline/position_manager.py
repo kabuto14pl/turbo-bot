@@ -278,6 +278,12 @@ class PositionManager:
         """5-Phase Chandelier trailing SL — PATCH #63: parameterized + regime-adaptive."""
         sl_dist = pos['initial_sl_distance']
         
+        # P#202d: Grid V2 trades use tighter phase thresholds (mean-reversion = smaller moves)
+        _is_grid = 'GridV2' in pos.get('strategies', [])
+        _phase3_r = getattr(config, 'GRID_V2_PHASE_3_LOCK_R', config.PHASE_3_LOCK_R) if _is_grid else config.PHASE_3_LOCK_R
+        _phase4_r = getattr(config, 'GRID_V2_PHASE_4_LOCK_R', config.PHASE_4_LOCK_R) if _is_grid else config.PHASE_4_LOCK_R
+        _phase5_r = getattr(config, 'GRID_V2_PHASE_5_CHANDELIER_R', config.PHASE_5_CHANDELIER_R) if _is_grid else config.PHASE_5_CHANDELIER_R
+        
         # PATCH #63: Regime-adaptive trail multiplier
         trail_regime_mult = getattr(config, 'TRAIL_REGIME_MULT', {}).get(regime, 1.0)
         
@@ -304,14 +310,14 @@ class PositionManager:
                     pos['phase'] = 2
                     
             # Phase 3: >= PHASE_3_LOCK_R — lock profit with trail
-            if max_r >= config.PHASE_3_LOCK_R:
+            if max_r >= _phase3_r:
                 lock_sl = pos['highest_price'] - phase3_trail * atr
                 if lock_sl > pos['sl']:
                     pos['sl'] = lock_sl
                     pos['phase'] = 3
                     
             # Phase 4: >= PHASE_4_LOCK_R — tighter trail
-            if max_r >= config.PHASE_4_LOCK_R:
+            if max_r >= _phase4_r:
                 lock_sl = pos['highest_price'] - phase4_trail * atr
                 if lock_sl > pos['sl']:
                     pos['sl'] = lock_sl
@@ -319,7 +325,7 @@ class PositionManager:
                     pos['phase'] = 4
                     
             # Phase 5: >= PHASE_5_CHANDELIER_R — Chandelier stop
-            if max_r >= config.PHASE_5_CHANDELIER_R:
+            if max_r >= _phase5_r:
                 chandelier = pos['highest_price'] - phase5_trail * atr
                 if chandelier > pos['sl']:
                     pos['sl'] = chandelier
@@ -339,20 +345,20 @@ class PositionManager:
                     pos['breakeven_hit'] = True
                     pos['phase'] = 2
                     
-            if max_r >= config.PHASE_3_LOCK_R:
+            if max_r >= _phase3_r:
                 lock_sl = pos['lowest_price'] + phase3_trail * atr
                 if lock_sl < pos['sl']:
                     pos['sl'] = lock_sl
                     pos['phase'] = 3
                     
-            if max_r >= config.PHASE_4_LOCK_R:
+            if max_r >= _phase4_r:
                 lock_sl = pos['lowest_price'] + phase4_trail * atr
                 if lock_sl < pos['sl']:
                     pos['sl'] = lock_sl
                     pos['trailing_active'] = True
                     pos['phase'] = 4
                     
-            if max_r >= config.PHASE_5_CHANDELIER_R:
+            if max_r >= _phase5_r:
                 chandelier = pos['lowest_price'] + phase5_trail * atr
                 if chandelier < pos['sl']:
                     pos['sl'] = chandelier

@@ -120,6 +120,9 @@ PAIR_OVERRIDES = {
         'BNB_LONG_REQUIRE_MTF_UPTREND': True,
         'BNB_LONG_BLOCK_IN_TRENDING_DOWN': False,
         
+        # P#202b: Disable MomentumHTF on BNB — 3 trades, PF=0.18, lost $35 on 1h
+        'MOMENTUM_HTF_ENABLED': False,
+        
         # P#70: Lower confidence floor for BNB SHORTs
         'CONFIDENCE_FLOOR': 0.15,       # P#200: Was 0.24 — blocked 108/118 signals on 1h
         

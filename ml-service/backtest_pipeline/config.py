@@ -55,6 +55,13 @@ PHASE_2_BE_R = 1.0             # Phase 2 BE at 1.0R
 PHASE_3_LOCK_R = 1.5           # Phase 3 lock at 1.5R
 PHASE_4_LOCK_R = 2.0           # Phase 4 lock at 2.0R
 PHASE_5_CHANDELIER_R = 2.0     # P#194: 2.5→2.0 — lock profit earlier (trail was giving back >1R)
+
+# P#202d: Grid V2 trades use tighter trail phases — grid is mean-reversion,
+#   moves are smaller (1-1.5R), so standard 2.0R trail never activates → 65% BE exits.
+#   Grid trades get earlier trail to capture more TRAIL wins instead of BE.
+GRID_V2_PHASE_3_LOCK_R = 0.8          # Grid: lock at 0.8R (vs 1.5R directional)
+GRID_V2_PHASE_4_LOCK_R = 1.2          # Grid: trail at 1.2R (vs 2.0R directional)
+GRID_V2_PHASE_5_CHANDELIER_R = 1.2    # Grid: chandelier at 1.2R (vs 2.0R)
 TRAILING_DISTANCE_ATR = 1.0    # P#194: 2.0→1.0 — trail MUST be tighter than SL (1.5 ATR). Was 2.0 = wider than SL = destroyed edge
 PHASE3_TRAIL_ATR = 1.0         # Phase 3: lock highest - 1.0 ATR
 PHASE4_TRAIL_ATR = 0.75        # Phase 4: lock highest - 0.75 ATR

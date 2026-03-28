@@ -121,14 +121,17 @@ class QuantumPipelineSimulator:
         
         # Ranging regime with low confidence
         # PATCH #65: Allow RANGING entries when micro-scalp is enabled
+        # P#202a: RANGING sub-floor respects pair CONFIDENCE_FLOOR (was hardcoded 0.25)
+        #   BNB has pair floor=0.15 but this check blocked 133 signals at 0.25
+        _ranging_sub_floor = max(_qdv_floor, 0.12)  # At least 0.12 to avoid noise
         if regime == 'RANGING' and confidence < 0.40:
             ranging_enabled = getattr(config, 'RANGING_TRADE_ENABLED', False)
             if not ranging_enabled:
                 self.rejected_count += 1
                 self.starvation_counter += 1
                 return {'verified': False, 'reason': 'Ranging regime with low confidence'}
-            elif confidence < 0.25:
-                # Even with micro-scalp, very low confidence is blocked
+            elif confidence < _ranging_sub_floor:
+                # Even with micro-scalp, below pair floor is blocked
                 self.rejected_count += 1
                 self.starvation_counter += 1
                 return {'verified': False, 'reason': 'Ranging micro-scalp: confidence too low'}

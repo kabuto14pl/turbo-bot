@@ -233,9 +233,14 @@ class FullPipelineEngine:
         # P#194: Store timeframe for gate bypass logic
         self._timeframe = timeframe
         self._is_higher_tf = timeframe in ('1h', '4h')
-        self._directional_disabled = (
-            timeframe == '15m' and not getattr(config, 'DIRECTIONAL_15M_ENABLED', True)
-        ) or (
+        # P#202c: Per-pair DIRECTIONAL_15M override — pair_config can set
+        #   DIRECTIONAL_15M_ENABLED=True to override the global kill switch
+        _global_15m_kill = not getattr(config, 'DIRECTIONAL_15M_ENABLED', True)
+        _pair_15m_override = getattr(config, '_PAIR_DIRECTIONAL_15M_ENABLED', None)
+        _15m_disabled = timeframe == '15m' and (
+            _pair_15m_override if _pair_15m_override is not None else _global_15m_kill
+        )
+        self._directional_disabled = _15m_disabled or (
             # P#198: Per-pair directional gate (e.g. ETH loses money on directional)
             not getattr(config, 'DIRECTIONAL_ENABLED', True)
         )
