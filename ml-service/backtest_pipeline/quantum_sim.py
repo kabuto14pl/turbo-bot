@@ -99,10 +99,13 @@ class QuantumPipelineSimulator:
             dict: {verified: bool, reason: str}
         """
         # Confidence floor
-        if confidence < config.QDV_MIN_CONFIDENCE:
+        # P#201c: Use min(QDV_MIN_CONFIDENCE, pair CONFIDENCE_FLOOR) so pair-level
+        # overrides (e.g. BNB 0.15) aren't blocked by the global QDV threshold (0.25)
+        _qdv_floor = min(config.QDV_MIN_CONFIDENCE, getattr(config, 'CONFIDENCE_FLOOR', config.QDV_MIN_CONFIDENCE))
+        if confidence < _qdv_floor:
             self.rejected_count += 1
             self.starvation_counter += 1
-            return {'verified': False, 'reason': f'Confidence {confidence:.2f} < {config.QDV_MIN_CONFIDENCE}'}
+            return {'verified': False, 'reason': f'Confidence {confidence:.2f} < {_qdv_floor}'}
         
         # Starvation fallback — force trade after too many idle cycles
         if self.starvation_counter >= config.QDV_STARVATION_CYCLES:

@@ -1,0 +1,18 @@
+{
+  "saved_at": "2026-03-28T10:32:31.129067",
+  "version": "200e",
+  "defense_mode": false,
+  "defense_mode_start": 0,
+  "consecutive_losses": 0,
+  "loss_streak_max": 0,
+  "win_count": 0,
+  "loss_count": 0,
+  "recent_pnls": [],
+  "risk_multiplier": 1.0,
+  "confidence_threshold": 0.35,
+  "aggression_level": 1.0,
+  "evolution_count": 0,
+  "total_decisions": 0,
+  "override_count": 0,
+  "hold_count": 0
+}

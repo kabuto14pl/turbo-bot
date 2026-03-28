@@ -67,6 +67,7 @@ PAIR_OVERRIDES = {
         
         # P#175: Grid V2 (replaces funding_rate — SOL APR=0.8% doesn't cover costs)
         'GRID_V2_ENABLED': True,
+        'GRID_V2_ALLOWED_TIMEFRAMES': ['1h', '4h'],  # P#201d: SOL 15m grid lost -$69.40 (PF=0.645). Keep 1h+4h (profitable)
         'GRID_V2_ADX_THRESHOLD': 22,   # SOL: slightly higher ADX threshold (volatile)
         'GRID_V2_BB_LOWER_ENTRY': 0.15,  # P#200c: Relaxed from 0.08 — capture more mean-reversion
         'GRID_V2_BB_UPPER_ENTRY': 0.85,  # P#200c: Relaxed from 0.92 — more SELL entries
@@ -139,6 +140,7 @@ PAIR_OVERRIDES = {
         
         # P#71: Grid V2
         'GRID_V2_ENABLED': True,
+        'GRID_V2_ALLOWED_TIMEFRAMES': ['15m'],  # P#201b: BNB grid only on 15m (1h=-$146, 4h=-$321 trading)
         'GRID_V2_ADX_THRESHOLD': 18,
         'GRID_V2_BB_LOWER_ENTRY': 0.12,   # P#200c: Relaxed from 0.07 — more entries
         'GRID_V2_BB_UPPER_ENTRY': 0.88,   # P#200c: Relaxed from 0.93
@@ -165,7 +167,7 @@ PAIR_OVERRIDES = {
     'ETHUSDT': {
         'CONFIDENCE_FLOOR': 0.34,
         'RISK_PER_TRADE': 0.006,
-        'GRID_V2_ENABLED': True,
+        'GRID_V2_ENABLED': False,       # P#201a: ETH Grid V2 lost -$83.80 across ALL TFs (PF 0.409-0.702). Funding-only.
         'FUNDING_ARB_ENABLED': True,
         'FUNDING_MIN_RATE': 0.00005,
         'FUNDING_CAPITAL_PCT': 0.40,    # P#200a: Pure funding formalized → 40% (was 25%)

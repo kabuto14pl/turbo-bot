@@ -511,8 +511,10 @@ class FullPipelineEngine:
             # P#200: GRID V2 — fires BEFORE directional check
             # Grid V2 is independent mean-reversion, NOT ensemble directional.
             # Must run even when directional is disabled (ETH, 15m).
+            # P#201b: Per-pair TF control via GRID_V2_ALLOWED_TIMEFRAMES
             # ============================================================
-            if self.pm.position is None and getattr(config, 'GRID_V2_ENABLED', False):
+            _grid_tf_allowed = self._timeframe in getattr(config, 'GRID_V2_ALLOWED_TIMEFRAMES', ['15m', '1h', '4h'])
+            if self.pm.position is None and getattr(config, 'GRID_V2_ENABLED', False) and _grid_tf_allowed:
                 grid_signal = self.grid_v2.evaluate(
                     row, history, current_regime, candle_idx=i,
                     has_position=(self.pm.position is not None)
