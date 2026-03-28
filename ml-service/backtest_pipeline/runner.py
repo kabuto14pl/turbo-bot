@@ -449,6 +449,45 @@ def print_results(results, verbose=True):
                                    key=lambda x: -x[1])[:8]:
             print(f"    {count:>5}× {reason}")
 
+    # P#201: Winning trades detail
+    trades_list = results.get('trades_list', [])
+    winning_trades = [t for t in trades_list if t['net_pnl'] > 0]
+    losing_trades = [t for t in trades_list if t['net_pnl'] <= 0]
+
+    if winning_trades:
+        print(f"\n  {'═'*100}")
+        print(f"  💰 WINNING TRADES DETAIL ({len(winning_trades)} trades)")
+        print(f"  {'═'*100}")
+        print(f"  {'#':>3} {'Side':<5} {'Entry Time':<20} {'Entry$':>10} {'Exit Time':<20} "
+              f"{'Exit$':>10} {'Reason':<14} {'Net PnL':>10} {'Ret%':>8}")
+        print(f"  {'─'*100}")
+        for t in sorted(winning_trades, key=lambda x: -x['net_pnl']):
+            print(f"  {t['id']:>3} {t['side']:<5} {t['entry_time'][:19]:<20} "
+                  f"${t['entry_price']:>9.2f} {t['exit_time'][:19]:<20} "
+                  f"${t['exit_price']:>9.2f} {t['reason']:<14} "
+                  f"${t['net_pnl']:>+9.2f} {t['return_pct']:>+7.3f}%")
+        total_win_pnl = sum(t['net_pnl'] for t in winning_trades)
+        print(f"  {'─'*100}")
+        print(f"  {'':>3} {'':5} {'':20} {'':>10} {'':20} {'':>10} "
+              f"{'TOTAL':>14} ${total_win_pnl:>+9.2f}")
+
+    if losing_trades:
+        print(f"\n  {'═'*100}")
+        print(f"  💀 LOSING TRADES DETAIL ({len(losing_trades)} trades)")
+        print(f"  {'═'*100}")
+        print(f"  {'#':>3} {'Side':<5} {'Entry Time':<20} {'Entry$':>10} {'Exit Time':<20} "
+              f"{'Exit$':>10} {'Reason':<14} {'Net PnL':>10} {'Ret%':>8}")
+        print(f"  {'─'*100}")
+        for t in sorted(losing_trades, key=lambda x: x['net_pnl']):
+            print(f"  {t['id']:>3} {t['side']:<5} {t['entry_time'][:19]:<20} "
+                  f"${t['entry_price']:>9.2f} {t['exit_time'][:19]:<20} "
+                  f"${t['exit_price']:>9.2f} {t['reason']:<14} "
+                  f"${t['net_pnl']:>+9.2f} {t['return_pct']:>+7.3f}%")
+        total_loss_pnl = sum(t['net_pnl'] for t in losing_trades)
+        print(f"  {'─'*100}")
+        print(f"  {'':>3} {'':5} {'':20} {'':>10} {'':20} {'':>10} "
+              f"{'TOTAL':>14} ${total_loss_pnl:>+9.2f}")
+
 
 def print_trades_table(results):
     """Print full trade-by-trade analysis table."""
@@ -680,6 +719,35 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
         if n_events > 0 or results.get('news_blocked', 0) > 0:
             print(f"  📰 News Filter: {results.get('news_blocked',0)} blocked | "
                   f"{n_events} events | {news_stats.get('events_by_type',{})}")
+
+        # P#201: Per-pair winning/losing trade details
+        trades_list = results.get('trades_list', [])
+        pair_winners = [t for t in trades_list if t['net_pnl'] > 0]
+        pair_losers = [t for t in trades_list if t['net_pnl'] <= 0]
+        if pair_winners:
+            print(f"\n  💰 WINNING TRADES ({len(pair_winners)}):")
+            print(f"  {'#':>3} {'Side':<5} {'Entry Time':<20} {'Entry$':>10} {'Exit Time':<20} "
+                  f"{'Exit$':>10} {'Reason':<14} {'Net PnL':>10}")
+            print(f"  {'─'*96}")
+            for t in sorted(pair_winners, key=lambda x: -x['net_pnl']):
+                print(f"  {t['id']:>3} {t['side']:<5} {t['entry_time'][:19]:<20} "
+                      f"${t['entry_price']:>9.2f} {t['exit_time'][:19]:<20} "
+                      f"${t['exit_price']:>9.2f} {t['reason']:<14} "
+                      f"${t['net_pnl']:>+9.2f}")
+            print(f"  {'─'*96}")
+            print(f"  {'TOTAL':>67} ${sum(t['net_pnl'] for t in pair_winners):>+9.2f}")
+        if pair_losers:
+            print(f"\n  💀 LOSING TRADES ({len(pair_losers)}):")
+            print(f"  {'#':>3} {'Side':<5} {'Entry Time':<20} {'Entry$':>10} {'Exit Time':<20} "
+                  f"{'Exit$':>10} {'Reason':<14} {'Net PnL':>10}")
+            print(f"  {'─'*96}")
+            for t in sorted(pair_losers, key=lambda x: x['net_pnl']):
+                print(f"  {t['id']:>3} {t['side']:<5} {t['entry_time'][:19]:<20} "
+                      f"${t['entry_price']:>9.2f} {t['exit_time'][:19]:<20} "
+                      f"${t['exit_price']:>9.2f} {t['reason']:<14} "
+                      f"${t['net_pnl']:>+9.2f}")
+            print(f"  {'─'*96}")
+            print(f"  {'TOTAL':>67} ${sum(t['net_pnl'] for t in pair_losers):>+9.2f}")
     
     # Aggregate summary
     if len(all_results) > 1:
