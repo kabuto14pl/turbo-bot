@@ -407,14 +407,7 @@ class FullPipelineEngine:
                 elif not self._ml_veto_only and (xgb_has_edge or ml_signal.get('source') != 'XGBoost'):
                     signals = self.xgb_ml.apply_ml_veto(signals, ml_signal)
             
-            # 4d. PATCH #58: XGBoost sliding window retrain
-            # P#193: Skip retraining in strategy-only mode
-            if not self._strategy_only:
-                self.xgb_ml.maybe_retrain(df, i)
-            
-            # P#176: MLP GPU retrain
-            if self._mlp_initialized and not self._strategy_only:
-                self.mlp_gpu.maybe_retrain(df, i)
+            # 4d. (moved to pre-grid section — P#200 FIX #4)
             
             # ============================================================
             # PHASE 14: SENTIMENT ANALYSIS (PATCH #58)
@@ -503,6 +496,16 @@ class FullPipelineEngine:
             # ============================================================
             if getattr(config, 'NEWS_FILTER_ENABLED', False):
                 self.news_filter.detect_events(row, history, i)
+            
+            # ============================================================
+            # P#200 FIX #4: XGBoost/MLP retrain — INDEPENDENT of directional
+            # Training learns from price data, not from signals.
+            # Must run on every candle, even for funding-only pairs.
+            # ============================================================
+            if not self._strategy_only:
+                self.xgb_ml.maybe_retrain(df, i)
+                if self._mlp_initialized:
+                    self.mlp_gpu.maybe_retrain(df, i)
             
             # ============================================================
             # P#200: GRID V2 — fires BEFORE directional check
