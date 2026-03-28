@@ -774,8 +774,8 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
         print(f"  📊 MULTI-PAIR SUMMARY {'(P#72 Adaptive+Funding+Grid)' if use_pair_config else ''}")
         print(f"{'═'*90}")
         print(f"  {'Symbol':<10} {'QB':>4} {'Rmt':>7} {'QChk':>8} {'Capital':>8} {'Trades':>7} {'WR':>7} {'PF':>7} {'Return':>9} "
-              f"{'MaxDD':>7} {'NetPnL':>10}")
-        print(f"  {'─'*104}")
+              f"{'MaxDD':>7} {'TradePnL':>10} {'FundPnL':>10} {'TOTAL':>10}")
+        print(f"  {'─'*118}")
         
         total_trades = 0
         total_pnl = 0
@@ -783,6 +783,7 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
         total_gv2 = 0
         total_news_blocked = 0
         total_capital = 0
+        total_trade_pnl = 0
         
         for symbol, r in all_results.items():
             if r.get('error'):
@@ -794,6 +795,7 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
             combined_pnl = pnl + fr_pnl  # P#72: Total PnL = directional + funding
             total_pnl += combined_pnl
             total_funding += fr_pnl
+            total_trade_pnl += pnl
             gv2 = r.get('grid_v2_trades', 0)
             total_gv2 += gv2
             nb = r.get('news_blocked', 0)
@@ -813,13 +815,13 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
                 q_check = '-'
             print(f"  {emoji} {symbol:<8} {q_backend:>4} {remote_status:>7} {q_check:>8} ${cap:>6,.0f} {t:>7} {r.get('win_rate',0):>6.1f}% "
                   f"{r.get('profit_factor',0):>7.3f} {combined_return:>+8.2f}% "
-                  f"{r.get('max_drawdown',0):>6.1f}% ${combined_pnl:>+9.2f}")
+                  f"{r.get('max_drawdown',0):>6.1f}% ${pnl:>+9.2f} ${fr_pnl:>+9.2f} ${combined_pnl:>+9.2f}")
         
-        print(f"  {'─'*104}")
+        print(f"  {'─'*118}")
         emoji_t = '✅' if total_pnl > 0 else '❌'
         portfolio_return = (total_pnl / total_capital * 100) if total_capital > 0 else 0
         print(f"  {emoji_t} {'TOTAL':<8} {'':>4} {'':>7} {'':>8} ${total_capital:>6,.0f} {total_trades:>7} {'':>7} {'':>7} "
-              f"{portfolio_return:>+8.2f}% {'':>7} ${total_pnl:>+9.2f}")
+              f"{portfolio_return:>+8.2f}% {'':>7} ${total_trade_pnl:>+9.2f} ${total_funding:>+9.2f} ${total_pnl:>+9.2f}")
         
         # P#200g: Show rebalancer recommendation
         _new_alloc = _rebalancer.maybe_rebalance(candle_idx=1)
