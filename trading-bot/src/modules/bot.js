@@ -61,10 +61,15 @@ const { DataPipeline } = require('./data-pipeline');
 const { StrategyRunner } = require('./strategy-runner');
 const { EnsembleVoting } = require('./ensemble-voting');
 const { ExecutionEngine } = require('./execution-engine');
+const { bootstrapOpenLIT } = require('../core/observability/openlit_bootstrap');
 const { MLIntegration } = require('./ml-integration');
 const { StatePersistence } = require('./state-persistence');
 const { MonitoringBridge } = require('./monitoring-bridge');
 const { Server } = require('./server');
+// P#212: Wire independent strategies (were dead code — never imported)
+const { GridV2Strategy } = require('../strategies/grid-v2');
+const { FundingRateArbitrage } = require('../strategies/funding-rate-arb');
+const { MomentumHTFLTF } = require('../strategies/momentum-htf-ltf');
 
 class AutonomousTradingBot {
     constructor() {
@@ -116,6 +121,11 @@ class AutonomousTradingBot {
         this.quantumPosMgr = null;
         // PATCH #20: Position sync mutex — prevent concurrent PM/APM/QPM modifications
         this._positionMutex = Promise.resolve();
+        // P#212: Independent strategies (bypass ensemble)
+        this.gridStrategies = new Map();    // symbol → GridV2Strategy
+        this.fundingStrategies = new Map(); // symbol → FundingRateArbitrage
+        this.momentumStrategy = null;       // MomentumHTFLTF for BTC
+        this._pairCandleCache = new Map();  // symbol → { data, time }
     }
 
     /**
@@ -134,6 +144,11 @@ class AutonomousTradingBot {
     async initialize() {
         console.log('[' + this.config.instanceId + '] Initializing MODULAR ENTERPRISE Trading Bot');
         console.log('Config:', JSON.stringify({ symbol: this.config.symbol, capital: this.config.initialCapital, instance: this.config.instanceId }, null, 2));
+
+        bootstrapOpenLIT({
+            applicationName: 'turbo-bot-runtime',
+            environment: process.env.OTEL_DEPLOYMENT_ENVIRONMENT || process.env.NODE_ENV || 'development',
+        });
 
         // HTTP + WS Server
         await this.server.start();
@@ -233,6 +248,64 @@ class AutonomousTradingBot {
             this.strategies.initialize({ SuperTrendStrategy, MACrossoverStrategy, MomentumProStrategy, Logger });
             this.mon.setComponent('strategies', true);
         } catch (e) { console.error('[ERR] Strategy init:', e.message); }
+
+        // ═══════════════════════════════════════════════════════════════
+        // P#212: Initialize independent strategies (Grid V2 + Funding Rate)
+        // These BYPASS ensemble voting — operate on their own with per-pair config.
+        // Backtest P#211 proved: SOL 1h grid = ONLY alpha, BNB 15m grid = marginal.
+        // ═══════════════════════════════════════════════════════════════
+        try {
+            // Grid V2 — BNB (15m, ranging mean-reversion)
+            this.gridStrategies.set('BNBUSDT', new GridV2Strategy('BNBUSDT', {
+                adxThreshold: 18,
+                bbLowerEntry: 0.12,
+                bbUpperEntry: 0.88,
+                rsiOversold: 36,
+                rsiOverbought: 64,
+                slAtr: 0.65,
+                tpAtr: 1.50,       // P#211b: widened from 1.20 for fee economics
+                cooldownMs: 8 * 3600000,  // 8 candles × 15m = 2h equiv (traded on 30s cycles)
+                maxTradesDay: 6,
+                riskPerTrade: 0.005,
+            }));
+            // Grid V2 — SOL (1h, primary alpha)
+            this.gridStrategies.set('SOLUSDT', new GridV2Strategy('SOLUSDT', {
+                adxThreshold: 22,
+                bbLowerEntry: 0.15,
+                bbUpperEntry: 0.85,
+                rsiOversold: 35,
+                rsiOverbought: 65,
+                slAtr: 0.80,
+                tpAtr: 1.40,
+                cooldownMs: 5 * 3600000,  // P#211d: reduced cooldown
+                maxTradesDay: 8,
+                riskPerTrade: 0.012,      // P#211d: boosted risk (primary alpha slot)
+            }));
+            console.log('[OK] Grid V2: BNB (15m-ranging) + SOL (1h-alpha) | BYPASS ensemble');
+
+            // Funding Rate Arbitrage — BTC, ETH, BNB, SOL, XRP
+            const fundingPairs = {
+                'BTCUSDT': { minRate: 0.00005, capitalPct: 0.50 },
+                'ETHUSDT': { minRate: 0.00005, capitalPct: 0.30 },
+                'BNBUSDT': { minRate: 0.00008, capitalPct: 0.20 },
+                'SOLUSDT': { minRate: 0.00005, capitalPct: 0.20 },
+                'XRPUSDT': { minRate: 0.00005, capitalPct: 0.50 },
+            };
+            for (const [sym, opts] of Object.entries(fundingPairs)) {
+                this.fundingStrategies.set(sym, new FundingRateArbitrage(sym, opts));
+            }
+            console.log('[OK] Funding Rate Arb: ' + this.fundingStrategies.size + ' pairs | INDEPENDENT');
+
+            // Momentum HTF/LTF — BTC only (uses main data pipeline directly)
+            this.momentumStrategy = new MomentumHTFLTF('BTCUSDT', {
+                adxMin: 20,
+                slAtr: 2.0,
+                tpAtr: 5.0,
+                cooldownMs: 6 * 3600000,
+                maxTradesDay: 3,
+            });
+            console.log('[OK] Momentum HTF/LTF: BTCUSDT | HTF trend + LTF pullback | Min RR 2.5');
+        } catch (e) { console.error('[ERR] P#212 strategy init:', e.message); }
 
         // PATCH #15: Adaptive Neural AI (TensorFlow.js)
         try {
@@ -522,6 +595,207 @@ class AutonomousTradingBot {
                 }
                 if (sigSummary.length > 0) {
                     this.megatron.logActivity('SIGNAL', 'Sygnaly strategii', sigSummary.join(', ') || 'All HOLD');
+                }
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // P#212: INDEPENDENT STRATEGIES — Grid V2 + Funding Rate Arb
+            // These BYPASS ensemble voting. Evaluated every cycle.
+            // Grid V2: fires when RANGING (ADX < threshold + BB + RSI)
+            // Funding: fires on 8h settlement intervals
+            // ═══════════════════════════════════════════════════════════════
+            if (history.length > 30) {
+                const ind = require('./indicators');
+                const regime = (this.neuralAI && this.neuralAI.currentRegime) || 'UNKNOWN';
+
+                // Helper: calculate full indicators from candle array
+                const _calcIndicators = (candles) => {
+                    const closes = candles.map(c => c.close);
+                    const price = closes[closes.length - 1];
+                    const rsi = ind.calculateRSI(closes.slice(-15), 14);
+                    const candleData = candles.slice(-20).map(c => ({
+                        symbol: 'X', timestamp: Date.now(),
+                        open: c.open || c.close, high: c.high || c.close,
+                        low: c.low || c.close, close: c.close, volume: c.volume || 0,
+                    }));
+                    const atr = ind.calculateATR(candleData, 14);
+                    const adx = ind.calculateRealADX(candleData, 14);
+                    const bb = ind.calculateBollingerBands(closes.slice(-20), 20);
+                    const bbPctb = (bb.upper - bb.lower) > 0 ? (price - bb.lower) / (bb.upper - bb.lower) : 0.5;
+                    const volumes = candles.map(c => c.volume || 0);
+                    const avgVol = volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
+                    const volRatio = avgVol > 0 ? (volumes[volumes.length - 1] || 0) / avgVol : 1.0;
+                    const sma20 = ind.calculateSMA(closes, 20);
+                    const sma50 = ind.calculateSMA(closes, 50);
+                    const sma200 = candles.length >= 200 ? ind.calculateSMA(closes, 200) : sma50;
+                    const macd = ind.calculateMACD(closes);
+                    return { rsi, adx, atr, bb_pctb: bbPctb, bb_upper: bb.upper, bb_lower: bb.lower,
+                        volume_ratio: volRatio, sma20, sma50, sma200, macd_histogram: macd.histogram };
+                };
+
+                // Helper: fetch per-pair candles (OKX → cache → fallback to main history)
+                const _getPairData = async (sym) => {
+                    // If this IS the main symbol, use existing history
+                    if (sym === this.config.symbol) {
+                        return { candles: history, price: history[history.length - 1].close };
+                    }
+                    // Try OKX per-pair fetch with 5-min cache
+                    if (this.dp.okxClient) {
+                        try {
+                            const cache = this._pairCandleCache.get(sym);
+                            const cacheAge = cache ? Date.now() - cache.time : Infinity;
+                            if (cache && cacheAge < 5 * 60000) {
+                                // Update last candle with live price
+                                let livePrice = cache.data[cache.data.length - 1].close;
+                                try {
+                                    const ticker = await this.dp.okxClient.getTicker(sym);
+                                    if (ticker && ticker.last) livePrice = parseFloat(ticker.last);
+                                } catch (_) { /* use cached close */ }
+                                return { candles: cache.data, price: livePrice };
+                            }
+                            const rawCandles = await this.dp.okxClient.getCandles(sym, '1H', 100);
+                            const pairCandles = rawCandles.map(c => ({
+                                symbol: sym, timestamp: c.timestamp,
+                                open: c.open, high: c.high, low: c.low,
+                                close: c.close, volume: c.volume,
+                            }));
+                            this._pairCandleCache.set(sym, { data: pairCandles, time: Date.now() });
+                            let livePrice = pairCandles[pairCandles.length - 1].close;
+                            try {
+                                const ticker = await this.dp.okxClient.getTicker(sym);
+                                if (ticker && ticker.last) livePrice = parseFloat(ticker.last);
+                            } catch (_) { /* use candle close */ }
+                            return { candles: pairCandles, price: livePrice };
+                        } catch (err) {
+                            console.warn('[P#212b] ' + sym + ' OKX fetch failed:', err.message);
+                        }
+                    }
+                    // Fallback: use main history (wrong symbol but better than nothing in mock mode)
+                    return { candles: history, price: history[history.length - 1].close };
+                };
+
+                // --- Grid V2: Evaluate for each configured pair with PER-PAIR data ---
+                for (const [sym, grid] of this.gridStrategies) {
+                    try {
+                        const { candles: pairCandles, price: pairPrice } = await _getPairData(sym);
+                        if (!pairCandles || pairCandles.length < 30) continue;
+
+                        const pairInd = _calcIndicators(pairCandles);
+                        const hasPos = this.pm.hasPosition(sym);
+                        const gridSignal = grid.evaluate({
+                            currentPrice: pairPrice,
+                            indicators: pairInd,
+                            regime,
+                            hasPosition: hasPos,
+                        });
+
+                        if (gridSignal && gridSignal.action !== 'HOLD') {
+                            const tradeSignal = {
+                                action: gridSignal.action,
+                                symbol: sym,
+                                confidence: gridSignal.confidence,
+                                price: pairPrice,
+                                strategy: 'GridV2_' + sym,
+                                reasoning: gridSignal.reason,
+                                timestamp: Date.now(),
+                                isGrid: true,
+                            };
+
+                            console.log('[GRID V2] ' + sym + ' ' + gridSignal.action +
+                                ' | Price: $' + pairPrice.toFixed(2) +
+                                ' | Conf: ' + (gridSignal.confidence * 100).toFixed(1) + '%' +
+                                ' | SL: $' + gridSignal.sl.toFixed(2) + ' TP: $' + gridSignal.tp.toFixed(2) +
+                                ' | ' + gridSignal.reason);
+
+                            await this.exec.executeTradeSignal(tradeSignal, this.dp);
+
+                            if (this.megatron) {
+                                this.megatron.logActivity('TRADE', 'Grid V2: ' + sym + ' ' + gridSignal.action,
+                                    'Price: $' + pairPrice.toFixed(2) + ' | Conf: ' + (gridSignal.confidence * 100).toFixed(1) + '% | ' + gridSignal.reason,
+                                    { sl: gridSignal.sl, tp: gridSignal.tp }, 'high');
+                            }
+                        }
+                    } catch (gridErr) {
+                        console.warn('[GRID V2] ' + sym + ' error:', gridErr.message);
+                    }
+                }
+
+                // --- Funding Rate Arb: Evaluate for each configured pair ---
+                for (const [sym, funding] of this.fundingStrategies) {
+                    try {
+                        const { price: fundPrice } = await _getPairData(sym);
+                        const pairCapital = this.config.initialCapital * ({
+                            'BTCUSDT': 0.08, 'ETHUSDT': 0.12, 'SOLUSDT': 0.30,
+                            'BNBUSDT': 0.35, 'XRPUSDT': 0.15,
+                        }[sym] || 0.10);
+
+                        const fundResult = funding.processCycle({
+                            currentPrice: fundPrice,
+                            pairCapital,
+                            indicators: null,
+                            regime,
+                            candleCount: this._cycleCount,
+                        });
+
+                        if (fundResult.fundingCollected > 0) {
+                            console.log('[FUNDING] ' + sym + ' collected $' + fundResult.fundingCollected.toFixed(4) +
+                                ' | Total: $' + funding.totalFundingCollected.toFixed(4) +
+                                ' | ' + fundResult.reason);
+                        }
+                        if (fundResult.action === 'OPEN' || fundResult.action === 'CLOSE') {
+                            console.log('[FUNDING] ' + sym + ' ' + fundResult.action + ' | ' + fundResult.reason);
+                            if (this.megatron) {
+                                this.megatron.logActivity('FUNDING', sym + ' ' + fundResult.action,
+                                    fundResult.reason, funding.getStats());
+                            }
+                        }
+                    } catch (fundErr) {
+                        console.warn('[FUNDING] ' + sym + ' error:', fundErr.message);
+                    }
+                }
+
+                // --- Momentum HTF/LTF: BTC only (uses main history) ---
+                if (this.momentumStrategy && history.length >= 200) {
+                    try {
+                        const btcPrice = history[history.length - 1].close;
+                        const btcInd = _calcIndicators(history);
+                        const hasPos = this.pm.hasPosition('BTCUSDT');
+                        const momSignal = this.momentumStrategy.evaluate({
+                            currentPrice: btcPrice,
+                            indicators: btcInd,
+                            regime,
+                            hasPosition: hasPos,
+                            history,
+                        });
+
+                        if (momSignal && momSignal.action !== 'HOLD' && momSignal.action) {
+                            const tradeSignal = {
+                                action: momSignal.action,
+                                symbol: 'BTCUSDT',
+                                confidence: momSignal.confidence,
+                                price: btcPrice,
+                                strategy: 'MomentumHTFLTF',
+                                reasoning: momSignal.reason,
+                                timestamp: Date.now(),
+                                isGrid: false,
+                            };
+
+                            console.log('[MOMENTUM] BTCUSDT ' + momSignal.action +
+                                ' | Conf: ' + (momSignal.confidence * 100).toFixed(1) + '%' +
+                                ' | SL: $' + momSignal.sl.toFixed(2) + ' TP: $' + momSignal.tp.toFixed(2) +
+                                ' | ' + momSignal.reason);
+
+                            await this.exec.executeTradeSignal(tradeSignal, this.dp);
+
+                            if (this.megatron) {
+                                this.megatron.logActivity('TRADE', 'Momentum: BTCUSDT ' + momSignal.action,
+                                    'Conf: ' + (momSignal.confidence * 100).toFixed(1) + '% | ' + momSignal.reason,
+                                    { sl: momSignal.sl, tp: momSignal.tp }, 'high');
+                            }
+                        }
+                    } catch (momErr) {
+                        console.warn('[MOMENTUM] BTCUSDT error:', momErr.message);
+                    }
                 }
             }
 
@@ -1619,6 +1893,35 @@ class AutonomousTradingBot {
                 this.megatron.logActivity('MARKET', 'BTC $' + (last.close||0).toFixed(0),
                     'Portfolio: $' + (p.totalValue||0).toFixed(2) + ' | PnL: $' + (p.realizedPnL||0).toFixed(2) +
                     ' | Positions: ' + (this.pm.positionCount || 0));
+            }
+
+            // P#212: Grid V2 + Funding Rate + Momentum status every 20 cycles
+            if (this._cycleCount % 20 === 0) {
+                try {
+                    for (const [sym, grid] of this.gridStrategies) {
+                        const gs = grid.getStats();
+                        if (gs.totalTrades > 0) {
+                            console.log('[GRID V2] ' + sym + ': ' + gs.totalTrades + ' trades | WR: ' +
+                                gs.winRate + '% | PnL: $' + gs.netPnL.toFixed(2) + ' | Fees: $' + gs.totalFees.toFixed(2));
+                        }
+                    }
+                    for (const [sym, fund] of this.fundingStrategies) {
+                        const fs = fund.getStats();
+                        if (fs.positionsOpened > 0 || fs.fundingCollected > 0) {
+                            console.log('[FUNDING] ' + sym + ': ' + fs.positionsOpened + ' positions | Collected: $' +
+                                fs.fundingCollected.toFixed(4) + ' | Net: $' + fs.netPnL.toFixed(4));
+                        }
+                    }
+                    if (this.momentumStrategy) {
+                        const ms = this.momentumStrategy.getStats();
+                        if (ms.totalTrades > 0 || ms.htfTrend !== 'NEUTRAL') {
+                            console.log('[MOMENTUM] BTCUSDT: ' + ms.totalTrades + ' trades | WR: ' +
+                                ms.winRate + '% | PnL: $' + ms.netPnL.toFixed(2) +
+                                ' | Trend: ' + ms.htfTrend + '(' + ms.htfTrendStrength + ')' +
+                                (ms.pullbackActive ? ' | PULLBACK ACTIVE' : ''));
+                        }
+                    }
+                } catch(e) { /* Non-critical status log */ }
             }
 
             console.log('[' + this.config.instanceId + '] Cycle #' + this._cycleCount + ' complete');

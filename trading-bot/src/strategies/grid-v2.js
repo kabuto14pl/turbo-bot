@@ -11,19 +11,19 @@
  */
 
 // ============================================================================
-// GRID V2 PARAMETERS (from Python backtest, calibrated)
+// GRID V2 PARAMETERS (P#211: updated from Python backtest, calibrated)
 // ============================================================================
 
 const GRID_ADX_THRESHOLD = 20;        // Max ADX for grid activation
-const GRID_BB_LOWER_ENTRY = 0.08;     // BB%B below → BUY zone
-const GRID_BB_UPPER_ENTRY = 0.92;     // BB%B above → SELL zone
-const GRID_RSI_OVERSOLD = 38;         // RSI below → BUY confirmation
-const GRID_RSI_OVERBOUGHT = 62;       // RSI above → SELL confirmation
+const GRID_BB_LOWER_ENTRY = 0.12;     // P#200c: Relaxed from 0.08 — more entries
+const GRID_BB_UPPER_ENTRY = 0.88;     // P#200c: Relaxed from 0.92
+const GRID_RSI_OVERSOLD = 36;         // RSI below → BUY confirmation
+const GRID_RSI_OVERBOUGHT = 64;       // RSI above → SELL confirmation
 const GRID_SL_ATR = 0.70;             // SL 0.7× ATR (tight)
-const GRID_TP_ATR = 1.20;             // TP 1.2× ATR (covers fees)
-const GRID_COOLDOWN_MS = 4 * 3600000; // 4h between grid trades
-const GRID_MAX_TRADES_DAY = 6;        // max grid trades per day
-const GRID_RISK_PER_TRADE = 0.006;    // 0.6% risk per grid trade
+const GRID_TP_ATR = 1.50;             // P#211b: widened from 1.20 — fee economics require bigger TP
+const GRID_COOLDOWN_MS = 5 * 3600000; // 5h between grid trades
+const GRID_MAX_TRADES_DAY = 8;        // max grid trades per day
+const GRID_RISK_PER_TRADE = 0.006;    // 0.6% risk per grid trade (overridden per-pair in bot.js)
 const GRID_MIN_BB_WIDTH = 0.008;      // min BB width (avoid dead periods)
 
 class GridV2Strategy {

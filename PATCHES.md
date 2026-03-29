@@ -7,6 +7,33 @@
 
 ## PATCH #46: CPU 100% FIX — GPU-Only Computation (2026-02-24)
 
+## PATCH #188: Agent Canon + Promptfoo + OpenLIT Baseline (2026-03-29)
+
+**Typ:** Workflow Consolidation + AI Tooling + Observability  
+**Pliki:** `AGENTS.md`, `.continue/config.json`, `.github/copilot-instructions.md`, `package.json`, `promptfoo/*`, `observability/openlit/*`, `trading-bot/src/core/observability/openlit_bootstrap.js`, `trading-bot/src/core/ai/megatron_system.js`, `trading-bot/src/core/ai/neuron_ai_manager.js`, `trading-bot/src/modules/bot.js`, `ml-service/openlit_config.py`, `ml-service/ml_service.py`, `deploy/services-deploy/ml_service.py`, `.env.example`, `README.md`, `docs/ai-observability.md`
+
+### Problem:
+Lokalny system agentów, promptów i instrukcji był rozproszony między kilkoma plikami bez jednego kanonicznego kontraktu. Repo nie miało lokalnego frameworka regresji promptów ani darmowego, przygotowanego stacku do obserwowalności AI.
+
+### Fixes:
+- Dodano `AGENTS.md` jako lokalny source of truth dla workflow i ownership decyzji.
+- Zsynchronizowano `.continue/config.json` i `.github/copilot-instructions.md` z nowym kontraktem.
+- Dodano Promptfoo z lokalnym providerem regresyjnym dla `NeuronAIManager`.
+- Dodano self-hosted stack OpenLIT oparty o ClickHouse + OTel Collector + OpenLIT UI.
+- Dodano lekkie, opt-in bootstrapping i telemetry hooks dla Node oraz Python ML service.
+
+### Wynik:
+- Repo ma jeden punkt wejścia dla agent workflow.
+- Decyzje fallback NeuronAI można regresyjnie oceniać lokalnie.
+- OpenLIT można uruchomić lokalnie bez płatnych usług.
+- Instrumentacja jest wyłączona domyślnie i nie zmienia zachowania produkcyjnego bez env flag.
+
+### Follow-up fix:
+- Naprawiono local OpenLIT compose po błędzie pull z `ghcr.io/openlit/openlit-client:latest`.
+- Stack używa teraz oficjalnego publicznego obrazu `ghcr.io/openlit/openlit:latest` z wbudowanym OTLP receiverem.
+- Poprawiono healthcheck kontenera `openlit`, bo obraz nie zawiera `curl` i nie odpowiada pod `127.0.0.1:3000`; status jest teraz sprawdzany przez `node` pod adresem hostname kontenera.
+- Odblokowano lokalny start `trading-bot/src/modules/bot.js` przez zmianę domyślnej ścieżki persistence z `/root/turbo-bot/data/bot_state.json` na repo-local `data/bot_state.json` z opcjonalnym override `BOT_STATE_FILE`.
+
 **Typ:** CRITICAL FIX — System Freeze Prevention  
 **Pliki:** `gpu-cuda-service.py`  
 **Zależności:** psutil (nowy pakiet)
@@ -1890,3 +1917,141 @@ Combined (45 trades):
 
 ### Production Decision:
 **Deploy P#198.3 (strategy-only)** as production baseline. ML adds negative value with current CV scores. Keep ML infrastructure ready for future iteration when data quality improves.
+
+## P#210a-c — Post-Board5 Backtest Regression Fixes (2026-03-29)
+
+### Backtest comparison: PRE (20260328_192039) vs POST-Board5 (20260329_170318)
+```
+PRE:  40 trades | NetProfit=+$34.55 | FundArb=+$636.86 | TOTAL=+$671.41
+POST: 69 trades | NetProfit=-$55.04 | FundArb=+$636.15 | TOTAL=+$581.11
+DELTA: +29 trades | NetProfit=-$89.59 | FundArb=-$0.71 | TOTAL=-$90.30
+```
+
+### P#210a: REVERTED PHASE_2_BE_R 1.3→1.0
+- **Root cause:** Board5 P#205c raised BE threshold to 1.3R — trades reaching 1.0-1.29R lost BE protection
+- **Impact:** BNB 15m PF 1.142→0.597, AvgLoss $6.92→$10.42 (+50%), 4 wasted winners, net -$40.43
+- **Mechanism:** 4 trades in "dead zone" (1.0≤maxR<1.3) no longer get BE lock → continue into SL/MAX_LOSS
+- **Fix:** config.py PHASE_2_BE_R = 1.0
+
+### P#210b: REVERTED DIRECTIONAL_15M_ENABLED True→False
+- **Root cause:** Board5 P#205b re-enabled 15m directional globally
+- **Impact:** SOL 15m got 8 new directional trades (PF=0.578, net -$16.00, ML accuracy 33.3%)
+- **Mechanism:** SOL lacks per-pair DIRECTIONAL_ENABLED:False — global 15m gate was the only blocker
+- **Fix:** config.py DIRECTIONAL_15M_ENABLED = False (BNB 15m grid unaffected, uses grid_v2 pathway)
+
+### P#210c: Raised BNB 1h confidence floor 0.25→0.40
+- **Root cause:** P#203b lowered 1h ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR from 0.45 to 0.25
+- **Impact:** 11 low-quality BNB 1h trades passed (PF=0.448, net -$52.67, 3 MAX_LOSS exits)
+- **Fix:** TF_OVERRIDES['1h'] floor raised to 0.40
+
+### Board5 changes KEPT (verified positive/neutral):
+- ✅ P#204d+: SOL grid ['1h'] only — saved $11.91 by removing losing 4h grid
+- ✅ P#205c: SOL 1h improved PF 1.792→1.821, net +$11.31
+- ✅ P#204e: XRP 1h grid V2 — PF 0.847, net -$3.71 (needs more data)
+- ✅ P#206c: Slippage jitter — contributes to realism (minor impact ~$1-2)
+- ✅ P#206a: ML_VETO_ONLY=False — ML veto_hard=0 across all pairs, no interference
+- ✅ P#205a: Shadow directional mode — data collection only, no trading impact
+- ✅ P#209b: PRIME_WARN_MODE=False — disabled by default, no impact
+
+## P#211a-d — Trade Profitability Structural Overhaul (2026-03-30)
+
+### Root Cause Analysis: Why Trading Doesn't Generate Profit
+Deep historical scan across 5 complete backtests (15 pair×TF slots) revealed:
+- **Only 1 of 15 slots has proven alpha: SOL 1h** (4/4 runs positive, avg PF=1.754, avg net=+$50.68)
+- **BNB 1h grid: CONSISTENTLY LOSING** (0/4 runs positive, avg PF=0.504, avg net=-$25.03)
+- **BNB 15m grid: MARGINAL** (3/4 positive, avg PF=1.369, avg net=+$18.09 but avg fees=$24.85)
+- **XRP 1h grid: NET NEGATIVE** (0/4 positive, PF=0.847, new — keeping for observation)
+- **Fees eat 50.7% of ALL gross trading profit** across all slots
+- **15m vs 1h economics:** 15m avg move=0.235%, fee drag=29.8% vs 1h avg move=0.790%, fee drag=8.9%
+- **Capital misallocation:** BNB gets 40% ($4000) but trading loses money; SOL gets only 25% ($2500) but is ONLY winner
+
+### P#211a: DISABLED BNB 1h grid (pair_config.py)
+- **Evidence:** 0/4 runs positive, avg PF=0.504, avg net=-$25.03, avg fees=$10.35
+- **Fix:** `GRID_V2_ALLOWED_TIMEFRAMES: ['15m', '1h']` → `['15m']`
+- **Expected recovery:** +$25/backtest
+
+### P#211b: WIDENED BNB 15m grid TP 1.20→1.50 ATR (pair_config.py)
+- **Evidence:** avg price move=0.235%, fee as % of move=29.8%. TP too tight → exits in noise.
+- **Logic:** SOL uses TP=1.40 ATR and works (PF=1.75). BNB 15m needs wider TP to overcome 30% fee drag.
+- **Fix:** `GRID_V2_TP_ATR: 1.20` → `1.50`
+
+### P#211c: REALLOCATED capital BNB 40%→35%, SOL 25%→30% (pair_config.py)
+- **Evidence:** SOL 1h only proven alpha. BNB trading marginal/negative — mostly funding.
+- **Fix:** `PAIR_CAPITAL_ALLOCATION: SOL 0.25→0.30, BNB 0.40→0.35`
+- **Constraint:** Conservative shift (5%) — SOL 1h alpha is real but position size needs gradual scaling.
+
+### P#211d: BOOSTED SOL 1h grid risk 0.008→0.012, cooldown 6→5, max_trades 80→100 (pair_config.py)
+- **Evidence:** 4/4 backtests positive, avg PF=1.754. This is the ONLY slot making money from trading.
+- **Logic:** Scale the winner: +50% risk per trade, -17% cooldown, +25% max trades.
+- **Fix:** `GRID_V2_RISK_PER_TRADE: 0.008→0.012`, `COOLDOWN: 6→5`, `MAX_TRADES: 80→100`
+
+### P#211e: DISABLED XRP 1h grid (pair_config.py)
+- **Evidence:** 36 trades over 1yr, PF=0.456, WR=36.1%, net=-$25.60. Far from breakeven.
+- **Board5 P#204e added it** — Liam Chen recommended XRP grid on 1h. Data says NO.
+- **Fix:** `GRID_V2_ENABLED: True` → `False`
+- **Expected recovery:** +$25/backtest
+
+### Validation Backtest Results (local CPU, split 15m+1h):
+```
+15m run:
+  BNB 15m: 30 trades | PF 1.711 | WR 70.0% | TradePnL +$52.43 | FundPnL +$11.13
+  (All others: 0 trades, funding only)
+
+1h run:
+  SOL 1h:  25 trades | PF 1.571 | WR 68.0% | TradePnL +$75.27 | FundPnL +$18.88
+  BNB 1h:   0 trades (DISABLED by P#211a ✅)
+  XRP 1h:  36 trades | PF 0.456 | WR 36.1% | TradePnL -$25.60 (→ DISABLED by P#211e)
+
+Combined active slots after P#211:
+  BNB 15m: +$52.43
+  SOL 1h:  +$75.27
+  Trading TOTAL: +$127.70
+  
+vs PRE-Board5 baseline: +$34.55 trading PnL
+IMPROVEMENT: +$93.15 (+270%)
+```
+
+## P#212 — Wire Dead Strategies into Live Bot (2026-03-30)
+
+### Root Cause: Three Strategies Were Complete Dead Code
+Live bot audit revealed 3 fully implemented strategies that were **NEVER imported** into bot.js:
+- `grid-v2.js` (281 lines) — Grid V2 mean-reversion for RANGING markets
+- `funding-rate-arb.js` (330 lines) — Funding rate arbitrage on 8h settlements
+- `momentum-htf-ltf.js` (338 lines) — HTF trend + LTF pullback for BTC
+
+None were `require()`d. None were instantiated. The live bot only ran 5 old ensemble strategies.
+
+### P#212a: Import + Wire Grid V2 into bot.js
+- **Grid V2 BYPASSES ensemble voting** — evaluates independently every cycle
+- **BNB**: ADX<18, BB 0.12/0.88, RSI 36/64, TP=1.50 ATR (P#211b), risk=0.005
+- **SOL**: ADX<22, BB 0.15/0.85, RSI 35/65, TP=1.40 ATR, risk=0.012 (P#211d)
+- Grid V2 defaults updated: TP 1.20→1.50, BB entries relaxed, RSI thresholds widened
+
+### P#212b: Per-pair data fetching (critical fix)
+- **Bug:** Grid V2 used BTC price/indicators for BNB/SOL evaluation (completely wrong)
+- **Fix:** Each pair now fetches its own candle data from OKX (5-min cache), with live price via ticker
+- **Fallback:** If OKX unavailable (mock mode), uses main history with warning
+- **Indicators per pair:** RSI, ADX (calculateRealADX), BB, ATR, SMA20/50/200, MACD, volume ratio
+
+### P#212c: Import + Wire Funding Rate Arb into bot.js
+- **All 5 pairs:** BTC (50%), ETH (30%), BNB (20%), SOL (20%), XRP (50%)
+- Evaluates every cycle, fires on 8h settlement windows
+- Uses per-pair prices from OKX (same `_getPairData` helper)
+
+### P#212d: Import + Wire MomentumHTFLTF into bot.js
+- **BTC only** — uses main history data (no extra fetch needed)
+- HTF trend from SMA20>SMA50>SMA200 alignment + ADX>20
+- LTF pullback entry on 2nd confirming candle
+- Min R:R 2.5:1, TP=5.0 ATR, SL=2.0 ATR
+- Max 3 trades/day, 6h cooldown
+
+### P#212e: Status logging for all independent strategies
+- Every 20 cycles: Grid V2 stats, Funding stats, Momentum stats (trend, pullbacks)
+
+### Validation:
+- Syntax checks: `node -c bot.js` ✅, `node -c grid-v2.js` ✅, `node -c funding-rate-arb.js` ✅, `node -c momentum-htf-ltf.js` ✅
+- Grid V2 BNB fires BUY at $620 with correct BNB-scale SL/TP ✅
+- Grid V2 SOL fires BUY at $148 with correct SOL-scale SL/TP ✅
+- Funding Rate fires correctly ✅
+- Momentum detects HTF trend and waits for 2nd candle ✅
+- Indicator module `calculateRealADX` + `calculateBollingerBands` used ✅

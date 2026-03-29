@@ -6,6 +6,20 @@
 
 ## 2026-03-15: PATCH #186 — GPU-Native Quantum Batching
 
+## 2026-03-29: PATCH #188 — Agent Canon + Promptfoo + OpenLIT Baseline
+
+### L188.1: Multiple instruction files without a canonical owner create silent architecture drift
+When `copilot-instructions`, skill markdown, runtime comments, and prompt entrypoints all evolve separately, the system stops answering a basic question: which file is authoritative. A short canonical contract file is cheaper than repeated audits.
+
+### L188.2: Deterministic evals should target the lowest-noise decision layer first
+Before grading live LLM behavior, lock down the deterministic fallback path that encodes actual trading gates. It catches regressions in drawdown handling, MTF gating, and HOLD/BUY/SELL ownership without provider variance.
+
+### L188.3: Observability must be opt-in in trading infrastructure
+Instrumentation that changes startup behavior by default creates deployment risk. For bot infrastructure, observability should be one env flag away, not hardwired into the happy path.
+
+### L188.4: Prefer vendor-maintained compose topology over hand-rolled image guesses
+If a self-hosted platform publishes its own Docker Compose and public image name, mirror that topology first. Guessing sub-images like `openlit-client` is brittle and can break immediately on private registry policy.
+
 ### L186.1: Bigger remote kernels do not fix a chatty per-candle architecture
 Raising QMC/QAOA payload sizes increased individual GPU calls, but the GPU-native backtest still spent most of its time inside a Python candle loop making thousands of scheduled quantum HTTP calls. If the orchestration layer is chatty, larger kernels only create bursts, not sustained utilization. Batch the quantum plan locally and reuse it through the loop.
 
@@ -1469,3 +1483,51 @@ XGBoost models on crypto 1h/4h with 43 features achieve ~50% accuracy — no bet
 
 ### L198.5: Monte Carlo p=0.06 with 45 trades = borderline
 Need ~60+ trades for p<0.05 statistical significance. Win rate IS significant (p=0.0012) but PnL isn't yet. More trading days or more pairs needed. Funding ARB ($599/731 = 82%) is the real profit engine — directional is supplementary.
+
+## 2026-03-29: PATCH #210 — Post-Board5 Backtest Regression Fixes
+
+### L210.1: PHASE_2_BE_R 1.0→1.3 is catastrophic for grid trades with maxR 1.0-1.3
+Board5 Advisory recommended 1.3R to "avoid premature BE" but real data shows: 6/17 BNB 15m trades (35%) had maxR in the 1.0-1.3 dead zone. These trades DEPENDED on BE at 1.0R for protection. Raising it to 1.3R turned 4 winners into losers. **Rule: Never change BE threshold without checking maxR distribution of existing trades. The "dead zone" between old and new BE is a kill zone.**
+
+### L210.2: Global enable flags without per-pair guards are dangerous
+DIRECTIONAL_15M_ENABLED=True was meant for BNB 15m grid, but SOL didn't have DIRECTIONAL_ENABLED:False. Result: SOL 15m got unwanted MomentumHTF trades. **Rule: When enabling a global flag, check ALL pairs for missing per-pair guards. If 3/5 pairs have the guard and 2 don't, the 2 will get unintended behavior.**
+
+### L210.3: Confidence floor changes must be validated per-pair, not per-TF
+Lowering 1h confidence floor from 0.45→0.25 (P#203b) was intended to unblock directional pipeline for profitable pairs. Instead it unblocked 11 garbage BNB 1h signals (conf=0.15→0.25 range). **Rule: Confidence floors should be set per-pair-TF, not just per-TF. Different pairs have wildly different sentiment/confidence distributions.**
+
+### L210.4: Funding ARB is the real profit engine — protect it at all costs
+PRE vs POST: FundArb changed by only -$0.71 while TradePnL changed by -$89.59. Funding ARB generates $636/backtest (82% of total) and is immune to Board5 parameter changes. **Rule: Directional/grid trading is a risky supplement. Don't break funding-only pairs by exposing them to untested directional signals.**
+
+### L210.5: Always run A/B comparison with the MOST RECENT complete baseline
+The pre-Board5 baseline (20260328_192039) was essential for isolating regressions. Without it, the +$581 total would look acceptable. Only the -$90 delta revealed the damage. **Rule: Always keep the last known-good backtest for comparison. Tag it in git.**
+
+## 2026-03-30: P#211 — Trade Profitability Structural Overhaul
+
+### L211.1: Only 1/15 pair×TF slots has proven trading alpha — scale the winner, kill the losers
+Historical scan of 5 complete backtests: SOL 1h is the ONLY slot with consistent profitability (4/4 positive, avg PF=1.754). BNB 1h lost money in 4/4 runs (PF=0.504). **Rule: When only ONE slot generates alpha, redirect capital and risk to it aggressively. Don't diversify across losing slots.**
+
+### L211.2: 15m grid trading is structurally disadvantaged by fee economics
+15m candles produce avg moves of 0.235% — fees eat 29.8% of each move. On 1h, avg moves are 0.790% with only 8.9% fee drag (3.3× better economics). **Rule: Grid V2 on 15m timeframes requires exceptionally tight SL or exceptionally wide TP to overcome the fee drag. Default to 1h for grid strategies.**
+
+### L211.3: Fees consuming >50% of gross profit is a RED FLAG for strategy viability
+Across PRE-Board5 baseline: GROSS=$70.15, FEES=$35.60 (50.7%). When fees eat more than 1/3 of gross, the strategy has no real edge — it's trading noise. **Rule: Track fee/gross ratio per slot. If >40%, the slot is either marginal or losing. If >60%, disable it.**
+
+### L211.4: Capital allocation must follow proven alpha, not historical labels
+BNB was labeled "ROBUST" from a single walk-forward test (P#72, PF=2.484) and given 40% allocation. But across 5 backtests, BNB 1h was 0/4 positive. Labels get stale. **Rule: Re-evaluate pair allocation every 10 backtest runs using multi-run consistency, not single-test PF.**
+
+### L211.5: Funding ARB generates 92% of all profit — trading supplements it, not the other way around
+Of $671 total/backtest, $636 is funding (94.7%). Trading contributes +$34 at best. Accept this reality: the bot is primarily a funding arbitrage system with supplemental grid/directional trading. **Scale trading only where alpha is PROVEN (SOL 1h), park capital in funding everywhere else.**
+
+## 2026-03-30: P#212 — Wire Dead Strategies into Live Bot
+
+### L212.1: DEAD CODE — 3 complete strategies were NEVER wired into bot.js
+`grid-v2.js` (281 lines), `funding-rate-arb.js` (330 lines), `momentum-htf-ltf.js` (338 lines) existed as fully implemented strategy files but were never `require()`d or instantiated in bot.js. The live bot only ran 5 old ensemble strategies. **Rule: After writing a new strategy file, ALWAYS verify it's imported AND instantiated in the main orchestrator (bot.js). Add a startup log line that confirms the strategy is active.**
+
+### L212.2: Price data must match the symbol being evaluated — NEVER share cross-pair
+Grid V2 was evaluating BNB/SOL conditions using BTCUSDT price data (RSI, BB, ADX, ATR all from BTC). This is completely meaningless — BTC ranging doesn't mean BNB is ranging. **Rule: EVERY independent strategy evaluation MUST use per-pair candle data. Implement a `_getPairData(sym)` helper with caching (5-min OKX refresh) and log a WARNING if falling back to main-symbol data.**
+
+### L212.3: Indicator calculation should use canonical module functions, not inline reimplementation
+The original P#212 indicator block reimplemented ADX with a rough estimation instead of using `indicators.calculateRealADX()`. The indicators module already has `calculateRealADX`, `calculateBollingerBands`, `calculateSMA`, `calculateMACD`. **Rule: Always check the indicators module first. If a function exists there, use it.**
+
+### L212.4: Strategies BYPASSING ensemble need their own rate limits
+Grid V2 and Funding Rate fire independently of ensemble voting, QDV verification, and NeuronAI gates. Without the 10+ safety gates, they could fire too aggressively. **Mitigant: Grid V2 has built-in cooldown (8h BNB, 5h SOL), daily trade limits, and ADX gates. Momentum has 6h cooldown and max 3/day.** Monitor live trade frequency closely after deployment.
