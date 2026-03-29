@@ -356,11 +356,12 @@ class ExecutionEngine {
             }
 
             // ═══════════════════════════════════════════════════════
-            // PATCH #44C: MIN-HOLD COOLDOWN — prevent rapid re-entry
-            // after position close. Enforces 15 min cooling period.
-            // ═══════════════════════════════════════════════════════
+            // P#213: MIN-HOLD COOLDOWN reduced 15min → 5min
+            // 15min was too restrictive — blocked re-entry on valid signals
+            // after quick SL exits. 5min prevents churning, allows recovery.
+            // ═══════════════════════════════════════════════════════════
             if (signal.action === 'BUY' && this._lastCloseTime > 0) {
-                const MIN_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
+                const MIN_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes (was 15)
                 const elapsed = Date.now() - this._lastCloseTime;
                 if (elapsed < MIN_COOLDOWN_MS) {
                     console.log('[MIN HOLD] BUY rejected — cooldown ' +

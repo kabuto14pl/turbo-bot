@@ -979,80 +979,37 @@ class AutonomousTradingBot {
                     }
 
                     // ═══════════════════════════════════════════════════════════════
-                    // PATCH #20: SKYNET OVERRIDE GATE — before quantum verification
-                    // If Skynet has an active override, it takes precedence.
-                    // If Skynet is in defense mode, it may VETO BUY signals.
+                    // P#213: SIMPLIFIED SKYNET GATE — advisory only, never blocks
+                    // Old system: Override Gate + Defense Mode + Starvation Override
+                    // = 3 gates playing block/unblock games → confidence death spiral.
+                    // New system: Skynet adjusts confidence, never nullifies consensus.
                     // ═══════════════════════════════════════════════════════════════
                     if (this.neuralAI && this.neuralAI.isReady) {
-                        // Check Skynet override
+                        // Skynet override → advisory confidence adjustment
                         if (this.neuralAI._activeOverride && this.neuralAI._activeOverride.expiresAt > Date.now()) {
                             const ovr = this.neuralAI._activeOverride;
                             if (ovr.action === 'HOLD') {
-                                // Skynet VETO — block all trades
-                                console.log('[SKYNET VETO] Trade blocked: ' + ovr.reason);
-                                if (this.megatron) this.megatron.logActivity('SKYNET', 'VETO',
-                                    consensus.action + ' blocked: ' + ovr.reason, {}, 'critical');
-                                consensus = null;
-                            } else if (ovr.action !== consensus.action) {
-                                // Skynet wants a different action — override if confidence is high
-                                if (ovr.confidence > this.neuralAI.evolvedConfig.ensembleOverrideThreshold) {
-                                    console.log('[SKYNET OVERRIDE] ' + consensus.action + ' -> ' + ovr.action +
-                                        ' (conf: ' + (ovr.confidence * 100).toFixed(1) + '%) — ' + ovr.reason);
-                                    consensus.action = ovr.action;
-                                    consensus.confidence = ovr.confidence;
-                                    consensus.strategy = 'SkynetOverride';
-                                    consensus.reasoning = 'Skynet override: ' + ovr.reason;
-                                    if (this.megatron) this.megatron.logActivity('SKYNET', 'OVERRIDE',
-                                        ovr.action + ' forced: ' + ovr.reason, ovr, 'critical');
-                                }
+                                // Advisory penalty instead of VETO
+                                consensus.confidence *= 0.70;
+                                console.log('[SKYNET ADVISORY] Confidence reduced 30%: ' + ovr.reason +
+                                    ' | New conf: ' + (consensus.confidence * 100).toFixed(1) + '%');
+                            } else if (ovr.action !== consensus.action && ovr.confidence > 0.70) {
+                                // Skynet strong disagreement → heavier penalty
+                                consensus.confidence *= 0.60;
+                                console.log('[SKYNET ADVISORY] Strong disagreement (' + ovr.action + ' vs ' + consensus.action +
+                                    ') | Conf reduced 40%: ' + (consensus.confidence * 100).toFixed(1) + '%');
                             }
                         }
 
-                        // Defense mode — block BUY signals
-                        // PATCH #39E: Allow BUY if starvation is extreme (>400 cycles)
-                        if (consensus && this.neuralAI.defenseMode && consensus.action === 'BUY') {
-                            if (this.neuralAI.cyclesWithoutTrade > 400) {
-                                console.log('[SKYNET DEFENSE] BUY ALLOWED despite defense mode — EXTREME starvation (' + this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
-                                if (this.megatron) this.megatron.logActivity('SKYNET', 'Defense Override',
-                                    'BUY allowed after ' + this.neuralAI.cyclesWithoutTrade + ' idle cycles (starvation break)', {}, 'critical');
-                                // Reduce position size as safety measure
-                                consensus.confidence = Math.min(consensus.confidence, 0.50);
-                            } else {
-                                console.log('[SKYNET DEFENSE] BUY blocked by defense mode (losses: ' + this.neuralAI.consecutiveLosses + ')');
-                                if (this.megatron) this.megatron.logActivity('SKYNET', 'Defense Block',
-                                    'BUY blocked — ' + this.neuralAI.consecutiveLosses + ' consecutive losses', {}, 'high');
-                                consensus = null;
-                            }
+                        // Defense mode → confidence penalty, NOT block
+                        if (this.neuralAI.defenseMode && consensus.action === 'BUY') {
+                            const penaltyFactor = this.neuralAI.consecutiveLosses >= 5 ? 0.50 : 0.75;
+                            consensus.confidence *= penaltyFactor;
+                            console.log('[SKYNET DEFENSE] BUY confidence reduced ' +
+                                ((1 - penaltyFactor) * 100).toFixed(0) + '% (losses: ' +
+                                this.neuralAI.consecutiveLosses + ') | Conf: ' +
+                                (consensus.confidence * 100).toFixed(1) + '%');
                         }
-                    }
-                }
-            }
-
-            // ═══════════════════════════════════════════════════════════════
-            // PATCH #20: SKYNET STARVATION OVERRIDE — if no trade for too long
-            // Force lower thresholds to prevent the bot from starving
-            // ═══════════════════════════════════════════════════════════════
-            if (!consensus && this.neuralAI && this.neuralAI.isReady) {
-                const starvation = this.neuralAI.checkStarvationOverride();
-                if (starvation && allSignals.size > 0) {
-                    // Re-vote with temporarily lowered thresholds
-                    const origWeights = { ...this.ensemble.weights };
-                    // PATCH #45: BUG #17 FIX — clone signals to avoid mutating originals in-place
-                    const boostedSignals = new Map();
-                    for (const [name, sig] of allSignals) {
-                        const cloned = { ...sig };
-                        if (cloned.action !== 'HOLD' && cloned.confidence > 0.2) {
-                            cloned.confidence = Math.min(0.95, cloned.confidence * 1.15);
-                        }
-                        boostedSignals.set(name, cloned);
-                    }
-                    consensus = this.ensemble.vote(boostedSignals, this.rm);
-                    this.ensemble.weights = origWeights; // Restore weights
-                    if (consensus && consensus.action !== 'HOLD') {
-                        console.log('[SKYNET STARVATION] Trade forced: ' + consensus.action + ' — ' + starvation.reason);
-                        consensus.reasoning = starvation.reason;
-                        if (this.megatron) this.megatron.logActivity('SKYNET', 'Starvation Override',
-                            consensus.action + ': ' + starvation.reason, {}, 'high');
                     }
                 }
             }
@@ -1104,66 +1061,43 @@ class AutonomousTradingBot {
                     }
                 }
 
-                // PATCH #17: Hybrid Pipeline -- STAGE 3: POST-PROCESSING (Quantum Decision Verification)
-                // PATCH #20: With starvation fallback — if QDV rejects but bot is starved, override
+                // ═══════════════════════════════════════════════════════════════
+                // P#213: QDV is now ADVISORY — adjusts confidence ±20%, NEVER blocks.
+                // Old system: QDV reject → block trade → starvation → bypass QDV
+                // (3 gates playing games). Now: QDV adjusts, fee gate is the real filter.
+                // ═══════════════════════════════════════════════════════════════
                 let shouldExecute = true;
-                let qdvRejected = false;
                 if (this.hybridPipeline && this.hybridPipeline.isReady) {
                     try {
                         const portfolio = this.pm.getPortfolio();
                         const verification = this.hybridPipeline.postProcess(consensus, portfolio.totalValue);
 
                         if (!verification.approved) {
-                            qdvRejected = true;
-                            shouldExecute = false;
-                            console.log('[HYBRID VERIFIER] REJECTED: ' + consensus.action +
-                                ' (conf: ' + (consensus.confidence * 100).toFixed(1) + '%) -> ' + verification.verificationResult.reason);
+                            // Advisory: reduce confidence by 20% instead of blocking
+                            consensus.confidence *= 0.80;
+                            console.log('[QDV ADVISORY] Confidence reduced 20%: ' + (verification.verificationResult.reason || 'low quantum score') +
+                                ' | Conf: ' + (consensus.confidence * 100).toFixed(1) + '%');
                             if (this.megatron) {
-                                this.megatron.logActivity('QUANTUM', 'Trade ODRZUCONY',
-                                    consensus.action + ' zablokowany przez Quantum Decision Verifier: ' + verification.verificationResult.reason,
-                                    verification.verificationResult, 'high');
-                            }
-
-                            // PATCH #20: Cross-system feedback — inform Skynet about rejection
-                            if (this.neuralAI && this.neuralAI.isReady) {
-                                this.neuralAI.learnFromQuantumVerification(
-                                    consensus.strategy || 'EnsembleVoting', false,
-                                    verification.verificationResult.reason, consensus);
-                            }
-
-                            // PATCH #20: Starvation override — if QDV rejects but bot is starved, force through
-                            if (this.neuralAI && this.neuralAI.cyclesWithoutTrade > 300) {
-                                console.log('[SKYNET] QDV rejection overridden — STARVATION (' +
-                                    this.neuralAI.cyclesWithoutTrade + ' cycles idle)');
-                                shouldExecute = true;
-                                qdvRejected = false;
-                                if (this.megatron) this.megatron.logActivity('SKYNET', 'QDV Starvation Override',
-                                    'QDV rejection bypassed after ' + this.neuralAI.cyclesWithoutTrade + ' idle cycles', {}, 'high');
+                                this.megatron.logActivity('QUANTUM', 'QDV Advisory (nie blokuje)',
+                                    consensus.action + ' conf reduced: ' + (verification.verificationResult.reason || ''),
+                                    verification.verificationResult);
                             }
                         } else {
-                            const oldConf = consensus.confidence;
                             consensus.confidence = verification.finalConfidence;
-                            if (Math.abs(oldConf - consensus.confidence) > 0.01) {
-                                console.log('[HYBRID VERIFIER] APPROVED: ' + consensus.action +
-                                    ' (conf adjusted: ' + (oldConf * 100).toFixed(1) + '% -> ' + (consensus.confidence * 100).toFixed(1) + '%)');
-                            } else {
-                                console.log('[HYBRID VERIFIER] APPROVED: ' + consensus.action +
-                                    ' (conf: ' + (consensus.confidence * 100).toFixed(1) + '%)');
-                            }
-                            if (this.megatron) {
-                                this.megatron.logActivity('QUANTUM', 'Trade ZATWIERDZONY',
-                                    consensus.action + ' przeszedl przez Quantum Decision Verifier | Conf: ' + (consensus.confidence * 100).toFixed(1) + '%',
-                                    verification.verificationResult.modifications || {});
-                            }
+                            console.log('[QDV APPROVED] ' + consensus.action +
+                                ' (conf: ' + (consensus.confidence * 100).toFixed(1) + '%)');
+                        }
 
-                            // PATCH #20: Cross-system feedback — inform Skynet about approval
-                            if (this.neuralAI && this.neuralAI.isReady) {
-                                this.neuralAI.learnFromQuantumVerification(
-                                    consensus.strategy || 'EnsembleVoting', true, null, consensus);
-                            }
+                        // Cross-system feedback (kept for learning)
+                        if (this.neuralAI && this.neuralAI.isReady) {
+                            this.neuralAI.learnFromQuantumVerification(
+                                consensus.strategy || 'EnsembleVoting',
+                                !!verification.approved,
+                                verification.approved ? null : (verification.verificationResult.reason || null),
+                                consensus);
                         }
                     } catch(e) {
-                        console.warn('[WARN] Hybrid verifier:', e.message);
+                        console.warn('[WARN] QDV advisory:', e.message);
                     }
                 }
 
@@ -1270,6 +1204,72 @@ class AutonomousTradingBot {
                         }
                     }
                 }
+
+            // ═══════════════════════════════════════════════════════════════
+            // P#213: MULTI-PAIR ENSEMBLE — run ensemble strategies on non-BTC pairs.
+            // Reuses _getPairData + strategies.runAll + ensemble.vote pipeline.
+            // Bypasses Skynet/QDV (pair-specific tuning not available yet).
+            // Higher conf gate (0.40) since strategies weren't tuned for altcoins.
+            // ═══════════════════════════════════════════════════════════════
+            if (this.config.symbols && this.config.symbols.length > 1) {
+                const multiPairSymbols = this.config.symbols.filter(function(s) { return s !== this.config.symbol; }.bind(this));
+                for (const sym of multiPairSymbols) {
+                    try {
+                        // Skip if already have position in this pair (Grid V2 or previous ensemble)
+                        if (this.pm.hasPosition(sym)) continue;
+
+                        // Check max positions
+                        const maxPos = (this.config.multiPosition && this.config.multiPosition.maxPositions) || 3;
+                        if (this.pm.positionCount >= maxPos) break;
+
+                        // Fetch per-pair candles (OKX → cache → fallback)
+                        const { candles: pairCandles } = await _getPairData(sym);
+                        if (!pairCandles || pairCandles.length < 30) continue;
+
+                        // Run all ensemble strategies on this pair's data
+                        const pairSignals = await this.strategies.runAll(pairCandles);
+                        if (!pairSignals || pairSignals.size === 0) continue;
+
+                        // Override symbol in each signal (strategies hardcode BTCUSDT)
+                        for (const [, sig] of pairSignals) {
+                            sig.symbol = sym;
+                        }
+
+                        // Ensemble vote (same Thompson Sampling + MTF system as BTC)
+                        const pairRegime = this.neuralAI && this.neuralAI.isReady
+                            ? { regime: this.neuralAI.currentRegime, volatility: 0 }
+                            : null;
+                        const pairConsensus = this.ensemble.vote(pairSignals, this.rm, pairRegime);
+
+                        if (pairConsensus && pairConsensus.action !== 'HOLD' && pairConsensus.confidence >= 0.40) {
+                            pairConsensus.symbol = sym;
+                            pairConsensus.strategy = 'MultiPairEnsemble_' + sym;
+
+                            // Add regime for regime-aware sizing
+                            if (this.neuralAI && this.neuralAI.currentRegime) {
+                                pairConsensus.regime = this.neuralAI.currentRegime;
+                            }
+
+                            await this.exec.executeTradeSignal(pairConsensus, this.dp);
+                            console.log('[MULTI-PAIR] ' + sym + ' ' + pairConsensus.action +
+                                ' (conf: ' + (pairConsensus.confidence * 100).toFixed(1) + '%)');
+
+                            if (this.megatron) {
+                                const agreeStrats = [];
+                                for (const [n, s] of pairSignals) {
+                                    if (s.action === pairConsensus.action) agreeStrats.push(n);
+                                }
+                                this.megatron.logActivity('TRADE', 'Multi-Pair Ensemble: ' + sym,
+                                    pairConsensus.action + ' conf=' + (pairConsensus.confidence * 100).toFixed(1) +
+                                    '% | Strategies: ' + agreeStrats.join(', '),
+                                    { symbol: sym, action: pairConsensus.action, confidence: pairConsensus.confidence }, 'high');
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[MULTI-PAIR] ' + sym + ' error:', e.message);
+                    }
+                }
+            }
 
             // 7. SL/TP monitoring
             if (this.pm.positionCount > 0) {

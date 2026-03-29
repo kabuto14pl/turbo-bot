@@ -1531,3 +1531,17 @@ The original P#212 indicator block reimplemented ADX with a rough estimation ins
 
 ### L212.4: Strategies BYPASSING ensemble need their own rate limits
 Grid V2 and Funding Rate fire independently of ensemble voting, QDV verification, and NeuronAI gates. Without the 10+ safety gates, they could fire too aggressively. **Mitigant: Grid V2 has built-in cooldown (8h BNB, 5h SOL), daily trade limits, and ADX gates. Momentum has 6h cooldown and max 3/day.** Monitor live trade frequency closely after deployment.
+
+## 2026-03-30: P#213 — Safety Gate Reduction + Multi-Pair Ensemble + Execution Audit
+
+### L213.1: Safety gates that block each other create confidence death spirals, not safety
+12 gates stacked: Override → Defense → Starvation Override → QDV Block → QDV Starvation. Each gate tried to fix the previous one's over-blocking. Net result: zero trades, infinite starvation cycles. **Rule: A safety gate should ADJUST confidence, never NULLIFY consensus. If you need a "starvation override" to undo a gate, the gate itself is broken.**
+
+### L213.2: The entire execution engine is in-memory paper trading — no real orders
+`execution-engine.js` → `pm.openPosition()` → JS Map update. Zero OKX API calls. `okx_execution_engine.js` EXISTS (371 lines, `POST /api/v5/trade/order`) but is NEVER imported. `paperTrading`/`enableLiveTrading` config flags are DEFINED but NEVER CHECKED. **The bot has been paper trading since inception regardless of config.** To go live: import + wire `okx_execution_engine.js` into execution engine, add `paperTrading` flag check.
+
+### L213.3: Advisory gates are superior to blocking gates — same protection, no starvation
+Replacing 3 blocking Skynet gates with confidence penalties (30-50%) and QDV block→20% penalty preserves the protective signal while allowing the fee gate ($profit > 1.5× fees) to be the real filter. Advisory adjustments stack naturally — if Skynet + QDV + Defense all penalize, confidence drops enough that the fee gate kills marginal trades. **Rule: Use multiplicative confidence penalties instead of hard blocks. Let the fee gate handle the final go/no-go.**
+
+### L213.4: Multi-pair ensemble requires symbol override — strategies hardcode config.symbol
+`strategies.runAll(pairCandles)` analyzes the pair's data correctly but outputs `{ symbol: 'BTCUSDT' }` because each strategy reads `this.config.symbol`. Must override `signal.symbol = actualPair` on all returned signals before voting and execution. **Rule: When reusing strategies across pairs, always patch the symbol in the output signals.**

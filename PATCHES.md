@@ -5,6 +5,51 @@
 
 ---
 
+## PATCH #213: Safety Gate Reduction + Multi-Pair Ensemble + Execution Audit (2026-03-30)
+
+**Typ:** Architecture Overhaul — Trade Flow Unblocking + Multi-Pair  
+**Pliki:** `trading-bot/src/modules/bot.js`, `trading-bot/src/modules/execution-engine.js`
+
+### Problem:
+1. **12 stackujących się safety gates** tworzących confidence death spiral — Skynet Override → Defense → Starvation Override → QDV Block → QDV Starvation = gra w block/unblock, zero tradów.
+2. **Ensemble path TYLKO na BTCUSDT** — 4 altcoiny (ETH, SOL, BNB, ADA) nie miały ensemble coverage.
+3. **execution-engine.js 100% in-memory** — `pm.openPosition()` to JS Map update, ZERO OKX API calls. `okx_execution_engine.js` (371 linii, ma `POST /api/v5/trade/order`) nigdy nie importowany.
+
+### Fixes:
+
+**A. Safety Gate Reduction: 12 → 6 gates**
+| Gate | BEFORE | AFTER |
+|------|--------|-------|
+| Skynet Override | VETO (blocks trade) | Advisory: -30% confidence |
+| Skynet Disagreement | Action override | Advisory: -40% confidence |
+| Skynet Defense | Hard block BUY (unless 400 cycles idle) | Advisory: -25% to -50% based on losses |
+| Starvation Override | Re-vote with boosted signals | REMOVED (nothing blocks anymore) |
+| QDV Reject | Block trade | Advisory: -20% confidence |
+| QDV Starvation | Bypass QDV after 300 cycles | REMOVED (QDV never blocks) |
+| Min-Hold Cooldown | 15 minutes | 5 minutes |
+
+Remaining gates: Ensemble Voting, Skynet Advisory, QDV Advisory, `_validateSignal()`, Fee Gate (>1.5× fees), Circuit Breaker.
+
+**B. Multi-Pair Ensemble**
+- Loop over `config.symbols` (ETH, SOL, BNB, ADA) after BTC ensemble path.
+- Per-pair: `_getPairData(sym)` → `strategies.runAll(pairCandles)` → `ensemble.vote()` → `exec.executeTradeSignal()`.
+- Override `signal.symbol` to correct pair (strategies hardcode BTCUSDT).
+- Higher conf gate (≥0.40) since strategies not tuned for altcoins.
+- Skip Skynet/QDV (pair-specific tuning TBD).
+- Respects max positions and skips pairs with existing positions (Grid V2 overlap protection).
+
+**C. Execution Audit Finding (dokumentacja)**
+- `execution-engine.js` → `pm.openPosition()` → JS Map update. Cały system to paper trading.
+- `okx_execution_engine.js` EXISTS (371 linii, `executeOrder()` z `POST /api/v5/trade/order`) ale NIGDY nie importowany.
+- `paperTrading` / `enableLiveTrading` config flags DEFINED ale NIGDY CHECKED w runtime.
+- OKX engine ma `x-simulated-trading: '1'` header — nawet podłączony handlowałby na OKX demo.
+
+### Wynik:
+- Trade starvation eliminated — gates advise instead of blocking.
+- 5 pairs covered by ensemble (was: only BTC).
+- Grid V2 (2 pairs) + Funding (5 pairs) + Momentum (1 pair) + Ensemble (5 pairs) = full coverage.
+- Min-hold reduced 15→5min for faster recovery after SL exits.
+
 ## PATCH #46: CPU 100% FIX — GPU-Only Computation (2026-02-24)
 
 ## PATCH #188: Agent Canon + Promptfoo + OpenLIT Baseline (2026-03-29)
@@ -33,6 +78,17 @@ Lokalny system agentów, promptów i instrukcji był rozproszony między kilkoma
 - Stack używa teraz oficjalnego publicznego obrazu `ghcr.io/openlit/openlit:latest` z wbudowanym OTLP receiverem.
 - Poprawiono healthcheck kontenera `openlit`, bo obraz nie zawiera `curl` i nie odpowiada pod `127.0.0.1:3000`; status jest teraz sprawdzany przez `node` pod adresem hostname kontenera.
 - Odblokowano lokalny start `trading-bot/src/modules/bot.js` przez zmianę domyślnej ścieżki persistence z `/root/turbo-bot/data/bot_state.json` na repo-local `data/bot_state.json` z opcjonalnym override `BOT_STATE_FILE`.
+- Naprawiono lokalny `observability/openlit/otel-collector-config.yaml`, bo niekompatybilne pola `metrics_tables.*` wywracały collector na starcie i resetowały OTLP `4318`.
+- Zweryfikowano end-to-end ingest do ClickHouse po naprawie collectora: ręczny span `manual.forceflush.span` został zapisany poprawnie.
+- Dodano ręczne span-y OTel w `trading-bot/src/core/observability/openlit_bootstrap.js`, więc `emitAiTelemetry()` zapisuje teraz realne ślady `ai.telemetry.*` nawet wtedy, gdy runtime nie przechodzi przez auto-instrumentowane SDK providerów.
+- Potwierdzono zapis realnego eventu bota `ai.telemetry.neuron_manager_initialized` dla usługi `turbo-bot-runtime` w `default.otel_traces`.
+- Dodano `withAiSpan()` — async context wrapper tworzący parent-child trace trees z propagacją kontekstu OTel.
+- Opakowano `NeuronAIManager.makeDecision()` w span `neuron.makeDecision` z atrybutami `decision.*`, `confidence`, `source`, `isOverride`.
+- Opakowano `LLMRouter.call()` w span `llm.router.call` z atrybutami `llm.provider`, `llm.model`, `llm.latencyMs`, `llm.status`.
+- Dodano `emitAiTelemetry('neuron_learn_trade', ...)` do `learnFromTrade()` dla widoczności PnL/winRate/riskMultiplier.
+- Rozszerzono Python `openlit_config.py` o `emit_ai_telemetry()` i `ai_span()` context manager z pełnym `StatusCode` + `recordException`.
+- Instrumentacja `/predict` w `ml_service.py` — span `ml_prediction` z `direction`, `confidence`, `should_trade`, `inference_ms`, `regime`.
+- Zweryfikowano hierarchię trace tree w ClickHouse: `neuron.makeDecision` → `llm.router.call` + `neuron_decision` (wspólny TraceId, poprawne ParentSpanId).
 
 **Typ:** CRITICAL FIX — System Freeze Prevention  
 **Pliki:** `gpu-cuda-service.py`  
