@@ -53,9 +53,9 @@ const BLEND_AI_WEIGHT_INITIAL = 0.3;  // AI influence starts at 30%
 const BLEND_AI_WEIGHT_MAX = 0.85;     // AI influence grows to 85%
 
 // PATCH #20: Skynet Autonomous Brain Constants
-const DEFENSE_MODE_TRIGGER_LOSSES = 5;     // PATCH #39A: 3→5 (prevent premature defense lock)
-const DEFENSE_MODE_RISK_REDUCTION = 0.65;  // PATCH #39A: 0.5→0.65 (less aggressive risk cut)
-const DEFENSE_MODE_COOLDOWN_MS = 1800000;  // PATCH #39A: 1h→30min (faster recovery)
+const DEFENSE_MODE_TRIGGER_LOSSES = 7;     // P#204d: parity with backtest config.py (was 5)
+const DEFENSE_MODE_RISK_REDUCTION = 0.75;  // P#204d: parity with backtest config.py (was 0.65)
+const DEFENSE_MODE_COOLDOWN_MS = 1800000;  // 30min recovery
 const PARAM_EVOLUTION_INTERVAL = 50;       // Evolve config every N trades
 const PHASE_RECOVERY_TIMEOUT_MS = 120000;  // 2min timeout to detect training crash
 const PRIORITY_REPLAY_RATIO = 0.3;         // 30% of replay buffer = high-priority

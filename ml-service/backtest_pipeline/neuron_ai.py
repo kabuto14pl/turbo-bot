@@ -58,10 +58,15 @@ class NeuronAISimulator:
         """
         PRIME Gate — 7 validation rules before execution.
         
+        P#209b: PRIME_WARN_MODE — when True, hard blocks become soft warnings.
+        Trade still passes but with warnings logged for analysis.
+        
         Returns:
-            dict: {passed: bool, reason: str, adjusted_confidence: float}
+            dict: {passed: bool, reason: str, adjusted_confidence: float, warnings: list}
         """
         adjusted_conf = confidence
+        prime_warn = getattr(config, 'PRIME_WARN_MODE', False)
+        warnings = []
         
         # PATCH #68: Determine effective confidence floor for RANGING bypass
         if is_grid_signal and regime == 'RANGING' and getattr(config, 'RANGING_BYPASS_ENABLED', False):
@@ -72,11 +77,14 @@ class NeuronAISimulator:
         # Rule 1: Drawdown block
         if drawdown > config.PRIME_DRAWDOWN_BLOCK:
             self.prime_rejections['drawdown'] += 1
-            return {
-                'passed': False,
-                'reason': f'Drawdown {drawdown*100:.1f}% > {config.PRIME_DRAWDOWN_BLOCK*100}%',
-                'adjusted_confidence': 0,
-            }
+            if not prime_warn:
+                return {
+                    'passed': False,
+                    'reason': f'Drawdown {drawdown*100:.1f}% > {config.PRIME_DRAWDOWN_BLOCK*100}%',
+                    'adjusted_confidence': 0,
+                    'warnings': [],
+                }
+            warnings.append(f'WARN_R1: Drawdown {drawdown*100:.1f}% > {config.PRIME_DRAWDOWN_BLOCK*100}%')
         
         # Rule 2: Duplicate prevention (min candle gap)
         candle_gap = candle_idx - self._last_trade_candle
@@ -84,11 +92,14 @@ class NeuronAISimulator:
         min_candle_gap = 4  # ~15 min / ~4 min per candle on 15m ≈ 1, but use 4 as safety
         if candle_gap < min_candle_gap:
             self.prime_rejections['duplicate'] += 1
-            return {
-                'passed': False,
-                'reason': f'Duplicate prevention: {candle_gap} candles since last trade',
-                'adjusted_confidence': 0,
-            }
+            if not prime_warn:
+                return {
+                    'passed': False,
+                    'reason': f'Duplicate prevention: {candle_gap} candles since last trade',
+                    'adjusted_confidence': 0,
+                    'warnings': [],
+                }
+            warnings.append(f'WARN_R2: Duplicate prevention: {candle_gap} candles since last trade')
         
         # Rule 3: Counter-trend block
         # PATCH #57D: Block shorts in TRENDING_UP, longs in TRENDING_DOWN
@@ -100,22 +111,28 @@ class NeuronAISimulator:
             if is_counter:
                 if getattr(config, 'PRIME_COUNTER_TREND_HARD_BLOCK', True):
                     self.prime_rejections['counter_trend'] += 1
-                    return {
-                        'passed': False,
-                        'reason': f'Counter-trend: {consensus_action} in {regime}',
-                        'adjusted_confidence': 0,
-                    }
-
-                adjusted_conf *= getattr(config, 'PRIME_COUNTER_TREND_CONF_MULT', 0.72)
-                min_conf = getattr(config, 'PRIME_COUNTER_TREND_MIN_CONF', effective_floor)
-                required_conf = max(effective_floor, min_conf)
-                if adjusted_conf < required_conf:
-                    self.prime_rejections['counter_trend'] += 1
-                    return {
-                        'passed': False,
-                        'reason': f'Counter-trend confidence {adjusted_conf:.2f} below {required_conf:.2f}',
-                        'adjusted_confidence': 0,
-                    }
+                    if not prime_warn:
+                        return {
+                            'passed': False,
+                            'reason': f'Counter-trend: {consensus_action} in {regime}',
+                            'adjusted_confidence': 0,
+                            'warnings': [],
+                        }
+                    warnings.append(f'WARN_R3: Counter-trend: {consensus_action} in {regime}')
+                else:
+                    adjusted_conf *= getattr(config, 'PRIME_COUNTER_TREND_CONF_MULT', 0.72)
+                    min_conf = getattr(config, 'PRIME_COUNTER_TREND_MIN_CONF', effective_floor)
+                    required_conf = max(effective_floor, min_conf)
+                    if adjusted_conf < required_conf:
+                        self.prime_rejections['counter_trend'] += 1
+                        if not prime_warn:
+                            return {
+                                'passed': False,
+                                'reason': f'Counter-trend confidence {adjusted_conf:.2f} below {required_conf:.2f}',
+                                'adjusted_confidence': 0,
+                                'warnings': [],
+                            }
+                        warnings.append(f'WARN_R3: Counter-trend conf {adjusted_conf:.2f} < {required_conf:.2f}')
         
         # Rule 4: Defense mode adjustment
         # PATCH #57G: Cap at floor instead of blocking (fix confidence death spiral)
@@ -133,20 +150,27 @@ class NeuronAISimulator:
         # Rule 5: Loss streak hold
         if self.consecutive_losses >= config.LLM_LOSS_STREAK_HOLD:
             self.prime_rejections['loss_streak'] += 1
-            return {
-                'passed': False,
-                'reason': f'Loss streak {self.consecutive_losses} >= {config.LLM_LOSS_STREAK_HOLD}',
-                'adjusted_confidence': 0,
-            }
+            if not prime_warn:
+                return {
+                    'passed': False,
+                    'reason': f'Loss streak {self.consecutive_losses} >= {config.LLM_LOSS_STREAK_HOLD}',
+                    'adjusted_confidence': 0,
+                    'warnings': [],
+                }
+            warnings.append(f'WARN_R5: Loss streak {self.consecutive_losses} >= {config.LLM_LOSS_STREAK_HOLD}')
         
         # Rule 6: Confidence floor
         # PATCH #68: Use effective_floor (lower for RANGING grid signals)
         if adjusted_conf < effective_floor:
-            return {
-                'passed': False,
-                'reason': f'Confidence {adjusted_conf:.2f} < floor {effective_floor}',
-                'adjusted_confidence': 0,
-            }
+            if not prime_warn:
+                return {
+                    'passed': False,
+                    'reason': f'Confidence {adjusted_conf:.2f} < floor {effective_floor}',
+                    'adjusted_confidence': 0,
+                    'warnings': [],
+                }
+            warnings.append(f'WARN_R6: Confidence {adjusted_conf:.2f} < floor {effective_floor}')
+            adjusted_conf = effective_floor  # Promote to floor in WARN mode
         
         # Rule 7: Regime-based confidence dampening
         # PATCH #68: Skip RANGING dampening for grid signals (they need confidence preserved)
@@ -159,10 +183,15 @@ class NeuronAISimulator:
         adjusted_conf = max(config.CONFIDENCE_CLAMP_MIN, 
                           min(config.CONFIDENCE_CLAMP_MAX, adjusted_conf))
         
+        reason = 'All PRIME gates passed'
+        if warnings:
+            reason = f'PRIME WARN MODE — {len(warnings)} warnings: {"; ".join(warnings)}'
+        
         return {
             'passed': True,
-            'reason': 'All PRIME gates passed',
+            'reason': reason,
             'adjusted_confidence': adjusted_conf,
+            'warnings': warnings,
         }
     
     def make_decision(self, consensus, signals, regime, drawdown, 

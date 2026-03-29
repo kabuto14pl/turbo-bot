@@ -29,7 +29,8 @@ function loadConfig() {
         rebalanceIntervalHours: parseFloat(process.env.REBALANCE_INTERVAL_HOURS || '12'),
         correlationThreshold: parseFloat(process.env.CORRELATION_THRESHOLD || '0.5'),
         tradingInterval: parseInt(process.env.TRADING_INTERVAL || '30000'),
-        tradingFeeRate: parseFloat(process.env.TRADING_FEE_RATE || '0.001'),
+        // P#204a: Fix fee rate parity — was 0.001 (0.10%), backtest uses 0.0005 taker (Board5)
+        tradingFeeRate: parseFloat(process.env.TRADING_FEE_RATE || '0.0005'),
         // P#198.5: VQC per-TF override — backtest proved VQC helps 4h but destroys 1h
         vqcEnabledTimeframes: (process.env.VQC_ENABLED_TF || '4h').split(',').map(s => s.trim()),
     };

@@ -51,13 +51,21 @@ SHORT_EXHAUSTION_MIN_VOLUME_RATIO = 1.8
 # PATCH #63: Parameterized trail distances + regime-adaptive trailing
 # Phase 3/4 were hardcoded at 0.5/1.0 ATR — way too tight for BTC 15m
 PHASE_1_MIN_R = 0.7            # Brain P#64 iter4: 1.0→0.7 (earlier trailing start)
-PHASE_2_BE_R = 1.0             # Phase 2 BE at 1.0R
+PHASE_2_BE_R = 1.3             # P#205c: 1.0→1.3 (Board5: avoid premature BE, must not collide with Phase 3 LOCK_R=1.5)
 PHASE_3_LOCK_R = 1.5           # Phase 3 lock at 1.5R
 PHASE_4_LOCK_R = 2.0           # Phase 4 lock at 2.0R
 PHASE_5_CHANDELIER_R = 2.0     # P#194: 2.5→2.0 — lock profit earlier (trail was giving back >1R)
 
 # P#203a: REVERTED P#202d grid trailing — tighter phases cut winners short,
 #   BNB 15m PF dropped 1.81→1.14, SOL 4h PF 0.97→0.79. Grid uses standard phases.
+
+# P#205a: Shadow directional mode — logs what QDV+PRIME alone would trade
+# Bypasses EQ, PA, LLM, Sentiment, LongTrend, DirectionFilters gates
+SHADOW_DIRECTIONAL_ENABLED = True
+
+# P#209b: PRIME WARN mode — hard blocks become soft warnings for analysis
+# When True, PRIME gate logs warnings but lets trades through
+PRIME_WARN_MODE = False  # Start disabled — enable per-backtest to measure impact
 TRAILING_DISTANCE_ATR = 1.0    # P#194: 2.0→1.0 — trail MUST be tighter than SL (1.5 ATR). Was 2.0 = wider than SL = destroyed edge
 PHASE3_TRAIL_ATR = 1.0         # Phase 3: lock highest - 1.0 ATR
 PHASE4_TRAIL_ATR = 0.75        # Phase 4: lock highest - 0.75 ATR

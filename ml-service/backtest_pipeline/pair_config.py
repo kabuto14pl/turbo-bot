@@ -67,7 +67,7 @@ PAIR_OVERRIDES = {
         
         # P#175: Grid V2 (replaces funding_rate — SOL APR=0.8% doesn't cover costs)
         'GRID_V2_ENABLED': True,
-        'GRID_V2_ALLOWED_TIMEFRAMES': ['1h', '4h'],  # P#201d: SOL 15m grid lost -$69.40 (PF=0.645). Keep 1h+4h (profitable)
+        'GRID_V2_ALLOWED_TIMEFRAMES': ['1h'],  # P#204d+: Removed 4h (PF<1.0, net negative -$12). Keep 1h only (PF=1.79, Board5)
         'GRID_V2_ADX_THRESHOLD': 22,   # SOL: slightly higher ADX threshold (volatile)
         'GRID_V2_BB_LOWER_ENTRY': 0.15,  # P#200c: Relaxed from 0.08 — capture more mean-reversion
         'GRID_V2_BB_UPPER_ENTRY': 0.85,  # P#200c: Relaxed from 0.92 — more SELL entries
@@ -202,8 +202,20 @@ PAIR_OVERRIDES = {
     'XRPUSDT': {
         'CONFIDENCE_FLOOR': 0.38,
         'RISK_PER_TRADE': 0.004,
-        'GRID_V2_ENABLED': False,
-        'DIRECTIONAL_ENABLED': False,   # P#200a: XRP directional PF=0.588, net negative. Pure funding.
+        # P#204d+: Enable Grid V2 on XRP 1h — ranging 80% of time, low spread on Kraken (Board5: Liam Chen)
+        'GRID_V2_ENABLED': True,
+        'GRID_V2_ALLOWED_TIMEFRAMES': ['1h'],
+        'GRID_V2_ADX_THRESHOLD': 23,
+        'GRID_V2_BB_LOWER_ENTRY': 0.15,
+        'GRID_V2_BB_UPPER_ENTRY': 0.85,
+        'GRID_V2_RSI_OVERSOLD': 35,
+        'GRID_V2_RSI_OVERBOUGHT': 65,
+        'GRID_V2_SL_ATR': 0.70,         # Standard SL, not too tight
+        'GRID_V2_TP_ATR': 1.30,
+        'GRID_V2_COOLDOWN': 8,
+        'GRID_V2_MAX_TRADES': 40,
+        'GRID_V2_RISK_PER_TRADE': 0.005,
+        'DIRECTIONAL_ENABLED': False,   # P#200a: XRP directional PF=0.588, net negative. Pure funding + grid.
         'FUNDING_ARB_ENABLED': True,
         'FUNDING_MIN_RATE': 0.00005,
         'FUNDING_CAPITAL_PCT': 0.50,    # P#200a: Pure funding → 50% capital on funding (was 35%)

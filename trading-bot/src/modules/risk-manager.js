@@ -104,10 +104,10 @@ class RiskManager {
             }
         }
 
-        // PATCH #44: RANGING regime reduction — 30% sizing in sideways markets
+        // P#204c: RANGING sizing parity with backtest (0.90) — was 0.30 (Board5)
         if (regime === 'RANGING') {
-            qty *= 0.3;
-            console.log('[SIZING] RANGING regime: size reduced to 30%');
+            qty *= 0.9;
+            console.log('[SIZING] RANGING regime: size reduced to 90% (parity fix)');
         } else if (regime === 'HIGH_VOLATILITY') {
             qty *= 0.6;
             console.log('[SIZING] HIGH_VOLATILITY regime: size reduced to 60%');

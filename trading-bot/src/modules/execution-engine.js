@@ -379,13 +379,12 @@ class ExecutionEngine {
             if (signal.action === 'BUY') {
                 let sl, tp;
                 if (atrValue && atrValue > 0) {
-                    // SL: 1.5x ATR (tighter than old 2x - better R:R with trailing)
-                    // TP: 4x ATR (wider - let runners run with partial TP levels)
+                    // P#204b: SL 1.5x ATR, TP 2.5x ATR — parity with backtest config.py (Board5)
                     sl = signal.price - 1.5 * atrValue;
-                    tp = signal.price + 4.0 * atrValue;
+                    tp = signal.price + 2.5 * atrValue;
                 } else {
                     sl = signal.price * 0.985;
-                    tp = signal.price * 1.04;
+                    tp = signal.price * 1.025;
                 }
                 this.pm.openPosition(signal.symbol, {
                     entryPrice: signal.price, quantity,
@@ -393,7 +392,7 @@ class ExecutionEngine {
                     atrAtEntry: atrValue || 0
                 });
                 console.log(`[BUY] ${quantity.toFixed(6)} @ $${signal.price.toFixed(2)}`);
-                console.log(`[RISK] SL: $${sl.toFixed(2)} (-${atrValue ? '1.5x ATR' : '1.5%'}) | TP: $${tp.toFixed(2)} (+${atrValue ? '4x ATR' : '4%'})`);
+                console.log(`[RISK] SL: $${sl.toFixed(2)} (-${atrValue ? '1.5x ATR' : '1.5%'}) | TP: $${tp.toFixed(2)} (+${atrValue ? '2.5x ATR' : '2.5%'})`);
                 trade.pnl = -fees;
                 trade.entryPrice = signal.price;
 

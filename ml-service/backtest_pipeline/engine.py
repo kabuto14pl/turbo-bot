@@ -746,6 +746,47 @@ class FullPipelineEngine:
                                                   config.CONFIDENCE_FLOOR)
 
                     # ============================================================
+                    # P#205a-shadow: SHADOW DIRECTIONAL LOGGING (Board5)
+                    # Bypasses: EQ + PA + LLM + Sentiment + Long Trend + Direction Filters
+                    # Keeps: QDV + PRIME only — logs "would-have-traded" for analysis
+                    # ============================================================
+                    if (not is_ranging_grid and
+                            getattr(config, 'SHADOW_DIRECTIONAL_ENABLED', False) and
+                            self._is_higher_tf):
+                        _shadow_prime = self.neuron.validate_prime_gate(
+                            consensus['action'], consensus['confidence'],
+                            current_regime, drawdown, i,
+                            is_grid_signal=False
+                        )
+                        _shadow_qdv = {'verified': True}
+                        if hasattr(self, 'quantum') and self.quantum:
+                            _shadow_qdv = self.quantum.verify_decision(
+                                consensus['action'], consensus['confidence'],
+                                current_regime, q_result.get('qra_risk_score', 50)
+                            )
+                        _shadow_would_trade = _shadow_prime['passed'] and _shadow_qdv.get('verified', True)
+                        _shadow_entry = {
+                            'candle_idx': i,
+                            'timestamp': str(candle_time),
+                            'pair': self.symbol,
+                            'timeframe': timeframe,
+                            'action': consensus['action'],
+                            'confidence': round(consensus['confidence'], 4),
+                            'prime_adjusted_conf': round(_shadow_prime.get('adjusted_confidence', 0), 4),
+                            'regime': current_regime,
+                            'would_trade': _shadow_would_trade,
+                            'prime_passed': _shadow_prime['passed'],
+                            'qdv_passed': _shadow_qdv.get('verified', True),
+                            'prime_reason': _shadow_prime.get('reason', ''),
+                            'entry_price': round(float(row['close']), 4),
+                            'atr': round(float(row.get('atr14', 0)), 4),
+                            'gates_bypassed': 'EQ,PA,LLM,Sentiment,LongTrend,PreMomentum,DirectionFilters',
+                        }
+                        if not hasattr(self, '_shadow_trades'):
+                            self._shadow_trades = []
+                        self._shadow_trades.append(_shadow_entry)
+
+                    # ============================================================
                     # PHASE 7: POST-ENSEMBLE GATES (PRIME)
                     # ============================================================
                     self.phase_stats['phase_7'] += 1
@@ -1504,6 +1545,7 @@ class FullPipelineEngine:
                 'fees_pct_of_pnl': 0,
                 'trades_per_day': 0,
                 'trades_list': [],
+                'shadow_trades': getattr(self, '_shadow_trades', []),
             }
         
         # === TRADE METRICS ===
@@ -1742,6 +1784,9 @@ class FullPipelineEngine:
                 'confidence': round(t.get('confidence', 0), 3),
                 'strategies': t.get('strategies', []),  # P#195: strategy attribution
             } for i, t in enumerate(trades)],
+
+            # P#205a: Shadow directional mode trades (QDV+PRIME only, bypasses all other gates)
+            'shadow_trades': getattr(self, '_shadow_trades', []),
         }
 
     def _build_quantum_summary(self, quantum_stats):
