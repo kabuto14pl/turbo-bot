@@ -109,7 +109,8 @@ TIME_EXIT_UNDERWATER_H = 36    # Close if underwater > 0.5 × ATR after 36h
 # GC2: Fee aligned with live tradingFeeRate (config.js + bundle.json)
 FEE_RATE = 0.0002              # P#174: 0.02% maker rate — limit TP/BE exits
 FEE_RATE_TAKER = 0.0005        # P#189: 0.05% taker rate — SL/TRAIL/TIME exits (market orders)
-SLIPPAGE_RATE = 0.0002         # P#189: 0.02% slippage on SL exits — realistic for fast closes (was 0.0001)
+SLIPPAGE_RATE = 0.0003         # P#206c: 0.03% slippage on SL exits (Board5: was 0.0002)
+SLIPPAGE_JITTER = True         # P#206c: Add random ±50% variance to slippage (break determinism)
 
 # PATCH #67: Volatility Pause — adaptive sizing after loss streaks
 # After N consecutive signal-level losses → reduce sizing to X%
@@ -337,8 +338,10 @@ STRATEGY_ONLY_MODE = False  # P#198: DISABLED — ML pipeline activated with saf
 # When True: XGBoost/MLP train and predict, but only VETO (block) bad trades.
 # Heuristic ML stays primary signal for ensemble. XGBoost can only suppress.
 # This prevents untrained ML from generating wrong directional trades.
+# P#206a: ML signal generation — XGBoost can now INITIATE trades (Board5: Dr. Elena Petrova)
+# Requires CV quality >= 55% and confidence >= 60% to generate signal
 # Disable when ML proves edge (CV consistently > 55% across pairs).
-ML_VETO_ONLY = True
+ML_VETO_ONLY = False
 
 # P#198: VQC REGIME OVERRIDE — A/B test GPU-VQC vs classical regime detection
 # When True: use GPU VQC regime classification instead of classical HMM.
@@ -352,8 +355,9 @@ VQC_REGIME_OVERRIDE_TF = ['4h']  # P#198.3: Enable VQC regime ONLY on these TFs
 
 # P#194 FAZA 1: Disable directional trading on 15m — funding only
 # Advisory Board: directional 15m was -$110.85, funding was +$23.91.
-# Directional trading is net negative on 15m. Keep it on 1h/4h only.
-DIRECTIONAL_15M_ENABLED = False
+# P#205b: Re-enabled globally, BNB 15m is profitable (grid winner).
+# Non-BNB pairs use DIRECTIONAL_ENABLED: False in pair_config.py to stay funding-only.
+DIRECTIONAL_15M_ENABLED = True
 
 # P#194 FAZA 1: Bypass heavy gate cascade on higher timeframes
 # Advisory Board (Khalil): 15 sequential gates kill 96.5% of signals.

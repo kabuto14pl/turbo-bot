@@ -371,7 +371,8 @@ class ExecutionEngine {
 
             const trade = {
                 id: this.config.instanceId + '-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                timestamp: signal.timestamp, symbol: signal.symbol, action: signal.action,
+                timestamp: Date.now(), symbol: signal.symbol, action: signal.action,
+                signalTimestamp: signal.timestamp,  // P#207a: Keep original candle time for reference
                 price: signal.price, quantity, pnl: 0, strategy: signal.strategy,
                 instanceId: this.config.instanceId, executionTime: 0, fees,
             };

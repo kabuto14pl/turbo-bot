@@ -833,6 +833,11 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
                 _delta = _new - _base
                 _arrow = '↑' if _delta > 0.01 else ('↓' if _delta < -0.01 else '→')
                 print(f"    {_sym:<10} {_base*100:5.1f}% → {_new*100:5.1f}% ({_delta*100:+.1f}%) {_arrow}")
+            # P#204e-rebal: Apply rebalancer allocation back to PAIR_CAPITAL_ALLOCATION
+            # Board5 (Robert Kim): Rebalancer was advisory-only — now active
+            for _sym, _val in _new_alloc.items():
+                PAIR_CAPITAL_ALLOCATION[_sym] = _val
+            print(f"    ✅ Rebalancer APPLIED — PAIR_CAPITAL_ALLOCATION updated for next run")
     
     return all_results
 

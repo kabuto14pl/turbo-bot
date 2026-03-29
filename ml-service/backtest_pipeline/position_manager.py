@@ -621,6 +621,10 @@ class PositionManager:
         # P#74: Slippage only on SL exits (market orders). TP/trail/BE = limit = no slippage
         slippage = getattr(config, 'SLIPPAGE_RATE', 0.0)
         if slippage > 0 and reason == 'SL':
+            # P#206c: Random jitter ±50% to break backtest determinism
+            if getattr(config, 'SLIPPAGE_JITTER', False):
+                import random
+                slippage *= (0.5 + random.random())  # range: 0.5x to 1.5x
             if pos['side'] == 'LONG':
                 exit_price = exit_price * (1 - slippage)
             else:
