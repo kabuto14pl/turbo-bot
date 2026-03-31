@@ -33,6 +33,13 @@ function loadConfig() {
         tradingFeeRate: parseFloat(process.env.TRADING_FEE_RATE || '0.0005'),
         // P#198.5: VQC per-TF override — backtest proved VQC helps 4h but destroys 1h
         vqcEnabledTimeframes: (process.env.VQC_ENABLED_TF || '4h').split(',').map(s => s.trim()),
+        // P#214: OKX API credentials for live/demo trading
+        okx: {
+            apiKey: process.env.OKX_API_KEY || '',
+            secretKey: process.env.OKX_SECRET_KEY || '',
+            passphrase: process.env.OKX_PASSPHRASE || '',
+            sandbox: process.env.OKX_SANDBOX !== 'false', // default: true (demo trading)
+        },
     };
 }
 

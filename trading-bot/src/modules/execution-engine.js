@@ -33,12 +33,26 @@ class ExecutionEngine {
         this.megatron = null; // PATCH #36: Megatron reference for activity logging
         // PATCH #44: Min-hold cooldown tracking
         this._lastCloseTime = 0;
+        // P#214: OKX live execution engine (null = paper trading)
+        this._okxEngine = null;
+        this._liveMode = false;
     }
 
     setAdvancedPositionManager(apm) { this.advancedPositionManager = apm; }
     setMonitoringSystem(ms) { this.monitoringSystem = ms; }
     // PATCH #36: Allow bot.js to set Megatron reference for SL/TP/TIME activity logs
     setMegatron(megatron) { this.megatron = megatron; }
+
+    /**
+     * P#214: Set OKX execution engine for live/demo trading.
+     * When set AND config.enableLiveTrading=true AND config.paperTrading=false,
+     * orders are sent to OKX API before updating in-memory portfolio.
+     */
+    setOKXEngine(okxEngine) {
+        this._okxEngine = okxEngine;
+        this._liveMode = !!(okxEngine && this.config.enableLiveTrading && !this.config.paperTrading);
+        console.log('[EXEC] Mode: ' + (this._liveMode ? 'LIVE (OKX API)' : 'PAPER (in-memory)'));
+    }
 
     /**
      * Monitor open positions: Chandelier trailing SL, 3-level partial TP, time exits
@@ -388,6 +402,36 @@ class ExecutionEngine {
                     sl = signal.price * 0.985;
                     tp = signal.price * 1.025;
                 }
+
+                // ═══════════════════════════════════════════════════════
+                // P#214: OKX LIVE EXECUTION — send real order to exchange
+                // before updating in-memory portfolio. If OKX rejects,
+                // abort the trade. Paper mode skips this entirely.
+                // ═══════════════════════════════════════════════════════
+                if (this._liveMode && this._okxEngine) {
+                    try {
+                        const okxResult = await this._okxEngine.executeOrder({
+                            symbol: signal.symbol,
+                            side: 'BUY',
+                            type: 'market',
+                            quantity: quantity,
+                            price: signal.price,
+                        });
+                        if (!okxResult.success) {
+                            console.log('[OKX REJECTED] BUY ' + signal.symbol + ': ' + (okxResult.error || 'unknown'));
+                            if (this.megatron) this.megatron.logActivity('TRADE', 'OKX Order Rejected',
+                                'BUY ' + signal.symbol + ': ' + (okxResult.error || 'unknown'), {}, 'critical');
+                            return;
+                        }
+                        console.log('[OKX FILLED] BUY ' + signal.symbol + ' orderId: ' + okxResult.orderId);
+                    } catch (okxErr) {
+                        console.error('[OKX ERROR] BUY ' + signal.symbol + ':', okxErr.message);
+                        if (this.megatron) this.megatron.logActivity('TRADE', 'OKX Error',
+                            'BUY ' + signal.symbol + ': ' + okxErr.message, {}, 'critical');
+                        return; // Do NOT update portfolio if exchange order failed
+                    }
+                }
+
                 this.pm.openPosition(signal.symbol, {
                     entryPrice: signal.price, quantity,
                     stopLoss: sl, takeProfit: tp,
@@ -408,6 +452,32 @@ class ExecutionEngine {
             } else if (signal.action === 'SELL') {
                 const pos = this.pm.getPosition(signal.symbol);
                 if (!pos) { console.error(`[SELL] No position for ${signal.symbol}`); return; }
+
+                // P#214: OKX LIVE SELL — send real sell order before updating portfolio
+                if (this._liveMode && this._okxEngine) {
+                    try {
+                        const okxResult = await this._okxEngine.executeOrder({
+                            symbol: signal.symbol,
+                            side: 'SELL',
+                            type: 'market',
+                            quantity: pos.quantity,
+                            price: signal.price,
+                        });
+                        if (!okxResult.success) {
+                            console.log('[OKX REJECTED] SELL ' + signal.symbol + ': ' + (okxResult.error || 'unknown'));
+                            if (this.megatron) this.megatron.logActivity('TRADE', 'OKX Sell Rejected',
+                                'SELL ' + signal.symbol + ': ' + (okxResult.error || 'unknown'), {}, 'critical');
+                            return;
+                        }
+                        console.log('[OKX FILLED] SELL ' + signal.symbol + ' orderId: ' + okxResult.orderId);
+                    } catch (okxErr) {
+                        console.error('[OKX ERROR] SELL ' + signal.symbol + ':', okxErr.message);
+                        if (this.megatron) this.megatron.logActivity('TRADE', 'OKX Sell Error',
+                            'SELL ' + signal.symbol + ': ' + okxErr.message, {}, 'critical');
+                        return; // Do NOT update portfolio if exchange order failed
+                    }
+                }
+
                 const result = this.pm.closePosition(signal.symbol, signal.price, null, 'SELL', signal.strategy);
                 if (result) {
                     trade.pnl = result.pnl;

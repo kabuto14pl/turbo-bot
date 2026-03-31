@@ -5,6 +5,69 @@
 
 ---
 
+## PATCH #215: Multi-Pair Skynet Prime (2026-03-31)
+
+**Typ:** Feature — LLM Trading on All Pairs  
+**Pliki:** `trading-bot/src/modules/bot.js`
+
+### Problem:
+Skynet Prime LLM cycle budował `llmState.indicators` wyłącznie z BTC candles i DIRECT TRADE używał hardcoded `this.config.symbol` (BTCUSDT). LLM nigdy nie handlował altcoinami.
+
+### Fixes:
+- `llmState.activeSymbols` i `llmState.pairPrices` dodane do kontekstu LLM — LLM widzi wszystkie pary i ich ceny.
+- DIRECT TRADE: `llmDetails.target_symbol` (z JSON response LLM) walidowany vs `config.symbols`. Jeśli valid → trade na tym symbolu. Jeśli brak → fallback do BTCUSDT.
+- Duplicate position check: `pm.hasPosition(targetSym)` przed otwarciem.
+- Log zawiera `targetSym` dla lepszej obserwowalności.
+
+### Wynik:
+- LLM może handlować na ETH, SOL, BNB, ADA — nie tylko BTC.
+- Backward compatible: brak `target_symbol` → default BTCUSDT.
+
+## PATCH #214: Wire OKX Execution Engine — Dual-Mode (2026-03-31)
+
+**Typ:** Architecture — Paper → Live Trading Path  
+**Pliki:** `trading-bot/src/modules/execution-engine.js`, `trading-bot/src/modules/bot.js`, `trading-bot/src/modules/config.js`, `trading-bot/okx_execution_engine.js`
+
+### Problem:
+`execution-engine.js` → `pm.openPosition()` = in-memory Map update. ZERO OKX API calls. `okx_execution_engine.js` (371 linii) istniał ale NIGDY nie był importowany. Bot paper-tradował niezależnie od konfiguracji.
+
+### Fixes:
+**A. execution-engine.js — Dual-mode execution:**
+- Nowe pola: `_okxEngine`, `_liveMode`, `setOKXEngine(okxEngine)`.
+- `_liveMode = true` TYLKO gdy `okxEngine` SET + `enableLiveTrading=true` + `paperTrading=false`.
+- BUY: Wywołuje `okxEngine.executeOrder()` PRZED `pm.openPosition()`. Jeśli OKX odrzuci → abort (portfolio nie zmieniony).
+- SELL: Wywołuje `okxEngine.executeOrder()` PRZED `pm.closePosition()`. Jeśli OKX odrzuci → abort.
+- Paper mode: zachowuje dotychczasowe zachowanie (bez zmian).
+
+**B. bot.js — Wire OKX engine:**
+- Import: `const { OKXExecutionEngine } = require('../../okx_execution_engine')`.
+- W konstruktorze: jeśli `config.okx.apiKey` jest SET → tworzy `OKXExecutionEngine` i przekazuje do `exec.setOKXEngine()`.
+- Jeśli brak credentials → log "Paper mode" i dalej jak dotychczas.
+
+**C. config.js — OKX credentials:**
+- `okx.apiKey`, `okx.secretKey`, `okx.passphrase` z env vars.
+- `okx.sandbox` (default: true) — kontroluje demo vs live API.
+
+**D. okx_execution_engine.js — Conditional demo header:**
+- Nowa metoda `_buildHeaders()` — `x-simulated-trading: '1'` TYLKO gdy `sandbox=true`.
+- Bez `sandbox` → header nie wysyłany = real production orders.
+- 3 endpoint (order, balance, cancel) używają `_buildHeaders()`.
+
+### Wynik:
+```
+DEFAULT (no env vars):  Paper mode — all in-memory, zero API calls
+OKX_API_KEY=xxx:        Paper mode — OKX engine loaded but _liveMode=false
++ ENABLE_LIVE_TRADING=true + PAPER_TRADING=false:
+                        LIVE mode — real OKX API orders + portfolio sync
++ OKX_SANDBOX=false:    PRODUCTION — real money orders (no demo header)
+```
+
+### Safety gates:
+- Default = paper trading (3 independent flags must all be set for live).
+- OKX rejection → abort (portfolio not modified).
+- Mock mode detection: `apiKey.includes('MOCK')` → simulation.
+- Sandbox default = true → OKX Demo API.
+
 ## PATCH #213: Safety Gate Reduction + Multi-Pair Ensemble + Execution Audit (2026-03-30)
 
 **Typ:** Architecture Overhaul — Trade Flow Unblocking + Multi-Pair  

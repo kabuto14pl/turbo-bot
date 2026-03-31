@@ -74,8 +74,26 @@ class OKXExecutionEngine {
             console.log('🎭 OKX Engine: MOCK MODE - Symulacja transakcji');
         }
         else {
-            console.log('🚀 OKX Engine: LIVE MODE - Rzeczywiste transakcje');
+            console.log('🚀 OKX Engine: ' + (credentials.sandbox ? 'DEMO' : 'LIVE') + ' MODE');
         }
+    }
+    /**
+     * P#214: Build common OKX API headers.
+     * x-simulated-trading header is ONLY sent when sandbox=true (OKX demo).
+     * Without it, orders go to real production OKX.
+     */
+    _buildHeaders(signature, timestamp) {
+        const headers = {
+            'OK-ACCESS-KEY': this.credentials.apiKey,
+            'OK-ACCESS-SIGN': signature,
+            'OK-ACCESS-TIMESTAMP': timestamp,
+            'OK-ACCESS-PASSPHRASE': this.credentials.passphrase,
+            'Content-Type': 'application/json',
+        };
+        if (this.credentials.sandbox) {
+            headers['x-simulated-trading'] = '1';
+        }
+        return headers;
     }
     /**
      * 🎯 GŁÓWNA FUNKCJA - WYKONYWANIE ORDERÓW (OKX)
@@ -130,14 +148,7 @@ class OKXExecutionEngine {
             const signature = this.createOKXSignature('POST', '/api/v5/trade/order', bodyString, timestamp);
             // Wysłanie order do OKX
             const response = await axios_1.default.post(`${this.baseURL}/api/v5/trade/order`, body, {
-                headers: {
-                    'OK-ACCESS-KEY': this.credentials.apiKey,
-                    'OK-ACCESS-SIGN': signature,
-                    'OK-ACCESS-TIMESTAMP': timestamp,
-                    'OK-ACCESS-PASSPHRASE': this.credentials.passphrase,
-                    'Content-Type': 'application/json',
-                    'x-simulated-trading': '1', // OBOWIĄZKOWY dla Demo Trading
-                },
+                headers: this._buildHeaders(signature, timestamp),
             });
             if (response.data.code === '0' && response.data.data?.length > 0) {
                 const orderData = response.data.data[0];
@@ -172,13 +183,7 @@ class OKXExecutionEngine {
             const timestamp = new Date().toISOString();
             const signature = this.createOKXSignature('GET', '/api/v5/account/balance', '', timestamp);
             const response = await axios_1.default.get(`${this.baseURL}/api/v5/account/balance`, {
-                headers: {
-                    'OK-ACCESS-KEY': this.credentials.apiKey,
-                    'OK-ACCESS-SIGN': signature,
-                    'OK-ACCESS-TIMESTAMP': timestamp,
-                    'OK-ACCESS-PASSPHRASE': this.credentials.passphrase,
-                    'x-simulated-trading': '1', // OBOWIĄZKOWY dla Demo Trading
-                },
+                headers: this._buildHeaders(signature, timestamp),
             });
             if (response.data.code === '0' && response.data.data?.length > 0) {
                 const balances = response.data.data[0].details || [];
@@ -211,14 +216,7 @@ class OKXExecutionEngine {
             const timestamp = new Date().toISOString();
             const signature = this.createOKXSignature('POST', '/api/v5/trade/cancel-order', bodyString, timestamp);
             const response = await axios_1.default.post(`${this.baseURL}/api/v5/trade/cancel-order`, body, {
-                headers: {
-                    'OK-ACCESS-KEY': this.credentials.apiKey,
-                    'OK-ACCESS-SIGN': signature,
-                    'OK-ACCESS-TIMESTAMP': timestamp,
-                    'OK-ACCESS-PASSPHRASE': this.credentials.passphrase,
-                    'Content-Type': 'application/json',
-                    'x-simulated-trading': '1', // OBOWIĄZKOWY dla Demo Trading
-                },
+                headers: this._buildHeaders(signature, timestamp),
             });
             return response.data.code === '0';
         }

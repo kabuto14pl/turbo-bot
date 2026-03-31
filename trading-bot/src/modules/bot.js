@@ -61,7 +61,7 @@ const { DataPipeline } = require('./data-pipeline');
 const { StrategyRunner } = require('./strategy-runner');
 const { EnsembleVoting } = require('./ensemble-voting');
 const { ExecutionEngine } = require('./execution-engine');
-const { bootstrapOpenLIT } = require('../core/observability/openlit_bootstrap');
+const { bootstrapOpenLIT, emitAiTelemetry, withAiSpan } = require('../core/observability/openlit_bootstrap');
 const { MLIntegration } = require('./ml-integration');
 const { StatePersistence } = require('./state-persistence');
 const { MonitoringBridge } = require('./monitoring-bridge');
@@ -70,6 +70,8 @@ const { Server } = require('./server');
 const { GridV2Strategy } = require('../strategies/grid-v2');
 const { FundingRateArbitrage } = require('../strategies/funding-rate-arb');
 const { MomentumHTFLTF } = require('../strategies/momentum-htf-ltf');
+// P#214: OKX execution engine for live/demo trading
+const { OKXExecutionEngine } = require('../../okx_execution_engine');
 
 class AutonomousTradingBot {
     constructor() {
@@ -82,6 +84,20 @@ class AutonomousTradingBot {
         this.ml = null; // Initialized async
         this.ensemble = new EnsembleVoting();
         this.exec = new ExecutionEngine(this.config, this.pm, this.rm, null);
+
+        // P#214: Wire OKX execution engine for live/demo trading
+        // Controlled by ENABLE_LIVE_TRADING=true + PAPER_TRADING=false + OKX credentials
+        if (this.config.okx && this.config.okx.apiKey) {
+            try {
+                const okxEngine = new OKXExecutionEngine(this.config.okx);
+                this.exec.setOKXEngine(okxEngine);
+            } catch (e) {
+                console.warn('[P#214] OKX engine init failed:', e.message, '— falling back to paper');
+            }
+        } else {
+            console.log('[EXEC] Paper mode — no OKX credentials configured');
+        }
+
         this.strategies = new StrategyRunner(this.config, this.rm, this.dp);
         this.state = new StatePersistence();
         this.mon = new MonitoringBridge(this.config);
@@ -497,6 +513,9 @@ class AutonomousTradingBot {
             }
             console.log('[' + this.config.instanceId + '] Trading cycle #' + this._cycleCount + '...');
 
+            const _cycleSpanAttrs = { 'cycle.number': this._cycleCount, 'cycle.instance': this.config.instanceId };
+            await withAiSpan('trading.cycle', _cycleSpanAttrs, async (cycleSpan) => {
+
             // 1. Fetch market data
             const marketData = await this.dp.getMarketData();
             const latestCandle = marketData[marketData.length - 1];
@@ -877,6 +896,11 @@ class AutonomousTradingBot {
                         allSignals, priceArr, portfolio.totalValue,
                         portfolio, currentPosition, trades
                     );
+                    emitAiTelemetry('quantum_boost', {
+                        hasWeightRecommendation: Boolean(hybridBoostResult.weightRecommendation),
+                        qaoaImprovement: hybridBoostResult.weightRecommendation
+                            ? hybridBoostResult.weightRecommendation.qaoaResult.improvement : null,
+                    });
 
                     // CRITICAL FIX (Patch #17): Apply quantum weight optimization to ensemble
                     if (hybridBoostResult.weightRecommendation && hybridBoostResult.weightRecommendation.weights) {
@@ -971,6 +995,12 @@ class AutonomousTradingBot {
                     ? { regime: this.neuralAI.currentRegime, volatility: 0 }
                     : null;
                 consensus = this.ensemble.vote(allSignals, this.rm, regimeInfo);
+                emitAiTelemetry('ensemble_vote', {
+                    action: consensus ? consensus.action : 'NONE',
+                    confidence: consensus ? consensus.confidence : 0,
+                    signalCount: allSignals.size,
+                    regime: regimeInfo ? regimeInfo.regime : 'UNKNOWN',
+                });
                 if (consensus && consensus.action !== 'HOLD') {
                     console.log('[CONSENSUS] ' + consensus.action + ' (conf: ' + (consensus.confidence*100).toFixed(1) + '%)');
                     this._lastConsensusStrategies = [];
@@ -1514,6 +1544,18 @@ class AutonomousTradingBot {
                     };
 
                     // Call NeuronAIManager — CPU Neural + LLM cascade
+                    // P#215: Add multi-pair context so LLM sees all symbols
+                    llmState.activeSymbols = this.config.symbols || [this.config.symbol];
+                    // Add per-pair price snapshots for LLM context
+                    const pairPrices = {};
+                    for (const sym of (this.config.symbols || [])) {
+                        try {
+                            const pp = await this._getCurrentPrice(sym);
+                            if (pp) pairPrices[sym] = pp;
+                        } catch (_) { /* non-critical */ }
+                    }
+                    llmState.pairPrices = pairPrices;
+
                     const llmDecision = await this.neuronManager.makeDecision(llmState);
 
                     if (llmDecision) {
@@ -1726,10 +1768,19 @@ class AutonomousTradingBot {
                             try {
                                 const maxPositions = (this.config.multiPosition && this.config.multiPosition.maxPositions) || 3;
                                 if (llmConf >= 0.40 && this.pm.positionCount < maxPositions) {
-                                    const tradePrice = await this._getCurrentPrice(this.config.symbol);
+                                    // P#215: Use LLM's target_symbol if valid, else default to main symbol
+                                    const validSymbols = this.config.symbols || [this.config.symbol];
+                                    const targetSym = (llmDetails.target_symbol && validSymbols.indexOf(llmDetails.target_symbol) >= 0)
+                                        ? llmDetails.target_symbol
+                                        : this.config.symbol;
+                                    // Skip if already have position in target symbol
+                                    if (this.pm.hasPosition(targetSym)) {
+                                        console.log('[SKYNET PRIME] ' + rawAction + ' SKIPPED — position already open for ' + targetSym);
+                                    } else {
+                                    const tradePrice = await this._getCurrentPrice(targetSym);
                                     if (tradePrice) {
                                         const tradeSignal = {
-                                            symbol: this.config.symbol,
+                                            symbol: targetSym,
                                             action: rawAction,
                                             confidence: llmConf,
                                             price: tradePrice,
@@ -1759,14 +1810,15 @@ class AutonomousTradingBot {
                                                 tradeSignal.regime = this.neuralAI.currentRegime;
                                             }
                                             await this.exec.executeTradeSignal(tradeSignal, this.dp);
-                                            console.log('[SKYNET PRIME] DIRECT TRADE: ' + rawAction +
+                                            console.log('[SKYNET PRIME] DIRECT TRADE: ' + rawAction + ' ' + targetSym +
                                                 ' (conf: ' + (llmConf*100).toFixed(1) + '%) | Provider: ' +
                                                 (llmDecision.provider || 'cpu') + ' | ' + llmReasoning);
                                             if (this.megatron) this.megatron.logActivity('SKYNET', 'Direct Trade (LLM)',
-                                                rawAction + ' conf=' + (llmConf*100).toFixed(1) + '% | ' + llmReasoning,
+                                                rawAction + ' ' + targetSym + ' conf=' + (llmConf*100).toFixed(1) + '% | ' + llmReasoning,
                                                 { provider: llmDecision.provider }, 'critical');
                                         }
                                     }
+                                    } // P#215: end hasPosition else
                                 } else if (llmConf < 0.40) {
                                     console.log('[SKYNET PRIME] ' + rawAction + ' SKIPPED — conf ' +
                                         (llmConf*100).toFixed(1) + '% below 40% gate');
@@ -1924,6 +1976,14 @@ class AutonomousTradingBot {
                 } catch(e) { /* Non-critical status log */ }
             }
 
+            if (cycleSpan) {
+                cycleSpan.setAttributes({
+                    'ai.cycle.consensus': consensus ? consensus.action : 'NONE',
+                    'ai.cycle.confidence': consensus ? consensus.confidence : 0,
+                    'ai.cycle.positionCount': this.pm.positionCount || 0,
+                });
+            }
+            }); // end trading.cycle span
             console.log('[' + this.config.instanceId + '] Cycle #' + this._cycleCount + ' complete');
         } catch (err) {
             console.error('[ERR] Trading cycle error:', err);

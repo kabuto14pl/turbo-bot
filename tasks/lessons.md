@@ -1545,3 +1545,16 @@ Replacing 3 blocking Skynet gates with confidence penalties (30-50%) and QDV blo
 
 ### L213.4: Multi-pair ensemble requires symbol override — strategies hardcode config.symbol
 `strategies.runAll(pairCandles)` analyzes the pair's data correctly but outputs `{ symbol: 'BTCUSDT' }` because each strategy reads `this.config.symbol`. Must override `signal.symbol = actualPair` on all returned signals before voting and execution. **Rule: When reusing strategies across pairs, always patch the symbol in the output signals.**
+
+## 2026-03-31: P#214 — Wire OKX Execution Engine
+
+### L214.1: Dual-mode execution requires 3 independent flags to prevent accidental live trading
+A single `enableLiveTrading=true` is not enough — you also need `paperTrading=false` AND valid OKX credentials. Triple-flag design prevents one misconfigured env var from sending real orders. **Rule: For irreversible actions (real money orders), require N≥3 independent enablement conditions.**
+
+### L214.2: Exchange order MUST execute BEFORE portfolio update — never the reverse
+If `pm.openPosition()` runs first and then OKX rejects the order, the in-memory portfolio shows a position that doesn't exist on the exchange. Always: exchange API first → if success → update portfolio. If exchange fails → abort entirely. **Rule: External state changes first, internal state second.**
+
+## 2026-03-31: P#215 — Multi-Pair Skynet Prime
+
+### L215.1: LLM target_symbol already existed in the prompt schema but was never used
+The NeuronAI prompt requested `"target_symbol": "BTCUSDT"` in the JSON response schema, but bot.js never read `details.target_symbol`. The LLM could technically return any symbol, but the code always used `this.config.symbol`. **Rule: After adding a field to an LLM prompt schema, ALWAYS wire the response field into the calling code.**
