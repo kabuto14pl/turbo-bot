@@ -137,8 +137,85 @@ function calculateCurrentVolatility(marketDataHistory, lookback) {
     return Math.sqrt(variance);
 }
 
+/**
+ * P#216: Real SuperTrend indicator (replaces fake EMA50 proxy).
+ * Uses Wilder ATR with upper/lower bands and direction tracking.
+ * @param {Array} marketData — candles with {high, low, close}
+ * @param {number} [period=10] — ATR period
+ * @param {number} [multiplier=3] — ATR multiplier for bands
+ * @returns {{value: number, direction: string}} — current SuperTrend value and 'buy'/'sell'
+ */
+function calculateSuperTrend(marketData, period, multiplier) {
+    if (period === undefined) period = 10;
+    if (multiplier === undefined) multiplier = 3;
+    if (!marketData || marketData.length < period + 1) {
+        const last = marketData && marketData.length > 0 ? marketData[marketData.length - 1] : null;
+        const c = last ? last.close : 0;
+        return { value: c, direction: 'buy' };
+    }
+
+    // Calculate ATR series using Wilder smoothing
+    const tr = [];
+    for (let i = 1; i < marketData.length; i++) {
+        const cur = marketData[i], prev = marketData[i - 1];
+        const h = cur.high || cur.close, l = cur.low || cur.close;
+        tr.push(Math.max(h - l, Math.abs(h - prev.close), Math.abs(l - prev.close)));
+    }
+
+    // Wilder ATR (not EMA — uses 1/period smoothing)
+    const atrArr = [tr.slice(0, period).reduce((a, b) => a + b, 0) / period];
+    for (let i = period; i < tr.length; i++) {
+        atrArr.push((atrArr[atrArr.length - 1] * (period - 1) + tr[i]) / period);
+    }
+
+    // SuperTrend calculation with direction flipping
+    let direction = 1; // 1 = uptrend (buy), -1 = downtrend (sell)
+    let superTrend = 0;
+    let prevUpperBand = 0, prevLowerBand = 0;
+
+    for (let i = period; i < marketData.length; i++) {
+        const atrIdx = i - period;
+        if (atrIdx >= atrArr.length) break;
+        const atr = atrArr[atrIdx];
+        const c = marketData[i];
+        const h = c.high || c.close, l = c.low || c.close;
+        const hl2 = (h + l) / 2;
+
+        let upperBand = hl2 + multiplier * atr;
+        let lowerBand = hl2 - multiplier * atr;
+
+        // Band continuity: bands can only tighten, not widen against direction
+        if (prevLowerBand > 0 && lowerBand < prevLowerBand && marketData[i - 1].close > prevLowerBand) {
+            lowerBand = prevLowerBand;
+        }
+        if (prevUpperBand > 0 && upperBand > prevUpperBand && marketData[i - 1].close < prevUpperBand) {
+            upperBand = prevUpperBand;
+        }
+
+        // Direction logic
+        if (direction === 1) {
+            superTrend = lowerBand;
+            if (c.close < lowerBand) {
+                direction = -1;
+                superTrend = upperBand;
+            }
+        } else {
+            superTrend = upperBand;
+            if (c.close > upperBand) {
+                direction = 1;
+                superTrend = lowerBand;
+            }
+        }
+
+        prevUpperBand = upperBand;
+        prevLowerBand = lowerBand;
+    }
+
+    return { value: superTrend, direction: direction === 1 ? 'buy' : 'sell' };
+}
+
 module.exports = {
     calculateSMA, calculateRSI, calculateMACD, calculateEMA, calculateROC,
     calculateATR, calculateRealADX, calculateBollingerBands, calculateVolumeProfile,
-    calculateCurrentVolatility,
+    calculateCurrentVolatility, calculateSuperTrend,
 };

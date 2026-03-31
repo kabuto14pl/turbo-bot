@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-04-01: PATCH #216 — Strategy Audit: Real SuperTrend, R:R, Grid Gate, Thresholds
+
+### L216.1: Fake indicator data is the silent killer of ensemble strategies
+`data-pipeline.js` set `supertrend: { value: ema50, direction: close > ema50 }` — EMA50 masquerading as SuperTrend. Three class-based strategies (55% of ensemble weight) consumed this as truth. No test or log ever flagged it because the shape was correct. **Rule**: every indicator must have an independent unit test comparing output to a known reference, not just a shape check.
+
+### L216.2: Unreachable candle gates make strategies invisible dead weight
+`MTF_MIN_CANDLES = 200` when the bot stores 100-200 candles meant Momentum HTF/LTF NEVER fired. The strategy loaded, the code ran, but the early return always triggered. **Rule**: log when a strategy is skipped due to insufficient data, and alert if skip rate > 95% over 24h.
+
+### L216.3: Regime-dependent strategies die when the regime classifier returns UNKNOWN
+Grid V2 required `regime === RANGING`, but NeuralAI (Thompson Sampling) often returns UNKNOWN. SOL Grid was permanently dead. **Rule**: regime gates must handle UNKNOWN explicitly; UNKNOWN should default to the strategy favorable regime, not block.
+
+### L216.4: R:R below 2:1 with partial TP is a losing game
+SL 1.5x ATR + TP 2.5x ATR = R:R 1.67:1. Partial TP at 1.5x ATR dropped effective R:R to ~1.3:1, requiring >60% win rate. **Rule**: minimum effective R:R (after partial TP) must be >= 2.0:1.
+
+### L216.5: Low confidence floors create high-frequency small-loss trades
+Floor 0.20 let marginal signals through. These hit SL quickly or get closed with micro-profit after fees. **Rule**: confidence floor should be >= max(fee_impact, 0.35).
+
+---
+
 ## 2026-03-15: PATCH #186 — GPU-Native Quantum Batching
 
 ## 2026-03-29: PATCH #188 — Agent Canon + Promptfoo + OpenLIT Baseline

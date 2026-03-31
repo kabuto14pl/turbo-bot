@@ -5,6 +5,51 @@
 
 ---
 
+## PATCH #216: Strategy Audit — Real SuperTrend, R:R 2.67:1, Grid ADX Gate, Thresholds (2026-04-01)
+
+**Typ:** Critical Fix — 7 Root Causes of Low Returns  
+**Pliki:** `indicators.js`, `data-pipeline.js`, `execution-engine.js`, `ensemble-voting.js`, `bot.js`, `grid-v2.js`, `momentum-htf-ltf.js`
+
+### Root Causes Found:
+1. **P0: SuperTrend was FAKE** — `data-pipeline.js` set `supertrend: { value: ema50, direction: close > ema50 }`. Real SuperTrend uses ATR bands + direction flip. 55% of ensemble weight (SuperTrend 22% + MACrossover 17% + MomentumPro 16%) received WRONG data.
+2. **P0: SL/TP R:R 1.67:1** — SL 1.5x ATR, TP 2.5x ATR. Partial TP at 1.5x dropped effective R:R to ~1.3:1. Needed >60% WR to profit.
+3. **P0: Grid V2 dead** — Required `regime === 'RANGING'`, NeuralAI often returns 'UNKNOWN'. SOL Grid never fired.
+4. **P1: Momentum HTF/LTF dead** — Required 200 candles, bot had 100-200 max. `MTF_MIN_CANDLES = 200` blocked it.
+5. **P1: Confidence floor 0.20** — Allowed garbage signals through → small losing trades.
+6. **P1: Fee gate 1.5x** — Too lenient, marginal trades passed through.
+7. **P1: Funding Rate Arb doesn't trade** — Logs only, no API calls. (NOT fixed — needs real API integration.)
+
+### Fixes (9 changes across 7 files):
+1. **Real SuperTrend** in `indicators.js` — Wilder ATR smoothing, upper/lower bands, band continuity (only tighten), direction flip. Period=10, multiplier=3.
+2. **Wire SuperTrend** in `data-pipeline.js` — Both `calcTFIndicators()` (h1/h4/d1) and m15 inline indicators use `ind.calculateSuperTrend()`.
+3. **TP widened** in `execution-engine.js` — 2.5x→4.0x ATR (R:R 1.67→2.67:1). Fallback TP 2.5%→4.0%.
+4. **Partial TP widened** — L1: 1.5x→2.0x ATR, L2: 2.5x→3.0x ATR. Effective R:R ~2.17:1.
+5. **Grid V2 ADX gate** in `grid-v2.js` — ADX-only gate replaces strict RANGING. Fires on UNKNOWN/RANGING/HIGH_VOL when ADX low.
+6. **Momentum candles** — `MTF_MIN_CANDLES` 200→50 in both `momentum-htf-ltf.js` and `bot.js`.
+7. **Confidence floor** 0.20→0.35 in `ensemble-voting.js`.
+8. **Ensemble thresholds** — conflict 0.35→0.40, normal 0.30→0.35 in `ensemble-voting.js`.
+9. **Fee gate** 1.5x→2.0x round-trip fees in `execution-engine.js`.
+
+### Multi-pair gate:
+- Altcoin confidence gate 0.40→0.45 in `bot.js`.
+
+### Validation:
+- All 7 modified files pass `node -c` syntax check.
+- 7-test validation suite (`tests/p216_validation.js`): ALL PASS ✓
+- Real SuperTrend: correct direction in both uptrend/downtrend, differs from EMA50.
+- R:R: 2.67:1 (effective 2.17:1 with partial TP).
+- Grid: fires on UNKNOWN regime, blocks on TRENDING_UP+high ADX.
+- Fee gate: blocks marginal trades, passes normal ATR trades.
+
+### Impact:
+- 55% of ensemble weight now gets REAL SuperTrend data (was EMA50 masquerading as SuperTrend).
+- R:R improvement: need ~38% WR to break even (was ~60%).
+- Grid V2 SOL strategy can actually fire (was permanently dead).
+- Momentum HTF/LTF strategy can evaluate (was blocked by candle count).
+- Garbage signals rejected at 0.35 floor (was passing at 0.20).
+
+---
+
 ## PATCH #215: Multi-Pair Skynet Prime (2026-03-31)
 
 **Typ:** Feature — LLM Trading on All Pairs  

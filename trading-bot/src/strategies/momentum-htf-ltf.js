@@ -33,7 +33,7 @@ const MTF_SL_ATR = 2.0;               // SL distance in ATR units
 const MTF_TP_ATR = 5.0;               // TP distance in ATR units
 const MTF_COOLDOWN_MS = 6 * 3600000;   // 6h between trades
 const MTF_MAX_TRADES_DAY = 3;          // Quality over quantity
-const MTF_MIN_CANDLES = 200;           // Data warmup
+const MTF_MIN_CANDLES = 50;           // P#216: Data warmup (was 200 — unreachable with 100-200 candle fetch)
 
 class MomentumHTFLTF {
     /**

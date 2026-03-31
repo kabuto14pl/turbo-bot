@@ -168,13 +168,15 @@ class DataPipeline {
             if (!raw || raw.length === 0) return null;
             const cls = raw.map(c => c.close);
             const lat = raw[raw.length - 1];
+            // P#216: Use real SuperTrend (ATR-based bands + direction flip)
+            const st = ind.calculateSuperTrend(raw, 10, 3);
             return {
                 indicators: {
                     rsi: ind.calculateRSI(cls, 14), atr: ind.calculateATR(raw, 14),
                     ema_9: ind.calculateEMA(cls, 9), ema_21: ind.calculateEMA(cls, 21),
                     ema_50: ind.calculateEMA(cls, 50), ema_200: ind.calculateEMA(cls, 200),
                     roc: ind.calculateROC(cls, 10), adx: ind.calculateRealADX(raw, 14),
-                    supertrend: { value: ind.calculateEMA(cls, 50), direction: lat.close > ind.calculateEMA(cls, 50) ? 'buy' : 'sell' }
+                    supertrend: st
                 },
                 prices: { time: lat.timestamp, open: lat.open, high: lat.high, low: lat.low, close: lat.close, volume: lat.volume }
             };
@@ -185,10 +187,12 @@ class DataPipeline {
         const d1 = calcTFIndicators(this.cachedTimeframeData.d1);
 
         // Fallback logic: h1 ??? m15, h4 ??? h1 ??? m15
+        // P#216: Use real SuperTrend for m15 (ATR-based bands + direction flip)
+        const m15ST = ind.calculateSuperTrend(marketData, 10, 3);
         const m15Ind = {
             rsi, atr, ema_9: ema9, ema_21: ema21, ema_50: ema50, ema_200: ema200,
             roc, adx: ind.calculateRealADX(marketData, 14),
-            supertrend: { value: ema50, direction: latest.close > ema50 ? 'buy' : 'sell' }
+            supertrend: m15ST
         };
         const m15Prices = { time: latest.timestamp, open: latest.open, high: latest.high, low: latest.low, close: latest.close, volume: latest.volume };
 

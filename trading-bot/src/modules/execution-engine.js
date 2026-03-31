@@ -146,13 +146,14 @@ class ExecutionEngine {
 
                     // ============================================
                     // 3-LEVEL PARTIAL TAKE-PROFIT
-                    // Level 1: 25% at 1.5x ATR
-                    // Level 2: 25% at 2.5x ATR
+                    // P#216: Widened levels for wider TP (4.0x ATR)
+                    // Level 1: 25% at 2.0x ATR (was 1.5x)
+                    // Level 2: 25% at 3.0x ATR (was 2.5x)
                     // Level 3: 50% runner (full TP or Chandelier exit)
                     // ============================================
 
-                    // PARTIAL TP LEVEL 1: 25% at 1.5x ATR
-                    if (atrMult >= 1.5 && !pos._partialTp1Done && pos.quantity > 0) {
+                    // PARTIAL TP LEVEL 1: 25% at 2.0x ATR
+                    if (atrMult >= 2.0 && !pos._partialTp1Done && pos.quantity > 0) {
                         const closeQty = pos.quantity * 0.25;
                         if (closeQty > 0.000001) {
                             const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L1_1.5ATR', 'PARTIAL_TP');
@@ -167,8 +168,8 @@ class ExecutionEngine {
                         }
                     }
 
-                    // PARTIAL TP LEVEL 2: 25% at 2.5x ATR
-                    if (atrMult >= 2.5 && !pos._partialTp2Done && pos.quantity > 0) {
+                    // PARTIAL TP LEVEL 2: 25% at 3.0x ATR (P#216: was 2.5x)
+                    if (atrMult >= 3.0 && !pos._partialTp2Done && pos.quantity > 0) {
                         const closeQty = pos.quantity * 0.333; // 25% of original = 33% of remaining 75%
                         if (closeQty > 0.000001) {
                             const trade = this.pm.closePosition(sym, price, closeQty, 'PARTIAL_TP_L2_2.5ATR', 'PARTIAL_TP');
@@ -354,16 +355,16 @@ class ExecutionEngine {
             const fees = signal.price * quantity * this.config.tradingFeeRate;
 
             // ═══════════════════════════════════════════════════════
-            // PATCH #44A: FEE GATE — reject trades where expected
-            // profit < 1.5× round-trip fees. Prevents fee-burning.
+            // P#216: FEE GATE — reject trades where expected
+            // profit < 2.0× round-trip fees (was 1.5×). Prevents fee-burning.
             // ═══════════════════════════════════════════════════════
             if (signal.action === 'BUY') {
                 const roundTripFees = fees * 2; // entry + exit
                 const expectedMinMove = atrValue ? atrValue * 1.5 : signal.price * 0.015;
                 const expectedProfit = expectedMinMove * quantity;
-                if (expectedProfit < roundTripFees * 1.5) {
+                if (expectedProfit < roundTripFees * 2.0) {
                     console.log('[FEE GATE] REJECTED: Expected $' + expectedProfit.toFixed(2) +
-                        ' < 1.5x fees $' + (roundTripFees * 1.5).toFixed(2) +
+                        ' < 2.0x fees $' + (roundTripFees * 2.0).toFixed(2) +
                         ' | ATR: ' + (atrValue ? atrValue.toFixed(2) : 'N/A'));
                     return;
                 }
@@ -395,12 +396,13 @@ class ExecutionEngine {
             if (signal.action === 'BUY') {
                 let sl, tp;
                 if (atrValue && atrValue > 0) {
-                    // P#204b: SL 1.5x ATR, TP 2.5x ATR — parity with backtest config.py (Board5)
+                    // P#216: SL 1.5x ATR, TP 4.0x ATR — R:R 2.67:1 (was 2.5x = 1.67:1)
+                    // With partial TP L1 at 2.0x and L2 at 3.0x, effective R:R stays above 2.0
                     sl = signal.price - 1.5 * atrValue;
-                    tp = signal.price + 2.5 * atrValue;
+                    tp = signal.price + 4.0 * atrValue;
                 } else {
                     sl = signal.price * 0.985;
-                    tp = signal.price * 1.025;
+                    tp = signal.price * 1.040; // P#216: 4% (was 2.5%)
                 }
 
                 // ═══════════════════════════════════════════════════════

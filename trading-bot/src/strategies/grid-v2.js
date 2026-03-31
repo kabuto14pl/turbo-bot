@@ -96,12 +96,13 @@ class GridV2Strategy {
         // Cooldown check
         if (Date.now() - this._lastGridTradeTime < this.cooldownMs) return null;
 
-        // === REGIME GATE: Only RANGING ===
+        // === REGIME GATE: ADX-based (P#216: removed strict RANGING requirement) ===
+        // Grid works on ANY regime where ADX is low (mean-reverting conditions).
+        // Previously required NeuralAI regime='RANGING' which often returned 'UNKNOWN'.
         const adx = indicators.adx || 30;
         if (adx > this.adxThreshold) return null;
-        if (regime !== 'RANGING' && regime !== 'HIGH_VOLATILITY') return null;
-        // HV only if ADX is still low (choppy HV)
-        if (regime === 'HIGH_VOLATILITY' && adx > 18) return null;
+        // Only block during strong trending (TRENDING_UP/DOWN with high ADX confirmed)
+        if ((regime === 'TRENDING_UP' || regime === 'TRENDING_DOWN') && adx > 15) return null;
 
         // === BOLLINGER BAND ANALYSIS ===
         const bbPctb = indicators.bb_pctb;

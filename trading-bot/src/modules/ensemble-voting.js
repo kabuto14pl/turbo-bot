@@ -162,19 +162,19 @@ class EnsembleVoting {
         // PATCH #26: Raised thresholds to reduce trade frequency (fewer trades = less fee drag)
         // Analysis showed 33% win rate ÔÇö need higher quality signals only
         if (hasConflict) {
-            threshold = 0.35; // PATCH #41C: was 0.50 (too high ÔÇö no signals could pass)
-            console.log('   [THRESHOLD] 60% (conflict ÔÇö P26 raised from 50%)');
+            threshold = 0.40; // P#216: Conflict — raised from 0.35 (need clearer signal)
+            console.log('   [THRESHOLD] 40% (conflict — P#216)');
         } else if (sourcesAgree >= 3 && (
             (mlConf > 0.80 && mlAct === action) ||
             (aiConf > 0.80 && aiAct === action) ||
             (mlConf > 0.70 && aiConf > 0.70 && mlAct === action && aiAct === action)
         )) {
             // PATCH #26: Require 3+ sources agreeing (was 2+) + higher ML thresholds
-            threshold = 0.25; // PATCH #41C: was 0.45
-            console.log('   [THRESHOLD] 25% (strong conviction ÔÇö P26 raised from 35%)');
+            threshold = 0.25; // Strong conviction (unchanged)
+            console.log('   [THRESHOLD] 25% (strong conviction)');
         } else {
-            threshold = 0.30; // PATCH #41C: was 0.45 (unreachable with current strategy weights)
-            console.log('   [THRESHOLD] 55% (normal ÔÇö P26 raised from 40%)');
+            threshold = 0.35; // P#216: Normal — raised from 0.30 (fewer but better trades)
+            console.log('   [THRESHOLD] 35% (normal — P#216)');
         }
 
         if (consensusPct < threshold) {
@@ -225,9 +225,9 @@ class EnsembleVoting {
             if (sig.symbol) { symbol = sig.symbol; break; }
         }
 
-        // PATCH #26: Minimum final confidence 0.30 (was 0.10) ÔÇö reject weak signals
+        // P#216: Minimum final confidence 0.35 (was 0.20) — reject weak/noisy signals
         const finalConf = (typeof weightedConf === 'number' && !isNaN(weightedConf))
-            ? Math.max(0.20, Math.min(0.95, weightedConf)) : 0.5; // PATCH #30b: was 0.30
+            ? Math.max(0.35, Math.min(0.95, weightedConf)) : 0.5; // P#216: raised from 0.20
 
         const result = {
             timestamp: Date.now(),

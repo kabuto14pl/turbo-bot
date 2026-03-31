@@ -774,7 +774,8 @@ class AutonomousTradingBot {
                 }
 
                 // --- Momentum HTF/LTF: BTC only (uses main history) ---
-                if (this.momentumStrategy && history.length >= 200) {
+                // P#216: Lowered from 200 to 50 candles — 200 was unreachable (bot fetches 100-200 15m candles)
+                if (this.momentumStrategy && history.length >= 50) {
                     try {
                         const btcPrice = history[history.length - 1].close;
                         const btcInd = _calcIndicators(history);
@@ -1271,7 +1272,7 @@ class AutonomousTradingBot {
                             : null;
                         const pairConsensus = this.ensemble.vote(pairSignals, this.rm, pairRegime);
 
-                        if (pairConsensus && pairConsensus.action !== 'HOLD' && pairConsensus.confidence >= 0.40) {
+                        if (pairConsensus && pairConsensus.action !== 'HOLD' && pairConsensus.confidence >= 0.45) {
                             pairConsensus.symbol = sym;
                             pairConsensus.strategy = 'MultiPairEnsemble_' + sym;
 
