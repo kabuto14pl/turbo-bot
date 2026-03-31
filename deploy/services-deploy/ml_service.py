@@ -39,10 +39,13 @@ from ml_model import TradingMLEnsemble
 from ollama_validator import OllamaValidator
 from regime_detection import StatisticalRegimeDetector
 from rule_validator import RuleValidator
+from openlit_config import bootstrap_openlit
 
 # Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [ML] %(message)s')
 logger = logging.getLogger(__name__)
+
+bootstrap_openlit("turbo-bot-ml-service-deploy")
 
 # ============================================================================
 # FastAPI App

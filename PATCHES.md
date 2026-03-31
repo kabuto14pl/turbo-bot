@@ -5,6 +5,28 @@
 
 ---
 
+## PATCH #218: Fix GPU Native Engine Selection — Remote Orchestrator Bug (2026-04-06)
+
+**Typ:** Critical Fix — GPU Engine Never Used  
+**Pliki:** `ml-service/backtest_pipeline/runner.py`, `ml-service/backtest_pipeline/gpu_native_engine.py`
+
+### Root Cause:
+`build_engine()` in runner.py had a hard gate: when `quantum_backend='remote-gpu'` (passed by `remote_gpu_full_orchestrator.py`), it **forced** `FullPipelineEngine`, printing "Remote quantum backend requested -> forcing FullPipelineEngine". This completely bypassed `GpuNativeBacktestEngine` even though `GPU_NATIVE_ENGINE=True` in config.
+
+Result: the user's real GPU backtest (`python -m ml-service.backtest_pipeline.remote_gpu_full_orchestrator --trades`) was running the classical engine with `DIRECTIONAL_ENABLED` gates — only SOL/BNB traded directionally → ~$253 returns instead of $2k+.
+
+### Fix:
+1. **runner.py `build_engine()`** — GPU-native engine now takes priority when `GPU_NATIVE_ENGINE=True` + PyTorch installed, regardless of quantum_backend. The MLP signal path trades ALL 5 pairs directionally without `DIRECTIONAL_ENABLED` gates.
+2. **gpu_native_engine.py** — Added `strategies=['GPU_MLP']` / `['GridV2']` / `['MomentumHTF']` attribution to all three trade paths for proper per-strategy PnL breakdown in trade tables.
+
+### Impact:
+- GpuNativeBacktestEngine now activates on Windows RTX 5070 Ti when user runs orchestrator
+- 4-layer MLP (2048→1024→512→256) + batched CUDA QMC generates signals for ALL pairs
+- BTC (8%), ETH (12%), XRP (15%) now trade directionally via MLP (were funding-only)
+- SOL (30%), BNB (35%) get MLP signals PLUS GridV2/MomentumHTF as before
+
+---
+
 ## PATCH #216: Strategy Audit — Real SuperTrend, R:R 2.67:1, Grid ADX Gate, Thresholds (2026-04-01)
 
 **Typ:** Critical Fix — 7 Root Causes of Low Returns  

@@ -21,8 +21,8 @@ PORTFOLIO_CAPITAL = 10000  # Total portfolio capital
 PAIR_CAPITAL_ALLOCATION = {
     'BTCUSDT': 0.08,    # P#175: funding-only, reduced from 10%
     'ETHUSDT': 0.12,    # ✅ ROBUST (PF 1.357 test)
-    'SOLUSDT': 0.25,    # P#175: ✅ ROBUST grid_v2 (PF 3.235 test), boosted from 22%
-    'BNBUSDT': 0.40,    # ✅ ROBUST (PF 2.484 test), boosted from 38%
+    'SOLUSDT': 0.30,    # P#211: boosted 25%→30% — ONLY proven alpha slot (SOL 1h PF=1.75, 4/4 positive)
+    'BNBUSDT': 0.35,    # P#211: reduced 40%→35% — trading marginal, mostly funding
     'XRPUSDT': 0.15,    # P#175: funding-only, reduced from 18%
 }
 
@@ -75,9 +75,9 @@ PAIR_OVERRIDES = {
         'GRID_V2_RSI_OVERBOUGHT': 65,
         'GRID_V2_SL_ATR': 0.80,       # SOL: wider grid SL (volatile)
         'GRID_V2_TP_ATR': 1.40,       # SOL: wider grid TP
-        'GRID_V2_COOLDOWN': 6,         # P#200c: 6 candles = 1.5h on 15m (was 12 = 3h)
-        'GRID_V2_MAX_TRADES': 80,      # P#200c: Double max (was 40)
-        'GRID_V2_RISK_PER_TRADE': 0.008,  # P#200c: Slight reduction per-trade (more trades × lower risk)
+        'GRID_V2_COOLDOWN': 5,         # P#211: reduced 6→5 candles — SOL 1h has proven alpha, allow faster re-entry
+        'GRID_V2_MAX_TRADES': 100,     # P#211: boosted 80→100 — SOL 1h is the primary revenue driver
+        'GRID_V2_RISK_PER_TRADE': 0.012,  # P#211: boosted 0.008→0.012 — SOL 1h is ONLY proven alpha (PF=1.75, 4/4 positive). Scale the winner.
         # P#198: Re-enable funding arb — diversify income (grid+funding dual)
         # P#175 disabled at APR=0.8%, but any positive funding adds edge
         # Lower min_rate threshold captures more funding windows
@@ -143,14 +143,14 @@ PAIR_OVERRIDES = {
         
         # P#71: Grid V2
         'GRID_V2_ENABLED': True,
-        'GRID_V2_ALLOWED_TIMEFRAMES': ['15m', '1h'],  # P#203c: re-enabled 1h (was -$146 pre-maxloss cap, now protected by GRID_V2_MAX_LOSS_ATR_MULT=1.5)
+        'GRID_V2_ALLOWED_TIMEFRAMES': ['15m'],  # P#211: DISABLED 1h (0/4 runs positive, PF=0.504, avg -$25). Keep 15m only (marginal PF=1.37)
         'GRID_V2_ADX_THRESHOLD': 18,
         'GRID_V2_BB_LOWER_ENTRY': 0.12,   # P#200c: Relaxed from 0.07 — more entries
         'GRID_V2_BB_UPPER_ENTRY': 0.88,   # P#200c: Relaxed from 0.93
         'GRID_V2_RSI_OVERSOLD': 36,
         'GRID_V2_RSI_OVERBOUGHT': 64,
         'GRID_V2_SL_ATR': 0.65,
-        'GRID_V2_TP_ATR': 1.20,
+        'GRID_V2_TP_ATR': 1.50,           # P#211: widened 1.20→1.50 ATR — bigger winners to overcome 30% fee drag (avg move 0.23%, need more TP room)
         'GRID_V2_COOLDOWN': 8,             # P#200c: 8 candles = 2h on 15m (was 18 = 4.5h)
         'GRID_V2_MAX_TRADES': 50,          # P#200c: 50 max (was 22)
         'GRID_V2_RISK_PER_TRADE': 0.005,
@@ -203,7 +203,8 @@ PAIR_OVERRIDES = {
         'CONFIDENCE_FLOOR': 0.38,
         'RISK_PER_TRADE': 0.004,
         # P#204d+: Enable Grid V2 on XRP 1h — ranging 80% of time, low spread on Kraken (Board5: Liam Chen)
-        'GRID_V2_ENABLED': True,
+        # P#211e: DISABLED — 36 trades across 1yr, PF=0.456, WR=36.1%, net=-$25.60. No alpha.
+        'GRID_V2_ENABLED': False,
         'GRID_V2_ALLOWED_TIMEFRAMES': ['1h'],
         'GRID_V2_ADX_THRESHOLD': 23,
         'GRID_V2_BB_LOWER_ENTRY': 0.15,

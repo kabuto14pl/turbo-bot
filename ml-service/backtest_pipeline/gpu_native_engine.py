@@ -75,9 +75,11 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
     def _resolve_device(self):
         if not HAS_TORCH:
             raise RuntimeError('PyTorch not installed — GPU native engine unavailable')
-        if not torch.cuda.is_available():
-            raise RuntimeError('CUDA not available — GPU native engine requires local CUDA')
-        return torch.device('cuda:0')
+        if torch.cuda.is_available():
+            return torch.device('cuda:0')
+        # P#217: Allow CPU fallback for local development without GPU
+        print('  ⚠️ CUDA not available — GPU-native engine running on CPU (slower)')
+        return torch.device('cpu')
 
     @staticmethod
     def _rolling_mean(values, window: int):
@@ -694,6 +696,7 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                         confidence=grid_signal['confidence'],
                     )
                     if _opened and self.pm.position is not None:
+                        self.pm.position['strategies'] = ['GridV2']
                         self.pm.position['is_grid_v2'] = True
                     self._track_equity(row, candle_time)
                     continue
@@ -717,6 +720,7 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                         confidence=mtf_signal['confidence'],
                     )
                     if _opened and self.pm.position is not None:
+                        self.pm.position['strategies'] = ['MomentumHTF']
                         self.pm.position['is_momentum_htf'] = True
                     self._track_equity(row, candle_time)
                     continue
@@ -787,7 +791,10 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                     risk_multiplier=1.0,
                     confidence=runtime_risk['confidence'],
                 )
-                if not opened:
+                if opened and self.pm.position is not None:
+                    self.pm.position['strategies'] = ['GPU_MLP']
+                    self.pm.position['is_gpu_direct'] = True
+                elif not opened:
                     self._block('Execution failed (fee gate / sizing)')
 
             self._track_equity(row, candle_time)

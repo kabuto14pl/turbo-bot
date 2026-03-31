@@ -50,9 +50,7 @@ def _local_cuda_ready_for_gpu_native():
     except ImportError:
         return False, 'PyTorch not installed'
 
-    if not torch.cuda.is_available():
-        return False, 'local CUDA not available'
-
+    # P#217: Allow CPU fallback — GPU native engine works on CPU too (slower)
     return True, None
 
 
@@ -61,16 +59,20 @@ def build_engine(initial_capital=None, symbol='BTCUSDT', quantum_backend='simula
     gpu_native_requested = bool(getattr(config, 'GPU_NATIVE_ENGINE', False))
     gpu_native_ready, gpu_native_reason = _local_cuda_ready_for_gpu_native()
 
-    if use_remote_quantum:
+    # P#218: GPU-native engine takes priority when requested + CUDA available.
+    # Previous code forced FullPipelineEngine for remote-gpu backend, completely
+    # bypassing the MLP signal path that trades ALL pairs directionally.
+    if gpu_native_requested and gpu_native_ready:
+        engine_cls = GpuNativeBacktestEngine
+        if use_remote_quantum:
+            print("  🚧 GPU-native engine + remote quantum backend (local CUDA MLP + batched QMC)")
+        else:
+            print("  🚧 Using GPU-native experimental engine (local CUDA)")
+    elif gpu_native_requested and not gpu_native_ready:
         engine_cls = FullPipelineEngine
-        if gpu_native_requested:
-            print("  📡 Remote quantum backend requested -> forcing FullPipelineEngine")
+        print(f"  ⚠️ GPU-native engine requested but {gpu_native_reason} -> using FullPipelineEngine")
     else:
-        engine_cls = GpuNativeBacktestEngine if gpu_native_requested and gpu_native_ready else FullPipelineEngine
-        if engine_cls is GpuNativeBacktestEngine:
-            print("  🚧 Using GPU-native experimental engine")
-        elif gpu_native_requested and not gpu_native_ready:
-            print(f"  ⚠️ GPU-native engine requested but {gpu_native_reason} -> using FullPipelineEngine")
+        engine_cls = FullPipelineEngine
     return engine_cls(
         initial_capital=initial_capital,
         symbol=symbol,

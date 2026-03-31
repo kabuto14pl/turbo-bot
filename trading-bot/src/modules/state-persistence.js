@@ -6,9 +6,11 @@
 const fs = require('fs');
 const path = require('path');
 
+const DEFAULT_STATE_FILE = process.env.BOT_STATE_FILE || path.join(__dirname, '..', '..', '..', 'data', 'bot_state.json');
+
 class StatePersistence {
     constructor(filePath, maxAgeMinutes) {
-        this.filePath = filePath || '/root/turbo-bot/data/bot_state.json';
+        this.filePath = filePath || DEFAULT_STATE_FILE;
         this.maxAge = (maxAgeMinutes || 60) * 60000;
         const dir = path.dirname(this.filePath);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

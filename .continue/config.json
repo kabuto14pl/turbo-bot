@@ -34,8 +34,11 @@
       "name": "file",
       "params": {
         "include": [
+          "AGENTS.md",
           "CLAUDE-SKYNET.md",
           "skills/**",
+          ".github/prompts/**",
+          "promptfoo/**",
           "TASKS/**",
           "PATCHES.md"
         ]
@@ -46,7 +49,7 @@
     {
       "name": "skynet",
       "description": "Pełna analiza z frameworkiem CLAUDE-SKYNET",
-      "prompt": "Aktywuj CLAUDE-SKYNET v1.0 i SKILL ROUTER z folderu skills/. Użyj Meta-Orchestrator i odpowiednich skilli. Zawsze zaczynaj od META-ORCHESTRATOR."
+      "prompt": "Aktywuj workflow z AGENTS.md, CLAUDE-SKYNET.md i SKILL ROUTER z folderu skills/. Użyj Meta-Orchestrator i odpowiednich skilli. Najpierw ustal decision ownership w kodzie, potem dobierz skille."
     }
   ],
   "chatContext": {
