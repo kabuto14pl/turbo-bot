@@ -5,6 +5,38 @@
 
 ---
 
+## PATCH #220: Fix 5 Root Causes of -$9,207 GPU Backtest Loss (2026-04-07)
+
+**Typ:** Critical Fix — Signal Quality, Overtrading, Inverted R:R  
+**Pliki:** `ml-service/backtest_pipeline/config.py`, `ml-service/backtest_pipeline/gpu_native_engine.py`  
+**Commit:** `35e8c85`
+
+### Results Analyzed:
+`ml-service/results/remote_gpu_full_20260331_193051/` — real GPU RTX 5070 Ti backtest:
+- 15m: -$3,764.53 (0/5 positive pairs, $3,058 fees, ~2000 trades/pair)
+- 1h: -$4,159.22 (0/5 positive pairs, $1,810 fees)
+- 4h: -$1,283.35 (1/5 positive pairs, $434 fees)
+- **Total: -$9,207 on $10,000 (-92%)**
+
+### 5 Root Causes:
+1. **P0: MLP predicted 1-candle noise** — `_build_labels()` used 1-candle-ahead return with 0.1% threshold → pure noise on 15m (53% WR). Fix: multi-candle labels (15m:8, 1h:4, 4h:2) with higher thresholds (0.3%-0.5%) + flat candle exclusion.
+2. **P0: Massive overtrading** — ~2000 trades/pair/TF, 15 trades/day on 15m, fees ate 30.6% of capital. Fix: mandatory cooldown after every trade close (15m:12, 1h:6, 4h:3 candles).
+3. **P0: Momentum gate inverted R:R** — SL tightened to 35% after 3 candles → avg_win/avg_loss=0.63 (config had 2.67:1). Fix: `GPU_NATIVE_MOMENTUM_GATE=False` disables gate for MLP trades.
+4. **P0: Low confidence floor** — 0.55 threshold ≈ random with binary MLP. Fix: `GPU_NATIVE_MIN_CONFIDENCE=0.65`.
+5. **P1: Fee gate used maker rate** — Exit estimate used 0.02% maker but SL exits hit taker 0.05% + slippage 0.03%. (Not fixed in this patch — requires position_manager.py change.)
+
+### Changes:
+- **config.py**: +5 new params: `GPU_NATIVE_LABEL_HORIZON`, `GPU_NATIVE_LABEL_THRESHOLD`, `GPU_NATIVE_COOLDOWN_CANDLES`, `GPU_NATIVE_MIN_CONFIDENCE`, `GPU_NATIVE_MOMENTUM_GATE`
+- **gpu_native_engine.py**: `_build_labels()` rewrite (multi-candle horizon, symmetric UP/DOWN, noise exclusion), cooldown system in execution loop, higher confidence gate, momentum gate override/restore
+
+### Expected Impact:
+- Trade count: ~2000/pair → ~200-400/pair
+- Fee drag: ~$3k → ~$300 on 15m
+- R:R restoration: avg_win/avg_loss 0.63 → ~1.5-2.0
+- Target: -$9,207 → somewhere between -$500 and +$2,000
+
+---
+
 ## PATCH #218: Fix GPU Native Engine Selection — Remote Orchestrator Bug (2026-04-06)
 
 **Typ:** Critical Fix — GPU Engine Never Used  
