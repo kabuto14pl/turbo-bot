@@ -1,0 +1,793 @@
+[PRECHECK] Waiting for remote health before multi:4h (timeout=10.0s)
+[PRECHECK] Remote GPU online: status=online
+
+
+=== REMOTE GPU FULL-PIPELINE ORCHESTRATOR ===
+Mode: FULL PIPELINE (ML + strategies + quantum)
+Remote URL: http://127.0.0.1:4001
+Worker output is written to per-job log files while jobs run.
+Requested jobs: multi:15m, multi:1h, multi:4h
+Remote GPU orchestrator + GPU-native config detected -> forcing max_parallel=1 to avoid worker contention
+C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+
+══════════════════════════════════════════════════════════════════════════════════════════
+  🌍 MULTI-PAIR BACKTEST — P#72 Adaptive+Funding+Grid — 5 pairs — 4h
+  💰 Portfolio: $10,000 | Allocation: BTC=8%, ETH=12%, SOL=30%, BNB=35%, XRP=15%
+══════════════════════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────────
+  🔄 BTCUSDT — 1991 candles — Capital: $800
+  ⚙️  Overrides: BTC_DIRECTION_FILTER_ENABLED=False, BTC_LONG_BLOCK_ALL=False, CONFIDENCE_FLOOR=0.3, RISK_PER_TRADE=0.005, GRID_V2_ENABLED=False
+────────────────────────────────────────────────────────────────────────────────
+  🚧 GPU-native engine + remote quantum backend (local CUDA MLP + batched QMC)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  📁 BTCUSDT: Loaded 1131 cached 8h funding rates
+  📊 BTCUSDT real funding: mean_8h=0.000057, positive=88.1%, est. APR=6.25%
+  ♻️ NeuronAI state restored (defense=False, WR=47%, risk_mult=0.50)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  📁 BTCUSDT: Loaded 1131 cached 8h funding rates
+  📊 BTCUSDT real funding: mean_8h=0.000057, positive=88.1%, est. APR=6.25%
+  ♻️ Learner state restored (deactivated=set())
+  🚧 GPU-native experimental engine active (CUDA tensor pipeline)
+  🔌 Pre-computing ExternalSignals plan (1491 candles, lookback=200)
+  ✅ ExtSig plan: 11 BUY / 58 SELL (570 ms)
+  📊 MLP training loop: 1490 candles, retrain every 100, ~14 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/14 | candle 600/1990 (6.7%) | acc=0.836/0.417 | ep=12 | 1.2s
+    retrain 2/14 | candle 700/1990 (13.4%) | acc=0.855/0.641 | ep=19 | 1.4s
+    retrain 3/14 | candle 800/1990 (20.1%) | acc=0.962/0.605 | ep=17 | 1.7s
+    retrain 4/14 | candle 900/1990 (26.8%) | acc=0.956/0.462 | ep=13 | 1.9s
+    retrain 5/14 | candle 1000/1990 (33.6%) | acc=0.746/0.500 | ep=12 | 2.1s
+    retrain 6/14 | candle 1100/1990 (40.3%) | acc=0.937/0.632 | ep=22 | 2.4s
+    retrain 7/14 | candle 1200/1990 (47.0%) | acc=0.956/0.474 | ep=11 | 2.6s
+    retrain 8/14 | candle 1300/1990 (53.7%) | acc=0.929/0.538 | ep=13 | 2.8s
+    retrain 9/14 | candle 1400/1990 (60.4%) | acc=0.633/0.512 | ep=12 | 3.0s
+    retrain 10/14 | candle 1500/1990 (67.1%) | acc=0.695/0.591 | ep=17 | 3.3s
+    retrain 11/14 | candle 1600/1990 (73.8%) | acc=0.793/0.333 | ep=12 | 3.5s
+    retrain 12/14 | candle 1700/1990 (80.5%) | acc=0.814/0.478 | ep=13 | 3.8s
+    retrain 13/14 | candle 1800/1990 (87.2%) | acc=1.000/0.628 | ep=23 | 4.1s
+    retrain 14/14 | candle 1900/1990 (94.0%) | acc=0.897/0.585 | ep=13 | 4.4s
+    retrain 15/14 | candle 1990/1990 (100.0%) | acc=0.939/0.463 | ep=12 | 4.6s
+  ✅ MLP training complete: 15 retrains in 4.6s
+  ⚡ Executing 1490 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=3, min_conf=0.65, momentum_gate=False]
+  ✅ Execution complete: 100 trades in 0.4s
+  ❌ BTCUSDT: 100 trades | PF 0.868 | WR 54.0% | Return -1.22% | MaxDD 1.3%
+  ⚛️  backend=remote-gpu | remote=online | calls=0 | failures=0
+  💰 Funding Arb: $+22.50 | 35 positions | 745 settlements
+  📰 News Filter: 0 blocked | 165 events | {'ECOSYSTEM': 82, 'FOMO': 12, 'REGULATORY': 50, 'WHALE_MOVE': 3, 'PANIC': 18}
+
+  💰 WINNING TRADES (53):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  100 SHORT 2026-02-27 04:00:00  $ 67681.20 2026-02-28 08:00:00  $ 64131.33 TRAIL          $    +4.72 TRENDING_UP      GPU_MLP             
+   78 SHORT 2025-11-19 20:00:00  $ 91561.10 2025-11-21 00:00:00  $ 87193.17 TRAIL          $    +4.27 TRENDING_DOWN    GPU_MLP             
+   25 LONG  2025-08-21 20:00:00  $112511.40 2025-08-22 16:00:00  $116469.46 TRAIL          $    +3.09 TRENDING_DOWN    GPU_MLP             
+   75 SHORT 2025-11-13 16:00:00  $ 98680.50 2025-11-16 16:00:00  $ 94032.10 TIME_EMERGENCY $    +3.08 HIGH_VOLATILITY  GPU_MLP             
+   57 SHORT 2025-10-20 12:00:00  $111153.90 2025-10-21 04:00:00  $108288.57 TRAIL          $    +3.02 RANGING          GPU_MLP             
+   76 SHORT 2025-11-17 04:00:00  $ 95652.60 2025-11-17 16:00:00  $ 93585.42 BE             $    +2.56 TRENDING_DOWN    GPU_MLP             
+    8 SHORT 2025-07-24 12:00:00  $119110.10 2025-07-25 00:00:00  $116546.98 TRAIL          $    +2.50 RANGING          GPU_MLP             
+   29 LONG  2025-08-26 12:00:00  $109672.00 2025-08-28 12:00:00  $112518.89 BE             $    +2.29 TRENDING_DOWN    GPU_MLP             
+   69 SHORT 2025-11-05 12:00:00  $103730.40 2025-11-07 08:00:00  $101732.86 BE             $    +2.26 TRENDING_DOWN    GPU_MLP             
+    9 LONG  2025-07-25 12:00:00  $115722.10 2025-07-27 08:00:00  $117850.06 BE             $    +2.17 RANGING          GPU_MLP             
+   52 SHORT 2025-10-13 00:00:00  $114821.10 2025-10-14 12:00:00  $112296.68 BE             $    +1.94 TRENDING_DOWN    GPU_MLP             
+   77 SHORT 2025-11-19 20:00:00  $ 91561.10 2025-11-20 16:00:00  $ 86439.07 PARTIAL_L1     $    +1.68 TRENDING_DOWN    GPU_MLP             
+   99 SHORT 2026-02-27 04:00:00  $ 67681.20 2026-02-28 04:00:00  $ 64479.14 PARTIAL_L1     $    +1.43 TRENDING_UP      GPU_MLP             
+   86 SHORT 2026-01-14 12:00:00  $ 96755.60 2026-01-17 12:00:00  $ 95571.00 TIME_EMERGENCY $    +1.41 TRENDING_UP      GPU_MLP             
+   15 LONG  2025-08-07 00:00:00  $114549.60 2025-08-07 08:00:00  $115940.30 TRAIL          $    +1.38 RANGING          GPU_MLP             
+   45 LONG  2025-10-05 12:00:00  $122807.00 2025-10-06 20:00:00  $124723.62 BE             $    +1.37 TRENDING_UP      GPU_MLP             
+   71 SHORT 2025-11-10 00:00:00  $106034.90 2025-11-11 12:00:00  $104811.70 BE             $    +1.34 RANGING          GPU_MLP             
+   58 SHORT 2025-10-21 16:00:00  $111790.90 2025-10-21 20:00:00  $110520.41 BE             $    +1.33 RANGING          GPU_MLP             
+   51 SHORT 2025-10-13 00:00:00  $114821.10 2025-10-14 08:00:00  $110162.71 PARTIAL_L1     $    +1.21 TRENDING_DOWN    GPU_MLP             
+   42 LONG  2025-10-03 04:00:00  $119638.10 2025-10-03 12:00:00  $120864.33 BE             $    +1.18 TRENDING_UP      GPU_MLP             
+   24 LONG  2025-08-21 20:00:00  $112511.40 2025-08-22 12:00:00  $116577.19 PARTIAL_L1     $    +1.07 TRENDING_DOWN    GPU_MLP             
+   98 SHORT 2026-02-26 08:00:00  $ 68042.50 2026-02-26 16:00:00  $ 67424.62 BE             $    +1.05 RANGING          GPU_MLP             
+   40 LONG  2025-10-01 04:00:00  $114534.60 2025-10-01 08:00:00  $115489.57 BE             $    +0.95 TRENDING_UP      GPU_MLP             
+   54 SHORT 2025-10-17 00:00:00  $109180.00 2025-10-17 04:00:00  $108286.13 BE             $    +0.94 TRENDING_DOWN    GPU_MLP             
+   89 SHORT 2026-01-21 12:00:00  $ 90279.50 2026-01-21 16:00:00  $ 89582.71 BE             $    +0.90 TRENDING_DOWN    GPU_MLP             
+   28 LONG  2025-08-26 12:00:00  $109672.00 2025-08-28 04:00:00  $112993.31 PARTIAL_L1     $    +0.89 TRENDING_DOWN    GPU_MLP             
+   53 SHORT 2025-10-15 00:00:00  $112027.10 2025-10-16 12:00:00  $111163.48 BE             $    +0.88 TRENDING_DOWN    GPU_MLP             
+   68 SHORT 2025-11-04 00:00:00  $107150.70 2025-11-04 04:00:00  $106376.40 BE             $    +0.82 TRENDING_DOWN    GPU_MLP             
+   74 SHORT 2025-11-13 16:00:00  $ 98680.50 2025-11-16 00:00:00  $ 95138.44 PARTIAL_L1     $    +0.78 HIGH_VOLATILITY  GPU_MLP             
+   97 SHORT 2026-02-15 04:00:00  $ 70823.10 2026-02-15 12:00:00  $ 70354.38 BE             $    +0.75 TRENDING_UP      GPU_MLP             
+   44 LONG  2025-10-05 12:00:00  $122807.00 2025-10-06 16:00:00  $125882.78 PARTIAL_L1     $    +0.74 TRENDING_UP      GPU_MLP             
+   49 SHORT 2025-10-10 00:00:00  $121037.80 2025-10-10 12:00:00  $120271.97 BE             $    +0.71 RANGING          GPU_MLP             
+   31 SHORT 2025-09-02 00:00:00  $110331.40 2025-09-02 12:00:00  $109665.72 BE             $    +0.68 RANGING          GPU_MLP             
+   48 SHORT 2025-10-08 20:00:00  $123304.10 2025-10-09 12:00:00  $122567.73 BE             $    +0.67 TRENDING_UP      GPU_MLP             
+   85 LONG  2026-01-13 16:00:00  $ 94224.10 2026-01-13 20:00:00  $ 94770.97 BE             $    +0.66 HIGH_VOLATILITY  GPU_MLP             
+   67 SHORT 2025-11-03 08:00:00  $107793.60 2025-11-03 12:00:00  $107163.39 BE             $    +0.65 TRENDING_DOWN    GPU_MLP             
+    6 LONG  2025-07-21 16:00:00  $116761.30 2025-07-22 04:00:00  $117410.32 BE             $    +0.62 RANGING          GPU_MLP             
+    7 SHORT 2025-07-22 16:00:00  $119272.00 2025-07-23 12:00:00  $118664.48 BE             $    +0.56 RANGING          GPU_MLP             
+   70 SHORT 2025-11-07 20:00:00  $103335.40 2025-11-09 12:00:00  $102819.51 BE             $    +0.55 RANGING          GPU_MLP             
+   94 LONG  2026-01-28 00:00:00  $ 89119.30 2026-01-28 08:00:00  $ 89550.83 BE             $    +0.54 RANGING          GPU_MLP             
+   32 LONG  2025-09-17 16:00:00  $115638.00 2025-09-18 00:00:00  $116168.62 BE             $    +0.50 HIGH_VOLATILITY  GPU_MLP             
+    5 LONG  2025-07-20 20:00:00  $117260.10 2025-07-21 00:00:00  $117774.98 BE             $    +0.48 RANGING          GPU_MLP             
+   14 LONG  2025-08-05 16:00:00  $113628.00 2025-08-06 12:00:00  $114129.49 BE             $    +0.48 TRENDING_DOWN    GPU_MLP             
+   63 LONG  2025-10-28 00:00:00  $113917.80 2025-10-28 12:00:00  $114416.45 BE             $    +0.48 TRENDING_UP      GPU_MLP             
+   23 LONG  2025-08-19 20:00:00  $112865.60 2025-08-21 08:00:00  $113352.75 BE             $    +0.47 TRENDING_DOWN    GPU_MLP             
+   88 SHORT 2026-01-19 00:00:00  $ 92693.40 2026-01-20 04:00:00  $ 92299.69 BE             $    +0.47 HIGH_VOLATILITY  GPU_MLP             
+   43 LONG  2025-10-04 00:00:00  $122245.00 2025-10-05 00:00:00  $122729.74 BE             $    +0.43 TRENDING_UP      GPU_MLP             
+   39 LONG  2025-09-30 08:00:00  $113046.80 2025-09-30 16:00:00  $113490.94 BE             $    +0.42 TRENDING_UP      GPU_MLP             
+    3 LONG  2025-07-15 00:00:00  $117158.10 2025-07-16 00:00:00  $117480.10 RANGING_STALE  $    +0.24 HIGH_VOLATILITY  GPU_MLP             
+   90 SHORT 2026-01-22 04:00:00  $ 89802.70 2026-01-24 04:00:00  $ 89608.00 TIME_WEAK      $    +0.18 TRENDING_DOWN    GPU_MLP             
+   13 LONG  2025-08-02 08:00:00  $113782.40 2025-08-05 04:00:00  $113983.90 TIME_WEAK      $    +0.13 TRENDING_DOWN    GPU_MLP             
+   10 LONG  2025-07-29 12:00:00  $117384.10 2025-07-30 08:00:00  $117577.00 RANGING_STALE  $    +0.11 RANGING          GPU_MLP             
+   84 LONG  2026-01-12 16:00:00  $ 91864.90 2026-01-13 04:00:00  $ 91949.70 RANGING_STALE  $    +0.03 HIGH_VOLATILITY  GPU_MLP             
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $   +64.06
+
+  💀 LOSING TRADES (47):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   59 SHORT 2025-10-22 08:00:00  $107550.70 2025-10-23 16:00:00  $110735.90 SL             $    -3.67 TRENDING_DOWN    GPU_MLP             
+   79 SHORT 2025-11-23 00:00:00  $ 86308.50 2025-11-24 16:00:00  $ 88333.60 TIME_UNDERWATER $    -2.94 TRENDING_DOWN    GPU_MLP             
+   96 LONG  2026-02-01 20:00:00  $ 76978.00 2026-02-03 16:00:00  $ 73981.29 SL             $    -2.90 TRENDING_DOWN    GPU_MLP             
+   80 SHORT 2025-12-18 20:00:00  $ 85506.10 2025-12-19 00:00:00  $ 87364.37 SL             $    -2.74 RANGING          GPU_MLP             
+   27 LONG  2025-08-25 04:00:00  $111510.30 2025-08-26 00:00:00  $109068.69 SL             $    -2.71 TRENDING_DOWN    GPU_MLP             
+   12 LONG  2025-08-01 12:00:00  $115352.60 2025-08-01 20:00:00  $113058.23 SL             $    -2.49 TRENDING_DOWN    GPU_MLP             
+   65 LONG  2025-10-30 08:00:00  $109716.90 2025-10-30 12:00:00  $107698.03 SL             $    -2.30 RANGING          GPU_MLP             
+   19 LONG  2025-08-14 00:00:00  $123344.00 2025-08-14 08:00:00  $121091.63 SL             $    -2.28 TRENDING_UP      GPU_MLP             
+   92 SHORT 2026-01-26 00:00:00  $ 87273.60 2026-01-26 12:00:00  $ 88819.05 SL             $    -2.25 TRENDING_DOWN    GPU_MLP             
+   41 SHORT 2025-10-01 20:00:00  $118607.70 2025-10-02 16:00:00  $120619.98 SL             $    -2.12 TRENDING_UP      GPU_MLP             
+    2 SHORT 2025-07-14 00:00:00  $120780.70 2025-07-14 04:00:00  $122804.93 SL             $    -2.10 TRENDING_UP      GPU_MLP             
+   62 SHORT 2025-10-26 20:00:00  $114554.60 2025-10-27 04:00:00  $116407.29 SL             $    -2.04 TRENDING_UP      GPU_MLP             
+   46 LONG  2025-10-07 08:00:00  $124447.10 2025-10-07 12:00:00  $122487.97 SL             $    -1.98 TRENDING_UP      GPU_MLP             
+   73 SHORT 2025-11-12 20:00:00  $101658.00 2025-11-13 04:00:00  $103253.67 SL             $    -1.98 RANGING          GPU_MLP             
+   36 LONG  2025-09-25 00:00:00  $112541.50 2025-09-25 12:00:00  $110885.46 SL             $    -1.85 TRENDING_DOWN    GPU_MLP             
+   22 LONG  2025-08-18 16:00:00  $116312.00 2025-08-19 04:00:00  $114655.69 SL             $    -1.79 TRENDING_DOWN    GPU_MLP             
+   35 LONG  2025-09-22 20:00:00  $112656.00 2025-09-24 04:00:00  $111070.96 SL             $    -1.78 TRENDING_DOWN    GPU_MLP             
+   95 LONG  2026-01-28 20:00:00  $ 89299.90 2026-01-29 00:00:00  $ 88072.34 SL             $    -1.76 RANGING          GPU_MLP             
+    1 SHORT 2025-07-13 00:00:00  $117752.20 2025-07-13 12:00:00  $119369.66 SL             $    -1.74 TRENDING_UP      GPU_MLP             
+   91 LONG  2026-01-24 16:00:00  $ 89335.80 2026-01-25 08:00:00  $ 88147.45 SL             $    -1.71 TRENDING_DOWN    GPU_MLP             
+   17 SHORT 2025-08-10 00:00:00  $118502.00 2025-08-11 00:00:00  $120086.29 SL             $    -1.70 TRENDING_UP      GPU_MLP             
+   72 SHORT 2025-11-12 00:00:00  $103322.80 2025-11-12 08:00:00  $104694.61 SL             $    -1.69 RANGING          GPU_MLP             
+   50 SHORT 2025-10-11 00:00:00  $112262.00 2025-10-12 12:00:00  $113783.08 SL             $    -1.66 TRENDING_DOWN    GPU_MLP             
+   93 LONG  2026-01-27 00:00:00  $ 88784.00 2026-01-27 12:00:00  $ 87654.30 SL             $    -1.64 RANGING          GPU_MLP             
+   47 SHORT 2025-10-08 00:00:00  $121372.40 2025-10-08 08:00:00  $122922.39 SL             $    -1.62 RANGING          GPU_MLP             
+   55 SHORT 2025-10-17 16:00:00  $106460.90 2025-10-19 08:00:00  $107783.00 TIME_UNDERWATER $    -1.59 TRENDING_DOWN    GPU_MLP             
+   18 SHORT 2025-08-11 16:00:00  $119085.90 2025-08-13 08:00:00  $120566.10 TIME_UNDERWATER $    -1.58 TRENDING_UP      GPU_MLP             
+   56 SHORT 2025-10-19 20:00:00  $108649.80 2025-10-20 00:00:00  $109965.65 SL             $    -1.55 RANGING          GPU_MLP             
+   21 LONG  2025-08-16 20:00:00  $117386.10 2025-08-18 00:00:00  $115963.28 SL             $    -1.54 TRENDING_DOWN    GPU_MLP             
+   82 LONG  2025-12-22 08:00:00  $ 89940.90 2025-12-22 16:00:00  $ 88927.65 SL             $    -1.46 RANGING          GPU_MLP             
+   64 LONG  2025-10-29 08:00:00  $113131.10 2025-10-29 12:00:00  $111847.75 SL             $    -1.45 RANGING          GPU_MLP             
+   11 LONG  2025-07-30 20:00:00  $117836.40 2025-07-31 20:00:00  $116512.36 SL             $    -1.44 RANGING          GPU_MLP             
+    4 LONG  2025-07-16 20:00:00  $118629.70 2025-07-18 16:00:00  $117368.10 TIME_UNDERWATER $    -1.36 TRENDING_UP      GPU_MLP             
+   26 LONG  2025-08-23 20:00:00  $115424.10 2025-08-24 16:00:00  $114262.68 SL             $    -1.29 RANGING          GPU_MLP             
+   66 SHORT 2025-10-31 00:00:00  $109219.10 2025-11-01 12:00:00  $110300.20 TIME_UNDERWATER $    -1.27 TRENDING_DOWN    GPU_MLP             
+   34 LONG  2025-09-22 00:00:00  $114655.00 2025-09-22 04:00:00  $113693.45 SL             $    -1.10 TRENDING_DOWN    GPU_MLP             
+   20 LONG  2025-08-14 20:00:00  $118298.50 2025-08-16 08:00:00  $117385.10 TIME_UNDERWATER $    -1.01 RANGING          GPU_MLP             
+   38 SHORT 2025-09-28 20:00:00  $112172.10 2025-09-29 12:00:00  $113021.73 SL             $    -0.99 RANGING          GPU_MLP             
+   83 SHORT 2025-12-26 12:00:00  $ 87139.00 2025-12-28 00:00:00  $ 87739.10 TIME_UNDERWATER $    -0.92 HIGH_VOLATILITY  GPU_MLP             
+   16 LONG  2025-08-07 20:00:00  $117478.00 2025-08-09 12:00:00  $116888.90 TIME_UNDERWATER $    -0.69 TRENDING_UP      GPU_MLP             
+   37 SHORT 2025-09-26 04:00:00  $109308.00 2025-09-28 04:00:00  $109515.00 TIME_WEAK      $    -0.31 TRENDING_DOWN    GPU_MLP             
+   30 LONG  2025-08-29 12:00:00  $108390.10 2025-08-31 20:00:00  $108248.30 TIME_WEAK      $    -0.24 TRENDING_DOWN    GPU_MLP             
+   61 LONG  2025-10-25 12:00:00  $111391.90 2025-10-26 00:00:00  $111266.00 RANGING_STALE  $    -0.22 RANGING          GPU_MLP             
+   87 LONG  2026-01-18 00:00:00  $ 95190.90 2026-01-18 12:00:00  $ 95113.90 RANGING_STALE  $    -0.18 RANGING          GPU_MLP             
+   81 LONG  2025-12-20 04:00:00  $ 88276.90 2025-12-20 16:00:00  $ 88233.90 RANGING_STALE  $    -0.14 RANGING          GPU_MLP             
+   60 SHORT 2025-10-24 04:00:00  $111053.90 2025-10-24 20:00:00  $111010.00 RANGING_STALE  $    -0.04 RANGING          GPU_MLP             
+   33 LONG  2025-09-19 12:00:00  $115880.10 2025-09-20 04:00:00  $115962.00 RANGING_STALE  $    +0.00 RANGING          GPU_MLP             
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $   -73.81
+
+  📊 PER-STRATEGY BREAKDOWN:
+    ❌ GPU_MLP                        100 trades  $     -9.75  (avg $   -0.10)
+
+────────────────────────────────────────────────────────────────────────────────
+  🔄 ETHUSDT — 2190 candles — Capital: $1,200
+  ⚙️  Overrides: CONFIDENCE_FLOOR=0.34, RISK_PER_TRADE=0.006, GRID_V2_ENABLED=False, FUNDING_ARB_ENABLED=True, FUNDING_MIN_RATE=5e-05
+────────────────────────────────────────────────────────────────────────────────
+  🚧 GPU-native engine + remote quantum backend (local CUDA MLP + batched QMC)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  📁 ETHUSDT: Loaded 1131 cached 8h funding rates
+  📊 ETHUSDT real funding: mean_8h=0.000031, positive=72.0%, est. APR=3.41%
+  ♻️ NeuronAI state restored (defense=False, WR=48%, risk_mult=1.22)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  📁 ETHUSDT: Loaded 1131 cached 8h funding rates
+  📊 ETHUSDT real funding: mean_8h=0.000031, positive=72.0%, est. APR=3.41%
+  ♻️ Learner state restored (deactivated=set())
+  🚧 GPU-native experimental engine active (CUDA tensor pipeline)
+  🔌 Pre-computing ExternalSignals plan (1690 candles, lookback=200)
+  ✅ ExtSig plan: 80 BUY / 67 SELL (622 ms)
+  📊 MLP training loop: 1689 candles, retrain every 100, ~16 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/16 | candle 600/2189 (5.9%) | acc=0.881/0.340 | ep=12 | 0.3s
+    retrain 2/16 | candle 700/2189 (11.8%) | acc=0.940/0.429 | ep=12 | 0.5s
+    retrain 3/16 | candle 800/2189 (17.8%) | acc=0.925/0.473 | ep=11 | 0.8s
+    retrain 4/16 | candle 900/2189 (23.7%) | acc=0.846/0.446 | ep=12 | 1.1s
+    retrain 5/16 | candle 1000/2189 (29.6%) | acc=0.947/0.509 | ep=13 | 1.4s
+    retrain 6/16 | candle 1100/2189 (35.5%) | acc=0.902/0.500 | ep=21 | 1.8s
+    retrain 7/16 | candle 1200/2189 (41.4%) | acc=0.868/0.536 | ep=19 | 2.3s
+    retrain 8/16 | candle 1300/2189 (47.4%) | acc=0.910/0.491 | ep=13 | 2.6s
+    retrain 9/16 | candle 1400/2189 (53.3%) | acc=0.866/0.630 | ep=12 | 2.8s
+    retrain 10/16 | candle 1500/2189 (59.2%) | acc=0.829/0.434 | ep=11 | 3.1s
+    retrain 11/16 | candle 1600/2189 (65.1%) | acc=0.824/0.604 | ep=17 | 3.5s
+    retrain 12/16 | candle 1700/2189 (71.0%) | acc=0.922/0.481 | ep=13 | 3.8s
+    retrain 13/16 | candle 1800/2189 (77.0%) | acc=0.829/0.566 | ep=16 | 4.1s
+    retrain 14/16 | candle 1900/2189 (82.9%) | acc=0.927/0.429 | ep=13 | 4.4s
+    retrain 15/16 | candle 2000/2189 (88.8%) | acc=0.904/0.383 | ep=12 | 4.6s
+    retrain 16/16 | candle 2100/2189 (94.7%) | acc=0.807/0.468 | ep=12 | 4.8s
+    retrain 17/16 | candle 2189/2189 (100.0%) | acc=0.887/0.440 | ep=11 | 4.9s
+  ✅ MLP training complete: 17 retrains in 4.9s
+  ⚡ Executing 1689 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=3, min_conf=0.65, momentum_gate=False]
+  ✅ Execution complete: 59 trades in 0.6s
+  ❌ ETHUSDT: 59 trades | PF 0.516 | WR 50.8% | Return -5.55% | MaxDD 1.7%
+  ⚛️  backend=remote-gpu | remote=online | calls=0 | failures=0
+  💰 Funding Arb: $+71.96 | 37 positions | 845 settlements
+  📰 News Filter: 0 blocked | 283 events | {'ECOSYSTEM': 122, 'FOMO': 50, 'REGULATORY': 55, 'PANIC': 55, 'WHALE_MOVE': 1}
+
+  💰 WINNING TRADES (30):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   47 SHORT 2025-11-17 04:00:00  $  3198.44 2025-11-18 00:00:00  $  3024.12 TRAIL          $    +7.19 TRENDING_DOWN    GPU_MLP             
+   19 LONG  2025-08-07 08:00:00  $  3827.00 2025-08-08 16:00:00  $  3971.19 BE             $    +4.98 TRENDING_UP      GPU_MLP             
+   51 SHORT 2025-11-20 08:00:00  $  3023.98 2025-11-20 20:00:00  $  2898.97 BE             $    +4.97 TRENDING_DOWN    GPU_MLP             
+   16 LONG  2025-08-03 16:00:00  $  3496.74 2025-08-04 16:00:00  $  3666.16 BE             $    +4.96 TRENDING_DOWN    GPU_MLP             
+   49 SHORT 2025-11-18 12:00:00  $  3106.87 2025-11-19 20:00:00  $  2984.42 BE             $    +4.35 TRENDING_DOWN    GPU_MLP             
+   11 SHORT 2025-07-24 12:00:00  $  3730.76 2025-07-25 00:00:00  $  3647.75 BE             $    +3.89 RANGING          GPU_MLP             
+   44 SHORT 2025-11-12 08:00:00  $  3549.38 2025-11-12 12:00:00  $  3483.13 BE             $    +3.26 RANGING          GPU_MLP             
+   50 SHORT 2025-11-20 08:00:00  $  3023.98 2025-11-20 16:00:00  $  2794.26 PARTIAL_L1     $    +3.06 TRENDING_DOWN    GPU_MLP             
+   46 SHORT 2025-11-17 04:00:00  $  3198.44 2025-11-17 16:00:00  $  2993.59 PARTIAL_L1     $    +2.83 TRENDING_DOWN    GPU_MLP             
+   48 SHORT 2025-11-18 12:00:00  $  3106.87 2025-11-19 16:00:00  $  2876.09 PARTIAL_L1     $    +2.74 TRENDING_DOWN    GPU_MLP             
+   37 SHORT 2025-10-15 04:00:00  $  4122.04 2025-10-15 12:00:00  $  4066.59 BE             $    +2.33 RANGING          GPU_MLP             
+   18 LONG  2025-08-07 08:00:00  $  3827.00 2025-08-08 12:00:00  $  4010.16 PARTIAL_L1     $    +2.11 TRENDING_UP      GPU_MLP             
+   27 LONG  2025-08-20 08:00:00  $  4195.30 2025-08-21 12:00:00  $  4243.59 BE             $    +1.98 TRENDING_DOWN    GPU_MLP             
+   54 LONG  2025-12-18 16:00:00  $  2781.93 2025-12-19 00:00:00  $  2815.97 BE             $    +1.97 TRENDING_DOWN    GPU_MLP             
+   10 SHORT 2025-07-23 12:00:00  $  3644.22 2025-07-23 20:00:00  $  3604.73 BE             $    +1.85 RANGING          GPU_MLP             
+   21 LONG  2025-08-12 12:00:00  $  4472.62 2025-08-12 20:00:00  $  4518.37 BE             $    +1.77 TRENDING_UP      GPU_MLP             
+   30 LONG  2025-08-29 12:00:00  $  4316.09 2025-09-01 08:00:00  $  4482.35 PARTIAL_L1     $    +1.69 TRENDING_DOWN    GPU_MLP             
+   43 SHORT 2025-11-09 16:00:00  $  3580.00 2025-11-11 12:00:00  $  3544.46 BE             $    +1.69 RANGING          GPU_MLP             
+    9 SHORT 2025-07-20 12:00:00  $  3786.05 2025-07-22 16:00:00  $  3748.57 BE             $    +1.68 TRENDING_UP      GPU_MLP             
+   15 LONG  2025-08-03 16:00:00  $  3496.74 2025-08-04 12:00:00  $  3656.91 PARTIAL_L1     $    +1.56 TRENDING_DOWN    GPU_MLP             
+   25 LONG  2025-08-17 04:00:00  $  4467.12 2025-08-17 08:00:00  $  4505.31 BE             $    +1.46 RANGING          GPU_MLP             
+   20 LONG  2025-08-10 12:00:00  $  4217.94 2025-08-11 16:00:00  $  4260.47 BE             $    +1.42 TRENDING_UP      GPU_MLP             
+   32 SHORT 2025-09-04 00:00:00  $  4398.03 2025-09-04 12:00:00  $  4361.52 BE             $    +1.41 RANGING          GPU_MLP             
+   34 SHORT 2025-09-05 16:00:00  $  4331.54 2025-09-06 16:00:00  $  4298.33 BE             $    +1.29 RANGING          GPU_MLP             
+   36 LONG  2025-10-04 08:00:00  $  4483.83 2025-10-05 16:00:00  $  4514.77 BE             $    +1.16 TRENDING_UP      GPU_MLP             
+   31 LONG  2025-08-29 12:00:00  $  4316.09 2025-09-01 12:00:00  $  4354.51 BE             $    +1.13 TRENDING_DOWN    GPU_MLP             
+   39 LONG  2025-10-25 20:00:00  $  3953.82 2025-10-26 08:00:00  $  3978.49 BE             $    +1.04 TRENDING_UP      GPU_MLP             
+   17 LONG  2025-08-05 12:00:00  $  3570.43 2025-08-06 00:00:00  $  3583.66 RANGING_STALE  $    +0.46 HIGH_VOLATILITY  GPU_MLP             
+   13 SHORT 2025-07-28 12:00:00  $  3808.11 2025-07-30 12:00:00  $  3797.25 TIME_WEAK      $    +0.38 TRENDING_UP      GPU_MLP             
+   29 LONG  2025-08-25 16:00:00  $  4420.34 2025-08-26 04:00:00  $  4429.70 RANGING_STALE  $    +0.25 RANGING          GPU_MLP             
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $   +70.86
+
+  💀 LOSING TRADES (29):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    7 SHORT 2025-07-17 16:00:00  $  3412.33 2025-07-18 00:00:00  $  3559.55 SL             $    -7.83 TRENDING_UP      GPU_MLP             
+   23 LONG  2025-08-15 00:00:00  $  4634.46 2025-08-15 12:00:00  $  4444.24 SL             $    -7.38 TRENDING_UP      GPU_MLP             
+   28 LONG  2025-08-23 20:00:00  $  4778.40 2025-08-25 04:00:00  $  4584.32 SL             $    -7.33 TRENDING_UP      GPU_MLP             
+    1 SHORT 2025-06-11 08:00:00  $  2772.25 2025-06-11 12:00:00  $  2879.65 SL             $    -7.10 TRENDING_UP      GPU_MLP             
+    6 SHORT 2025-07-17 00:00:00  $  3330.14 2025-07-17 04:00:00  $  3459.41 SL             $    -7.10 TRENDING_UP      GPU_MLP             
+   14 LONG  2025-08-01 16:00:00  $  3518.40 2025-08-02 16:00:00  $  3380.93 SL             $    -7.08 TRENDING_DOWN    GPU_MLP             
+   22 LONG  2025-08-13 08:00:00  $  4690.33 2025-08-14 12:00:00  $  4514.14 SL             $    -6.91 TRENDING_UP      GPU_MLP             
+   53 LONG  2025-12-16 00:00:00  $  2937.00 2025-12-17 16:00:00  $  2831.62 SL             $    -6.66 TRENDING_DOWN    GPU_MLP             
+   52 SHORT 2025-11-24 08:00:00  $  2803.41 2025-11-24 16:00:00  $  2898.81 SL             $    -6.32 TRENDING_DOWN    GPU_MLP             
+   57 LONG  2026-01-29 12:00:00  $  2824.32 2026-01-30 00:00:00  $  2721.31 SL             $    -5.97 HIGH_VOLATILITY  GPU_MLP             
+   35 LONG  2025-09-23 16:00:00  $  4153.43 2025-09-25 04:00:00  $  4018.36 SL             $    -5.93 TRENDING_DOWN    GPU_MLP             
+   58 LONG  2026-03-04 20:00:00  $  2127.28 2026-03-06 08:00:00  $  2051.03 TIME_UNDERWATER $    -5.58 TRENDING_UP      GPU_MLP             
+   12 SHORT 2025-07-25 12:00:00  $  3634.20 2025-07-26 00:00:00  $  3744.71 SL             $    -5.55 RANGING          GPU_MLP             
+    5 SHORT 2025-06-24 20:00:00  $  2448.45 2025-06-26 00:00:00  $  2521.18 SL             $    -5.43 RANGING          GPU_MLP             
+   41 LONG  2025-11-01 00:00:00  $  3861.38 2025-11-03 00:00:00  $  3728.09 SL             $    -5.14 TRENDING_DOWN    GPU_MLP             
+   40 LONG  2025-10-28 00:00:00  $  4094.32 2025-10-28 20:00:00  $  3984.52 SL             $    -4.93 TRENDING_UP      GPU_MLP             
+   26 LONG  2025-08-18 00:00:00  $  4320.22 2025-08-19 12:00:00  $  4192.14 TIME_UNDERWATER $    -4.74 HIGH_VOLATILITY  GPU_MLP             
+   45 SHORT 2025-11-13 00:00:00  $  3452.86 2025-11-13 04:00:00  $  3541.64 SL             $    -4.72 RANGING          GPU_MLP             
+    8 SHORT 2025-07-18 12:00:00  $  3563.68 2025-07-20 00:00:00  $  3658.01 TIME_UNDERWATER $    -4.66 TRENDING_UP      GPU_MLP             
+   55 SHORT 2025-12-29 12:00:00  $  2935.75 2025-12-30 08:00:00  $  2997.74 SL             $    -3.97 HIGH_VOLATILITY  MomentumHTF         
+   38 SHORT 2025-10-19 12:00:00  $  3978.65 2025-10-20 04:00:00  $  4058.75 SL             $    -3.73 RANGING          GPU_MLP             
+   33 SHORT 2025-09-05 00:00:00  $  4328.88 2025-09-05 04:00:00  $  4411.42 SL             $    -3.53 RANGING          GPU_MLP             
+    2 SHORT 2025-06-16 08:00:00  $  2617.01 2025-06-16 16:00:00  $  2660.07 SL             $    -3.07 RANGING          GPU_MLP             
+   59 LONG  2026-03-13 12:00:00  $  2128.01 2026-03-15 00:00:00  $  2096.15 TIME_UNDERWATER $    -2.85 TRENDING_UP      GPU_MLP             
+   56 LONG  2026-01-21 20:00:00  $  2982.27 2026-01-23 08:00:00  $  2940.68 TIME_UNDERWATER $    -1.82 TRENDING_DOWN    GPU_MLP             
+   24 LONG  2025-08-16 00:00:00  $  4432.24 2025-08-16 16:00:00  $  4418.53 RANGING_STALE  $    -0.68 RANGING          GPU_MLP             
+   42 SHORT 2025-11-08 08:00:00  $  3413.03 2025-11-09 04:00:00  $  3422.78 RANGING_STALE  $    -0.59 TRENDING_DOWN    GPU_MLP             
+    3 LONG  2025-06-17 12:00:00  $  2499.00 2025-06-19 12:00:00  $  2492.97 TIME_WEAK      $    -0.56 RANGING          GPU_MLP             
+    4 LONG  2025-06-23 20:00:00  $  2411.66 2025-06-24 08:00:00  $  2409.44 RANGING_STALE  $    -0.28 RANGING          GPU_MLP             
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $  -137.44
+
+  📊 PER-STRATEGY BREAKDOWN:
+    ❌ MomentumHTF                      1 trades  $     -3.97  (avg $   -3.97)
+    ❌ GPU_MLP                         58 trades  $    -62.61  (avg $   -1.08)
+
+────────────────────────────────────────────────────────────────────────────────
+  🔄 SOLUSDT — 2190 candles — Capital: $3,000
+  ⚙️  Overrides: SL_ATR_MULT=2.0, TP_ATR_MULT=3.0, TP_CLAMP_MAX=5.5, RISK_PER_TRADE=0.01, MAX_POSITION_VALUE_PCT=0.5
+────────────────────────────────────────────────────────────────────────────────
+  🚧 GPU-native engine + remote quantum backend (local CUDA MLP + batched QMC)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  📁 SOLUSDT: Loaded 1131 cached 8h funding rates
+  📊 SOLUSDT real funding: mean_8h=0.000007, positive=55.9%, est. APR=0.79%
+  ♻️ NeuronAI state restored (defense=False, WR=44%, risk_mult=0.50)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  📁 SOLUSDT: Loaded 1131 cached 8h funding rates
+  📊 SOLUSDT real funding: mean_8h=0.000007, positive=55.9%, est. APR=0.79%
+  ♻️ Learner state restored (deactivated=set())
+  🚧 GPU-native experimental engine active (CUDA tensor pipeline)
+  🔌 Pre-computing ExternalSignals plan (1690 candles, lookback=200)
+  ✅ ExtSig plan: 63 BUY / 85 SELL (613 ms)
+  📊 MLP training loop: 1689 candles, retrain every 100, ~16 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/16 | candle 600/2189 (5.9%) | acc=0.880/0.407 | ep=13 | 0.2s
+    retrain 2/16 | candle 700/2189 (11.8%) | acc=0.942/0.550 | ep=12 | 0.4s
+    retrain 3/16 | candle 800/2189 (17.8%) | acc=0.838/0.483 | ep=13 | 0.7s
+    retrain 4/16 | candle 900/2189 (23.7%) | acc=0.936/0.517 | ep=12 | 0.9s
+    retrain 5/16 | candle 1000/2189 (29.6%) | acc=0.952/0.517 | ep=12 | 1.1s
+    retrain 6/16 | candle 1100/2189 (35.5%) | acc=0.940/0.600 | ep=15 | 1.4s
+    retrain 7/16 | candle 1200/2189 (41.4%) | acc=0.949/0.593 | ep=11 | 1.6s
+    retrain 8/16 | candle 1300/2189 (47.4%) | acc=0.932/0.550 | ep=12 | 1.8s
+    retrain 9/16 | candle 1400/2189 (53.3%) | acc=0.826/0.492 | ep=11 | 2.0s
+    retrain 10/16 | candle 1500/2189 (59.2%) | acc=0.912/0.533 | ep=16 | 2.3s
+    retrain 11/16 | candle 1600/2189 (65.1%) | acc=0.736/0.517 | ep=12 | 2.5s
+    retrain 12/16 | candle 1700/2189 (71.0%) | acc=0.918/0.467 | ep=14 | 2.8s
+    retrain 13/16 | candle 1800/2189 (77.0%) | acc=0.741/0.552 | ep=15 | 3.1s
+    retrain 14/16 | candle 1900/2189 (82.9%) | acc=0.939/0.649 | ep=11 | 3.3s
+    retrain 15/16 | candle 2000/2189 (88.8%) | acc=0.721/0.527 | ep=11 | 3.6s
+    retrain 16/16 | candle 2100/2189 (94.7%) | acc=0.928/0.400 | ep=12 | 3.9s
+    retrain 17/16 | candle 2189/2189 (100.0%) | acc=0.929/0.649 | ep=13 | 4.1s
+  ✅ MLP training complete: 17 retrains in 4.1s
+  ⚡ Executing 1689 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=3, min_conf=0.65, momentum_gate=False]
+  ✅ Execution complete: 98 trades in 0.6s
+  ❌ SOLUSDT: 98 trades | PF 0.874 | WR 60.2% | Return -3.25% | MaxDD 4.8%
+  ⚛️  backend=remote-gpu | remote=online | calls=0 | failures=0
+  💰 Funding Arb: $+181.38 | 40 positions | 845 settlements
+  📰 News Filter: 0 blocked | 274 events | {'ECOSYSTEM': 124, 'REGULATORY': 48, 'PANIC': 60, 'FOMO': 42}
+
+  💰 WINNING TRADES (59):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   49 LONG  2025-10-22 16:00:00  $   180.20 2025-10-23 12:00:00  $   189.38 TRAIL          $   +34.37 RANGING          GridV2              
+   58 SHORT 2025-11-11 04:00:00  $   163.98 2025-11-12 08:00:00  $   157.51 BE             $   +32.38 RANGING          GPU_MLP             
+   74 SHORT 2026-01-19 00:00:00  $   133.94 2026-01-20 20:00:00  $   127.10 TRAIL          $   +30.48 TRENDING_DOWN    GPU_MLP             
+   96 SHORT 2026-02-26 04:00:00  $    87.24 2026-02-28 04:00:00  $    79.38 BE             $   +29.96 TRENDING_UP      GPU_MLP             
+   35 LONG  2025-09-10 12:00:00  $   223.17 2025-09-12 20:00:00  $   240.28 TRAIL          $   +27.73 TRENDING_UP      GPU_MLP             
+   78 SHORT 2026-02-01 04:00:00  $   105.20 2026-02-04 04:00:00  $    97.90 TIME_EMERGENCY $   +27.07 TRENDING_DOWN    GPU_MLP             
+   32 LONG  2025-09-07 04:00:00  $   202.99 2025-09-08 16:00:00  $   214.21 TRAIL          $   +26.64 TRENDING_DOWN    GPU_MLP             
+   87 SHORT 2026-02-15 04:00:00  $    90.74 2026-02-16 00:00:00  $    85.19 TP             $   +25.97 TRENDING_UP      GPU_MLP             
+   69 SHORT 2025-12-22 12:00:00  $   128.07 2025-12-22 16:00:00  $   125.77 TRAIL          $   +25.59 RANGING          GridV2              
+   22 LONG  2025-08-26 16:00:00  $   197.43 2025-08-27 16:00:00  $   206.77 BE             $   +25.25 RANGING          GPU_MLP             
+   55 SHORT 2025-10-31 16:00:00  $   188.42 2025-11-03 12:00:00  $   171.43 BE             $   +22.95 TRENDING_DOWN    GPU_MLP             
+   90 SHORT 2026-02-16 20:00:00  $    86.45 2026-02-19 12:00:00  $    80.07 TP             $   +22.94 TRENDING_UP      GPU_MLP             
+   17 SHORT 2025-08-14 00:00:00  $   207.94 2025-08-15 00:00:00  $   193.85 BE             $   +20.98 TRENDING_UP      GPU_MLP             
+   82 SHORT 2026-02-09 12:00:00  $    85.28 2026-02-12 12:00:00  $    80.12 TIME_EMERGENCY $   +17.94 TRENDING_DOWN    GPU_MLP             
+   39 SHORT 2025-09-14 12:00:00  $   243.81 2025-09-16 00:00:00  $   235.41 BE             $   +17.59 TRENDING_UP      GPU_MLP             
+   72 SHORT 2026-01-19 00:00:00  $   133.94 2026-01-20 12:00:00  $   127.89 PARTIAL_L1     $   +12.04 TRENDING_DOWN    GPU_MLP             
+   15 SHORT 2025-08-14 00:00:00  $   207.94 2025-08-14 12:00:00  $   190.18 PARTIAL_L1     $   +11.77 TRENDING_UP      GPU_MLP             
+   37 SHORT 2025-09-14 12:00:00  $   243.81 2025-09-15 08:00:00  $   231.69 PARTIAL_L1     $   +11.32 TRENDING_UP      GPU_MLP             
+   85 SHORT 2026-02-15 04:00:00  $    90.74 2026-02-15 16:00:00  $    85.50 PARTIAL_L1     $   +10.89 TRENDING_UP      GPU_MLP             
+   94 SHORT 2026-02-26 04:00:00  $    87.24 2026-02-27 20:00:00  $    81.02 PARTIAL_L1     $   +10.52 TRENDING_UP      GPU_MLP             
+   47 LONG  2025-10-08 00:00:00  $   218.31 2025-10-08 12:00:00  $   220.34 BE             $   +10.17 RANGING          GPU_MLP             
+   25 SHORT 2025-08-29 08:00:00  $   207.62 2025-09-01 08:00:00  $   199.40 TIME_EMERGENCY $    +9.59 TRENDING_UP      GPU_MLP             
+   80 SHORT 2026-02-09 12:00:00  $    85.28 2026-02-11 12:00:00  $    79.29 PARTIAL_L1     $    +9.30 TRENDING_DOWN    GPU_MLP             
+   88 SHORT 2026-02-16 20:00:00  $    86.45 2026-02-18 16:00:00  $    80.97 PARTIAL_L1     $    +8.75 TRENDING_UP      GPU_MLP             
+   62 SHORT 2025-11-20 12:00:00  $   138.57 2025-11-20 16:00:00  $   136.54 BE             $    +8.70 RANGING          GPU_MLP             
+    7 LONG  2025-07-16 12:00:00  $   168.45 2025-07-16 16:00:00  $   170.17 BE             $    +8.38 RANGING          GPU_MLP             
+   68 LONG  2025-12-18 16:00:00  $   117.56 2025-12-19 00:00:00  $   119.23 BE             $    +8.25 HIGH_VOLATILITY  GridV2              
+   70 LONG  2025-12-24 04:00:00  $   121.31 2025-12-24 16:00:00  $   122.30 BE             $    +8.09 RANGING          GridV2              
+   65 SHORT 2025-12-09 16:00:00  $   142.10 2025-12-09 20:00:00  $   140.30 BE             $    +8.03 HIGH_VOLATILITY  GridV2              
+   76 SHORT 2026-01-29 12:00:00  $   117.69 2026-01-30 00:00:00  $   116.48 BE             $    +8.02 TRENDING_DOWN    GPU_MLP             
+    8 SHORT 2025-07-16 16:00:00  $   174.16 2025-07-17 00:00:00  $   172.40 BE             $    +7.94 HIGH_VOLATILITY  GridV2              
+   30 LONG  2025-09-07 04:00:00  $   202.99 2025-09-08 08:00:00  $   210.41 PARTIAL_L1     $    +7.85 TRENDING_DOWN    GPU_MLP             
+   33 LONG  2025-09-10 12:00:00  $   223.17 2025-09-12 00:00:00  $   233.68 PARTIAL_L1     $    +7.58 TRENDING_UP      GPU_MLP             
+   73 SHORT 2026-01-19 00:00:00  $   133.94 2026-01-20 16:00:00  $   128.87 PARTIAL_L2     $    +7.55 TRENDING_DOWN    GPU_MLP             
+   27 LONG  2025-09-02 16:00:00  $   205.54 2025-09-04 00:00:00  $   207.65 BE             $    +7.28 RANGING          GPU_MLP             
+   16 SHORT 2025-08-14 00:00:00  $   207.94 2025-08-14 16:00:00  $   193.38 PARTIAL_L2     $    +7.23 TRENDING_UP      GPU_MLP             
+   38 SHORT 2025-09-14 12:00:00  $   243.81 2025-09-15 12:00:00  $   233.58 PARTIAL_L2     $    +7.16 TRENDING_UP      GPU_MLP             
+   77 SHORT 2026-01-30 12:00:00  $   116.80 2026-01-31 12:00:00  $   115.19 BE             $    +7.13 TRENDING_DOWN    GPU_MLP             
+   67 SHORT 2025-12-16 12:00:00  $   129.75 2025-12-18 12:00:00  $   127.99 BE             $    +6.86 TRENDING_DOWN    GPU_MLP             
+   28 LONG  2025-09-04 16:00:00  $   202.12 2025-09-05 04:00:00  $   203.72 BE             $    +6.59 RANGING          GPU_MLP             
+    9 LONG  2025-07-17 12:00:00  $   174.13 2025-07-18 12:00:00  $   176.25 BE             $    +6.28 TRENDING_UP      GPU_MLP             
+   86 SHORT 2026-02-15 04:00:00  $    90.74 2026-02-15 20:00:00  $    86.95 PARTIAL_L2     $    +5.89 TRENDING_UP      GPU_MLP             
+   95 SHORT 2026-02-26 04:00:00  $    87.24 2026-02-28 00:00:00  $    82.69 PARTIAL_L2     $    +5.76 TRENDING_UP      GPU_MLP             
+   81 SHORT 2026-02-09 12:00:00  $    85.28 2026-02-11 16:00:00  $    80.47 PARTIAL_L2     $    +5.59 TRENDING_DOWN    GPU_MLP             
+   10 SHORT 2025-07-20 16:00:00  $   181.99 2025-07-20 20:00:00  $   180.58 BE             $    +5.52 RANGING          GridV2              
+   23 SHORT 2025-08-29 08:00:00  $   207.62 2025-09-01 00:00:00  $   197.42 PARTIAL_L1     $    +5.34 TRENDING_UP      GPU_MLP             
+   53 SHORT 2025-10-31 16:00:00  $   188.42 2025-11-03 00:00:00  $   180.13 PARTIAL_L1     $    +4.95 TRENDING_DOWN    GPU_MLP             
+   31 LONG  2025-09-07 04:00:00  $   202.99 2025-09-08 12:00:00  $   209.22 PARTIAL_L2     $    +4.93 TRENDING_DOWN    GPU_MLP             
+   34 LONG  2025-09-10 12:00:00  $   223.17 2025-09-12 04:00:00  $   231.98 PARTIAL_L2     $    +4.76 TRENDING_UP      GPU_MLP             
+   89 SHORT 2026-02-16 20:00:00  $    86.45 2026-02-18 20:00:00  $    82.58 PARTIAL_L2     $    +4.62 TRENDING_UP      GPU_MLP             
+   24 SHORT 2025-08-29 08:00:00  $   207.62 2025-09-01 04:00:00  $   199.36 PARTIAL_L2     $    +3.23 TRENDING_UP      GPU_MLP             
+   54 SHORT 2025-10-31 16:00:00  $   188.42 2025-11-03 04:00:00  $   181.46 PARTIAL_L2     $    +3.11 TRENDING_DOWN    GPU_MLP             
+   44 LONG  2025-09-30 12:00:00  $   206.00 2025-10-01 00:00:00  $   206.69 RANGING_STALE  $    +2.38 RANGING          GPU_MLP             
+   66 SHORT 2025-12-12 12:00:00  $   133.49 2025-12-13 00:00:00  $   132.88 RANGING_STALE  $    +2.38 RANGING          GPU_MLP             
+   91 SHORT 2026-02-21 08:00:00  $    85.40 2026-02-21 20:00:00  $    85.17 RANGING_STALE  $    +2.12 RANGING          GPU_MLP             
+   51 SHORT 2025-10-29 16:00:00  $   192.76 2025-10-30 08:00:00  $   191.85 RANGING_STALE  $    +1.59 HIGH_VOLATILITY  GPU_MLP             
+   43 LONG  2025-09-29 12:00:00  $   210.07 2025-09-30 00:00:00  $   210.71 RANGING_STALE  $    +1.26 HIGH_VOLATILITY  GPU_MLP             
+   12 LONG  2025-07-25 00:00:00  $   177.71 2025-07-25 12:00:00  $   178.20 RANGING_STALE  $    +1.03 RANGING          GPU_MLP             
+   11 LONG  2025-07-23 16:00:00  $   188.08 2025-07-24 12:00:00  $   188.53 RANGING_STALE  $    +0.87 RANGING          GPU_MLP             
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $  +676.44
+
+  💀 LOSING TRADES (39):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   75 SHORT 2026-01-25 16:00:00  $   117.96 2026-01-26 00:00:00  $   121.91 SL             $   -36.15 TRENDING_DOWN    GPU_MLP             
+   93 SHORT 2026-02-25 12:00:00  $    85.98 2026-02-25 16:00:00  $    88.95 SL             $   -32.92 RANGING          GPU_MLP             
+   84 SHORT 2026-02-14 04:00:00  $    85.19 2026-02-14 16:00:00  $    88.07 SL             $   -32.80 RANGING          GPU_MLP             
+   92 SHORT 2026-02-24 16:00:00  $    78.38 2026-02-25 00:00:00  $    82.92 SL             $   -31.75 TRENDING_DOWN    GPU_MLP             
+   83 SHORT 2026-02-13 08:00:00  $    80.31 2026-02-13 16:00:00  $    85.27 SL             $   -31.56 TRENDING_DOWN    GPU_MLP             
+   59 LONG  2025-11-12 20:00:00  $   153.42 2025-11-13 16:00:00  $   144.41 SL             $   -30.46 TRENDING_DOWN    GPU_MLP             
+   36 SHORT 2025-09-13 12:00:00  $   239.43 2025-09-14 00:00:00  $   248.83 SL             $   -30.45 TRENDING_UP      GPU_MLP             
+   61 SHORT 2025-11-19 12:00:00  $   134.62 2025-11-20 00:00:00  $   144.05 SL             $   -30.13 TRENDING_DOWN    GPU_MLP             
+    5 SHORT 2025-07-09 00:00:00  $   151.29 2025-07-09 16:00:00  $   156.29 SL             $   -29.99 TRENDING_UP      GPU_MLP             
+   14 SHORT 2025-08-12 20:00:00  $   191.78 2025-08-13 08:00:00  $   201.64 SL             $   -29.69 TRENDING_UP      GPU_MLP             
+   98 SHORT 2026-03-03 20:00:00  $    86.97 2026-03-04 08:00:00  $    91.09 SL             $   -28.68 RANGING          GPU_MLP             
+    1 SHORT 2025-06-28 16:00:00  $   150.67 2025-06-29 20:00:00  $   153.18 MAX_LOSS       $   -28.51 RANGING          GridV2              
+    4 SHORT 2025-07-08 04:00:00  $   149.66 2025-07-08 12:00:00  $   152.75 SL             $   -27.74 RANGING          GPU_MLP             
+    2 SHORT 2025-07-02 04:00:00  $   149.09 2025-07-02 20:00:00  $   153.92 SL             $   -27.72 RANGING          GPU_MLP             
+    3 SHORT 2025-07-05 00:00:00  $   147.75 2025-07-06 12:00:00  $   151.57 SL             $   -27.70 RANGING          GPU_MLP             
+   29 LONG  2025-09-05 16:00:00  $   205.44 2025-09-06 16:00:00  $   199.71 SL             $   -27.09 RANGING          GPU_MLP             
+   19 LONG  2025-08-21 00:00:00  $   188.43 2025-08-21 12:00:00  $   182.07 SL             $   -26.88 RANGING          GPU_MLP             
+   41 LONG  2025-09-18 04:00:00  $   244.75 2025-09-19 16:00:00  $   235.98 TIME_UNDERWATER $   -26.34 TRENDING_UP      GPU_MLP             
+   18 LONG  2025-08-18 00:00:00  $   182.67 2025-08-19 12:00:00  $   177.98 TIME_UNDERWATER $   -22.49 RANGING          GPU_MLP             
+    6 SHORT 2025-07-12 08:00:00  $   161.62 2025-07-14 00:00:00  $   167.11 TIME_UNDERWATER $   -21.19 TRENDING_UP      GPU_MLP             
+   45 SHORT 2025-10-01 12:00:00  $   220.25 2025-10-02 00:00:00  $   224.03 SL             $   -19.52 RANGING          GridV2              
+   52 LONG  2025-10-30 08:00:00  $   191.85 2025-10-30 12:00:00  $   187.52 MAX_LOSS       $   -17.08 RANGING          GridV2              
+   57 SHORT 2025-11-09 16:00:00  $   166.15 2025-11-10 08:00:00  $   169.54 SL             $   -16.94 RANGING          GridV2              
+   20 SHORT 2025-08-22 12:00:00  $   193.47 2025-08-22 16:00:00  $   197.96 SL             $   -16.58 HIGH_VOLATILITY  GridV2              
+   71 SHORT 2025-12-26 12:00:00  $   121.55 2025-12-28 00:00:00  $   124.13 TIME_UNDERWATER $   -16.44 TRENDING_DOWN    GPU_MLP             
+   21 LONG  2025-08-23 04:00:00  $   205.18 2025-08-25 04:00:00  $   199.82 TIME_WEAK      $   -12.93 TRENDING_UP      GPU_MLP             
+   63 SHORT 2025-11-21 04:00:00  $   127.55 2025-11-21 16:00:00  $   130.61 SL             $   -12.77 TRENDING_DOWN    GPU_MLP             
+   46 LONG  2025-10-05 04:00:00  $   236.59 2025-10-06 20:00:00  $   232.35 TIME_UNDERWATER $   -12.69 TRENDING_UP      GPU_MLP             
+   26 LONG  2025-09-01 12:00:00  $   198.37 2025-09-01 20:00:00  $   194.97 SL             $   -11.55 RANGING          GridV2              
+   48 LONG  2025-10-16 20:00:00  $   184.85 2025-10-17 04:00:00  $   179.56 SL             $   -11.47 RANGING          GridV2              
+   13 SHORT 2025-08-08 16:00:00  $   178.47 2025-08-10 12:00:00  $   181.54 TIME_UNDERWATER $   -11.21 TRENDING_UP      GPU_MLP             
+   42 LONG  2025-09-20 04:00:00  $   239.78 2025-09-21 16:00:00  $   237.99 TIME_UNDERWATER $    -9.29 RANGING          GPU_MLP             
+   56 SHORT 2025-11-05 12:00:00  $   160.50 2025-11-07 16:00:00  $   164.17 TIME_WEAK      $    -7.61 TRENDING_DOWN    GPU_MLP             
+   64 SHORT 2025-11-23 00:00:00  $   129.96 2025-11-24 12:00:00  $   131.94 TIME_UNDERWATER $    -6.14 TRENDING_DOWN    GPU_MLP             
+   60 SHORT 2025-11-15 08:00:00  $   140.22 2025-11-17 08:00:00  $   141.90 TIME_WEAK      $    -5.05 TRENDING_DOWN    GPU_MLP             
+   97 LONG  2026-03-01 16:00:00  $    83.23 2026-03-02 04:00:00  $    82.95 RANGING_STALE  $    -2.55 RANGING          GPU_MLP             
+   50 SHORT 2025-10-28 16:00:00  $   195.35 2025-10-29 04:00:00  $   195.65 RANGING_STALE  $    -1.95 RANGING          GPU_MLP             
+   40 LONG  2025-09-16 12:00:00  $   237.79 2025-09-17 04:00:00  $   237.69 RANGING_STALE  $    -1.03 RANGING          GPU_MLP             
+   79 SHORT 2026-02-06 20:00:00  $    87.46 2026-02-09 00:00:00  $    87.67 TIME_WEAK      $    -0.85 TRENDING_DOWN    GPU_MLP             
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $  -773.89
+
+  📊 PER-STRATEGY BREAKDOWN:
+    ❌ GridV2                          14 trades  $    -23.86  (avg $   -1.70)
+    ❌ GPU_MLP                         84 trades  $    -73.59  (avg $   -0.88)
+
+────────────────────────────────────────────────────────────────────────────────
+  🔄 BNBUSDT — 2190 candles — Capital: $3,500
+  ⚙️  Overrides: BNB_DIRECTION_FILTER_ENABLED=False, BNB_LONG_MIN_CONFIDENCE=0.3, BNB_LONG_REQUIRE_MTF_UPTREND=True, BNB_LONG_BLOCK_IN_TRENDING_DOWN=False, MOMENTUM_HTF_ENABLED=False
+────────────────────────────────────────────────────────────────────────────────
+  🚧 GPU-native engine + remote quantum backend (local CUDA MLP + batched QMC)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  ⚠️ BNBUSDT: No Kraken perpetual available — using simulation
+  ♻️ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.73)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  ⚠️ BNBUSDT: No Kraken perpetual available — using simulation
+  ♻️ Learner state restored (deactivated=set())
+  🚧 GPU-native experimental engine active (CUDA tensor pipeline)
+  🔌 Pre-computing ExternalSignals plan (1690 candles, lookback=200)
+  ✅ ExtSig plan: 57 BUY / 63 SELL (755 ms)
+  📊 MLP training loop: 1689 candles, retrain every 100, ~16 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/16 | candle 600/2189 (5.9%) | acc=0.754/0.488 | ep=16 | 0.3s
+    retrain 2/16 | candle 700/2189 (11.8%) | acc=0.836/0.524 | ep=12 | 0.6s
+    retrain 3/16 | candle 800/2189 (17.8%) | acc=0.867/0.462 | ep=12 | 0.8s
+    retrain 4/16 | candle 900/2189 (23.7%) | acc=0.688/0.463 | ep=13 | 1.0s
+    retrain 5/16 | candle 1000/2189 (29.6%) | acc=0.941/0.595 | ep=28 | 1.5s
+    retrain 6/16 | candle 1100/2189 (35.5%) | acc=0.932/0.523 | ep=15 | 1.8s
+    retrain 7/16 | candle 1200/2189 (41.4%) | acc=0.888/0.500 | ep=12 | 2.0s
+    retrain 8/16 | candle 1300/2189 (47.4%) | acc=0.861/0.600 | ep=14 | 2.3s
+    retrain 9/16 | candle 1400/2189 (53.3%) | acc=0.928/0.500 | ep=14 | 2.7s
+    retrain 10/16 | candle 1500/2189 (59.2%) | acc=0.927/0.460 | ep=12 | 2.9s
+    retrain 11/16 | candle 1600/2189 (65.1%) | acc=0.967/0.577 | ep=18 | 3.3s
+    retrain 12/16 | candle 1700/2189 (71.0%) | acc=0.876/0.455 | ep=13 | 3.6s
+    retrain 13/16 | candle 1800/2189 (77.0%) | acc=0.896/0.491 | ep=12 | 3.9s
+    retrain 14/16 | candle 1900/2189 (82.9%) | acc=0.823/0.438 | ep=12 | 4.1s
+    retrain 15/16 | candle 2000/2189 (88.8%) | acc=0.901/0.489 | ep=12 | 4.3s
+    retrain 16/16 | candle 2100/2189 (94.7%) | acc=0.791/0.333 | ep=13 | 4.5s
+    retrain 17/16 | candle 2189/2189 (100.0%) | acc=0.897/0.510 | ep=12 | 4.7s
+  ✅ MLP training complete: 17 retrains in 4.7s
+  ⚡ Executing 1689 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=3, min_conf=0.65, momentum_gate=False]
+  ✅ Execution complete: 113 trades in 0.5s
+  ❌ BNBUSDT: 113 trades | PF 0.674 | WR 46.9% | Return -15.64% | MaxDD 14.8%
+  ⚛️  backend=remote-gpu | remote=online | calls=0 | failures=0
+  💰 Funding Arb: $+194.43 | 34 positions | 845 settlements
+  📰 News Filter: 0 blocked | 216 events | {'REGULATORY': 37, 'PANIC': 31, 'ECOSYSTEM': 111, 'FOMO': 36, 'WHALE_MOVE': 1}
+
+  💰 WINNING TRADES (53):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   19 LONG  2025-08-15 12:00:00  $   818.65 2025-08-17 08:00:00  $   853.44 TRAIL          $   +77.04 RANGING          GPU_MLP             
+   25 LONG  2025-08-20 12:00:00  $   832.83 2025-08-20 20:00:00  $   867.72 TRAIL          $   +59.97 TRENDING_DOWN    GPU_MLP             
+   52 LONG  2025-10-10 20:00:00  $  1102.47 2025-10-13 08:00:00  $  1325.08 TRAIL          $   +54.82 HIGH_VOLATILITY  GPU_MLP             
+   46 LONG  2025-09-30 08:00:00  $  1014.36 2025-10-02 12:00:00  $  1049.93 TRAIL          $   +53.15 TRENDING_UP      GPU_MLP             
+   57 LONG  2025-10-23 00:00:00  $  1087.01 2025-10-23 16:00:00  $  1138.32 TRAIL          $   +50.90 TRENDING_DOWN    GPU_MLP             
+   60 LONG  2025-10-26 00:00:00  $  1116.98 2025-10-27 04:00:00  $  1149.50 BE             $   +46.60 TRENDING_UP      GPU_MLP             
+   18 LONG  2025-08-05 12:00:00  $   748.96 2025-08-06 16:00:00  $   766.11 BE             $   +45.59 TRENDING_DOWN    GPU_MLP             
+   79 LONG  2025-12-02 00:00:00  $   828.38 2025-12-02 16:00:00  $   873.39 TRAIL          $   +44.24 TRENDING_DOWN    GPU_MLP             
+   44 LONG  2025-09-27 16:00:00  $   969.61 2025-09-29 16:00:00  $  1013.26 BE             $   +38.14 TRENDING_DOWN    GPU_MLP             
+   97 SHORT 2026-01-07 00:00:00  $   909.84 2026-01-08 08:00:00  $   885.88 BE             $   +37.95 TRENDING_UP      GPU_MLP             
+   36 SHORT 2025-09-14 04:00:00  $   937.47 2025-09-15 08:00:00  $   919.80 BE             $   +37.87 TRENDING_UP      GPU_MLP             
+   39 LONG  2025-09-20 20:00:00  $  1043.77 2025-09-21 00:00:00  $  1063.20 BE             $   +37.47 TRENDING_UP      GPU_MLP             
+   48 LONG  2025-10-05 08:00:00  $  1167.85 2025-10-07 00:00:00  $  1211.62 BE             $   +33.36 TRENDING_UP      GPU_MLP             
+   90 SHORT 2025-12-29 00:00:00  $   869.19 2025-12-29 12:00:00  $   853.26 TRAIL          $   +26.44 TRENDING_UP      GPU_MLP             
+    6 LONG  2025-07-16 12:00:00  $   700.20 2025-07-17 16:00:00  $   715.36 BE             $   +26.05 HIGH_VOLATILITY  GPU_MLP             
+   56 LONG  2025-10-23 00:00:00  $  1087.01 2025-10-23 12:00:00  $  1158.47 PARTIAL_L1     $   +23.84 TRENDING_DOWN    GPU_MLP             
+   24 LONG  2025-08-20 12:00:00  $   832.83 2025-08-20 16:00:00  $   869.31 PARTIAL_L1     $   +21.07 TRENDING_DOWN    GPU_MLP             
+   50 LONG  2025-10-10 20:00:00  $  1102.47 2025-10-12 12:00:00  $  1294.03 PARTIAL_L1     $   +21.00 HIGH_VOLATILITY  GPU_MLP             
+   77 LONG  2025-11-30 00:00:00  $   875.59 2025-11-30 12:00:00  $   884.46 BE             $   +20.13 RANGING          GPU_MLP             
+   11 LONG  2025-07-25 00:00:00  $   756.81 2025-07-25 12:00:00  $   765.94 BE             $   +19.97 RANGING          GPU_MLP             
+   10 LONG  2025-07-24 04:00:00  $   759.09 2025-07-24 12:00:00  $   768.00 BE             $   +19.75 RANGING          GPU_MLP             
+   45 LONG  2025-09-30 08:00:00  $  1014.36 2025-10-02 08:00:00  $  1049.91 PARTIAL_L1     $   +17.87 TRENDING_UP      GPU_MLP             
+   96 SHORT 2026-01-07 00:00:00  $   909.84 2026-01-08 04:00:00  $   876.16 PARTIAL_L1     $   +17.86 TRENDING_UP      GPU_MLP             
+   51 LONG  2025-10-10 20:00:00  $  1102.47 2025-10-13 04:00:00  $  1313.76 PARTIAL_L2     $   +17.37 HIGH_VOLATILITY  GPU_MLP             
+   15 LONG  2025-07-30 20:00:00  $   793.51 2025-07-31 08:00:00  $   800.31 BE             $   +16.14 RANGING          GPU_MLP             
+   78 LONG  2025-12-02 00:00:00  $   828.38 2025-12-02 12:00:00  $   874.17 PARTIAL_L1     $   +15.09 TRENDING_DOWN    GPU_MLP             
+   73 LONG  2025-11-22 08:00:00  $   825.60 2025-11-25 08:00:00  $   850.65 TIME_EMERGENCY $   +15.05 TRENDING_DOWN    GPU_MLP             
+   47 LONG  2025-10-05 08:00:00  $  1167.85 2025-10-06 12:00:00  $  1226.84 PARTIAL_L1     $   +15.03 TRENDING_UP      GPU_MLP             
+    5 LONG  2025-07-16 12:00:00  $   700.20 2025-07-17 12:00:00  $   726.22 PARTIAL_L1     $   +15.02 HIGH_VOLATILITY  GPU_MLP             
+   59 LONG  2025-10-26 00:00:00  $  1116.98 2025-10-27 00:00:00  $  1148.32 PARTIAL_L1     $   +14.96 TRENDING_UP      GPU_MLP             
+   43 LONG  2025-09-27 16:00:00  $   969.61 2025-09-29 12:00:00  $  1019.13 PARTIAL_L2     $   +14.44 TRENDING_DOWN    GPU_MLP             
+   21 LONG  2025-08-18 12:00:00  $   841.85 2025-08-18 20:00:00  $   847.06 BE             $   +12.06 RANGING          GPU_MLP             
+   82 LONG  2025-12-06 04:00:00  $   884.76 2025-12-06 16:00:00  $   890.03 BE             $   +11.45 RANGING          GPU_MLP             
+   89 SHORT 2025-12-29 00:00:00  $   869.19 2025-12-29 08:00:00  $   849.10 PARTIAL_L1     $   +11.35 TRENDING_UP      GPU_MLP             
+   13 LONG  2025-07-27 00:00:00  $   794.28 2025-07-27 12:00:00  $   798.90 BE             $   +11.19 TRENDING_UP      GPU_MLP             
+   42 LONG  2025-09-27 16:00:00  $   969.61 2025-09-29 00:00:00  $   998.40 PARTIAL_L1     $   +11.13 TRENDING_DOWN    GPU_MLP             
+    4 LONG  2025-07-15 12:00:00  $   683.10 2025-07-15 20:00:00  $   686.99 BE             $   +11.11 RANGING          GPU_MLP             
+   31 LONG  2025-08-27 20:00:00  $   855.18 2025-08-29 04:00:00  $   859.73 BE             $   +10.07 TRENDING_DOWN    GPU_MLP             
+   87 LONG  2025-12-11 04:00:00  $   866.88 2025-12-11 16:00:00  $   874.20 BE             $   +10.07 RANGING          GridV2              
+   75 SHORT 2025-11-26 16:00:00  $   896.55 2025-11-27 12:00:00  $   890.57 BE             $    +9.79 RANGING          GridV2              
+   67 LONG  2025-11-11 20:00:00  $   958.08 2025-11-12 08:00:00  $   965.19 BE             $    +9.66 RANGING          GridV2              
+   85 SHORT 2025-12-09 16:00:00  $   914.21 2025-12-09 20:00:00  $   907.35 BE             $    +8.80 HIGH_VOLATILITY  GridV2              
+   35 SHORT 2025-09-13 08:00:00  $   941.16 2025-09-13 16:00:00  $   936.76 BE             $    +8.75 TRENDING_UP      GPU_MLP             
+  112 SHORT 2026-03-02 12:00:00  $   646.25 2026-03-02 20:00:00  $   640.47 BE             $    +8.62 HIGH_VOLATILITY  GridV2              
+   72 LONG  2025-11-22 08:00:00  $   825.60 2025-11-24 16:00:00  $   863.92 PARTIAL_L1     $    +7.79 TRENDING_DOWN    GPU_MLP             
+   23 LONG  2025-08-19 20:00:00  $   824.11 2025-08-20 00:00:00  $   830.35 BE             $    +7.16 RANGING          GridV2              
+  111 SHORT 2026-02-21 08:00:00  $   630.18 2026-02-22 00:00:00  $   626.13 BE             $    +7.04 RANGING          GridV2              
+    1 LONG  2025-06-18 12:00:00  $   642.32 2025-06-20 04:00:00  $   644.56 BE             $    +6.48 RANGING          GridV2              
+   74 LONG  2025-11-25 20:00:00  $   862.57 2025-11-26 12:00:00  $   865.00 RANGING_STALE  $    +4.39 RANGING          GPU_MLP             
+  104 LONG  2026-01-21 20:00:00  $   883.36 2026-01-24 20:00:00  $   887.17 TIME_EMERGENCY $    +4.23 TRENDING_DOWN    GPU_MLP             
+   98 SHORT 2026-01-10 00:00:00  $   907.31 2026-01-12 00:00:00  $   905.27 TIME_WEAK      $    +3.07 TRENDING_UP      GPU_MLP             
+  110 SHORT 2026-02-14 12:00:00  $   634.73 2026-02-15 00:00:00  $   633.40 RANGING_STALE  $    +1.69 RANGING          GridV2              
+   62 SHORT 2025-10-29 08:00:00  $  1113.66 2025-10-30 08:00:00  $  1111.56 RANGING_STALE  $    +1.26 HIGH_VOLATILITY  GPU_MLP             
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $ +1131.34
+
+  💀 LOSING TRADES (60):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   29 LONG  2025-08-24 20:00:00  $   876.51 2025-08-25 08:00:00  $   852.89 SL             $   -57.61 TRENDING_UP      GPU_MLP             
+   64 LONG  2025-11-01 20:00:00  $  1094.53 2025-11-03 00:00:00  $  1068.86 SL             $   -52.89 TRENDING_DOWN    GPU_MLP             
+   53 LONG  2025-10-14 00:00:00  $  1278.14 2025-10-14 04:00:00  $  1190.78 SL             $   -51.76 TRENDING_UP      GPU_MLP             
+    7 SHORT 2025-07-19 12:00:00  $   730.81 2025-07-20 16:00:00  $   755.51 SL             $   -51.44 TRENDING_UP      GPU_MLP             
+   55 LONG  2025-10-16 16:00:00  $  1145.30 2025-10-17 04:00:00  $  1085.44 SL             $   -51.08 TRENDING_DOWN    GPU_MLP             
+   69 LONG  2025-11-15 12:00:00  $   936.57 2025-11-17 12:00:00  $   901.74 SL             $   -50.98 TRENDING_DOWN    GPU_MLP             
+    8 LONG  2025-07-21 12:00:00  $   774.35 2025-07-22 00:00:00  $   754.55 SL             $   -50.79 TRENDING_UP      GPU_MLP             
+   70 LONG  2025-11-20 08:00:00  $   902.31 2025-11-20 16:00:00  $   870.90 SL             $   -50.48 TRENDING_DOWN    GPU_MLP             
+   81 LONG  2025-12-04 16:00:00  $   898.52 2025-12-05 16:00:00  $   870.46 SL             $   -50.19 TRENDING_UP      GPU_MLP             
+   40 LONG  2025-09-22 00:00:00  $  1029.95 2025-09-22 04:00:00  $   997.18 SL             $   -50.05 TRENDING_UP      GPU_MLP             
+    9 LONG  2025-07-23 00:00:00  $   797.09 2025-07-23 16:00:00  $   770.56 SL             $   -49.74 TRENDING_UP      GPU_MLP             
+   41 LONG  2025-09-24 20:00:00  $  1018.49 2025-09-25 08:00:00  $   983.59 SL             $   -49.37 TRENDING_UP      GPU_MLP             
+   17 LONG  2025-08-01 20:00:00  $   757.08 2025-08-03 00:00:00  $   730.88 SL             $   -49.21 TRENDING_DOWN    GPU_MLP             
+   84 LONG  2025-12-08 00:00:00  $   902.01 2025-12-09 12:00:00  $   882.35 SL             $   -45.97 TRENDING_UP      GPU_MLP             
+   16 LONG  2025-07-31 20:00:00  $   783.14 2025-08-01 08:00:00  $   766.55 SL             $   -45.53 RANGING          GPU_MLP             
+   80 SHORT 2025-12-03 08:00:00  $   898.92 2025-12-03 20:00:00  $   916.66 SL             $   -43.26 RANGING          GPU_MLP             
+   20 LONG  2025-08-17 20:00:00  $   855.38 2025-08-18 00:00:00  $   838.66 SL             $   -42.71 TRENDING_UP      GPU_MLP             
+   68 LONG  2025-11-13 08:00:00  $   967.07 2025-11-13 16:00:00  $   949.41 SL             $   -40.87 RANGING          GPU_MLP             
+   28 LONG  2025-08-23 12:00:00  $   888.64 2025-08-24 04:00:00  $   872.09 SL             $   -40.71 RANGING          GPU_MLP             
+   83 LONG  2025-12-07 04:00:00  $   891.52 2025-12-07 12:00:00  $   875.14 SL             $   -39.44 TRENDING_UP      GPU_MLP             
+   22 LONG  2025-08-19 08:00:00  $   846.46 2025-08-19 12:00:00  $   832.58 SL             $   -35.74 RANGING          GPU_MLP             
+   99 SHORT 2026-01-12 12:00:00  $   904.28 2026-01-13 16:00:00  $   919.57 SL             $   -35.01 TRENDING_UP      GPU_MLP             
+   86 SHORT 2025-12-10 12:00:00  $   891.40 2025-12-10 20:00:00  $   906.00 SL             $   -34.58 RANGING          GPU_MLP             
+   91 SHORT 2025-12-30 00:00:00  $   852.50 2025-12-31 04:00:00  $   866.33 SL             $   -34.23 TRENDING_UP      GPU_MLP             
+   95 SHORT 2026-01-06 04:00:00  $   904.71 2026-01-06 12:00:00  $   919.37 SL             $   -33.32 TRENDING_UP      GPU_MLP             
+  107 LONG  2026-01-30 12:00:00  $   850.11 2026-01-31 12:00:00  $   823.68 SL             $   -32.04 TRENDING_DOWN    GPU_MLP             
+   49 SHORT 2025-10-07 12:00:00  $  1280.97 2025-10-09 04:00:00  $  1309.90 TIME_UNDERWATER $   -30.77 TRENDING_UP      GPU_MLP             
+  113 LONG  2026-03-18 08:00:00  $   662.89 2026-03-18 12:00:00  $   652.55 SL             $   -29.58 RANGING          GPU_MLP             
+   76 LONG  2025-11-28 00:00:00  $   892.59 2025-11-29 12:00:00  $   880.93 TIME_UNDERWATER $   -28.67 TRENDING_UP      GPU_MLP             
+   94 SHORT 2026-01-05 00:00:00  $   900.02 2026-01-05 16:00:00  $   912.34 SL             $   -28.58 TRENDING_UP      GPU_MLP             
+   27 SHORT 2025-08-22 12:00:00  $   876.22 2025-08-22 16:00:00  $   890.69 MAX_LOSS       $   -25.89 HIGH_VOLATILITY  GridV2              
+    3 LONG  2025-07-14 16:00:00  $   690.06 2025-07-15 00:00:00  $   682.16 SL             $   -25.64 RANGING          GPU_MLP             
+  103 LONG  2026-01-20 04:00:00  $   917.77 2026-01-20 12:00:00  $   907.10 SL             $   -23.93 RANGING          GPU_MLP             
+  106 LONG  2026-01-29 12:00:00  $   864.15 2026-01-30 00:00:00  $   852.03 SL             $   -20.72 HIGH_VOLATILITY  GPU_MLP             
+  102 LONG  2026-01-18 20:00:00  $   932.51 2026-01-19 00:00:00  $   923.29 SL             $   -20.69 RANGING          GPU_MLP             
+   33 LONG  2025-09-01 04:00:00  $   865.56 2025-09-01 08:00:00  $   857.49 SL             $   -20.57 RANGING          GPU_MLP             
+   88 SHORT 2025-12-28 08:00:00  $   854.60 2025-12-28 12:00:00  $   862.71 SL             $   -20.50 RANGING          GPU_MLP             
+   37 SHORT 2025-09-17 04:00:00  $   954.70 2025-09-17 20:00:00  $   963.82 MAX_LOSS       $   -20.18 RANGING          GridV2              
+   71 LONG  2025-11-20 16:00:00  $   880.44 2025-11-21 00:00:00  $   864.99 MAX_LOSS       $   -19.87 RANGING          GridV2              
+  100 SHORT 2026-01-13 16:00:00  $   941.50 2026-01-13 20:00:00  $   950.51 SL             $   -19.83 HIGH_VOLATILITY  GridV2              
+   93 SHORT 2026-01-02 20:00:00  $   881.25 2026-01-04 12:00:00  $   889.30 TIME_UNDERWATER $   -19.63 TRENDING_UP      GPU_MLP             
+   38 SHORT 2025-09-18 08:00:00  $   991.71 2025-09-20 04:00:00  $   999.46 TIME_UNDERWATER $   -17.60 TRENDING_UP      GPU_MLP             
+  105 LONG  2026-01-25 04:00:00  $   879.40 2026-01-25 16:00:00  $   874.89 MAX_LOSS       $   -15.64 RANGING          GridV2              
+  108 LONG  2026-02-02 16:00:00  $   770.39 2026-02-04 08:00:00  $   750.34 TIME_UNDERWATER $   -15.36 TRENDING_DOWN    GPU_MLP             
+   65 SHORT 2025-11-05 12:00:00  $   965.68 2025-11-07 16:00:00  $   981.81 TIME_WEAK      $   -14.60 TRENDING_DOWN    GPU_MLP             
+   92 SHORT 2025-12-31 16:00:00  $   864.32 2026-01-02 08:00:00  $   869.51 TIME_UNDERWATER $   -13.43 TRENDING_UP      GPU_MLP             
+   63 SHORT 2025-10-30 20:00:00  $  1079.05 2025-11-01 08:00:00  $  1089.11 TIME_UNDERWATER $   -13.39 TRENDING_DOWN    GPU_MLP             
+   54 LONG  2025-10-14 16:00:00  $  1206.54 2025-10-16 04:00:00  $  1184.47 TIME_UNDERWATER $   -11.95 TRENDING_DOWN    GPU_MLP             
+    2 SHORT 2025-06-29 04:00:00  $   649.29 2025-06-29 08:00:00  $   651.90 SL             $    -9.96 RANGING          GridV2              
+   61 LONG  2025-10-28 04:00:00  $  1132.46 2025-10-28 16:00:00  $  1128.92 RANGING_STALE  $    -8.43 RANGING          GPU_MLP             
+  109 LONG  2026-02-07 12:00:00  $   642.29 2026-02-09 04:00:00  $   632.05 TIME_UNDERWATER $    -7.10 TRENDING_DOWN    GPU_MLP             
+   12 LONG  2025-07-26 00:00:00  $   783.52 2025-07-26 12:00:00  $   781.32 RANGING_STALE  $    -6.45 RANGING          GPU_MLP             
+   30 LONG  2025-08-26 16:00:00  $   860.72 2025-08-27 08:00:00  $   859.31 RANGING_STALE  $    -4.79 RANGING          GPU_MLP             
+  101 SHORT 2026-01-14 12:00:00  $   942.03 2026-01-17 08:00:00  $   942.93 TIME_WEAK      $    -3.24 TRENDING_UP      GPU_MLP             
+   66 SHORT 2025-11-08 04:00:00  $   995.38 2025-11-08 16:00:00  $   996.32 RANGING_STALE  $    -2.87 RANGING          GPU_MLP             
+   14 LONG  2025-07-29 12:00:00  $   805.28 2025-07-30 00:00:00  $   804.60 RANGING_STALE  $    -2.78 RANGING          GPU_MLP             
+   58 LONG  2025-10-24 16:00:00  $  1109.86 2025-10-25 12:00:00  $  1108.61 RANGING_STALE  $    -2.29 TRENDING_UP      GPU_MLP             
+   32 LONG  2025-08-29 20:00:00  $   862.30 2025-08-30 20:00:00  $   862.00 RANGING_STALE  $    -2.15 TRENDING_DOWN    GPU_MLP             
+   26 LONG  2025-08-21 08:00:00  $   851.24 2025-08-22 04:00:00  $   851.02 RANGING_STALE  $    -1.85 TRENDING_UP      GPU_MLP             
+   34 SHORT 2025-09-06 08:00:00  $   861.07 2025-09-06 20:00:00  $   860.85 RANGING_STALE  $    -0.91 RANGING          GridV2              
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $ -1678.84
+
+  📊 PER-STRATEGY BREAKDOWN:
+    ❌ GridV2                          16 trades  $    -42.97  (avg $   -2.69)
+    ❌ GPU_MLP                         97 trades  $   -504.53  (avg $   -5.20)
+
+────────────────────────────────────────────────────────────────────────────────
+  🔄 XRPUSDT — 2190 candles — Capital: $1,500
+  ⚙️  Overrides: CONFIDENCE_FLOOR=0.38, RISK_PER_TRADE=0.004, GRID_V2_ENABLED=False, GRID_V2_ALLOWED_TIMEFRAMES=['1h'], GRID_V2_ADX_THRESHOLD=23
+────────────────────────────────────────────────────────────────────────────────
+  🚧 GPU-native engine + remote quantum backend (local CUDA MLP + batched QMC)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  📁 XRPUSDT: Loaded 1131 cached 8h funding rates
+  📊 XRPUSDT real funding: mean_8h=0.000027, positive=62.2%, est. APR=2.98%
+  ♻️ NeuronAI state restored (defense=False, WR=47%, risk_mult=0.68)
+  🚀 XGBoost → remote GPU training: http://127.0.0.1:4001
+  🚀 PyTorch MLP → remote GPU training: http://127.0.0.1:4001
+  📁 XRPUSDT: Loaded 1131 cached 8h funding rates
+  📊 XRPUSDT real funding: mean_8h=0.000027, positive=62.2%, est. APR=2.98%
+  ♻️ Learner state restored (deactivated={'GPU_MLP'})
+  🚧 GPU-native experimental engine active (CUDA tensor pipeline)
+  🔌 Pre-computing ExternalSignals plan (1690 candles, lookback=200)
+  ✅ ExtSig plan: 56 BUY / 89 SELL (578 ms)
+  📊 MLP training loop: 1689 candles, retrain every 100, ~16 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/16 | candle 600/2189 (5.9%) | acc=0.850/0.420 | ep=12 | 0.2s
+    retrain 2/16 | candle 700/2189 (11.8%) | acc=0.884/0.527 | ep=13 | 0.4s
+    retrain 3/16 | candle 800/2189 (17.8%) | acc=0.871/0.259 | ep=13 | 0.6s
+    retrain 4/16 | candle 900/2189 (23.7%) | acc=0.787/0.509 | ep=12 | 0.8s
+    retrain 5/16 | candle 1000/2189 (29.6%) | acc=0.688/0.404 | ep=14 | 1.1s
+    retrain 6/16 | candle 1100/2189 (35.5%) | acc=0.769/0.492 | ep=13 | 1.3s
+    retrain 7/16 | candle 1200/2189 (41.4%) | acc=0.826/0.534 | ep=13 | 1.6s
+    retrain 8/16 | candle 1300/2189 (47.4%) | acc=0.966/0.439 | ep=13 | 1.8s
+    retrain 9/16 | candle 1400/2189 (53.3%) | acc=0.797/0.518 | ep=12 | 2.0s
+    retrain 10/16 | candle 1500/2189 (59.2%) | acc=0.746/0.527 | ep=14 | 2.3s
+    retrain 11/16 | candle 1600/2189 (65.1%) | acc=0.885/0.649 | ep=13 | 2.5s
+    retrain 12/16 | candle 1700/2189 (71.0%) | acc=0.905/0.446 | ep=12 | 2.7s
+    retrain 13/16 | candle 1800/2189 (77.0%) | acc=0.929/0.582 | ep=14 | 3.0s
+    retrain 14/16 | candle 1900/2189 (82.9%) | acc=0.628/0.352 | ep=11 | 3.2s
+    retrain 15/16 | candle 2000/2189 (88.8%) | acc=0.978/0.627 | ep=14 | 3.4s
+    retrain 16/16 | candle 2100/2189 (94.7%) | acc=0.703/0.471 | ep=15 | 3.6s
+    retrain 17/16 | candle 2189/2189 (100.0%) | acc=0.862/0.558 | ep=12 | 3.8s
+  ✅ MLP training complete: 17 retrains in 3.8s
+  ⚡ Executing 1689 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=3, min_conf=0.65, momentum_gate=False]
+  ✅ Execution complete: 89 trades in 0.5s
+  ❌ XRPUSDT: 89 trades | PF 0.722 | WR 53.9% | Return -3.02% | MaxDD 2.6%
+  ⚛️  backend=remote-gpu | remote=online | calls=0 | failures=0
+  💰 Funding Arb: $+76.88 | 40 positions | 845 settlements
+  📰 News Filter: 0 blocked | 271 events | {'REGULATORY': 48, 'PANIC': 56, 'ECOSYSTEM': 114, 'FOMO': 51, 'WHALE_MOVE': 2}
+
+  💰 WINNING TRADES (48):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   38 SHORT 2025-08-12 16:00:00  $     3.29 2025-08-14 16:00:00  $     3.04 TRAIL          $    +9.95 TRENDING_UP      GPU_MLP             
+   74 SHORT 2025-12-18 12:00:00  $     1.92 2025-12-18 16:00:00  $     1.84 TRAIL          $    +9.09 RANGING          GPU_MLP             
+   62 SHORT 2025-11-30 20:00:00  $     2.15 2025-12-01 00:00:00  $     2.07 TRAIL          $    +8.84 RANGING          GPU_MLP             
+    4 LONG  2025-06-14 16:00:00  $     2.12 2025-06-16 12:00:00  $     2.27 TRAIL          $    +7.41 TRENDING_DOWN    GPU_MLP             
+   52 SHORT 2025-11-03 00:00:00  $     2.43 2025-11-03 16:00:00  $     2.34 TRAIL          $    +6.43 TRENDING_DOWN    GPU_MLP             
+   73 SHORT 2025-12-15 04:00:00  $     2.00 2025-12-15 20:00:00  $     1.90 TRAIL          $    +6.28 TRENDING_DOWN    GPU_MLP             
+   77 SHORT 2025-12-22 12:00:00  $     1.93 2025-12-23 12:00:00  $     1.89 BE             $    +5.56 TRENDING_UP      GPU_MLP             
+   43 LONG  2025-09-25 20:00:00  $     2.74 2025-09-29 04:00:00  $     2.88 BE             $    +4.56 TRENDING_DOWN    GPU_MLP             
+   69 SHORT 2025-12-12 08:00:00  $     2.04 2025-12-12 12:00:00  $     2.00 BE             $    +4.50 RANGING          GPU_MLP             
+   64 SHORT 2025-12-04 16:00:00  $     2.10 2025-12-05 16:00:00  $     2.06 BE             $    +3.55 RANGING          GPU_MLP             
+   51 SHORT 2025-11-03 00:00:00  $     2.43 2025-11-03 12:00:00  $     2.31 PARTIAL_L1     $    +2.72 TRENDING_DOWN    GPU_MLP             
+   37 SHORT 2025-08-12 16:00:00  $     3.29 2025-08-14 12:00:00  $     3.09 PARTIAL_L1     $    +2.67 TRENDING_UP      GPU_MLP             
+   72 SHORT 2025-12-15 04:00:00  $     2.00 2025-12-15 16:00:00  $     1.88 PARTIAL_L2     $    +2.47 TRENDING_DOWN    GPU_MLP             
+   87 SHORT 2026-02-12 08:00:00  $     1.40 2026-02-13 12:00:00  $     1.39 BE             $    +2.41 RANGING          GPU_MLP             
+   27 SHORT 2025-07-31 08:00:00  $     3.15 2025-07-31 16:00:00  $     3.12 BE             $    +2.19 RANGING          GPU_MLP             
+   80 LONG  2026-01-08 08:00:00  $     2.09 2026-01-08 16:00:00  $     2.12 BE             $    +2.18 RANGING          GPU_MLP             
+   88 SHORT 2026-02-15 12:00:00  $     1.52 2026-02-15 16:00:00  $     1.50 BE             $    +2.04 TRENDING_UP      GPU_MLP             
+   33 SHORT 2025-08-08 08:00:00  $     3.34 2025-08-08 12:00:00  $     3.30 BE             $    +1.95 TRENDING_UP      GPU_MLP             
+   85 SHORT 2026-02-06 20:00:00  $     1.47 2026-02-09 20:00:00  $     1.44 TIME_EMERGENCY $    +1.88 RANGING          GPU_MLP             
+   56 SHORT 2025-11-10 08:00:00  $     2.54 2025-11-11 04:00:00  $     2.51 BE             $    +1.87 TRENDING_UP      GPU_MLP             
+    3 LONG  2025-06-14 16:00:00  $     2.12 2025-06-16 08:00:00  $     2.24 PARTIAL_L2     $    +1.86 TRENDING_DOWN    GPU_MLP             
+   48 SHORT 2025-10-27 12:00:00  $     2.66 2025-10-28 20:00:00  $     2.64 BE             $    +1.83 TRENDING_UP      GPU_MLP             
+   71 SHORT 2025-12-15 04:00:00  $     2.00 2025-12-15 12:00:00  $     1.93 PARTIAL_L1     $    +1.81 TRENDING_DOWN    GPU_MLP             
+   58 SHORT 2025-11-13 12:00:00  $     2.43 2025-11-13 16:00:00  $     2.40 BE             $    +1.79 TRENDING_UP      GPU_MLP             
+   28 SHORT 2025-08-01 04:00:00  $     2.96 2025-08-02 12:00:00  $     2.92 BE             $    +1.75 TRENDING_DOWN    GPU_MLP             
+    9 LONG  2025-06-27 04:00:00  $     2.09 2025-06-27 16:00:00  $     2.10 BE             $    +1.70 RANGING          GPU_MLP             
+   57 SHORT 2025-11-12 08:00:00  $     2.44 2025-11-13 00:00:00  $     2.41 BE             $    +1.56 TRENDING_UP      GPU_MLP             
+   34 SHORT 2025-08-09 04:00:00  $     3.32 2025-08-10 20:00:00  $     3.17 PARTIAL_L1     $    +1.54 TRENDING_UP      GPU_MLP             
+   40 LONG  2025-09-23 04:00:00  $     2.86 2025-09-25 00:00:00  $     2.89 BE             $    +1.44 TRENDING_DOWN    GPU_MLP             
+    2 LONG  2025-06-14 16:00:00  $     2.12 2025-06-16 04:00:00  $     2.19 PARTIAL_L1     $    +1.43 TRENDING_DOWN    GPU_MLP             
+   53 SHORT 2025-11-05 16:00:00  $     2.32 2025-11-07 08:00:00  $     2.18 PARTIAL_L1     $    +1.41 TRENDING_DOWN    GPU_MLP             
+   42 LONG  2025-09-25 20:00:00  $     2.74 2025-09-29 00:00:00  $     2.87 PARTIAL_L2     $    +1.39 TRENDING_DOWN    GPU_MLP             
+   22 LONG  2025-07-19 12:00:00  $     3.41 2025-07-21 12:00:00  $     3.62 PARTIAL_L1     $    +1.33 TRENDING_UP      GPU_MLP             
+   41 LONG  2025-09-25 20:00:00  $     2.74 2025-09-28 20:00:00  $     2.83 PARTIAL_L1     $    +1.26 TRENDING_DOWN    GPU_MLP             
+   26 LONG  2025-07-26 00:00:00  $     3.14 2025-07-28 12:00:00  $     3.20 BE             $    +1.18 TRENDING_DOWN    GPU_MLP             
+   81 SHORT 2026-01-11 20:00:00  $     2.07 2026-01-12 00:00:00  $     2.06 BE             $    +1.03 TRENDING_DOWN    GPU_MLP             
+   35 SHORT 2025-08-09 04:00:00  $     3.32 2025-08-11 04:00:00  $     3.29 BE             $    +1.00 TRENDING_UP      GPU_MLP             
+   25 LONG  2025-07-26 00:00:00  $     3.14 2025-07-28 00:00:00  $     3.28 PARTIAL_L1     $    +0.99 TRENDING_DOWN    GPU_MLP             
+   54 SHORT 2025-11-05 16:00:00  $     2.32 2025-11-07 16:00:00  $     2.30 BE             $    +0.74 TRENDING_DOWN    GPU_MLP             
+   23 LONG  2025-07-19 12:00:00  $     3.41 2025-07-22 04:00:00  $     3.45 BE             $    +0.70 TRENDING_UP      GPU_MLP             
+   66 SHORT 2025-12-08 12:00:00  $     2.08 2025-12-09 08:00:00  $     2.07 RANGING_STALE  $    +0.33 HIGH_VOLATILITY  GPU_MLP             
+   86 SHORT 2026-02-10 08:00:00  $     1.41 2026-02-11 00:00:00  $     1.40 RANGING_STALE  $    +0.31 TRENDING_DOWN    GPU_MLP             
+   10 SHORT 2025-06-28 04:00:00  $     2.19 2025-06-28 16:00:00  $     2.19 RANGING_STALE  $    +0.28 TRENDING_UP      GPU_MLP             
+   15 SHORT 2025-07-05 08:00:00  $     2.22 2025-07-05 20:00:00  $     2.22 RANGING_STALE  $    +0.24 RANGING          GPU_MLP             
+   70 SHORT 2025-12-13 00:00:00  $     2.02 2025-12-13 16:00:00  $     2.02 RANGING_STALE  $    +0.19 RANGING          GPU_MLP             
+   49 SHORT 2025-10-29 16:00:00  $     2.59 2025-10-30 04:00:00  $     2.58 RANGING_STALE  $    +0.08 HIGH_VOLATILITY  GPU_MLP             
+   31 SHORT 2025-08-05 12:00:00  $     2.97 2025-08-07 00:00:00  $     2.97 RANGING_STALE  $    +0.07 RANGING          GPU_MLP             
+   60 SHORT 2025-11-24 16:00:00  $     2.23 2025-11-26 16:00:00  $     2.23 TIME_WEAK      $    +0.05 HIGH_VOLATILITY  GPU_MLP             
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $  +117.84
+
+  💀 LOSING TRADES (41):
+    # Side  Entry Time               Entry$ Exit Time                 Exit$ Reason            Net PnL Regime           Strategy            
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   84 LONG  2026-02-04 12:00:00  $     1.54 2026-02-05 00:00:00  $     1.47 SL             $    -7.20 TRENDING_DOWN    GPU_MLP             
+   19 SHORT 2025-07-11 04:00:00  $     2.58 2025-07-11 08:00:00  $     2.66 SL             $    -7.01 TRENDING_UP      GPU_MLP             
+   20 SHORT 2025-07-11 20:00:00  $     2.73 2025-07-13 12:00:00  $     2.89 SL             $    -6.90 TRENDING_UP      GPU_MLP             
+   89 SHORT 2026-02-16 04:00:00  $     1.46 2026-02-16 12:00:00  $     1.52 SL             $    -6.52 RANGING          GPU_MLP             
+   61 SHORT 2025-11-27 08:00:00  $     2.19 2025-11-28 12:00:00  $     2.26 SL             $    -6.24 TRENDING_UP      GPU_MLP             
+   65 SHORT 2025-12-07 12:00:00  $     2.05 2025-12-07 16:00:00  $     2.11 SL             $    -6.23 TRENDING_DOWN    GPU_MLP             
+    8 LONG  2025-06-25 12:00:00  $     2.18 2025-06-26 16:00:00  $     2.10 SL             $    -6.20 TRENDING_UP      GPU_MLP             
+   13 SHORT 2025-07-03 00:00:00  $     2.24 2025-07-03 08:00:00  $     2.31 SL             $    -6.17 TRENDING_UP      GPU_MLP             
+   46 LONG  2025-10-16 20:00:00  $     2.33 2025-10-17 08:00:00  $     2.22 SL             $    -6.13 TRENDING_DOWN    GPU_MLP             
+   32 SHORT 2025-08-07 12:00:00  $     3.06 2025-08-07 20:00:00  $     3.17 SL             $    -6.12 TRENDING_UP      GPU_MLP             
+   29 SHORT 2025-08-03 04:00:00  $     2.87 2025-08-04 00:00:00  $     3.02 SL             $    -6.05 TRENDING_DOWN    GPU_MLP             
+   47 SHORT 2025-10-25 12:00:00  $     2.60 2025-10-27 00:00:00  $     2.66 SL             $    -5.97 TRENDING_UP      GPU_MLP             
+   17 SHORT 2025-07-08 00:00:00  $     2.26 2025-07-08 16:00:00  $     2.32 SL             $    -5.85 TRENDING_UP      GPU_MLP             
+   75 SHORT 2025-12-19 04:00:00  $     1.87 2025-12-20 08:00:00  $     1.92 SL             $    -5.73 RANGING          GPU_MLP             
+   18 SHORT 2025-07-09 04:00:00  $     2.33 2025-07-09 12:00:00  $     2.39 SL             $    -5.70 TRENDING_UP      GPU_MLP             
+   55 SHORT 2025-11-09 12:00:00  $     2.31 2025-11-09 20:00:00  $     2.38 SL             $    -5.67 RANGING          GPU_MLP             
+   45 LONG  2025-10-13 08:00:00  $     2.57 2025-10-14 04:00:00  $     2.48 SL             $    -5.59 RANGING          GPU_MLP             
+   24 LONG  2025-07-23 12:00:00  $     3.32 2025-07-23 20:00:00  $     3.15 SL             $    -5.54 HIGH_VOLATILITY  GPU_MLP             
+   68 SHORT 2025-12-11 12:00:00  $     2.00 2025-12-11 20:00:00  $     2.04 SL             $    -5.28 RANGING          GPU_MLP             
+    6 LONG  2025-06-21 16:00:00  $     2.07 2025-06-21 20:00:00  $     2.02 SL             $    -5.23 TRENDING_DOWN    GPU_MLP             
+   11 SHORT 2025-06-29 04:00:00  $     2.18 2025-06-30 16:00:00  $     2.23 SL             $    -5.23 TRENDING_UP      GPU_MLP             
+   67 SHORT 2025-12-10 16:00:00  $     2.07 2025-12-10 20:00:00  $     2.11 SL             $    -4.57 RANGING          GPU_MLP             
+   44 LONG  2025-10-03 16:00:00  $     3.03 2025-10-04 12:00:00  $     2.95 SL             $    -4.38 TRENDING_UP      GPU_MLP             
+    1 LONG  2025-06-12 08:00:00  $     2.23 2025-06-12 20:00:00  $     2.19 SL             $    -4.20 RANGING          GPU_MLP             
+   16 SHORT 2025-07-07 00:00:00  $     2.27 2025-07-07 12:00:00  $     2.31 SL             $    -4.00 TRENDING_UP      GPU_MLP             
+   82 SHORT 2026-01-12 16:00:00  $     2.07 2026-01-13 16:00:00  $     2.10 SL             $    -3.83 RANGING          GPU_MLP             
+   76 SHORT 2025-12-21 12:00:00  $     1.90 2025-12-22 00:00:00  $     1.93 SL             $    -3.66 RANGING          GPU_MLP             
+   78 SHORT 2025-12-24 00:00:00  $     1.86 2025-12-25 12:00:00  $     1.88 TIME_UNDERWATER $    -2.79 TRENDING_DOWN    GPU_MLP             
+   63 SHORT 2025-12-02 12:00:00  $     2.16 2025-12-04 00:00:00  $     2.19 TIME_UNDERWATER $    -2.11 HIGH_VOLATILITY  GPU_MLP             
+   79 SHORT 2025-12-26 00:00:00  $     1.86 2025-12-28 00:00:00  $     1.87 TIME_WEAK      $    -1.38 TRENDING_DOWN    GPU_MLP             
+   50 SHORT 2025-10-31 08:00:00  $     2.51 2025-11-02 04:00:00  $     2.54 TIME_UNDERWATER $    -1.24 TRENDING_DOWN    GPU_MLP             
+    5 LONG  2025-06-18 08:00:00  $     2.14 2025-06-20 12:00:00  $     2.13 TIME_WEAK      $    -0.96 RANGING          GPU_MLP             
+   83 LONG  2026-02-01 16:00:00  $     1.60 2026-02-03 16:00:00  $     1.58 TIME_WEAK      $    -0.88 TRENDING_DOWN    GPU_MLP             
+   12 SHORT 2025-07-01 20:00:00  $     2.17 2025-07-02 08:00:00  $     2.18 RANGING_STALE  $    -0.64 RANGING          GPU_MLP             
+   36 SHORT 2025-08-11 16:00:00  $     3.15 2025-08-12 04:00:00  $     3.16 RANGING_STALE  $    -0.62 RANGING          GPU_MLP             
+   30 SHORT 2025-08-04 12:00:00  $     3.03 2025-08-05 00:00:00  $     3.04 RANGING_STALE  $    -0.57 RANGING          GPU_MLP             
+   59 SHORT 2025-11-23 12:00:00  $     2.06 2025-11-24 04:00:00  $     2.06 RANGING_STALE  $    -0.19 RANGING          GPU_MLP             
+   21 SHORT 2025-07-14 00:00:00  $     2.93 2025-07-16 04:00:00  $     2.93 TIME_WEAK      $    -0.17 TRENDING_UP      GPU_MLP             
+   14 SHORT 2025-07-04 04:00:00  $     2.22 2025-07-04 20:00:00  $     2.22 RANGING_STALE  $    -0.12 RANGING          GPU_MLP             
+   39 SHORT 2025-08-15 04:00:00  $     3.12 2025-08-17 04:00:00  $     3.12 TIME_WEAK      $    -0.11 TRENDING_DOWN    GPU_MLP             
+    7 LONG  2025-06-24 04:00:00  $     2.18 2025-06-25 00:00:00  $     2.18 RANGING_STALE  $    -0.10 RANGING          GPU_MLP             
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                TOTAL $  -163.08
+
+  📊 PER-STRATEGY BREAKDOWN:
+    ❌ GPU_MLP                         89 trades  $    -45.24  (avg $   -0.51)
+
+══════════════════════════════════════════════════════════════════════════════════════════
+  📊 MULTI-PAIR SUMMARY (P#72 Adaptive+Funding+Grid)
+══════════════════════════════════════════════════════════════════════════════════════════
+  Symbol       QB     Rmt     QChk  Capital  Trades      WR      PF    Return   MaxDD   TradePnL    FundPnL      TOTAL
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ✅ BTCUSDT   GPU  ONLINE       0F $   800     100   54.0%   0.868    +1.60%    1.3% $    -9.73 $   +22.50 $   +12.77
+  ✅ ETHUSDT   GPU  ONLINE       0F $ 1,200      59   50.8%   0.516    +0.45%    1.7% $   -66.55 $   +71.96 $    +5.41
+  ✅ SOLUSDT   GPU  ONLINE       0F $ 3,000      98   60.2%   0.874    +2.80%    4.8% $   -97.43 $  +181.38 $   +83.95
+  ❌ BNBUSDT   GPU  ONLINE       0F $ 3,500     113   46.9%   0.674   -10.09%   14.8% $  -547.52 $  +194.43 $  -353.09
+  ✅ XRPUSDT   GPU  ONLINE       0F $ 1,500      89   53.9%   0.722    +2.11%    2.6% $   -45.27 $   +76.88 $   +31.61
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ❌ TOTAL                          $10,000     459                    -2.19%         $  -766.50 $  +547.15 $  -219.35
+
+  📊 P#200g REBALANCER RECOMMENDATION (Sharpe-weighted):
+    BNBUSDT     35.0% →  20.0% (-15.0%) ↓
+    BTCUSDT      8.0% →  20.0% (+12.0%) ↑
+    ETHUSDT     12.0% →  20.0% (+8.0%) ↑
+    SOLUSDT     30.0% →  20.0% (-10.0%) ↓
+    XRPUSDT     15.0% →  20.0% (+5.0%) ↑
+    ✅ Rebalancer APPLIED — PAIR_CAPITAL_ALLOCATION updated for next run
+
+[WORKER] Saved job artifact: C:\Users\dudzi\turbo-bot-local\ml-service\results\remote_gpu_full_20260331_202038\multi_4h.json
