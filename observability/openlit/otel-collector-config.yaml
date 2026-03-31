@@ -1,0 +1,45 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+  memory_limiter:
+    # Keep memory within a safe local-dev ceiling.
+    limit_mib: 512
+    spike_limit_mib: 128
+    check_interval: 5s
+
+exporters:
+  clickhouse:
+    endpoint: tcp://clickhouse:9000?dial_timeout=10s&compress=lz4&async_insert=1
+    database: default
+    username: default
+    password: OPENLIT
+    logs_table_name: otel_logs
+    traces_table_name: otel_traces
+    timeout: 5s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [clickhouse]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [clickhouse]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [clickhouse]

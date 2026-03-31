@@ -82,6 +82,16 @@ PROMETHEUS_PORT=9090
 - **Trading analytics** and backtesting
 - **Risk management** monitoring
 - **ML model performance** tracking
+- **AI prompt regressions** via Promptfoo
+- **AI observability** via OpenLIT
+
+## 🧪 AI Workflow
+
+- Agent workflow contract lives in `AGENTS.md`
+- Prompt regressions run with `npm run ai:promptfoo:eval`
+- Local OpenLIT stack runs with `npm run observability:openlit:up`
+- Local OpenLIT uses the official public image `ghcr.io/openlit/openlit:latest`
+- Runbook: `docs/ai-observability.md`
 
 ## 🤖 Bot Features
 

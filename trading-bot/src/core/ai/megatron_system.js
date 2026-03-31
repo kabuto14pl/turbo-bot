@@ -21,6 +21,7 @@ const https = require('https');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
+const { emitAiTelemetry, withAiSpan } = require('../observability/openlit_bootstrap');
 
 // ─────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -211,6 +212,12 @@ class LLMRouter {
         this.metrics.totalCalls++;
         const order = this.preferredOrder.filter(p => this.providers.has(p));
 
+        return withAiSpan('llm.router.call', {
+            'llm.totalCalls': this.metrics.totalCalls,
+            'llm.providerCount': order.length,
+            'llm.messageCount': messages.length,
+        }, async (routerSpan) => {
+
         for (const providerName of order) {
             try {
                 const start = Date.now();
@@ -219,19 +226,48 @@ class LLMRouter {
                 this._totalLatency += latency;
                 this.metrics.avgLatencyMs = Math.round(this._totalLatency / this.metrics.totalCalls);
                 this.metrics.providerUsage[providerName] = (this.metrics.providerUsage[providerName] || 0) + 1;
+                if (routerSpan) {
+                    routerSpan.setAttributes({
+                        'ai.llm.provider': providerName,
+                        'ai.llm.model': this.providers.get(providerName).model,
+                        'ai.llm.latencyMs': latency,
+                        'ai.llm.status': 'success',
+                    });
+                }
+                emitAiTelemetry('llm_provider_success', {
+                    provider: providerName,
+                    model: this.providers.get(providerName).model,
+                    latencyMs: latency,
+                    promptChars: systemPrompt.length,
+                    messageCount: messages.length,
+                });
                 return { content: result, provider: providerName, latencyMs: latency };
             } catch (e) {
                 this.metrics.errors++;
+                emitAiTelemetry('llm_provider_error', {
+                    provider: providerName,
+                    model: this.providers.get(providerName).model,
+                    error: e.message,
+                });
                 console.warn('[MEGATRON LLM] Provider ' + providerName + ' failed: ' + e.message);
                 continue;
             }
         }
 
         // All API providers failed — use rule-based fallback
+        if (routerSpan) {
+            routerSpan.setAttribute('ai.llm.status', 'fallback');
+        }
         return this._ruleFallback(messages);
+        });
     }
 
     async _callProvider(name, systemPrompt, messages, options) {
+        return withAiSpan('llm.provider.' + name, {
+            'llm.provider': name,
+            'llm.model': this.providers.get(name).model,
+            'llm.format': this.providers.get(name).format,
+        }, async (providerSpan) => {
         const provider = this.providers.get(name);
         let body;
 
@@ -278,16 +314,23 @@ class LLMRouter {
         const response = await this._httpRequest(provider.url, { method: 'POST', headers: provider.headers }, body);
 
         // Parse response based on format
+        let result;
         if (provider.format === 'claude') {
-            if (response.content && response.content[0]) return response.content[0].text;
-            throw new Error('Unexpected Claude response format');
+            if (response.content && response.content[0]) result = response.content[0].text;
+            else throw new Error('Unexpected Claude response format');
         } else if (provider.format === 'ollama') {
-            if (response.message && response.message.content) return response.message.content;
-            throw new Error('Unexpected Ollama response format');
+            if (response.message && response.message.content) result = response.message.content;
+            else throw new Error('Unexpected Ollama response format');
         } else {
-            if (response.choices && response.choices[0]) return response.choices[0].message.content;
-            throw new Error('Unexpected OpenAI response format');
+            if (response.choices && response.choices[0]) result = response.choices[0].message.content;
+            else throw new Error('Unexpected OpenAI response format');
         }
+
+        if (providerSpan) {
+            providerSpan.setAttribute('ai.llm.responseLength', result ? result.length : 0);
+        }
+        return result;
+        });
     }
 
     _ruleFallback(messages) {

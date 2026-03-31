@@ -1,0 +1,12 @@
+description: Turbo-Bot local AI regressions
+prompts:
+  - '{{ state | dump }}'
+providers:
+  - id: file://./providers/neuronDecisionProvider.js
+    label: neuron-decision-fallback
+tests:
+  - file://tests/neuron-regression.yaml
+defaultTest:
+  assert:
+    - type: javascript
+      value: 'typeof output === "string" && output.trim().startsWith("{") && output.trim().endsWith("}")'

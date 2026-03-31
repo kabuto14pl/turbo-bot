@@ -1,10 +1,10 @@
 "use strict";
 /**
  * @module NeuronAIManager
- * @description PATCH #24: NEURON AI - Autonomous Skynet Brain
+ * @description PATCH #24: NEURON AI - Autonomous Skynet Decision Layer
  *
  * NeuronAI is NO LONGER a voting strategy in the ensemble.
- * It is the CENTRAL ORCHESTRATOR that:
+ * It is the autonomous decision layer that:
  *   1. Receives raw votes from ensemble (5 strategies + ML, without NeuralAI)
  *   2. Receives regime/quantum/MTF context
  *   3. Makes the FINAL autonomous decision via LLM reasoning
@@ -26,6 +26,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { emitAiTelemetry, withAiSpan } = require('../observability/openlit_bootstrap');
 
 const NEURON_CONFIG_PATH = path.join(__dirname, '../../../data/neuron_ai_state.json');
 const NEURON_LOG_PATH = path.join(__dirname, '../../../data/neuron_ai_decisions.log');
@@ -84,9 +85,14 @@ class NeuronAIManager {
             this.llmRouter = megatronInstance.llm;
         }
         this.isReady = true;
-        console.log('[NEURON AI MANAGER] v' + this.version + ' initialized as CENTRAL BRAIN');
+        console.log('[NEURON AI MANAGER] v' + this.version + ' initialized as DECISION LAYER');
         console.log('[NEURON AI MANAGER] LLM: ' + (this.llmRouter ? 'Connected' : 'Fallback mode'));
         console.log('[NEURON AI MANAGER] State: ' + this.totalDecisions + ' decisions, ' + this.overrideCount + ' overrides, PnL: $' + this.totalPnL.toFixed(2));
+        emitAiTelemetry('neuron_manager_initialized', {
+            version: this.version,
+            llmConnected: Boolean(this.llmRouter),
+            totalDecisions: this.totalDecisions,
+        });
     }
 
     /**
@@ -105,9 +111,14 @@ class NeuronAIManager {
      * @returns {object} Decision {action, confidence, details, evolution}
      */
     async makeDecision(state) {
+        return withAiSpan('neuron.makeDecision', {
+            'decision.cycle': this.totalDecisions + 1,
+            'decision.hasLLM': Boolean(this.llmRouter && this.llmRouter.providers && this.llmRouter.providers.size > 0),
+        }, async (parentSpan) => {
         // Rate limit LLM calls
         const now = Date.now();
         if (now - this.lastDecisionTime < this.decisionCooldownMs && this.lastDecision) {
+            if (parentSpan) parentSpan.setAttribute('ai.decision.cached', true);
             return this.lastDecision;
         }
 
@@ -136,10 +147,21 @@ class NeuronAIManager {
             this._applyEvolution(decision.evolution);
         }
 
+        if (parentSpan) {
+            parentSpan.setAttributes({
+                'ai.decision.action': decision.action,
+                'ai.decision.confidence': decision.confidence || 0,
+                'ai.decision.source': decision.source || 'fallback',
+                'ai.decision.isOverride': Boolean(decision.isOverride),
+                'ai.decision.provider': decision.provider || 'cpu',
+            });
+        }
+
         // Log decision
         this._logDecision(decision, state);
 
         return decision;
+        });
     }
 
     /**
@@ -553,8 +575,14 @@ class NeuronAIManager {
 
         try {
             const result = await this.llmRouter.call(chatPrompt, messages, { temperature: 0.7 });
+            emitAiTelemetry('neuron_chat_response', {
+                provider: result && result.provider ? result.provider : 'unknown',
+                latencyMs: result && result.latencyMs ? result.latencyMs : 0,
+                promptChars: userMessage.length,
+            });
             return (result && result.content) ? result.content : 'Neuron AI: processing...';
         } catch (e) {
+            emitAiTelemetry('neuron_chat_error', { error: e.message });
             return 'Neuron AI error: ' + e.message;
         }
     }
@@ -566,6 +594,17 @@ class NeuronAIManager {
         const pnl = tradeResult.pnl || 0;
         this.totalPnL += pnl;
         this.recentTrades.push({ pnl, timestamp: Date.now(), strategy: tradeResult.strategy || 'unknown' });
+
+        if (this.recentTrades.length > 50) this.recentTrades = this.recentTrades.slice(-50);
+
+        emitAiTelemetry('neuron_learn_trade', {
+            pnl,
+            totalPnL: this.totalPnL,
+            winRate: this._getRecentWinRate(),
+            riskMultiplier: this.riskMultiplier,
+            outcome: pnl >= 0 ? 'win' : 'loss',
+            strategy: tradeResult.strategy || 'unknown',
+        });
 
         if (this.recentTrades.length > 50) this.recentTrades = this.recentTrades.slice(-50);
 
@@ -791,6 +830,12 @@ class NeuronAIManager {
             ' (conf: ' + ((decision.confidence || 0) * 100).toFixed(1) + '%) | ' +
             (decision.source || 'fallback') +
             (decision.isOverride ? ' | OVERRIDE' : ''));
+        emitAiTelemetry('neuron_decision', {
+            action: decision.action,
+            confidence: decision.confidence || 0,
+            source: decision.source || 'fallback',
+            isOverride: Boolean(decision.isOverride),
+        });
         if (decision.reasoning) {
             console.log('[NEURON AI] ' + decision.reasoning);
         }

@@ -39,10 +39,13 @@ from ml_model import TradingMLEnsemble
 from ollama_validator import OllamaValidator
 from regime_detection import StatisticalRegimeDetector
 from rule_validator import RuleValidator
+from openlit_config import bootstrap_openlit, emit_ai_telemetry, ai_span
 
 # Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [ML] %(message)s')
 logger = logging.getLogger(__name__)
+
+bootstrap_openlit("turbo-bot-ml-service")
 
 # ============================================================================
 # FastAPI App
@@ -255,6 +258,18 @@ async def predict(req: PredictRequest):
     ) / n
     service_stats['last_prediction'] = datetime.now().isoformat()
     
+    emit_ai_telemetry('ml_prediction', {
+        'direction': result['direction'],
+        'confidence': result['confidence'],
+        'should_trade': should_trade,
+        'inference_ms': round(elapsed_ms, 1),
+        'regime': req.current_regime,
+        'candle_count': len(req.candles),
+        'model_trained': model.trained,
+        'ollama_used': ollama_result is not None,
+        'rule_valid': rule_result['valid'] if rule_result else None,
+    })
+
     return PredictResponse(
         direction=result['direction'],
         confidence=result['confidence'],

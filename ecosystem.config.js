@@ -20,6 +20,10 @@ const BASE_ENV = {
   // PATCH #43: GPU-ONLY - Remote GPU via SSH tunnel
   GPU_REMOTE_URL: 'http://127.0.0.1:4001',
   GPU_TIMEOUT_MS: '3000',
+  // PATCH #188: OpenLIT AI Observability (set OPENLIT_ENABLED=true to activate on VPS)
+  OPENLIT_ENABLED: process.env.OPENLIT_ENABLED || 'false',
+  OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://127.0.0.1:4318',
+  OTEL_DEPLOYMENT_ENVIRONMENT: 'production',
 };
 
 const botApps = PAIRS.map(pair => ({
@@ -36,6 +40,7 @@ const botApps = PAIRS.map(pair => ({
     ...BASE_ENV,
     TRADING_SYMBOL: pair,
     INSTANCE_ID: pair,
+    OTEL_SERVICE_NAME: `turbo-bot-${pair.replace('USDT', '').toLowerCase()}`,
   },
   error_file: `/root/turbo-bot/logs/${pair}-error.log`,
   out_file: `/root/turbo-bot/logs/${pair}-out.log`,

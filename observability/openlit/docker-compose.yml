@@ -1,0 +1,64 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: turbo-bot-openlit-clickhouse
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: OPENLIT
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_DATABASE: default
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - openlit-clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse-config.xml:/etc/clickhouse-server/config.d/openlit-config.xml:ro
+      - ./clickhouse-init.sh:/docker-entrypoint-initdb.d/clickhouse-init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --user=$${CLICKHOUSE_USER} --password=$${CLICKHOUSE_PASSWORD} --query='SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  openlit:
+    image: ghcr.io/openlit/openlit:latest
+    container_name: turbo-bot-openlit
+    restart: unless-stopped
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    environment:
+      TELEMETRY_ENABLED: "true"
+      INIT_DB_HOST: clickhouse
+      INIT_DB_PORT: 8123
+      INIT_DB_DATABASE: default
+      INIT_DB_USERNAME: default
+      INIT_DB_PASSWORD: OPENLIT
+      SQLITE_DATABASE_URL: file:/app/client/data/data.db
+      NEXTAUTH_URL: http://localhost:3000
+      PORT: 3000
+      DOCKER_PORT: 3000
+      OPAMP_ENVIRONMENT: development
+      OPAMP_TLS_INSECURE_SKIP_VERIFY: true
+      OPAMP_TLS_REQUIRE_CLIENT_CERT: false
+      OPAMP_LOG_LEVEL: info
+    ports:
+      - "3000:3000"
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - openlit-sqlite-data:/app/client/data
+      - ./otel-collector-config.yaml:/etc/otel/otel-collector-config.yaml:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http=require('http');http.get({host:process.env.HOSTNAME||'127.0.0.1',port:3000,path:'/'},res=>process.exit(res.statusCode>=200&&res.statusCode<400?0:1)).on('error',()=>process.exit(1));"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+volumes:
+  openlit-clickhouse-data:
+  openlit-sqlite-data:

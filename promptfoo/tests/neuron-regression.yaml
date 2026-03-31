@@ -1,0 +1,65 @@
+- description: bullish alignment opens long
+  vars:
+    state:
+      votes:
+        BUY: 0.48
+        SELL: 0.12
+        HOLD: 0.40
+      mtfBias:
+        score: 28
+        direction: BULLISH
+      mlSignal:
+        action: BUY
+        confidence: 0.82
+      portfolio:
+        drawdownPct: 0.03
+      positionCount: 0
+  assert:
+    - type: contains
+      value: '"action":"BUY"'
+    - type: contains
+      value: '"source":"NEURON_AI_FALLBACK"'
+    - type: javascript
+      value: '!output.includes("```")'
+- description: high drawdown closes exposure
+  vars:
+    state:
+      votes:
+        BUY: 0.18
+        SELL: 0.22
+        HOLD: 0.60
+      mtfBias:
+        score: 10
+        direction: BEARISH
+      mlSignal:
+        action: SELL
+        confidence: 0.61
+      portfolio:
+        drawdownPct: 0.18
+      positionCount: 1
+  assert:
+    - type: contains
+      value: '"action":"CLOSE"'
+    - type: javascript
+      value: 'JSON.parse(output).confidence >= 0.8'
+- description: weak signal holds position
+  vars:
+    state:
+      votes:
+        BUY: 0.18
+        SELL: 0.17
+        HOLD: 0.65
+      mtfBias:
+        score: 4
+        direction: NEUTRAL
+      mlSignal:
+        action: HOLD
+        confidence: 0.40
+      portfolio:
+        drawdownPct: 0.02
+      positionCount: 0
+  assert:
+    - type: contains
+      value: '"action":"HOLD"'
+    - type: javascript
+      value: 'JSON.parse(output).source === "NEURON_AI_FALLBACK"'

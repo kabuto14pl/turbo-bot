@@ -152,6 +152,14 @@ Lokalny system agentów, promptów i instrukcji był rozproszony między kilkoma
 - Rozszerzono Python `openlit_config.py` o `emit_ai_telemetry()` i `ai_span()` context manager z pełnym `StatusCode` + `recordException`.
 - Instrumentacja `/predict` w `ml_service.py` — span `ml_prediction` z `direction`, `confidence`, `should_trade`, `inference_ms`, `regime`.
 - Zweryfikowano hierarchię trace tree w ClickHouse: `neuron.makeDecision` → `llm.router.call` + `neuron_decision` (wspólny TraceId, poprawne ParentSpanId).
+- Zweryfikowano Python ML telemetry: span `ai.telemetry.ml_service_probe` zapisany w ClickHouse dla `turbo-bot-ml-service`.
+- Dodano per-provider child span `llm.provider.<name>` w `_callProvider()` z atrybutami `model`, `format`, `responseLength`.
+- Opakowano `bot.js` trading cycle w span `trading.cycle` z atrybutami `consensus`, `confidence`, `positionCount`.
+- Dodano `emitAiTelemetry('ensemble_vote', ...)` po ensemble voting z `action`, `confidence`, `signalCount`, `regime`.
+- Dodano `emitAiTelemetry('quantum_boost', ...)` po quantum pipeline z `hasWeightRecommendation`, `qaoaImprovement`.
+- Zweryfikowano pełne drzewko trace: `trading.cycle` → `quantum_boost` + `ensemble_vote` (wspólny TraceId).
+- Utworzono 6 ClickHouse views analitycznych: `v_ai_decisions`, `v_trading_cycles`, `v_ensemble_quantum`, `v_llm_performance`, `v_ml_predictions`, `v_trade_learning`.
+- Zapisano views SQL w `observability/openlit/clickhouse-views.sql`.
 
 **Typ:** CRITICAL FIX — System Freeze Prevention  
 **Pliki:** `gpu-cuda-service.py`  
