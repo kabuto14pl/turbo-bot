@@ -28,12 +28,12 @@ function bootstrapFallbackOtel(options = {}) {
         if (!otelApi) return false;
 
         const endpoint = (options.otlpEndpoint || process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://127.0.0.1:4318') + '/v1/traces';
-        const provider = new NodeTracerProvider({
-            resource: new (require('@opentelemetry/resources').Resource)({
-                'service.name': options.applicationName || process.env.OTEL_SERVICE_NAME || 'turbo-bot',
-                'deployment.environment': options.environment || process.env.OTEL_DEPLOYMENT_ENVIRONMENT || 'production',
-            }),
+        const { resourceFromAttributes } = require('@opentelemetry/resources');
+        const resource = resourceFromAttributes({
+            'service.name': options.applicationName || process.env.OTEL_SERVICE_NAME || 'turbo-bot',
+            'deployment.environment': options.environment || process.env.OTEL_DEPLOYMENT_ENVIRONMENT || 'production',
         });
+        const provider = new NodeTracerProvider({ resource });
         provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter({ url: endpoint })));
         provider.register();
         openlitInitialized = true;
