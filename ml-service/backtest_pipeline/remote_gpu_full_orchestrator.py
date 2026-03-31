@@ -456,6 +456,8 @@ def run_job(args, job: dict, run_dir: Path) -> dict:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             env=worker_env,
         )
         for line in process.stdout:
