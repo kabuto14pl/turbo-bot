@@ -36,7 +36,7 @@ MTF_TP_ATR = 5.0                # TP distance in ATR units
 MTF_COOLDOWN = 24               # Min candles between trades (6h on 15m)
 MTF_MAX_TRADES = 50             # Max momentum trades per backtest session
 MTF_RISK_PER_TRADE = 0.010      # 1.0% risk per momentum trade
-MTF_MIN_CANDLES = 200            # Data warmup
+MTF_MIN_CANDLES = 50             # P#216: lowered 200→50 (parity with live bot)
 
 
 class MomentumHTFStrategy:

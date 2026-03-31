@@ -160,18 +160,37 @@ def add_indicators(df):
     vol_ma = volume.rolling(20).mean()
     df['volume_ratio'] = volume / (vol_ma + 1e-10)
     
-    # SuperTrend (simple)
+    # SuperTrend (real Wilder ATR, period=10, multiplier=3, band continuity)
+    st_period = 10
+    st_mult = 3.0
+    tr_h = high - low
+    tr_hc = abs(high - close.shift(1))
+    tr_lc = abs(low - close.shift(1))
+    tr_all = pd.concat([tr_h, tr_hc, tr_lc], axis=1).max(axis=1)
+    # Wilder smoothing for ATR
+    st_atr = tr_all.ewm(alpha=1.0/st_period, min_periods=st_period, adjust=False).mean()
     mid = (high + low) / 2
-    df['supertrend_upper'] = mid + 2 * df['atr']
-    df['supertrend_lower'] = mid - 2 * df['atr']
-    df['supertrend_dir'] = 0
-    for i in range(1, len(df)):
-        if close.iloc[i] > df['supertrend_upper'].iloc[i-1]:
-            df.iloc[i, df.columns.get_loc('supertrend_dir')] = 1
-        elif close.iloc[i] < df['supertrend_lower'].iloc[i-1]:
-            df.iloc[i, df.columns.get_loc('supertrend_dir')] = -1
+    upper_band = (mid + st_mult * st_atr).values
+    lower_band = (mid - st_mult * st_atr).values
+    close_arr = close.values
+    n = len(df)
+    st_dir = np.zeros(n)
+    for i in range(1, n):
+        # Band continuity: bands only tighten, never widen
+        if lower_band[i] < lower_band[i-1] and close_arr[i-1] > lower_band[i-1]:
+            lower_band[i] = lower_band[i-1]
+        if upper_band[i] > upper_band[i-1] and close_arr[i-1] < upper_band[i-1]:
+            upper_band[i] = upper_band[i-1]
+        # Direction flip
+        if close_arr[i] > upper_band[i]:
+            st_dir[i] = 1
+        elif close_arr[i] < lower_band[i]:
+            st_dir[i] = -1
         else:
-            df.iloc[i, df.columns.get_loc('supertrend_dir')] = df.iloc[i-1, df.columns.get_loc('supertrend_dir')]
+            st_dir[i] = st_dir[i-1]
+    df['supertrend_upper'] = upper_band
+    df['supertrend_lower'] = lower_band
+    df['supertrend_dir'] = st_dir
     
     # ROC
     df['roc_10'] = close.pct_change(10)

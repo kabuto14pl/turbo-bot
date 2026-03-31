@@ -10,11 +10,11 @@ All thresholds, parameters, and constants from production bot.
 # At 4.0 ATR ~4% price move needed; 2.5 ATR is achievable with current momentum structure
 # Combined with trailing, winners can ride well beyond the base TP level
 SL_ATR_MULT = 1.5          # P#153 PARITY: aligned with live execution-engine.js (was 1.75)
-TP_ATR_MULT = 2.5          # P#189: lowered 4.0→2.5 — achievable R:R target on 15m (was 4.0)
+TP_ATR_MULT = 4.0          # P#216 PARITY: aligned with live execution-engine.js (was 2.5, P#189 reverted)
 SL_CLAMP_MIN = 0.8         # Min SL = 0.8 × ATR
 SL_CLAMP_MAX = 2.5         # Max SL = 2.5 × ATR
-TP_CLAMP_MIN = 1.5         # P#189: lowered 2.0→1.5 to match new partial L1 level
-TP_CLAMP_MAX = 4.5         # P#189: lowered 6.0→4.5 (was 6.0 for TP=4.0 ATR)
+TP_CLAMP_MIN = 2.5         # P#216: raised 1.5→2.5 to match TP_ATR_MULT=4.0
+TP_CLAMP_MAX = 6.0         # P#216: raised 4.5→6.0 for TP=4.0 ATR headroom
 
 # PATCH #64: Dynamic SL base per-regime (applied BEFORE VQC regime adjust)
 # In ranging: no momentum → tighter SL saves capital on failures
@@ -51,7 +51,7 @@ SHORT_EXHAUSTION_MIN_VOLUME_RATIO = 1.8
 # PATCH #63: Parameterized trail distances + regime-adaptive trailing
 # Phase 3/4 were hardcoded at 0.5/1.0 ATR — way too tight for BTC 15m
 PHASE_1_MIN_R = 0.7            # Brain P#64 iter4: 1.0→0.7 (earlier trailing start)
-PHASE_2_BE_R = 1.3             # P#205c: 1.0→1.3 (Board5: avoid premature BE, must not collide with Phase 3 LOCK_R=1.5)
+PHASE_2_BE_R = 1.0             # P#210a: REVERTED 1.3→1.0 (Board5 P#205c caused BNB 15m PF 1.14→0.597, AvgLoss +50%, 4 wasted winners)
 PHASE_3_LOCK_R = 1.5           # Phase 3 lock at 1.5R
 PHASE_4_LOCK_R = 2.0           # Phase 4 lock at 2.0R
 PHASE_5_CHANDELIER_R = 2.0     # P#194: 2.5→2.0 — lock profit earlier (trail was giving back >1R)
@@ -85,9 +85,9 @@ BE_PROFIT_BUFFER_ATR = 0.45    # Lock more realized profit once BE is armed
 # P#153 PARITY: Partial TP aligned with live execution-engine.js (2-level system)
 # Live uses: L1 @2.5×ATR (25%), L2 @4.0×ATR (25%), remainder runs as runner
 USE_PARTIAL_TP = True          # P#153: Enabled to match live (was False)
-PARTIAL_TP_ATR_L1 = 1.5       # P#189: Level 1 at 1.5×ATR — early partial before full TP (was 2.5)
+PARTIAL_TP_ATR_L1 = 2.0       # P#216 PARITY: Level 1 at 2.0×ATR (was 1.5)
 PARTIAL_TP_PCT_L1 = 0.25      # P#153: Close 25% at L1
-PARTIAL_TP_ATR_L2 = 2.0       # P#194: 2.5→2.0 ATR — lock profit before Chandelier trail at 2.0R (was 2.5)
+PARTIAL_TP_ATR_L2 = 3.0       # P#216 PARITY: Level 2 at 3.0×ATR (was 2.0)
 PARTIAL_TP_PCT_L2 = 0.35      # P#194: 0.25→0.35 — close 35% at L2 to lock more profit before trail
 # Legacy (kept for backward compat — not used when USE_PARTIAL_TP=True)
 PARTIAL_TP_R = 2.0
@@ -119,7 +119,7 @@ VOLATILITY_PAUSE_ENABLED = True
 VOLATILITY_PAUSE_LOSS_STREAK = 3        # Trigger after 3 consecutive losses
 VOLATILITY_PAUSE_SIZE_MULT = 0.50       # Reduce position size to 50%
 VOLATILITY_PAUSE_RECOVERY_WINS = 1      # 1 win to restore normal sizing
-FEE_GATE_MULTIPLIER = 1.5      # Expected profit must be >= 1.5× fees
+FEE_GATE_MULTIPLIER = 2.0      # P#216 PARITY: Expected profit must be >= 2.0× fees (was 1.5)
 RISK_PER_TRADE = 0.020         # P#153 PARITY: 2.0% risk aligned with live risk-manager.js (was 1.5%)
 MAX_POSITION_VALUE_PCT = 0.15  # P#153 PARITY: 15% position cap aligned with live (was 1.00)
 MIN_HOLD_COOLDOWN_MIN = 120    # P#174: 2h min hold — aligned with live MIN_HOLD_MS=7200000 (was 15min)
@@ -146,7 +146,7 @@ ENSEMBLE_THRESHOLD_NORMAL = 0.22       # was 0.30 — allow single strong strate
 ENSEMBLE_THRESHOLD_CONFLICT = 0.30     # was 0.35
 ENSEMBLE_THRESHOLD_STRONG = 0.18       # was 0.25
 ENSEMBLE_THRESHOLD_RANGING = 0.10      # P#66: lower threshold in RANGING for BB MR signals
-CONFIDENCE_FLOOR = 0.30                # PATCH #149B: aligned with live risk-manager.js CONF_FLOOR=0.30
+CONFIDENCE_FLOOR = 0.35                # P#216 PARITY: aligned with live ensemble-voting.js floor=0.35 (was 0.30)
 CONFIDENCE_CLAMP_MIN = 0.15            # was 0.20
 CONFIDENCE_CLAMP_MAX = 0.95
 ENSEMBLE_COUNTER_TREND_CONF_MULT = 0.65     # P#196: 0.50 was too harsh (regressed), 0.72 was too lenient. Middle ground.
@@ -355,9 +355,10 @@ VQC_REGIME_OVERRIDE_TF = ['4h']  # P#198.3: Enable VQC regime ONLY on these TFs
 
 # P#194 FAZA 1: Disable directional trading on 15m — funding only
 # Advisory Board: directional 15m was -$110.85, funding was +$23.91.
-# P#205b: Re-enabled globally, BNB 15m is profitable (grid winner).
-# Non-BNB pairs use DIRECTIONAL_ENABLED: False in pair_config.py to stay funding-only.
-DIRECTIONAL_15M_ENABLED = True
+# P#210b: REVERTED P#205b True→False. SOL 15m got 8 directional trades (PF=0.578, -$16).
+# SOL lacks DIRECTIONAL_ENABLED:False so global 15m gate was the only blocker.
+# BNB 15m grid is unaffected (grid uses separate grid_v2 pathway).
+DIRECTIONAL_15M_ENABLED = False
 
 # P#194 FAZA 1: Bypass heavy gate cascade on higher timeframes
 # Advisory Board (Khalil): 15 sequential gates kill 96.5% of signals.
@@ -646,7 +647,7 @@ TIMEFRAME_OVERRIDES = {
     '1h': {
         # 1h needs strict filtering — TRENDING regimes are net negative
         'TRENDING_UP_ENSEMBLE_DIRECTIONAL_ENABLED': False,  # 1h TRENDING_UP = -$36 (blocked)
-        'ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR': 0.25,     # P#203b: was 0.45 — blocked ALL directional (incl 133 BNB signals)
+        'ENSEMBLE_DIRECTIONAL_CONFIDENCE_FLOOR': 0.40,     # P#210c: raised 0.25→0.40 (P#203b too low — 11 BNB 1h trades PF=0.448, net -$52.67)
         'RISK_PER_TRADE': 0.015,                           # Standard risk
     },
     '15m': {

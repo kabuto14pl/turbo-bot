@@ -727,27 +727,45 @@ def run_multi_pair(timeframe='15m', verbose=True, show_trades=False, use_pair_co
         if pair_winners:
             print(f"\n  💰 WINNING TRADES ({len(pair_winners)}):")
             print(f"  {'#':>3} {'Side':<5} {'Entry Time':<20} {'Entry$':>10} {'Exit Time':<20} "
-                  f"{'Exit$':>10} {'Reason':<14} {'Net PnL':>10}")
-            print(f"  {'─'*96}")
+                  f"{'Exit$':>10} {'Reason':<14} {'Net PnL':>10} {'Regime':<16} {'Strategy':<20}")
+            print(f"  {'─'*140}")
             for t in sorted(pair_winners, key=lambda x: -x['net_pnl']):
+                strats = '+'.join(t.get('strategies', [])) or 'Ensemble'
+                regime = t.get('regime', 'N/A')[:15]
                 print(f"  {t['id']:>3} {t['side']:<5} {t['entry_time'][:19]:<20} "
                       f"${t['entry_price']:>9.2f} {t['exit_time'][:19]:<20} "
                       f"${t['exit_price']:>9.2f} {t['reason']:<14} "
-                      f"${t['net_pnl']:>+9.2f}")
-            print(f"  {'─'*96}")
+                      f"${t['net_pnl']:>+9.2f} {regime:<16} {strats:<20}")
+            print(f"  {'─'*140}")
             print(f"  {'TOTAL':>67} ${sum(t['net_pnl'] for t in pair_winners):>+9.2f}")
         if pair_losers:
             print(f"\n  💀 LOSING TRADES ({len(pair_losers)}):")
             print(f"  {'#':>3} {'Side':<5} {'Entry Time':<20} {'Entry$':>10} {'Exit Time':<20} "
-                  f"{'Exit$':>10} {'Reason':<14} {'Net PnL':>10}")
-            print(f"  {'─'*96}")
+                  f"{'Exit$':>10} {'Reason':<14} {'Net PnL':>10} {'Regime':<16} {'Strategy':<20}")
+            print(f"  {'─'*140}")
             for t in sorted(pair_losers, key=lambda x: x['net_pnl']):
+                strats = '+'.join(t.get('strategies', [])) or 'Ensemble'
+                regime = t.get('regime', 'N/A')[:15]
                 print(f"  {t['id']:>3} {t['side']:<5} {t['entry_time'][:19]:<20} "
                       f"${t['entry_price']:>9.2f} {t['exit_time'][:19]:<20} "
                       f"${t['exit_price']:>9.2f} {t['reason']:<14} "
-                      f"${t['net_pnl']:>+9.2f}")
-            print(f"  {'─'*96}")
+                      f"${t['net_pnl']:>+9.2f} {regime:<16} {strats:<20}")
+            print(f"  {'─'*140}")
             print(f"  {'TOTAL':>67} ${sum(t['net_pnl'] for t in pair_losers):>+9.2f}")
+        # P#217: Per-strategy PnL breakdown
+        if trades_list:
+            strat_pnl = {}
+            strat_count = {}
+            for t in trades_list:
+                key = '+'.join(t.get('strategies', [])) or 'Ensemble'
+                strat_pnl[key] = strat_pnl.get(key, 0) + t['net_pnl']
+                strat_count[key] = strat_count.get(key, 0) + 1
+            if strat_pnl:
+                print(f"\n  📊 PER-STRATEGY BREAKDOWN:")
+                for s, pnl in sorted(strat_pnl.items(), key=lambda x: -x[1]):
+                    avg = pnl / strat_count[s]
+                    emoji = '✅' if pnl > 0 else '❌'
+                    print(f"    {emoji} {s:<30} {strat_count[s]:>3} trades  ${pnl:>+10.2f}  (avg ${avg:>+8.2f})")
     
     # Aggregate summary
     if len(all_results) > 1:
