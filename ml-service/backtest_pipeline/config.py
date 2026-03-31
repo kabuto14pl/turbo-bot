@@ -377,13 +377,19 @@ GPU_NATIVE_TRAIN_REPEAT = 32    # P#185: GPU-side augmentation/repeat factor to 
 # ── P#220: Signal-quality & overtrading fixes ──────────────────────────
 GPU_NATIVE_LABEL_HORIZON   = {'15m': 8, '1h': 4, '4h': 2}   # candles-ahead for label; was 1 everywhere
 GPU_NATIVE_LABEL_THRESHOLD = {'15m': 0.003, '1h': 0.005, '4h': 0.005}  # min |return| for UP/DOWN; was 0.001
-GPU_NATIVE_COOLDOWN_CANDLES = {'15m': 12, '1h': 6, '4h': 3}  # mandatory wait after closing a position
+GPU_NATIVE_COOLDOWN_CANDLES = {'15m': 24, '1h': 8, '4h': 3}  # P#222: 15m 12->24, 1h 6->8 (still overtrades)
 GPU_NATIVE_MIN_CONFIDENCE  = 0.65   # MLP confidence floor (was using XGBOOST_MIN_PROBABILITY 0.55)
 GPU_NATIVE_MOMENTUM_GATE   = False  # disable momentum gate for MLP (tightens SL to 35% after 3 candles -> kills R:R)
 
 # ── P#221: Simple SL/TP exits + training resilience ────────────────────
-GPU_NATIVE_SIMPLE_EXITS    = True   # SL/TP only: no BE(34%), no partials, no trailing
+GPU_NATIVE_SIMPLE_EXITS    = True   # SL/TP only: no partials, no trailing -- BUT allow BE at BREAKEVEN_R
 GPU_NATIVE_TP_ATR_MULT     = 2.5    # MLP TP override (was 4.0; hit ONCE in 677 trades on 15m)
+
+# -- P#222: Breakeven, regime filter, long bias, time exit fixes ---------
+GPU_NATIVE_BREAKEVEN_R     = 0.8    # move SL to entry when maxR >= 0.8 (17% trades are "wasted winners")
+GPU_NATIVE_LONG_CONF_ADD   = 0.05   # require +5% higher confidence for LONG (shorts outperform by 5-10% WR)
+GPU_NATIVE_BLOCK_HV_15M    = True   # block HIGH_VOLATILITY regime on 15m (26% WR, -$586)
+GPU_NATIVE_DISABLE_TIME_UW = True   # disable TIME_UNDERWATER exit (0% WR across ALL TFs, -$575)
 GPU_NATIVE_LOCAL_QUANTUM = True  # P#186: bypass per-candle remote quantum HTTP in native engine
 GPU_NATIVE_LOCAL_QMC_PATHS = 32768  # P#186: large local CUDA Monte Carlo batch per scheduled quantum sweep
 GPU_NATIVE_LOCAL_QMC_STEPS = 16     # P#186: keep local QMC horizon aligned with heavy remote path

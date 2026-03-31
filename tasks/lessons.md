@@ -3,24 +3,24 @@
 > Automatycznie aktualizowane po każdej poprawce i odkryciu.
 
 ---
+## 2026-04-08: PATCH #222 — Exit Management + Entry Filtering
 
-## 2026-04-01: PATCH #216 — Strategy Audit: Real SuperTrend, R:R, Grid Gate, Thresholds
+### L222.1: SIMPLE_EXITS (SL+TP only) needs at least a breakeven move
+Disabling ALL 5-phase trailing (P#221) improved R:R from 0.63 to 1.76 but left 17% of trades as "wasted winners" (reached 1.0R profit then reversed to full loss). 46-58% of ALL losses had peak profit >= 0.5R. A single breakeven move at 0.8R preserves the SIMPLE_EXITS simplicity while saving the ~$3,400-5,700 lost to reversals. **Rule**: SL+TP exits always need at least a BE failsafe.
 
-### L216.1: Fake indicator data is the silent killer of ensemble strategies
-`data-pipeline.js` set `supertrend: { value: ema50, direction: close > ema50 }` — EMA50 masquerading as SuperTrend. Three class-based strategies (55% of ensemble weight) consumed this as truth. No test or log ever flagged it because the shape was correct. **Rule**: every indicator must have an independent unit test comparing output to a known reference, not just a shape check.
+### L222.2: LONG/SHORT asymmetry reveals MLP directional bias
+LONG WR was 5-10% worse than SHORT across ALL 5 pairs and ALL 3 timeframes. This is systematic, not pair-specific. The MLP overfits upward noise (mean-reversion tendency) while shorts capture real momentum. **Rule**: always check direction-split WR; apply asymmetric confidence thresholds if bias > 5%.
 
-### L216.2: Unreachable candle gates make strategies invisible dead weight
-`MTF_MIN_CANDLES = 200` when the bot stores 100-200 candles meant Momentum HTF/LTF NEVER fired. The strategy loaded, the code ran, but the early return always triggered. **Rule**: log when a strategy is skipped due to insufficient data, and alert if skip rate > 95% over 24h.
+### L222.3: Time-based exits with 0% WR are pure P&L destroyers
+TIME_UNDERWATER (36h) had ZERO winning trades across ALL TFs (-$575 total). It closes positions at the point of maximum loss instead of letting SL or BE handle it. **Rule**: any exit type with WR < 10% across 3+ timeframes should be disabled immediately.
 
-### L216.3: Regime-dependent strategies die when the regime classifier returns UNKNOWN
-Grid V2 required `regime === RANGING`, but NeuralAI (Thompson Sampling) often returns UNKNOWN. SOL Grid was permanently dead. **Rule**: regime gates must handle UNKNOWN explicitly; UNKNOWN should default to the strategy favorable regime, not block.
+### L222.4: Regime filtering works when you have data to prove it
+HIGH_VOLATILITY on 15m: 168 trades, 26% WR, -$586. But RANGING on 4h: 40% WR, +$385. Regime filters should be data-driven, not theoretical. **Rule**: measure WR and PnL per regime per TF before enabling/disabling.
 
-### L216.4: R:R below 2:1 with partial TP is a losing game
-SL 1.5x ATR + TP 2.5x ATR = R:R 1.67:1. Partial TP at 1.5x ATR dropped effective R:R to ~1.3:1, requiring >60% win rate. **Rule**: minimum effective R:R (after partial TP) must be >= 2.0:1.
+### L222.5: Iterative parameter sweeps beat manual tuning
+Created param_sweep.py for automated grid search. With 6 BE levels x 5 conf levels x 2 HV x 2 TUW x 3 cooldowns = 360 combos per pair/TF. Single-pair 4h sweep takes ~15 min on GPU. **Rule**: always sweep > 50 combinations before declaring a param "optimal".
 
-### L216.5: Low confidence floors create high-frequency small-loss trades
-Floor 0.20 let marginal signals through. These hit SL quickly or get closed with micro-profit after fees. **Rule**: confidence floor should be >= max(fee_impact, 0.35).
-
+---
 ---
 
 ## 2026-03-15: PATCH #186 — GPU-Native Quantum Batching

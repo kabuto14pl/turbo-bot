@@ -693,8 +693,14 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 _p221_overrides[_k] = getattr(config, _k)
             config.PARTIAL_ATR_L1_PCT = 0
             config.PARTIAL_ATR_L2_PCT = 0
-            config.PHASE_2_BE_R = 999.0
-            config.PHASE_1_MIN_R = 999.0
+            # P#222: Allow breakeven at GPU_NATIVE_BREAKEVEN_R (0.8R) — save 17% "wasted winners"
+            _be_r = getattr(config, 'GPU_NATIVE_BREAKEVEN_R', None)
+            if _be_r is not None:
+                config.PHASE_2_BE_R = float(_be_r)
+                config.PHASE_1_MIN_R = float(_be_r) - 0.1  # phase1 just below BE trigger
+            else:
+                config.PHASE_2_BE_R = 999.0
+                config.PHASE_1_MIN_R = 999.0
             config.PHASE_3_LOCK_R = 999.0
             config.PHASE_4_LOCK_R = 999.0
             config.PHASE_5_CHANDELIER_R = 999.0
@@ -702,12 +708,25 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             if _gpu_tp is not None:
                 config.TP_ATR_MULT = float(_gpu_tp)
 
+        # P#222: Disable TIME_UNDERWATER exit (0% WR across ALL TFs = -$575)
+        if getattr(config, 'GPU_NATIVE_DISABLE_TIME_UW', False):
+            _p221_overrides['TIME_EXIT_UNDERWATER_H'] = config.TIME_EXIT_UNDERWATER_H
+            config.TIME_EXIT_UNDERWATER_H = 99999  # effectively disabled
+
+        # P#222: Long confidence boost setup
+        _long_conf_add = float(getattr(config, 'GPU_NATIVE_LONG_CONF_ADD', 0.0))
+
+        # P#222: HV regime block on 15m
+        _block_hv_15m = getattr(config, 'GPU_NATIVE_BLOCK_HV_15M', False) and _tf == '15m'
+
         exec_total = total_candles - warmup
         exec_t0 = time.perf_counter()
         _simple_tag = ' SIMPLE_EXITS' if _p221_overrides else ''
+        _be_tag = f' BE={config.PHASE_2_BE_R}R' if getattr(config, 'GPU_NATIVE_BREAKEVEN_R', None) else ''
         print(f'  ⚡ Executing {exec_total} candles (GridV2 + MomentumHTF + GPU_MLP signals)...'
               f' [cooldown={cooldown_candles}, min_conf={mlp_min_conf:.2f}, momentum_gate={config.MOMENTUM_GATE_ENABLED},'
-              f' TP={config.TP_ATR_MULT}×ATR{_simple_tag}]',
+              f' TP={config.TP_ATR_MULT}xATR{_simple_tag}{_be_tag},'
+              f' long_add={_long_conf_add}, block_hv={_block_hv_15m}]',
               flush=True)
         for i in range(warmup, len(df) - 1):
             row = {
@@ -844,9 +863,18 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 final_confidence = min(config.CONFIDENCE_CLAMP_MAX, max(0.0, final_confidence))
 
                 # P#220: Use GPU_NATIVE_MIN_CONFIDENCE instead of XGBOOST_MIN_PROBABILITY
-                if final_confidence >= mlp_min_conf:
+                # P#222: LONG entries require higher confidence (shorts outperform by 5-10% WR)
+                _eff_conf = mlp_min_conf
+                if proba_up >= proba_down and _long_conf_add > 0:
+                    _eff_conf = mlp_min_conf + _long_conf_add
+
+                if final_confidence >= _eff_conf:
                     final_action = 'BUY' if proba_up >= proba_down else 'SELL'
                 else:
+                    final_action = 'HOLD'
+
+                # P#222: Block trades in HIGH_VOLATILITY regime on 15m (26% WR, -$586)
+                if _block_hv_15m and current_regime == 'HIGH_VOLATILITY' and final_action != 'HOLD':
                     final_action = 'HOLD'
 
                 # P#187: ExternalSignals soft vote — blended at STATIC_WEIGHTS['ExternalSignals'] (0.10)

@@ -5,6 +5,38 @@
 
 ---
 
+## PATCH #222: Exit Management + Entry Filtering + Param Sweep (2026-04-08)
+
+**Typ:** Optimization -- Exit Quality, Entry Filtering, Iterative Backtest Loop
+**Pliki:** `config.py`, `gpu_native_engine.py`, `param_sweep.py` (new)
+**Bazuje na:** P#221 results (total: -$1,116, 4h profitable +$221)
+
+### Analiza P#221 -- Root Causes:
+1. **17% "wasted winners"** (maxR >= 1.0R then reversed to loss) -- no BE with SIMPLE_EXITS
+2. **LONG WR 5-10% gorsza niz SHORT** -- across ALL pairs and timeframes
+3. **HIGH_VOLATILITY on 15m**: 168 trades, 26% WR, -$586 -- pure noise
+4. **TIME_UNDERWATER exit**: 0% WR across ALL TFs, total -$575 -- closes at worst moment
+5. **15m overtrading**: 2.5 trades/day despite cooldown=12, fees=$846
+
+### 5 Fixes:
+1. **BE at 0.8R** -- re-enable Phase 2 breakeven within SIMPLE_EXITS. 46-58% of losses had maxR >= 0.5, only SL/TP prevented profit capture. Expected savings: ~$3,400-5,700
+2. **LONG confidence boost +5%** -- `GPU_NATIVE_LONG_CONF_ADD=0.05` requires higher confidence for BUY (shorts consistently outperform). Expected savings: ~$200-400
+3. **Block HV regime on 15m** -- `GPU_NATIVE_BLOCK_HV_15M=True` prevents entry in HIGH_VOLATILITY on 15m. Savings: ~$586
+4. **Disable TIME_UNDERWATER** -- `GPU_NATIVE_DISABLE_TIME_UW=True` disables 0% WR exit. Savings: ~$575
+5. **Cooldown 15m: 12->24, 1h: 6->8** -- reduce overtrading + fee drag. Savings: ~$200
+
+### Nowy tool: param_sweep.py
+Iterative parameter optimization loop:
+- `python -m backtest_pipeline.param_sweep --pair SOLUSDT --tf 4h --quick`
+- `python -m backtest_pipeline.param_sweep --all-pairs --tf 4h`
+- Sweeps: BE_R, LONG_CONF_ADD, BLOCK_HV, TIME_UW, COOLDOWN
+- Outputs ranked results table + JSON
+
+### Szacowany Impact:
+Current: -$1,116 | After P#222: +$2,300 to +$3,800
+
+---
+
 ## PATCH #220: Fix 5 Root Causes of -$9,207 GPU Backtest Loss (2026-04-07)
 
 **Typ:** Critical Fix — Signal Quality, Overtrading, Inverted R:R  
