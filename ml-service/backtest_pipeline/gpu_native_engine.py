@@ -590,12 +590,21 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
 
         probas = torch.zeros((len(df), 2), device=device)
         cursor = warmup
+        total_candles = len(df) - 1
+        est_retrains = max(1, (total_candles - warmup) // retrain_interval)
+        retrain_num = 0
+        train_t0 = time.perf_counter()
+        print(f'  📊 MLP training loop: {total_candles - warmup} candles, retrain every {retrain_interval}, '
+              f'~{est_retrains} retrains, dims={getattr(config, "GPU_NATIVE_HIDDEN_DIMS", [512, 256, 128])}, '
+              f'epochs={getattr(config, "GPU_NATIVE_EPOCHS", 36)}, repeat={getattr(config, "GPU_NATIVE_TRAIN_REPEAT", 1)}',
+              flush=True)
         while cursor < len(df) - 1:
             train_start = max(50, cursor - warmup)
             model, train_stats = self._train_window_model(features, labels, valid, train_start, cursor, device)
             if model is None:
                 return {'error': f'GPU-native model could not train at cursor={cursor}'}
 
+            retrain_num += 1
             self.gpu_native_stats['retrain_count'] += 1
             self.gpu_native_stats['train_repeat'] = train_stats['train_repeat']
             self.gpu_native_stats['epochs_last'] = train_stats['epochs_used']
@@ -604,10 +613,23 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
 
             infer_end = min(len(df) - 1, cursor + retrain_interval)
             probas[cursor:infer_end] = self._infer_segment(model, train_stats, features, cursor, infer_end)
+
+            pct = round(100.0 * (infer_end - warmup) / max(1, total_candles - warmup), 1)
+            elapsed = time.perf_counter() - train_t0
+            print(f'    retrain {retrain_num}/{est_retrains} | candle {infer_end}/{total_candles} '
+                  f'({pct}%) | acc={train_stats["train_accuracy"]:.3f}/{train_stats["val_accuracy"]:.3f} '
+                  f'| ep={train_stats["epochs_used"]} | {elapsed:.1f}s', flush=True)
+
             cursor = infer_end
+
+        train_elapsed = time.perf_counter() - train_t0
+        print(f'  ✅ MLP training complete: {retrain_num} retrains in {train_elapsed:.1f}s', flush=True)
 
         probs_cpu = probas.detach().cpu().numpy()
 
+        exec_total = total_candles - warmup
+        exec_t0 = time.perf_counter()
+        print(f'  ⚡ Executing {exec_total} candles (GridV2 + MomentumHTF + GPU_MLP signals)...', flush=True)
         for i in range(warmup, len(df) - 1):
             row = {
                 'close': float(row_buffers['close'][i]),
@@ -798,6 +820,10 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                     self._block('Execution failed (fee gate / sizing)')
 
             self._track_equity(row, candle_time)
+
+        exec_elapsed = time.perf_counter() - exec_t0
+        trades_so_far = len(self.pm.trades)
+        print(f'  ✅ Execution complete: {trades_so_far} trades in {exec_elapsed:.1f}s', flush=True)
 
         if self.pm.position is not None:
             last_price = df.iloc[-1]['close']

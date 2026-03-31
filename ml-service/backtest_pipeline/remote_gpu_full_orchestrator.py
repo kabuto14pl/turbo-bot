@@ -445,18 +445,25 @@ def run_job(args, job: dict, run_dir: Path) -> dict:
     if health is None:
         worker_env['QUANTUM_REMOTE_PRECHECK'] = 'unreachable'
     print(f"[RUNNING] {job['spec']} worker launched; stdout/stderr -> {log_path}", flush=True)
+
+    # P#219: Tee worker output to both log file AND terminal so user sees progress
     with open(log_path, 'w', encoding='utf-8') as log_handle:
         if preflight_lines:
             log_handle.write('\n'.join(preflight_lines) + '\n\n')
-        process = subprocess.run(
+        process = subprocess.Popen(
             command,
             cwd=str(ROOT_DIR),
-            stdout=log_handle,
+            stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            check=False,
             env=worker_env,
         )
+        for line in process.stdout:
+            log_handle.write(line)
+            log_handle.flush()
+            sys.stdout.write(line)
+            sys.stdout.flush()
+        process.wait()
 
     elapsed_s = round(time.time() - started_at, 2)
     result = {
