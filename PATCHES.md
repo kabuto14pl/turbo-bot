@@ -5,6 +5,42 @@
 
 ---
 
+## PATCH #223: Integrate ALL Classical Strategies into GPU Engine (2026-04-08)
+
+**Typ:** Critical Fix -- Missing Strategies in GPU Backtest
+**Pliki:** `gpu_native_engine.py`, `config.py`
+
+### Problem:
+GPU native engine (`gpu_native_engine.py`) completely SKIPPED all 6 classical strategies:
+- AdvancedAdaptive (15% weight)
+- RSITurbo (11% weight)
+- SuperTrend (14% weight)
+- MACrossover (18% weight)
+- MomentumPro (3% weight)
+- BollingerMR (14% weight)
+
+Only GridV2, MomentumHTF, and raw MLP signal were used. This means 75% of the ensemble voting
+system was ignored in GPU backtests. Live bot uses ALL strategies.
+
+### Fix:
+1. **Added missing indicators** to `_row_buffers` and `row` dict: `ema_9`, `ema_50`, `roc_10`, `supertrend_dir`
+2. **Imported `run_all_strategies()`** from strategies.py into GPU engine
+3. **Ensemble voting** runs ALL 6 strategies on each candle, with:
+   - Regime-aware routing (STRATEGY_ROUTING config)
+   - Per-pair strategy map filtering (PAIR_STRATEGY_MAP)
+   - Weighted vote using STATIC_WEIGHTS
+4. **MLP+Ensemble blend**: 65% MLP + 35% classical ensemble
+   - Agreement: confidence boost (both agree on direction)
+   - Disagreement: confidence reduction or veto (ensemble overrides MLP)
+   - No classical signal: mild penalty on MLP confidence
+5. **Per-strategy signal tracking** in results (BUY/SELL/HOLD counts per strategy)
+
+### Config:
+- `GPU_NATIVE_ENSEMBLE_ENABLED = True` (enable classical strategies)
+- `GPU_NATIVE_ENSEMBLE_WEIGHT = 0.35` (35% ensemble, 65% MLP)
+
+---
+
 ## PATCH #222: Exit Management + Entry Filtering + Param Sweep (2026-04-08)
 
 **Typ:** Optimization -- Exit Quality, Entry Filtering, Iterative Backtest Loop

@@ -390,6 +390,12 @@ GPU_NATIVE_BREAKEVEN_R     = 0.8    # move SL to entry when maxR >= 0.8 (17% tra
 GPU_NATIVE_LONG_CONF_ADD   = 0.05   # require +5% higher confidence for LONG (shorts outperform by 5-10% WR)
 GPU_NATIVE_BLOCK_HV_15M    = True   # block HIGH_VOLATILITY regime on 15m (26% WR, -$586)
 GPU_NATIVE_DISABLE_TIME_UW = True   # disable TIME_UNDERWATER exit (0% WR across ALL TFs, -$575)
+
+# P#223: Classical Strategy Ensemble in GPU Engine
+# Runs ALL 6 strategies (AdvancedAdaptive, RSITurbo, SuperTrend, MACrossover, MomentumPro, BollingerMR)
+# alongside MLP signal. Ensemble vote confirms/vetoes MLP direction.
+GPU_NATIVE_ENSEMBLE_ENABLED = True   # enable classical strategies in GPU engine
+GPU_NATIVE_ENSEMBLE_WEIGHT  = 0.35   # 35% classical ensemble, 65% MLP signal
 GPU_NATIVE_LOCAL_QUANTUM = True  # P#186: bypass per-candle remote quantum HTTP in native engine
 GPU_NATIVE_LOCAL_QMC_PATHS = 32768  # P#186: large local CUDA Monte Carlo batch per scheduled quantum sweep
 GPU_NATIVE_LOCAL_QMC_STEPS = 16     # P#186: keep local QMC horizon aligned with heavy remote path

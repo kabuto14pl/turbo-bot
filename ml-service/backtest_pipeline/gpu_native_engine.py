@@ -20,6 +20,7 @@ import numpy as np
 
 from . import config
 from .engine import FullPipelineEngine
+from .strategies import run_all_strategies
 from .runtime_parity import apply_runtime_risk_check
 
 try:
@@ -432,6 +433,11 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             'macd_hist': column('macd_hist', 0.0),
             'ema_21': column('ema_21', cl0),
             'sma_50': column('sma_50', cl0),
+            # P#223: Additional columns for classical strategies
+            'ema_9': column('ema_9', cl0),
+            'ema_50': column('ema_50', cl0),  # RSITurbo fallback
+            'roc_10': column('roc_10', 0.0),
+            'supertrend_dir': column('supertrend_dir', 0.0),
         }
 
     def _build_ext_signals_plan(self, df, warmup: int, regimes):
@@ -708,6 +714,16 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             if _gpu_tp is not None:
                 config.TP_ATR_MULT = float(_gpu_tp)
 
+        # P#223: Classical strategy ensemble — run ALL 6 strategies alongside MLP
+        _ensemble_enabled = getattr(config, 'GPU_NATIVE_ENSEMBLE_ENABLED', True)
+        _ensemble_weight = float(getattr(config, 'GPU_NATIVE_ENSEMBLE_WEIGHT', 0.35))  # 35% classical, 65% MLP
+        _ensemble_stats = {'strategy_signals': {}, 'ensemble_trades': 0, 'ensemble_confirms': 0, 'ensemble_vetoes': 0}
+        _strategy_routing = getattr(config, 'STRATEGY_ROUTING', None)
+        _pair_strategy_map = getattr(config, 'PAIR_STRATEGY_MAP', None)
+        _static_weights = getattr(config, 'STATIC_WEIGHTS', {})
+        if _ensemble_enabled:
+            print(f'  🎯 Classical ensemble ENABLED: weight={_ensemble_weight:.0%}, strategies=6+ExternalSignals')
+
         # P#222: Disable TIME_UNDERWATER exit (0% WR across ALL TFs = -$575)
         if getattr(config, 'GPU_NATIVE_DISABLE_TIME_UW', False):
             _p221_overrides['TIME_EXIT_UNDERWATER_H'] = config.TIME_EXIT_UNDERWATER_H
@@ -748,6 +764,11 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 'macd_hist': float(row_buffers['macd_hist'][i]),
                 'ema_21': float(row_buffers['ema_21'][i]) or float(row_buffers['close'][i]),
                 'sma_50': float(row_buffers['sma_50'][i]) or float(row_buffers['close'][i]),
+                # P#223: indicators for classical strategies ensemble
+                'ema_9': float(row_buffers['ema_9'][i]) or float(row_buffers['close'][i]),
+                'ema_50': float(row_buffers['ema_50'][i]) or float(row_buffers['close'][i]),
+                'roc_10': float(row_buffers['roc_10'][i]),
+                'supertrend_dir': float(row_buffers['supertrend_dir'][i]),
             }
             candle_time = df.index[i]
             current_regime = regimes[i]
@@ -877,6 +898,79 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 if _block_hv_15m and current_regime == 'HIGH_VOLATILITY' and final_action != 'HOLD':
                     final_action = 'HOLD'
 
+                # ── P#223: Classical Strategy Ensemble ─────────────────────
+                _ensemble_action = 'HOLD'
+                _ensemble_conf = 0.0
+                _strat_details = {}
+                if _ensemble_enabled and final_action != 'HOLD':
+                    # Build history slice for strategies that need it
+                    _hist_start = max(0, i - 20)
+                    _history = df.iloc[_hist_start:i + 1]
+
+                    # Run all 6 classical strategies
+                    _signals = run_all_strategies(row, _history)
+
+                    # Regime-based routing — suppress inactive strategies
+                    if _strategy_routing and current_regime in _strategy_routing:
+                        for _strat_name in _strategy_routing[current_regime].get('inactive', []):
+                            _signals.pop(_strat_name, None)
+
+                    # Per-pair strategy map filtering
+                    if _pair_strategy_map and self.symbol in _pair_strategy_map:
+                        _allowed = _pair_strategy_map[self.symbol]
+                        _signals = {k: v for k, v in _signals.items() if k in _allowed or k not in _pair_strategy_map.get(self.symbol, [])}
+
+                    # Weighted ensemble vote
+                    _buy_score = 0.0
+                    _sell_score = 0.0
+                    _total_weight = 0.0
+                    for _sname, _sig in _signals.items():
+                        _w = _static_weights.get(_sname, 0.05)
+                        _a = _sig.get('action', 'HOLD')
+                        _c = float(_sig.get('confidence', 0.0))
+                        _strat_details[_sname] = _a
+                        if _a == 'BUY':
+                            _buy_score += _w * _c
+                            _total_weight += _w
+                        elif _a == 'SELL':
+                            _sell_score += _w * _c
+                            _total_weight += _w
+                        # Track stats
+                        if _sname not in _ensemble_stats['strategy_signals']:
+                            _ensemble_stats['strategy_signals'][_sname] = {'BUY': 0, 'SELL': 0, 'HOLD': 0}
+                        _ensemble_stats['strategy_signals'][_sname][_a] = _ensemble_stats['strategy_signals'][_sname].get(_a, 0) + 1
+
+                    if _total_weight > 0:
+                        if _buy_score > _sell_score:
+                            _ensemble_action = 'BUY'
+                            _ensemble_conf = _buy_score / _total_weight
+                        elif _sell_score > _buy_score:
+                            _ensemble_action = 'SELL'
+                            _ensemble_conf = _sell_score / _total_weight
+
+                    # Blend: MLP (1-weight) + Ensemble (weight)
+                    if _ensemble_action != 'HOLD':
+                        if _ensemble_action == final_action:
+                            # Agreement — boost confidence
+                            final_confidence = (1 - _ensemble_weight) * final_confidence + _ensemble_weight * _ensemble_conf
+                            final_confidence = min(config.CONFIDENCE_CLAMP_MAX, final_confidence)
+                            _ensemble_stats['ensemble_confirms'] += 1
+                        else:
+                            # Disagreement — reduce confidence (ensemble vetoes MLP direction)
+                            final_confidence *= (1 - _ensemble_weight)
+                            if final_confidence < _eff_conf:
+                                final_action = 'HOLD'
+                                _ensemble_stats['ensemble_vetoes'] += 1
+                    # If ensemble is HOLD but MLP has signal, keep MLP but slightly lower conf
+                    elif _total_weight > 0:
+                        # No classical strategy fired — mild penalty
+                        final_confidence *= (1 - _ensemble_weight * 0.3)
+                        if final_confidence < _eff_conf:
+                            final_action = 'HOLD'
+
+                    if final_action != 'HOLD':
+                        _ensemble_stats['ensemble_trades'] += 1
+
                 # P#187: ExternalSignals soft vote — blended at STATIC_WEIGHTS['ExternalSignals'] (0.10)
                 # Aligned signal → confidence boost; conflicting signal → small headwind
                 if final_action != 'HOLD' and self.external_signals.enabled:
@@ -939,6 +1033,14 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
 
         exec_elapsed = time.perf_counter() - exec_t0
         trades_so_far = len(self.pm.trades)
+        if _ensemble_enabled:
+            _ec = _ensemble_stats
+            print(f'  📊 Ensemble: {_ec["ensemble_trades"]} MLP+ensemble trades, '
+                  f'{_ec["ensemble_confirms"]} confirms, {_ec["ensemble_vetoes"]} vetoes', flush=True)
+            for _sn, _sc in sorted(_ec['strategy_signals'].items()):
+                _total_sigs = _sc.get('BUY', 0) + _sc.get('SELL', 0)
+                if _total_sigs > 0:
+                    print(f'      {_sn}: {_sc.get("BUY",0)} BUY, {_sc.get("SELL",0)} SELL, {_sc.get("HOLD",0)} HOLD', flush=True)
         print(f'  ✅ Execution complete: {trades_so_far} trades in {exec_elapsed:.1f}s', flush=True)
 
         # P#220: Restore original momentum gate setting
@@ -957,4 +1059,5 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         results = self._compute_results(df, timeframe)
         results['engine_mode'] = self.engine_mode
         results['gpu_native_stats'] = dict(self.gpu_native_stats)
+        results['ensemble_stats'] = _ensemble_stats if _ensemble_enabled else {}
         return results
