@@ -19,6 +19,32 @@ function getOpenlitModule() {
     return moduleValue && moduleValue.default ? moduleValue.default : moduleValue;
 }
 
+function bootstrapFallbackOtel(options = {}) {
+    try {
+        const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+        const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
+        const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+        const otelApi = getOtelApi();
+        if (!otelApi) return false;
+
+        const endpoint = (options.otlpEndpoint || process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://127.0.0.1:4318') + '/v1/traces';
+        const provider = new NodeTracerProvider({
+            resource: new (require('@opentelemetry/resources').Resource)({
+                'service.name': options.applicationName || process.env.OTEL_SERVICE_NAME || 'turbo-bot',
+                'deployment.environment': options.environment || process.env.OTEL_DEPLOYMENT_ENVIRONMENT || 'production',
+            }),
+        });
+        provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter({ url: endpoint })));
+        provider.register();
+        openlitInitialized = true;
+        console.log('[OPENLIT] Fallback OTel TracerProvider enabled for ' + (options.applicationName || process.env.OTEL_SERVICE_NAME || 'turbo-bot'));
+        return true;
+    } catch (fallbackError) {
+        console.warn('[OPENLIT] Fallback OTel setup failed: ' + fallbackError.message);
+        return false;
+    }
+}
+
 function bootstrapOpenLIT(options = {}) {
     if (openlitInitialized || !isEnabled()) {
         return false;
@@ -37,8 +63,8 @@ function bootstrapOpenLIT(options = {}) {
         console.log('[OPENLIT] Node observability enabled for ' + (options.applicationName || process.env.OTEL_SERVICE_NAME || 'turbo-bot'));
         return true;
     } catch (error) {
-        console.warn('[OPENLIT] Node bootstrap skipped: ' + error.message);
-        return false;
+        console.warn('[OPENLIT] SDK init failed (' + error.message + '), trying fallback OTel...');
+        return bootstrapFallbackOtel(options);
     }
 }
 
