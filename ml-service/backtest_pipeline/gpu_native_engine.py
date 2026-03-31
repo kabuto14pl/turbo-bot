@@ -204,14 +204,40 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         features = torch.nan_to_num(features, nan=0.0, posinf=0.0, neginf=0.0)
         return features
 
-    def _build_labels(self, close):
-        future_close = torch.roll(close, -1)
-        future_close[-1] = close[-1]
+    def _build_labels(self, close, timeframe='15m'):
+        """P#220: Multi-candle forward labels with symmetric UP/DOWN + noise exclusion.
+
+        Old: 1-candle ahead, 0.1% threshold → pure noise prediction (53% WR).
+        New: N-candle ahead (TF-specific), higher threshold, flat candles excluded
+        from training so MLP learns real directional moves only.
+        """
+        _tf = str(timeframe).lower()
+
+        horizon_map = getattr(config, 'GPU_NATIVE_LABEL_HORIZON', {})
+        if isinstance(horizon_map, dict):
+            horizon = int(horizon_map.get(_tf, 1))
+        else:
+            horizon = int(horizon_map)
+
+        thresh_map = getattr(config, 'GPU_NATIVE_LABEL_THRESHOLD', {})
+        if isinstance(thresh_map, dict):
+            threshold = float(thresh_map.get(_tf, getattr(config, 'XGBOOST_LABEL_THRESHOLD', 0.001)))
+        else:
+            threshold = float(thresh_map)
+
+        # Forward return over N candles
+        future_close = torch.roll(close, -horizon)
+        future_close[-horizon:] = close[-1]
         future_return = (future_close - close) / torch.clamp(close, min=1e-6)
-        threshold = float(getattr(config, 'XGBOOST_LABEL_THRESHOLD', 0.001))
+
+        # Binary: 1=UP (return > +threshold), 0=DOWN (return < -threshold)
         labels = (future_return > threshold).long()
+
+        # Valid mask: exclude last N candles AND flat candles (|return| < threshold)
         valid = torch.ones_like(labels, dtype=torch.bool)
-        valid[-1] = False
+        valid[-horizon:] = False
+        valid &= (future_return.abs() >= threshold)  # Only train on clear moves
+
         return labels, valid
 
     def _build_regime_series(self, inputs):
@@ -555,7 +581,7 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
 
         inputs = self._tensor_inputs(df, device)
         features = self._build_feature_matrix(inputs)
-        labels, valid = self._build_labels(inputs['close'])
+        labels, valid = self._build_labels(inputs['close'], timeframe)
         regimes = self._build_regime_series(inputs)
         warmup = min(getattr(config, 'XGBOOST_WARMUP_CANDLES', 500), max(250, int(len(df) * 0.6)))
         retrain_interval = int(getattr(config, 'GPU_NATIVE_RETRAIN_INTERVAL', getattr(config, 'XGBOOST_RETRAIN_INTERVAL', 200)))
@@ -627,9 +653,29 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
 
         probs_cpu = probas.detach().cpu().numpy()
 
+        # P#220: Trade cooldown — prevent overtrading (was 15 trades/day/pair)
+        cooldown_map = getattr(config, 'GPU_NATIVE_COOLDOWN_CANDLES', {})
+        if isinstance(cooldown_map, dict):
+            cooldown_candles = int(cooldown_map.get(_tf, 0))
+        else:
+            cooldown_candles = int(cooldown_map)
+        cooldown_remaining = 0
+
+        # P#220: Higher MLP confidence threshold (was 0.55 ≈ random)
+        mlp_min_conf = float(getattr(config, 'GPU_NATIVE_MIN_CONFIDENCE',
+                                     getattr(config, 'XGBOOST_MIN_PROBABILITY', 0.55)))
+
+        # P#220: Disable momentum early-exit gate for MLP trades
+        # Gate was tightening SL to 35% after 3 candles → avg_win/avg_loss = 0.63 (inverted R:R)
+        _orig_momentum_gate = config.MOMENTUM_GATE_ENABLED
+        if not getattr(config, 'GPU_NATIVE_MOMENTUM_GATE', True):
+            config.MOMENTUM_GATE_ENABLED = False
+
         exec_total = total_candles - warmup
         exec_t0 = time.perf_counter()
-        print(f'  ⚡ Executing {exec_total} candles (GridV2 + MomentumHTF + GPU_MLP signals)...', flush=True)
+        print(f'  ⚡ Executing {exec_total} candles (GridV2 + MomentumHTF + GPU_MLP signals)...'
+              f' [cooldown={cooldown_candles}, min_conf={mlp_min_conf:.2f}, momentum_gate={config.MOMENTUM_GATE_ENABLED}]',
+              flush=True)
         for i in range(warmup, len(df) - 1):
             row = {
                 'close': float(row_buffers['close'][i]),
@@ -679,6 +725,8 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 exit_result = self.pm.manage_position(row, candle_time, current_regime, q_result)
                 if exit_result and exit_result != 'OPEN':
                     self._learn_from_last_trade(i)
+                    # P#220: Start cooldown after trade close
+                    cooldown_remaining = cooldown_candles
                     if self.pm.trades and self.pm.trades[-1].get('is_grid_v2', False):
                         last_t = self.pm.trades[-1]
                         self.grid_v2.record_grid_trade(last_t['net_pnl'], last_t['fees'])
@@ -748,6 +796,12 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                     continue
 
             if self.pm.position is None:
+                # P#220: Cooldown — skip MLP signals during cooldown period
+                if cooldown_remaining > 0:
+                    cooldown_remaining -= 1
+                    self._track_equity(row, candle_time)
+                    continue
+
                 self.phase_stats['phase_6'] += 1
                 drawdown = self.pm.get_current_drawdown()
                 proba_up = float(probs_cpu[i, 1])
@@ -756,7 +810,8 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                 final_confidence += float(q_result.get('quantum_confidence_boost', 0.0) or 0.0)
                 final_confidence = min(config.CONFIDENCE_CLAMP_MAX, max(0.0, final_confidence))
 
-                if final_confidence >= getattr(config, 'XGBOOST_MIN_PROBABILITY', 0.55):
+                # P#220: Use GPU_NATIVE_MIN_CONFIDENCE instead of XGBOOST_MIN_PROBABILITY
+                if final_confidence >= mlp_min_conf:
                     final_action = 'BUY' if proba_up >= proba_down else 'SELL'
                 else:
                     final_action = 'HOLD'
@@ -824,6 +879,9 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         exec_elapsed = time.perf_counter() - exec_t0
         trades_so_far = len(self.pm.trades)
         print(f'  ✅ Execution complete: {trades_so_far} trades in {exec_elapsed:.1f}s', flush=True)
+
+        # P#220: Restore original momentum gate setting
+        config.MOMENTUM_GATE_ENABLED = _orig_momentum_gate
 
         if self.pm.position is not None:
             last_price = df.iloc[-1]['close']

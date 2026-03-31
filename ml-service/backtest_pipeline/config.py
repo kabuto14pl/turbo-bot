@@ -373,6 +373,13 @@ GPU_NATIVE_BATCH_SIZE = 4096    # P#185: larger GPU batch for tensor training/in
 GPU_NATIVE_RETRAIN_INTERVAL = 100  # P#185: retrain more often to keep GPU busy
 GPU_NATIVE_HIDDEN_DIMS = [2048, 1024, 512, 256]  # P#185: wider/deeper local CUDA network
 GPU_NATIVE_TRAIN_REPEAT = 32    # P#185: GPU-side augmentation/repeat factor to enlarge each training window
+
+# ── P#220: Signal-quality & overtrading fixes ──────────────────────────
+GPU_NATIVE_LABEL_HORIZON   = {'15m': 8, '1h': 4, '4h': 2}   # candles-ahead for label; was 1 everywhere
+GPU_NATIVE_LABEL_THRESHOLD = {'15m': 0.003, '1h': 0.005, '4h': 0.005}  # min |return| for UP/DOWN; was 0.001
+GPU_NATIVE_COOLDOWN_CANDLES = {'15m': 12, '1h': 6, '4h': 3}  # mandatory wait after closing a position
+GPU_NATIVE_MIN_CONFIDENCE  = 0.65   # MLP confidence floor (was using XGBOOST_MIN_PROBABILITY 0.55)
+GPU_NATIVE_MOMENTUM_GATE   = False  # disable momentum gate for MLP (tightens SL to 35% after 3 candles -> kills R:R)
 GPU_NATIVE_LOCAL_QUANTUM = True  # P#186: bypass per-candle remote quantum HTTP in native engine
 GPU_NATIVE_LOCAL_QMC_PATHS = 32768  # P#186: large local CUDA Monte Carlo batch per scheduled quantum sweep
 GPU_NATIVE_LOCAL_QMC_STEPS = 16     # P#186: keep local QMC horizon aligned with heavy remote path
