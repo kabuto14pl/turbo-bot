@@ -380,6 +380,10 @@ GPU_NATIVE_LABEL_THRESHOLD = {'15m': 0.003, '1h': 0.005, '4h': 0.005}  # min |re
 GPU_NATIVE_COOLDOWN_CANDLES = {'15m': 12, '1h': 6, '4h': 3}  # mandatory wait after closing a position
 GPU_NATIVE_MIN_CONFIDENCE  = 0.65   # MLP confidence floor (was using XGBOOST_MIN_PROBABILITY 0.55)
 GPU_NATIVE_MOMENTUM_GATE   = False  # disable momentum gate for MLP (tightens SL to 35% after 3 candles -> kills R:R)
+
+# ── P#221: Simple SL/TP exits + training resilience ────────────────────
+GPU_NATIVE_SIMPLE_EXITS    = True   # SL/TP only: no BE(34%), no partials, no trailing
+GPU_NATIVE_TP_ATR_MULT     = 2.5    # MLP TP override (was 4.0; hit ONCE in 677 trades on 15m)
 GPU_NATIVE_LOCAL_QUANTUM = True  # P#186: bypass per-candle remote quantum HTTP in native engine
 GPU_NATIVE_LOCAL_QMC_PATHS = 32768  # P#186: large local CUDA Monte Carlo batch per scheduled quantum sweep
 GPU_NATIVE_LOCAL_QMC_STEPS = 16     # P#186: keep local QMC horizon aligned with heavy remote path

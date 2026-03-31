@@ -624,11 +624,22 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
               f'~{est_retrains} retrains, dims={getattr(config, "GPU_NATIVE_HIDDEN_DIMS", [512, 256, 128])}, '
               f'epochs={getattr(config, "GPU_NATIVE_EPOCHS", 36)}, repeat={getattr(config, "GPU_NATIVE_TRAIN_REPEAT", 1)}',
               flush=True)
+        _prev_model = None
+        _prev_train_stats = None
         while cursor < len(df) - 1:
             train_start = max(50, cursor - warmup)
             model, train_stats = self._train_window_model(features, labels, valid, train_start, cursor, device)
             if model is None:
-                return {'error': f'GPU-native model could not train at cursor={cursor}'}
+                if _prev_model is not None:
+                    # P#221: Reuse last good model when a retrain window has
+                    # too few valid labels (e.g. BTC low-vol periods with
+                    # 0.3% threshold filtering most candles as "flat")
+                    model, train_stats = _prev_model, _prev_train_stats
+                    print(f'    ⚠️ retrain skipped at cursor={cursor} — reusing previous model', flush=True)
+                else:
+                    return {'error': f'GPU-native model could not train at cursor={cursor}'}
+
+            _prev_model, _prev_train_stats = model, train_stats
 
             retrain_num += 1
             self.gpu_native_stats['retrain_count'] += 1
@@ -671,10 +682,32 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         if not getattr(config, 'GPU_NATIVE_MOMENTUM_GATE', True):
             config.MOMENTUM_GATE_ENABLED = False
 
+        # P#221: Simple SL/TP exits — disable BE(34%), partials, trailing for MLP
+        # Data: avg_win/avg_loss = 0.39-0.76 because BE exits inflate WR to 60%
+        # but contribute ~$0 while SL losses are full -1.5×ATR → inverted R:R
+        _p221_overrides = {}
+        if getattr(config, 'GPU_NATIVE_SIMPLE_EXITS', False):
+            for _k in ('PARTIAL_ATR_L1_PCT', 'PARTIAL_ATR_L2_PCT',
+                        'PHASE_2_BE_R', 'PHASE_1_MIN_R', 'PHASE_3_LOCK_R',
+                        'PHASE_4_LOCK_R', 'PHASE_5_CHANDELIER_R', 'TP_ATR_MULT'):
+                _p221_overrides[_k] = getattr(config, _k)
+            config.PARTIAL_ATR_L1_PCT = 0
+            config.PARTIAL_ATR_L2_PCT = 0
+            config.PHASE_2_BE_R = 999.0
+            config.PHASE_1_MIN_R = 999.0
+            config.PHASE_3_LOCK_R = 999.0
+            config.PHASE_4_LOCK_R = 999.0
+            config.PHASE_5_CHANDELIER_R = 999.0
+            _gpu_tp = getattr(config, 'GPU_NATIVE_TP_ATR_MULT', None)
+            if _gpu_tp is not None:
+                config.TP_ATR_MULT = float(_gpu_tp)
+
         exec_total = total_candles - warmup
         exec_t0 = time.perf_counter()
+        _simple_tag = ' SIMPLE_EXITS' if _p221_overrides else ''
         print(f'  ⚡ Executing {exec_total} candles (GridV2 + MomentumHTF + GPU_MLP signals)...'
-              f' [cooldown={cooldown_candles}, min_conf={mlp_min_conf:.2f}, momentum_gate={config.MOMENTUM_GATE_ENABLED}]',
+              f' [cooldown={cooldown_candles}, min_conf={mlp_min_conf:.2f}, momentum_gate={config.MOMENTUM_GATE_ENABLED},'
+              f' TP={config.TP_ATR_MULT}×ATR{_simple_tag}]',
               flush=True)
         for i in range(warmup, len(df) - 1):
             row = {
@@ -882,6 +915,10 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
 
         # P#220: Restore original momentum gate setting
         config.MOMENTUM_GATE_ENABLED = _orig_momentum_gate
+
+        # P#221: Restore overridden exit config values
+        for _k, _v in _p221_overrides.items():
+            setattr(config, _k, _v)
 
         if self.pm.position is not None:
             last_price = df.iloc[-1]['close']
