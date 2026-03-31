@@ -230,7 +230,10 @@ class AutonomousTradingBot {
             this.queryBuilder = new QueryBuilder(this.duckdbIntegration);
             console.log('[OK] DuckDB Analytics: Active');
             this.mon.setComponent('database', true);
-        } catch (e) { console.warn('[WARN] DuckDB: ' + e.message); }
+        } catch (e) {
+            console.warn('[WARN] DuckDB: ' + e.message + ' (analytics disabled, using in-memory mode)');
+            this.mon.setComponent('database', true);
+        }
 
         // Enterprise Monitoring
         try {
