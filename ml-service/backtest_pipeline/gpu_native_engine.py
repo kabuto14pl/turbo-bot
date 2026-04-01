@@ -820,6 +820,12 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             if getattr(config, 'NEWS_FILTER_ENABLED', False):
                 self.news_filter.detect_events(row, df.iloc[max(0, i - 50):i], i)
 
+            # P#225: Cooldown must gate ALL entry strategies (GridV2, MomentumHTF, MLP)
+            if self.pm.position is None and cooldown_remaining > 0:
+                cooldown_remaining -= 1
+                self._track_equity(row, candle_time)
+                continue
+
             # P#188: GridV2 — RANGING mean-reversion bypass (row-only, no history needed)
             if self.pm.position is None and getattr(config, 'GRID_V2_ENABLED', False):
                 grid_signal = self.grid_v2.evaluate(
@@ -869,11 +875,7 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
                     continue
 
             if self.pm.position is None:
-                # P#220: Cooldown — skip MLP signals during cooldown period
-                if cooldown_remaining > 0:
-                    cooldown_remaining -= 1
-                    self._track_equity(row, candle_time)
-                    continue
+                # P#225: Cooldown check moved before GridV2/MomentumHTF blocks
 
                 self.phase_stats['phase_6'] += 1
                 drawdown = self.pm.get_current_drawdown()

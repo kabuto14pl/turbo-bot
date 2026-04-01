@@ -141,6 +141,7 @@ class PositionManager:
             'sl': sl,
             'tp': tp,
             'quantity': quantity,
+            'original_quantity': quantity,
             'entry_time': time,
             'entry_fee': entry_fee,
             'initial_sl_distance': sl_distance,
@@ -165,7 +166,7 @@ class PositionManager:
             'momentum_gate_applied': False,
         }
         
-        self.capital -= entry_fee
+        # P#225: entry_fee is deducted via net_pnl at close/partial — no upfront deduction
         return True
         
     def manage_position(self, row, time, regime='RANGING', qpm_result=None):
@@ -413,7 +414,10 @@ class PositionManager:
     
     def _execute_partial(self, pos, exit_price, pct, reason, time):
         """Execute partial close at given level."""
-        partial_qty = pos['quantity'] * pct
+        # P#225: use original_quantity so each level closes declared % of original position
+        partial_qty = pos.get('original_quantity', pos['quantity']) * pct
+        # Cap to available quantity (safety)
+        partial_qty = min(partial_qty, pos['quantity'])
         remaining_qty = pos['quantity'] - partial_qty
         
         if pos['side'] == 'LONG':
@@ -422,7 +426,9 @@ class PositionManager:
             pnl = (pos['entry'] - exit_price) * partial_qty
             
         exit_fee = exit_price * partial_qty * self.fee_rate
-        entry_fee_share = pos['entry_fee'] * pct
+        # P#225: fee share proportional to fraction of CURRENT position closed
+        actual_pct = partial_qty / pos['quantity'] if pos['quantity'] > 0 else pct
+        entry_fee_share = pos['entry_fee'] * actual_pct
         net_pnl = pnl - entry_fee_share - exit_fee
         
         hold_hours = (time - pos['entry_time']).total_seconds() / 3600
@@ -448,7 +454,7 @@ class PositionManager:
         
         self.capital += net_pnl
         pos['quantity'] = remaining_qty
-        pos['entry_fee'] = pos['entry_fee'] * (1 - pct)
+        pos['entry_fee'] = pos['entry_fee'] * (1 - actual_pct)  # P#225: use actual_pct
         self.partials_executed += 1
         
         # Mark partial level

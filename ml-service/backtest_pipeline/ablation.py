@@ -176,9 +176,9 @@ def _run_single_pass(pairs: list, timeframe: str, verbose: bool = False) -> dict
     total_wins = sum(p['trades'] * p['win_rate'] / 100 for p in per_pair.values())
     wr = (total_wins / total_trades * 100) if total_trades > 0 else 0
 
-    # Profit factor
-    gross_win = sum(p['net_profit'] for p in per_pair.values() if p['net_profit'] > 0)
-    gross_loss = abs(sum(p['net_profit'] for p in per_pair.values() if p['net_profit'] < 0))
+    # P#225: Profit factor from trade-level wins/losses (not pair-level net_profit)
+    gross_win = sum(t['net_pnl'] for t in all_trades if t.get('net_pnl', 0) > 0)
+    gross_loss = abs(sum(t['net_pnl'] for t in all_trades if t.get('net_pnl', 0) < 0))
     pf = (gross_win / gross_loss) if gross_loss > 0 else (99.0 if gross_win > 0 else 0)
 
     # Sharpe (avg of per-pair)
