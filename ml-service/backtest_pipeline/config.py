@@ -111,6 +111,7 @@ FEE_RATE = 0.0002              # P#174: 0.02% maker rate — limit TP/BE exits
 FEE_RATE_TAKER = 0.0005        # P#189: 0.05% taker rate — SL/TRAIL/TIME exits (market orders)
 SLIPPAGE_RATE = 0.0003         # P#206c: 0.03% slippage on SL exits (Board5: was 0.0002)
 SLIPPAGE_JITTER = True         # P#206c: Add random ±50% variance to slippage (break determinism)
+RANDOM_SEED = 42               # P#224: Reproducible backtests (set None for non-deterministic)
 
 # PATCH #67: Volatility Pause — adaptive sizing after loss streaks
 # After N consecutive signal-level losses → reduce sizing to X%
@@ -396,6 +397,43 @@ GPU_NATIVE_DISABLE_TIME_UW = True   # disable TIME_UNDERWATER exit (0% WR across
 # alongside MLP signal. Ensemble vote confirms/vetoes MLP direction.
 GPU_NATIVE_ENSEMBLE_ENABLED = True   # enable classical strategies in GPU engine
 GPU_NATIVE_ENSEMBLE_WEIGHT  = 0.35   # 35% classical ensemble, 65% MLP signal
+
+# ============================================================================
+# P#224: PRO BACKTEST — Optuna, Walk-Forward, Ablation, Monte Carlo
+# ============================================================================
+# Walk-Forward (rolling OOS window)
+WF_TRAIN_DAYS   = 90            # Training window in days
+WF_TEST_DAYS    = 30            # OOS test window in days
+WF_STEP_DAYS    = 30            # Step forward between windows
+WF_MIN_TRADES   = 20            # Minimum trades per OOS window to count
+
+# Optuna hyperparameter optimization
+OPTUNA_DB_PATH       = 'optuna_db/optuna.db'
+OPTUNA_N_TRIALS      = 120      # Number of Optuna trials per run
+OPTUNA_TIMEOUT_H     = 12       # Max hours per optimization
+OPTUNA_STUDY_NAME    = 'turbo_bot_pro'
+
+# Optimizer parameter ranges (Optuna search space)
+OPT_TP_MULT_RANGE      = (2.0, 4.0)
+OPT_SL_MULT_RANGE      = (1.0, 2.5)
+OPT_CONF_FLOOR_RANGE   = (0.35, 0.55)
+OPT_ML_CONF_RANGE      = (0.55, 0.80)
+OPT_GRID_ADX_RANGE     = (18, 28)
+OPT_COOLDOWN_15M_RANGE = (8, 36)
+OPT_COOLDOWN_1H_RANGE  = (4, 16)
+OPT_BE_R_RANGE         = (0.5, 1.2)
+OPT_ENSEMBLE_W_RANGE   = (0.10, 0.50)
+
+# Monte Carlo perturbations
+MC_SLIPPAGE_RANGE_BPS  = (0, 8)   # Random slippage 0-8 bps per trial
+MC_N_RUNS              = 50        # Monte Carlo simulation runs
+
+# Ablation study
+ABLATION_STRATEGIES    = [
+    'AdvancedAdaptive', 'RSITurbo', 'SuperTrend',
+    'MACrossover', 'MomentumPro', 'BollingerMR',
+    'GridV2', 'MomentumHTF', 'GPU_MLP', 'ExternalSignals',
+]
 GPU_NATIVE_LOCAL_QUANTUM = True  # P#186: bypass per-candle remote quantum HTTP in native engine
 GPU_NATIVE_LOCAL_QMC_PATHS = 32768  # P#186: large local CUDA Monte Carlo batch per scheduled quantum sweep
 GPU_NATIVE_LOCAL_QMC_STEPS = 16     # P#186: keep local QMC horizon aligned with heavy remote path

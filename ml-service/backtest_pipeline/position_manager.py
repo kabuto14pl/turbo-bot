@@ -618,12 +618,18 @@ class PositionManager:
         if pos is None:
             return
         
-        # P#74: Slippage only on SL exits (market orders). TP/trail/BE = limit = no slippage
+        # P#224: Slippage on ALL market-order exits (SL, TRAIL, TIME_*, RANGING, END)
+        # Limit exits (TP, BE) = maker = no slippage
         slippage = getattr(config, 'SLIPPAGE_RATE', 0.0)
-        if slippage > 0 and reason == 'SL':
+        _market_exit_slip = reason in ('SL', 'TRAIL', 'TIME_EMERGENCY', 'TIME_WEAK',
+                                        'TIME_UNDERWATER', 'RANGING_STALE', 'END')
+        if slippage > 0 and _market_exit_slip:
             # P#206c: Random jitter ±50% to break backtest determinism
             if getattr(config, 'SLIPPAGE_JITTER', False):
                 import random
+                _seed = getattr(config, 'RANDOM_SEED', None)
+                if _seed is not None:
+                    random.seed(_seed + hash(str(time)) % 10000)
                 slippage *= (0.5 + random.random())  # range: 0.5x to 1.5x
             if pos['side'] == 'LONG':
                 exit_price = exit_price * (1 - slippage)

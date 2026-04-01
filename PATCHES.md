@@ -5,6 +5,52 @@
 
 ---
 
+## PATCH #224: Pro Backtest Overhaul — Walk-Forward, Optuna, Ablation (2026-04-09)
+
+**Typ:** Major Infrastructure — Professional Quant Pipeline
+**Pliki:** `config.py`, `position_manager.py`, `walk_forward.py` (NEW), `optimizer.py` (NEW), `ablation.py` (NEW)
+
+### Problem:
+GPU backtest pipeline had fatal flaws blocking realistic performance measurement:
+- **P0**: No RANDOM_SEED → non-reproducible results between runs
+- **P0**: Walk-forward tested on training data (not true OOS)
+- **P1**: Slippage only applied on SL exits (TRAIL, TIME_*, END got 0 slippage)
+- **P1**: STATIC_WEIGHTS summed to 0.94, not 1.0
+- **P2**: No hyperparameter optimizer, no ablation study, no component validation
+
+### Fix:
+1. **RANDOM_SEED = 42** — reproducible results across runs
+2. **walk_forward.py** — proper rolling OOS validation (90d train / 30d test / 30d step)
+   - Trains engine on TRAIN window, evaluates ONLY test-window trades
+   - Aggregates per-window + overall Sharpe, PF, WR, DD
+   - CLI: `python -m backtest_pipeline.walk_forward --pair SOLUSDT --tf 1h`
+3. **optimizer.py** — Optuna Bayesian optimizer (TPE sampler, SQLite storage)
+   - Optimizes TP/SL/CONF/BE/ENSEMBLE_W/COOLDOWN + categorical flags
+   - Scoring: Sharpe×100 + PF×50 + PnL/1000 ± penalties/bonuses
+   - Single-pair and multi-pair modes, quick mode, resume support
+   - CLI: `python -m backtest_pipeline.optimizer --pair SOLUSDT --tf 1h`
+4. **ablation.py** — component knock-out experiments
+   - Disables each strategy/filter one at a time, measures delta PF/Sharpe/PnL
+   - Verdicts: KEEP (strong contributor) / REMOVE (hurts) / NEUTRAL
+   - CLI: `python -m backtest_pipeline.ablation --tf 1h`
+5. **Slippage fix** — all market-order exits now incur slippage (SL, TRAIL, TIME_*, RANGING_STALE, END)
+   - Seed-based random for reproducible jitter
+6. **STATIC_WEIGHTS normalized** — 0.94 → 1.00 (proportional redistribution)
+
+### Config additions:
+- `RANDOM_SEED`, `WF_TRAIN_DAYS`, `WF_TEST_DAYS`, `WF_STEP_DAYS`, `WF_MIN_TRADES`
+- `OPTUNA_DB_PATH`, `OPTUNA_N_TRIALS`, `OPTUNA_TIMEOUT_H`, `OPTUNA_STUDY_NAME`
+- `OPT_TP_MULT_RANGE`, `OPT_SL_MULT_RANGE`, `OPT_CONF_FLOOR_RANGE`, etc.
+- `MC_SLIPPAGE_RANGE_BPS`, `MC_N_RUNS`, `ABLATION_STRATEGIES`
+
+### Expected Impact:
+- PF directional: 0.35-0.55 → 1.4-2.0 (with optimized params)
+- Backtest-live gap: currently unbounded → target < 1.2×
+- Reproducibility: deterministic runs with seed control
+- Data-driven strategy selection via ablation
+
+---
+
 ## PATCH #223: Integrate ALL Classical Strategies into GPU Engine (2026-04-08)
 
 **Typ:** Critical Fix -- Missing Strategies in GPU Backtest
