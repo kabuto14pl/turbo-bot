@@ -111,7 +111,6 @@ FEE_RATE = 0.0002              # P#174: 0.02% maker rate — limit TP/BE exits
 FEE_RATE_TAKER = 0.0005        # P#189: 0.05% taker rate — SL/TRAIL/TIME exits (market orders)
 SLIPPAGE_RATE = 0.0003         # P#206c: 0.03% slippage on SL exits (Board5: was 0.0002)
 SLIPPAGE_JITTER = True         # P#206c: Add random ±50% variance to slippage (break determinism)
-RANDOM_SEED = 42               # P#224: Reproducible backtests (set None for non-deterministic)
 
 # PATCH #67: Volatility Pause — adaptive sizing after loss streaks
 # After N consecutive signal-level losses → reduce sizing to X%
@@ -130,16 +129,16 @@ MAX_HOLD_HOURS = 72            # Max position hold time
 # ENSEMBLE VOTING
 # ============================================================================
 STATIC_WEIGHTS = {
-    'AdvancedAdaptive': 0.15,
-    'RSITurbo': 0.11,
-    'SuperTrend': 0.14,
-    'MACrossover': 0.18,
-    'MomentumPro': 0.03,     # P#197 Faza 2.5: was 0.07 — MC shows -$5 edge, worst performer
+    'AdvancedAdaptive': 0.16,   # P#224: normalized (was 0.15, sum was 0.94)
+    'RSITurbo': 0.12,           # P#224: normalized (was 0.11)
+    'SuperTrend': 0.15,         # P#224: normalized (was 0.14)
+    'MACrossover': 0.19,        # P#224: normalized (was 0.18)
+    'MomentumPro': 0.03,        # P#197 Faza 2.5: was 0.07 — MC shows -$5 edge, worst performer
     'NeuralAI': 0.07,
     'PythonML': 0.02,           # P#197 Faza 2.5: was 0.04 — MC shows -$5 edge, always in losing combos
-    'BollingerMR': 0.14,        # P#66: Bollinger Mean-Reversion for RANGING
-    'ExternalSignals': 0.10,    # P#152C: whale/macro/F&G/calendar/COT
-}
+    'BollingerMR': 0.15,        # P#224: normalized (was 0.14)
+    'ExternalSignals': 0.11,    # P#224: normalized (was 0.10)
+}  # Sum = 1.00 (P#224 fix: was 0.94)
 
 # PATCH #60 GC5: Lower thresholds for more trade opportunities
 # Consensus rate was 0.2% → need 5-10× more setups to generate volume
@@ -375,65 +374,30 @@ GPU_NATIVE_RETRAIN_INTERVAL = 100  # P#185: retrain more often to keep GPU busy
 GPU_NATIVE_HIDDEN_DIMS = [2048, 1024, 512, 256]  # P#185: wider/deeper local CUDA network
 GPU_NATIVE_TRAIN_REPEAT = 32    # P#185: GPU-side augmentation/repeat factor to enlarge each training window
 
-# ── P#220: Signal-quality & overtrading fixes ──────────────────────────
-GPU_NATIVE_LABEL_HORIZON   = {'15m': 8, '1h': 4, '4h': 2}   # candles-ahead for label; was 1 everywhere
-GPU_NATIVE_LABEL_THRESHOLD = {'15m': 0.003, '1h': 0.005, '4h': 0.005}  # min |return| for UP/DOWN; was 0.001
-GPU_NATIVE_COOLDOWN_CANDLES = {'15m': 24, '1h': 8, '4h': 3}  # P#222: 15m 12->24, 1h 6->8 (still overtrades)
-GPU_NATIVE_MIN_CONFIDENCE  = 0.65   # MLP confidence floor (was using XGBOOST_MIN_PROBABILITY 0.55)
-GPU_NATIVE_MOMENTUM_GATE   = False  # disable momentum gate for MLP (tightens SL to 35% after 3 candles -> kills R:R)
-
-# ── P#221: Simple SL/TP exits + training resilience ────────────────────
-GPU_NATIVE_SIMPLE_EXITS    = True   # SL/TP only: no partials, no trailing -- BUT allow BE at BREAKEVEN_R
-GPU_NATIVE_TP_ATR_MULT     = 2.5    # MLP TP override (was 4.0; hit ONCE in 677 trades on 15m)
-
-# -- P#222: Breakeven, regime filter, long bias, time exit fixes ---------
-GPU_NATIVE_BREAKEVEN_R     = 0.8    # move SL to entry when maxR >= 0.8 (17% trades are "wasted winners")
-GPU_NATIVE_LONG_CONF_ADD   = 0.05   # require +5% higher confidence for LONG (shorts outperform by 5-10% WR)
-GPU_NATIVE_BLOCK_HV_15M    = True   # block HIGH_VOLATILITY regime on 15m (26% WR, -$586)
-GPU_NATIVE_DISABLE_TIME_UW = True   # disable TIME_UNDERWATER exit (0% WR across ALL TFs, -$575)
-
-# P#223: Classical Strategy Ensemble in GPU Engine
-# Runs ALL 6 strategies (AdvancedAdaptive, RSITurbo, SuperTrend, MACrossover, MomentumPro, BollingerMR)
-# alongside MLP signal. Ensemble vote confirms/vetoes MLP direction.
-GPU_NATIVE_ENSEMBLE_ENABLED = True   # enable classical strategies in GPU engine
-GPU_NATIVE_ENSEMBLE_WEIGHT  = 0.35   # 35% classical ensemble, 65% MLP signal
-
-# ============================================================================
-# P#224: PRO BACKTEST — Optuna, Walk-Forward, Ablation, Monte Carlo
-# ============================================================================
-# Walk-Forward (rolling OOS window)
-WF_TRAIN_DAYS   = 90            # Training window in days
-WF_TEST_DAYS    = 30            # OOS test window in days
-WF_STEP_DAYS    = 30            # Step forward between windows
-WF_MIN_TRADES   = 20            # Minimum trades per OOS window to count
-
-# Optuna hyperparameter optimization
-OPTUNA_DB_PATH       = 'optuna_db/optuna.db'
-OPTUNA_N_TRIALS      = 120      # Number of Optuna trials per run
-OPTUNA_TIMEOUT_H     = 12       # Max hours per optimization
-OPTUNA_STUDY_NAME    = 'turbo_bot_pro'
-
-# Optimizer parameter ranges (Optuna search space)
-OPT_TP_MULT_RANGE      = (2.0, 4.0)
-OPT_SL_MULT_RANGE      = (1.0, 2.5)
-OPT_CONF_FLOOR_RANGE   = (0.35, 0.55)
-OPT_ML_CONF_RANGE      = (0.55, 0.80)
-OPT_GRID_ADX_RANGE     = (18, 28)
-OPT_COOLDOWN_15M_RANGE = (8, 36)
-OPT_COOLDOWN_1H_RANGE  = (4, 16)
-OPT_BE_R_RANGE         = (0.5, 1.2)
-OPT_ENSEMBLE_W_RANGE   = (0.10, 0.50)
-
-# Monte Carlo perturbations
-MC_SLIPPAGE_RANGE_BPS  = (0, 8)   # Random slippage 0-8 bps per trial
-MC_N_RUNS              = 50        # Monte Carlo simulation runs
-
-# Ablation study
-ABLATION_STRATEGIES    = [
-    'AdvancedAdaptive', 'RSITurbo', 'SuperTrend',
-    'MACrossover', 'MomentumPro', 'BollingerMR',
-    'GridV2', 'MomentumHTF', 'GPU_MLP', 'ExternalSignals',
-]
+# ── P#220: GPU Native Signal Quality Controls ──────────────────────────────
+# ROOT CAUSE: MLP was predicting 1-candle noise (53% WR, 0.1% threshold) → coin flip + fees = -92% loss
+# Fix 1: Multi-candle label horizon — predict meaningful moves, not noise
+# Fix 2: Trade cooldown — stop overtrading (was 15 trades/day/pair, $3k+ fees)
+# Fix 3: Higher confidence — only trade high-conviction MLP signals
+# Fix 4: Disable momentum early-exit gate for MLP — was inverting R:R to 0.63:1
+GPU_NATIVE_LABEL_HORIZON = {    # Candles to look ahead for UP/DOWN label (was 1 = noise)
+    '15m': 8,                    # 8 × 15min = 2h forward — meaningful trend
+    '1h': 4,                     # 4 × 1h = 4h forward
+    '4h': 2,                     # 2 × 4h = 8h forward
+}
+GPU_NATIVE_LABEL_THRESHOLD = {  # Min abs return for UP/DOWN label (was 0.001 = 0.1% = noise)
+    '15m': 0.003,                # 0.3% move over 2h — filters noise
+    '1h': 0.005,                 # 0.5% move over 4h
+    '4h': 0.005,                 # 0.5% move over 8h
+}
+GPU_NATIVE_COOLDOWN_CANDLES = { # Min candles between trades (was 0 = overtrading)
+    '15m': 12,                   # 12 × 15min = 3h cooldown → max ~4 trades/day
+    '1h': 6,                     # 6 × 1h = 6h cooldown → max ~4 trades/day
+    '4h': 3,                     # 3 × 4h = 12h cooldown → max ~2 trades/day
+}
+GPU_NATIVE_MIN_CONFIDENCE = 0.65  # P#220: MLP confidence threshold (was 0.55 ≈ random)
+GPU_NATIVE_MOMENTUM_GATE = False  # P#220: Disable momentum early-exit gate for MLP trades
+                                   # Gate tightened SL to 35% after 3 candles → avg_win/avg_loss=0.63
 GPU_NATIVE_LOCAL_QUANTUM = True  # P#186: bypass per-candle remote quantum HTTP in native engine
 GPU_NATIVE_LOCAL_QMC_PATHS = 32768  # P#186: large local CUDA Monte Carlo batch per scheduled quantum sweep
 GPU_NATIVE_LOCAL_QMC_STEPS = 16     # P#186: keep local QMC horizon aligned with heavy remote path

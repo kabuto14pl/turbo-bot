@@ -26,7 +26,6 @@ from backtest_pipeline import config
 from backtest_pipeline.runner import (
     build_engine, load_pair_data, apply_pair_overrides,
     restore_config, get_pair_capital, apply_timeframe_overrides,
-    restore_timeframe_overrides,
 )
 
 
@@ -128,7 +127,7 @@ def walk_forward_backtest(
     if df is None:
         _restore_overrides(override_originals)
         restore_config(pair_originals)
-        restore_timeframe_overrides(tf_originals)
+        restore_config(tf_originals)
         return {'error': f'No data for {symbol} @ {timeframe}'}
 
     # Calculate windows
@@ -154,7 +153,7 @@ def walk_forward_backtest(
     if not windows:
         _restore_overrides(override_originals)
         restore_config(pair_originals)
-        restore_timeframe_overrides(tf_originals)
+        restore_config(tf_originals)
         return {'error': f'Not enough data for walk-forward: {total_days}d < {train_days + test_days}d required'}
 
     if verbose:
@@ -237,7 +236,7 @@ def walk_forward_backtest(
     # Restore config
     _restore_overrides(override_originals)
     restore_config(pair_originals)
-    restore_timeframe_overrides(tf_originals)
+    restore_config(tf_originals)
 
     if verbose:
         print(f"\n{'='*90}")
