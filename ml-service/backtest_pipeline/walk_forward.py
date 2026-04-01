@@ -273,6 +273,47 @@ def walk_forward_backtest(
     }
 
 
+def _portfolio_win_rate(all_results: dict) -> float:
+    """Weighted average win rate across pairs."""
+    total_wins = 0
+    total_trades = 0
+    for r in all_results.values():
+        a = r.get('aggregate', {})
+        t = a.get('trades', 0)
+        w = a.get('win_rate', 0)
+        total_wins += t * w / 100
+        total_trades += t
+    return round(total_wins / total_trades * 100, 1) if total_trades > 0 else 0
+
+
+def _portfolio_profit_factor(all_results: dict) -> float:
+    """Portfolio-level profit factor from per-pair aggregates."""
+    total_gross = 0
+    total_loss = 0
+    for r in all_results.values():
+        a = r.get('aggregate', {})
+        pnl = a.get('net_profit', 0)
+        if pnl > 0:
+            total_gross += pnl
+        else:
+            total_loss += abs(pnl)
+    if total_loss > 0:
+        return round(total_gross / total_loss, 3)
+    return 99.0 if total_gross > 0 else 0
+
+
+def _portfolio_sharpe(all_results: dict) -> float:
+    """Average Sharpe across pairs (simple average)."""
+    sharpes = [r.get('aggregate', {}).get('sharpe', 0) for r in all_results.values()
+               if r.get('aggregate', {}).get('trades', 0) > 0]
+    return round(float(np.mean(sharpes)), 3) if sharpes else 0
+
+
+def _portfolio_max_dd(all_results: dict) -> float:
+    """Sum of per-pair max drawdowns (conservative estimate)."""
+    return round(sum(r.get('aggregate', {}).get('max_drawdown', 0) for r in all_results.values()), 2)
+
+
 def walk_forward_multi_pair(
     timeframe: str = '1h',
     pairs: list = None,
@@ -328,6 +369,15 @@ def walk_forward_multi_pair(
         'portfolio_pnl': total_pnl,
         'portfolio_trades': total_trades,
         'portfolio_fees': total_fees,
+        'aggregate': {
+            'net_profit': total_pnl,
+            'trades': total_trades,
+            'total_fees': total_fees,
+            'win_rate': _portfolio_win_rate(all_results),
+            'profit_factor': _portfolio_profit_factor(all_results),
+            'sharpe': _portfolio_sharpe(all_results),
+            'max_drawdown': _portfolio_max_dd(all_results),
+        },
         'params': overrides or {},
     }
 
