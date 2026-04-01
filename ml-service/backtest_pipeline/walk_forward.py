@@ -212,7 +212,8 @@ def walk_forward_backtest(
 
         oos_trades = [
             t for t in all_trades
-            if t.get('entry_time') is not None and t['entry_time'] >= test_start_time
+            if t.get('entry_time') is not None
+            and pd.Timestamp(t['entry_time']) >= test_start_time
         ]
 
         w_metrics = _compute_window_metrics(oos_trades)
