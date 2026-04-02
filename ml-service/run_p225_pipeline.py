@@ -89,7 +89,7 @@ def run_walk_forward(tf: str):
     from backtest_pipeline.walk_forward import walk_forward_multi_pair
     from backtest_pipeline.pair_config import get_active_pairs
 
-    pairs = get_active_pairs(tf)
+    pairs = get_active_pairs()
     result = walk_forward_multi_pair(pairs, tf, verbose=True)
 
     out_file = RESULTS_DIR / f'walk_forward_{tf}_{int(time.time())}.json'
