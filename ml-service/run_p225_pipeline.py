@@ -25,8 +25,8 @@ def run_ablation(tf: str):
     print(f"  STEP 1: ABLATION STUDY ({tf})")
     print("=" * 70)
 
-    from backtest_pipeline.ablation import run_full_ablation
-    result = run_full_ablation(timeframe=tf, verbose=True)
+    from backtest_pipeline.ablation import run_ablation as _run_ablation
+    result = _run_ablation(timeframe=tf, verbose=True)
 
     out_file = RESULTS_DIR / f'ablation_{tf}_{int(time.time())}.json'
     with open(out_file, 'w') as f:
