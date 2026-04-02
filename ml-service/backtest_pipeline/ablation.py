@@ -89,7 +89,9 @@ def _build_disable_overrides(strategy_name: str) -> dict:
         overrides['GPU_NATIVE_ENSEMBLE_ENABLED'] = False
 
     elif strategy_name == 'BreakevenExit':
-        overrides['GPU_NATIVE_BREAKEVEN_R'] = 0.0  # Disable BE
+        # P#225: Must set PHASE_2_BE_R directly (GPU_NATIVE_BREAKEVEN_R only active with SIMPLE_EXITS)
+        overrides['PHASE_2_BE_R'] = 999.0
+        overrides['PHASE_1_MIN_R'] = 999.0
 
     elif strategy_name == 'HVBlock':
         overrides['GPU_NATIVE_BLOCK_HV_15M'] = False

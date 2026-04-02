@@ -63,7 +63,8 @@ def _build_overrides_from_trial(trial) -> dict:
             '1h': trial.suggest_int('cooldown_1h', cd_1h_range[0], cd_1h_range[1], step=2),
             '4h': 3,
         },
-        'GPU_NATIVE_BREAKEVEN_R': trial.suggest_float('be_r', be_range[0], be_range[1], step=0.1),
+        # P#225: Set PHASE_2_BE_R directly (works regardless of SIMPLE_EXITS mode)
+        'PHASE_2_BE_R': trial.suggest_float('be_r', be_range[0], be_range[1], step=0.1),
         'GPU_NATIVE_ENSEMBLE_WEIGHT': trial.suggest_float('ensemble_w', ens_range[0], ens_range[1], step=0.05),
         # Categorical
         'GPU_NATIVE_BLOCK_HV_15M': trial.suggest_categorical('block_hv_15m', [True, False]),
@@ -76,6 +77,9 @@ def _build_overrides_from_trial(trial) -> dict:
     # Long confidence add — only if simple_exits enabled
     if overrides['GPU_NATIVE_SIMPLE_EXITS']:
         overrides['GPU_NATIVE_LONG_CONF_ADD'] = trial.suggest_float('long_conf_add', 0.0, 0.10, step=0.02)
+
+    # P#225: derive PHASE_1_MIN_R from PHASE_2_BE_R
+    overrides['PHASE_1_MIN_R'] = overrides['PHASE_2_BE_R'] - 0.1
 
     return overrides
 
@@ -236,7 +240,7 @@ def show_best(study):
         'confidence_floor': 'CONFIDENCE_FLOOR',
         'ml_min_conf': 'GPU_NATIVE_MIN_CONFIDENCE',
         'grid_adx': 'GRID_MAX_ADX',
-        'be_r': 'GPU_NATIVE_BREAKEVEN_R',
+        'be_r': 'PHASE_2_BE_R',
         'ensemble_w': 'GPU_NATIVE_ENSEMBLE_WEIGHT',
         'block_hv_15m': 'GPU_NATIVE_BLOCK_HV_15M',
         'disable_time_uw': 'GPU_NATIVE_DISABLE_TIME_UW',

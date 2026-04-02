@@ -156,15 +156,13 @@ def main():
             config_key = k.upper()
             # Map trial param names to config names
             param_map = {
-                'TP_MULT': 'TP_ATR_MULT',
-                'SL_MULT': 'SL_ATR_MULT',
-                'CONFIDENCE_FLOOR': 'CONFIDENCE_FLOOR',
-                'ML_MIN_CONF': 'GPU_NATIVE_MIN_CONFIDENCE',
-                'GRID_ADX': 'GRID_MAX_ADX',
-                'COOLDOWN_15M': 'GPU_NATIVE_COOLDOWN_CANDLES_15M',
-                'COOLDOWN_1H': 'GPU_NATIVE_COOLDOWN_CANDLES_1H',
-                'BE_R': 'GPU_NATIVE_BREAKEVEN_R',
-                'ENSEMBLE_W': 'GPU_NATIVE_ENSEMBLE_WEIGHT',
+                'tp_mult': 'TP_ATR_MULT',
+                'sl_mult': 'SL_ATR_MULT',
+                'confidence_floor': 'CONFIDENCE_FLOOR',
+                'ml_min_conf': 'GPU_NATIVE_MIN_CONFIDENCE',
+                'grid_adx': 'GRID_MAX_ADX',
+                'be_r': 'PHASE_2_BE_R',
+                'ensemble_w': 'GPU_NATIVE_ENSEMBLE_WEIGHT',
             }
             if k in param_map:
                 setattr(config, param_map[k], v)
