@@ -9,8 +9,8 @@ All thresholds, parameters, and constants from production bot.
 # P#189: TP lowered 4.0→2.5 ATR — advisory board (Khalil): 4.0 ATR unreachable on 15m
 # At 4.0 ATR ~4% price move needed; 2.5 ATR is achievable with current momentum structure
 # Combined with trailing, winners can ride well beyond the base TP level
-SL_ATR_MULT = 1.5          # P#153 PARITY: aligned with live execution-engine.js (was 1.75)
-TP_ATR_MULT = 4.0          # P#216 PARITY: aligned with live execution-engine.js (was 2.5, P#189 reverted)
+SL_ATR_MULT = 1.75         # P#225 Optuna #21: 1.5→1.75 (wider SL = less noise stops)
+TP_ATR_MULT = 2.75         # P#225 Optuna #21: 4.0→2.75 (achievable TP = more realized wins)
 SL_CLAMP_MIN = 0.8         # Min SL = 0.8 × ATR
 SL_CLAMP_MAX = 2.5         # Max SL = 2.5 × ATR
 TP_CLAMP_MIN = 2.5         # P#216: raised 1.5→2.5 to match TP_ATR_MULT=4.0
@@ -51,7 +51,7 @@ SHORT_EXHAUSTION_MIN_VOLUME_RATIO = 1.8
 # PATCH #63: Parameterized trail distances + regime-adaptive trailing
 # Phase 3/4 were hardcoded at 0.5/1.0 ATR — way too tight for BTC 15m
 PHASE_1_MIN_R = 0.7            # Brain P#64 iter4: 1.0→0.7 (earlier trailing start)
-PHASE_2_BE_R = 1.0             # P#210a: REVERTED 1.3→1.0 (Board5 P#205c caused BNB 15m PF 1.14→0.597, AvgLoss +50%, 4 wasted winners)
+PHASE_2_BE_R = 0.8             # P#225 Optuna #21: 1.0→0.8 (earlier BE lock)
 PHASE_3_LOCK_R = 1.5           # Phase 3 lock at 1.5R
 PHASE_4_LOCK_R = 2.0           # Phase 4 lock at 2.0R
 PHASE_5_CHANDELIER_R = 2.0     # P#194: 2.5→2.0 — lock profit earlier (trail was giving back >1R)
@@ -109,7 +109,7 @@ TIME_EXIT_UNDERWATER_H = 36    # Close if underwater > 0.5 × ATR after 36h
 # GC2: Fee aligned with live tradingFeeRate (config.js + bundle.json)
 FEE_RATE = 0.0002              # P#174: 0.02% maker rate — limit TP/BE exits
 FEE_RATE_TAKER = 0.0005        # P#189: 0.05% taker rate — SL/TRAIL/TIME exits (market orders)
-SLIPPAGE_RATE = 0.0003         # P#206c: 0.03% slippage on SL exits (Board5: was 0.0002)
+SLIPPAGE_RATE = 0.0002         # P#225 Optuna #21: 0.0003→0.0002
 SLIPPAGE_JITTER = True         # P#206c: Add random ±50% variance to slippage (break determinism)
 
 # PATCH #67: Volatility Pause — adaptive sizing after loss streaks
@@ -146,7 +146,7 @@ ENSEMBLE_THRESHOLD_NORMAL = 0.22       # was 0.30 — allow single strong strate
 ENSEMBLE_THRESHOLD_CONFLICT = 0.30     # was 0.35
 ENSEMBLE_THRESHOLD_STRONG = 0.18       # was 0.25
 ENSEMBLE_THRESHOLD_RANGING = 0.10      # P#66: lower threshold in RANGING for BB MR signals
-CONFIDENCE_FLOOR = 0.35                # P#216 PARITY: aligned with live ensemble-voting.js floor=0.35 (was 0.30)
+CONFIDENCE_FLOOR = 0.40                # P#225 Optuna #21: 0.35→0.40 (slightly more selective)
 CONFIDENCE_CLAMP_MIN = 0.15            # was 0.20
 CONFIDENCE_CLAMP_MAX = 0.95
 ENSEMBLE_COUNTER_TREND_CONF_MULT = 0.65     # P#196: 0.50 was too harsh (regressed), 0.72 was too lenient. Middle ground.
@@ -390,14 +390,21 @@ GPU_NATIVE_LABEL_THRESHOLD = {  # Min abs return for UP/DOWN label (was 0.001 = 
     '1h': 0.005,                 # 0.5% move over 4h
     '4h': 0.005,                 # 0.5% move over 8h
 }
-GPU_NATIVE_COOLDOWN_CANDLES = { # Min candles between trades (was 0 = overtrading)
-    '15m': 12,                   # 12 × 15min = 3h cooldown → max ~4 trades/day
-    '1h': 6,                     # 6 × 1h = 6h cooldown → max ~4 trades/day
-    '4h': 3,                     # 3 × 4h = 12h cooldown → max ~2 trades/day
+GPU_NATIVE_COOLDOWN_CANDLES = { # P#225 Optuna #21: longer cooldowns = quality over quantity
+    '15m': 16,                   # 16 × 15min = 4h cooldown (was 12)
+    '1h': 8,                     # 8 × 1h = 8h cooldown → max ~3 trades/day (was 6)
+    '4h': 3,                     # unchanged
 }
-GPU_NATIVE_MIN_CONFIDENCE = 0.65  # P#220: MLP confidence threshold (was 0.55 ≈ random)
+GPU_NATIVE_MIN_CONFIDENCE = 0.70  # P#225 Optuna #21: 0.65→0.70 (more selective MLP)
 GPU_NATIVE_MOMENTUM_GATE = False  # P#220: Disable momentum early-exit gate for MLP trades
                                    # Gate tightened SL to 35% after 3 candles → avg_win/avg_loss=0.63
+# P#225 Optuna #21: New params from optimization
+GPU_NATIVE_SIMPLE_EXITS = True     # P#225 Optuna #21: disable trailing/phases, just SL/TP/BE
+GPU_NATIVE_ENSEMBLE_WEIGHT = 0.45  # P#225 Optuna #21: 0.35→0.45 (45% classical, 55% MLP)
+GPU_NATIVE_BREAKEVEN_R = 0.8      # P#225 Optuna #21: BE at 0.8R (used when SIMPLE_EXITS=True)
+GPU_NATIVE_BLOCK_HV_15M = False    # P#225 Optuna #21: don't block HV on 15m
+GPU_NATIVE_DISABLE_TIME_UW = True  # P#225 Optuna #21: disable time underwater exit
+GPU_NATIVE_LONG_CONF_ADD = 0.10   # P#225 Optuna #21: longs need +10% extra confidence
 GPU_NATIVE_LOCAL_QUANTUM = True  # P#186: bypass per-candle remote quantum HTTP in native engine
 GPU_NATIVE_LOCAL_QMC_PATHS = 32768  # P#186: large local CUDA Monte Carlo batch per scheduled quantum sweep
 GPU_NATIVE_LOCAL_QMC_STEPS = 16     # P#186: keep local QMC horizon aligned with heavy remote path
@@ -521,7 +528,7 @@ GRID_BB_LOW = 0.20               # P#67: BB%B below this = near lower band (was 
 GRID_BB_HIGH = 0.80              # P#67: BB%B above this = near upper band (was 0.90)
 GRID_BB_EXTREME_LOW = 0.08       # Extreme oversold → max confidence
 GRID_BB_EXTREME_HIGH = 0.92      # Extreme overbought → max confidence
-GRID_MAX_ADX = 22                # P#67: Slightly wider ADX range (was 20)
+GRID_MAX_ADX = 18                # P#225 Optuna #21: 22→18 (tighter range = more ranging quality)
 GRID_RSI_FILTER_LOW = 25         # Only filter extreme RSI contradictions
 GRID_RSI_FILTER_HIGH = 75        # (don't require RSI like P#66)
 GRID_COOLDOWN_CANDLES = 8        # Min candles between grid entries (2h on 15m)
