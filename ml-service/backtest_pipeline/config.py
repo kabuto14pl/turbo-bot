@@ -129,16 +129,16 @@ MAX_HOLD_HOURS = 72            # Max position hold time
 # ENSEMBLE VOTING
 # ============================================================================
 STATIC_WEIGHTS = {
-    'AdvancedAdaptive': 0.19,   # P#225: renormalized (was 0.16). Ablation: -$398 = strong keeper
-    'RSITurbo': 0.00,           # P#225: DISABLED. Ablation: +$439 when removed = hurts performance
-    'SuperTrend': 0.18,         # P#225: renormalized (was 0.15). Ablation: -$151 = keeper
-    'MACrossover': 0.22,        # P#225: renormalized (was 0.19). Ablation: -$662 = strongest
-    'MomentumPro': 0.00,        # P#225: DISABLED. Ablation: +$103 when removed = hurts performance
-    'NeuralAI': 0.08,           # P#225: renormalized (was 0.07)
-    'PythonML': 0.02,           # P#225: kept (unchanged)
-    'BollingerMR': 0.18,        # P#225: renormalized (was 0.15). Ablation: -$461 = strong keeper
-    'ExternalSignals': 0.13,    # P#225: renormalized (was 0.11)
-}  # Sum = 1.00 (P#225: removed RSITurbo + MomentumPro, renormalized remaining)
+    'AdvancedAdaptive': 0.16,   # P#224: normalized (was 0.15, sum was 0.94)
+    'RSITurbo': 0.12,           # P#224: normalized (was 0.11)
+    'SuperTrend': 0.15,         # P#224: normalized (was 0.14)
+    'MACrossover': 0.19,        # P#224: normalized (was 0.18)
+    'MomentumPro': 0.03,        # P#197 Faza 2.5: was 0.07 — MC shows -$5 edge, worst performer
+    'NeuralAI': 0.07,
+    'PythonML': 0.02,           # P#197 Faza 2.5: was 0.04 — MC shows -$5 edge, always in losing combos
+    'BollingerMR': 0.15,        # P#224: normalized (was 0.14)
+    'ExternalSignals': 0.11,    # P#224: normalized (was 0.10)
+}  # Sum = 1.00 — P#225: REVERTED from removal (combined removal worsened by $399)
 
 # PATCH #60 GC5: Lower thresholds for more trade opportunities
 # Consensus rate was 0.2% → need 5-10× more setups to generate volume
