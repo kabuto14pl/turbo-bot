@@ -63,8 +63,8 @@ def _build_overrides_from_trial(trial) -> dict:
             '1h': trial.suggest_int('cooldown_1h', cd_1h_range[0], cd_1h_range[1], step=2),
             '4h': 3,
         },
-        # P#225: Set PHASE_2_BE_R directly (works regardless of SIMPLE_EXITS mode)
-        'PHASE_2_BE_R': trial.suggest_float('be_r', be_range[0], be_range[1], step=0.1),
+        # P#225: BE can be disabled (999) or set in range
+        'PHASE_2_BE_R': trial.suggest_categorical('be_r', [0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 999.0]),
         'GPU_NATIVE_ENSEMBLE_WEIGHT': trial.suggest_float('ensemble_w', ens_range[0], ens_range[1], step=0.05),
         # Categorical
         'GPU_NATIVE_BLOCK_HV_15M': trial.suggest_categorical('block_hv_15m', [True, False]),
@@ -79,7 +79,8 @@ def _build_overrides_from_trial(trial) -> dict:
         overrides['GPU_NATIVE_LONG_CONF_ADD'] = trial.suggest_float('long_conf_add', 0.0, 0.10, step=0.02)
 
     # P#225: derive PHASE_1_MIN_R from PHASE_2_BE_R
-    overrides['PHASE_1_MIN_R'] = overrides['PHASE_2_BE_R'] - 0.1
+    be_val = overrides['PHASE_2_BE_R']
+    overrides['PHASE_1_MIN_R'] = be_val - 0.1 if be_val < 100 else 999.0
 
     return overrides
 
@@ -102,24 +103,23 @@ def _score_result(result: dict) -> float:
     wr = agg.get('win_rate', 0)
     trades = agg.get('trades', 0)
 
-    # Core score
-    score = sharpe * 100 + pf * 50 + pnl / 1000
+    # P#225: Simplified scoring — profit-first, Sharpe as tiebreaker
+    # Old scoring over-weighted Sharpe, causing overfit to low-trade windows
+    score = pnl / 100  # $1 = 0.01 points — profit is primary
+    score += pf * 30   # PF bonus (PF 1.0 = 30 pts)
+    score += sharpe * 20  # Sharpe mild bonus
 
-    # Penalties
-    if sharpe < 0:
-        score -= 200  # Strong penalty for negative Sharpe
-    if dd > 1500:  # Max drawdown > $1500
-        score -= (dd - 1500) / 10
-    if wr < 30:
-        score -= (30 - wr) * 5  # Penalty for very low WR
-    if trades < 30:
-        score -= (30 - trades) * 3  # Penalty for too few trades
+    # Hard penalties
+    if pnl < 0:
+        score -= abs(pnl) / 50  # Extra penalty for losing money
+    if dd > 2000:
+        score -= (dd - 2000) / 20
+    if trades < 50:
+        score -= (50 - trades) * 2  # Need enough trades for significance
 
-    # Bonuses
-    if pf > 1.5:
-        score += 50  # Bonus for solid PF
-    if sharpe > 1.2:
-        score += 100  # Bonus for strong Sharpe
+    # Bonus for robust profit
+    if pnl > 0 and pf > 1.2 and sharpe > 0:
+        score += 100  # Strong bonus for profitable + consistent
 
     return score
 
