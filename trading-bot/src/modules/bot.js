@@ -747,9 +747,8 @@ class AutonomousTradingBot {
                     try {
                         const { price: fundPrice } = await _getPairData(sym);
                         const pairCapital = this.config.initialCapital * ({
-                            'BTCUSDT': 0.08, 'ETHUSDT': 0.12, 'SOLUSDT': 0.30,
-                            'BNBUSDT': 0.35, 'XRPUSDT': 0.15,
-                        }[sym] || 0.10);
+                            'SOLUSDT': 0.65, 'BNBUSDT': 0.35,
+                        }[sym] || 0.0);
 
                         const fundResult = funding.processCycle({
                             currentPrice: fundPrice,

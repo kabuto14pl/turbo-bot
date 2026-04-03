@@ -12,7 +12,7 @@ function loadConfig() {
         symbol: process.env.TRADING_SYMBOL || 'BTCUSDT',
         symbols: process.env.TRADING_SYMBOLS
             ? process.env.TRADING_SYMBOLS.split(',').map(s => s.trim())
-            : ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'ADAUSDT'],
+            : ['SOLUSDT', 'BNBUSDT'],
         timeframe: process.env.TIMEFRAME || '1h',
         strategy: process.env.STRATEGY || 'AdvancedAdaptive',
         initialCapital: parseFloat(process.env.INITIAL_CAPITAL || '1000'),

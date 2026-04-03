@@ -2514,14 +2514,14 @@ function updateDashboard(data, latency) {
 
         var dd = ((p.drawdown || 0) * 100);
         var ddEl = $('maxDrawdownVal');
-        if (ddEl) { ddEl.textContent = dd.toFixed(4) + '%'; ddEl.style.color = dd > 5 ? 'var(--red)' : dd > 1 ? 'var(--accent)' : 'var(--text-primary)'; }
+        if (ddEl) { ddEl.textContent = dd.toFixed(2) + '%'; ddEl.style.color = dd > 5 ? 'var(--red)' : dd > 1 ? 'var(--accent)' : 'var(--text-primary)'; }
 
         var sr = $('sharpeRatioVal');
         if (sr) { sr.textContent = (p.sharpeRatio || 0).toFixed(2); sr.style.color = (p.sharpeRatio || 0) > 1 ? 'var(--green)' : 'var(--text-primary)'; }
 
         var at = (p.avgTradeReturn || 0);
         var atEl = $('avgTradeVal');
-        if (atEl) { atEl.textContent = (at >= 0 ? '+' : '') + '$' + fmtNum(Math.abs(at), 4); atEl.style.color = at >= 0 ? 'var(--green)' : 'var(--red)'; }
+        if (atEl) { atEl.textContent = (at >= 0 ? '+' : '') + '$' + fmtNum(Math.abs(at), 2); atEl.style.color = at >= 0 ? 'var(--green)' : 'var(--red)'; }
 
         setText('unrealizedPnL', fmtPrice(p.unrealizedPnL || 0));
 
@@ -2677,8 +2677,8 @@ function updateTradesTable(trades) {
                 '<td>' + (t.symbol || 'BTC-USDT') + '</td>' +
                 '<td class="' + acCls + '">' + action + '</td>' +
                 '<td>' + fmtPrice(price) + '</td>' +
-                '<td>' + qty.toFixed(6) + '</td>' +
-                '<td class="' + pnlCls + '">' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(4) + '</td>' +
+                '<td>' + qty.toFixed(4) + '</td>' +
+                '<td class="' + pnlCls + '">' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2) + '</td>' +
                 '<td style="color:var(--text-secondary);font-size:0.72rem;">' + (t.strategy || '?') + '</td>' +
                 '</tr>';
         }).join('');
@@ -2883,11 +2883,11 @@ function updatePositionsPanel(positions) {
                 '<span class="pos-symbol-sub">Perpetual · Paper</span>' +
             '</td>' +
             '<td><span class="pos-side ' + side.toLowerCase() + '">' + side + '</span></td>' +
-            '<td>' + qty.toFixed(6) + ' BTC<span class="pos-entry-value">≈ $' + fmtNum(entryValue) + '</span></td>' +
+            '<td>' + qty.toFixed(4) + '<span class="pos-entry-value">≈ $' + fmtNum(entryValue) + '</span></td>' +
             '<td>$' + fmtNum(entry) + '</td>' +
             '<td style="color:' + (markPrice >= entry ? 'var(--green)' : 'var(--red)') + ';font-weight:600;">$' + fmtNum(markPrice) + '</td>' +
             '<td class="' + flashClass + '">' +
-                '<span class="pos-pnl ' + pnlClass + '">' + pnlSign + '$' + fmtNum(Math.abs(pnl), 4) + '</span>' +
+                '<span class="pos-pnl ' + pnlClass + '">' + pnlSign + '$' + fmtNum(Math.abs(pnl), 2) + '</span>' +
                 '<span class="pos-roe ' + pnlClass + '">' + roeSign + roe.toFixed(2) + '%</span>' +
             '</td>' +
             '<td><span class="pos-roe ' + pnlClass + '" style="font-size:0.85rem;font-weight:700;">' + roeSign + roe.toFixed(2) + '%</span></td>' +

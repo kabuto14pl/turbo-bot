@@ -23,7 +23,7 @@ PAIR_CAPITAL_ALLOCATION = {
     'ETHUSDT': 0.00,    # P#229: ETH marginal +$105 on 1h only — not worth allocation
     'SOLUSDT': 0.65,    # P#229: SOL@4h conf=0.65 → +$1,926 standalone — primary alpha
     'BNBUSDT': 0.35,    # P#229: BNB@4h conf=0.70 → +$1,356 standalone — secondary alpha
-    'XRPUSDT': 0.00,    # P#229: XRP marginal +$37 on 4h — noise
+    'XRPUSDT': 0.00,    # P#230: XRP@4h conf=0.65 has edge (+$1,232) but dilutes SOL/BNB
 }
 
 # ============================================================================

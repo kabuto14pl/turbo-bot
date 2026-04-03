@@ -12,11 +12,13 @@
  * Monitor:      pm2 monit
  */
 
-// P#204e: Per-pair PM2 instances — each pair runs independently (Board5: Viktor Novak)
-const PAIRS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT'];
+// P#229: Only active pairs — SOL 65% + BNB 35% (BTC/ETH/XRP have no edge)
+const PAIRS = ['SOLUSDT', 'BNBUSDT'];
 const BASE_ENV = {
   NODE_ENV: 'production',
   MODE: 'simulation',
+  // P#229: Starting capital $1,000
+  INITIAL_CAPITAL: '1000',
   // PATCH #43: GPU-ONLY - Remote GPU via SSH tunnel
   GPU_REMOTE_URL: 'http://127.0.0.1:4001',
   GPU_TIMEOUT_MS: '3000',
