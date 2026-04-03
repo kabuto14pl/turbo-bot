@@ -28,6 +28,9 @@ const BASE_ENV = {
   OTEL_DEPLOYMENT_ENVIRONMENT: 'production',
 };
 
+// Port offset per pair to avoid EADDRINUSE conflicts
+const PAIR_PORTS = { 'SOLUSDT': 3001, 'BNBUSDT': 3002 };
+
 const botApps = PAIRS.map(pair => ({
   name: `turbo-${pair.replace('USDT', '').toLowerCase()}`,
   script: 'node',
@@ -42,6 +45,7 @@ const botApps = PAIRS.map(pair => ({
     ...BASE_ENV,
     TRADING_SYMBOL: pair,
     INSTANCE_ID: pair,
+    HEALTH_CHECK_PORT: String(PAIR_PORTS[pair] || 3001),
     OTEL_SERVICE_NAME: `turbo-bot-${pair.replace('USDT', '').toLowerCase()}`,
   },
   error_file: `/root/turbo-bot/logs/${pair}-error.log`,
