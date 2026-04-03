@@ -1,0 +1,53 @@
+{
+  "config_snapshot": {
+    "ensemble_weight": 0.5,
+    "sl_atr": 1.5
+  },
+  "results": [
+    {
+      "seed": 42,
+      "net": -316.5899999999998,
+      "pf": 0.358,
+      "sharpe": 1.037,
+      "trades": 0,
+      "pairs": {}
+    },
+    {
+      "seed": 123,
+      "net": -611.8599999999999,
+      "pf": 0.349,
+      "sharpe": 0.51,
+      "trades": 0,
+      "pairs": {}
+    },
+    {
+      "seed": 456,
+      "net": -1130.1900000000005,
+      "pf": 0.176,
+      "sharpe": 0.035,
+      "trades": 0,
+      "pairs": {}
+    },
+    {
+      "seed": 789,
+      "net": 324.30000000000007,
+      "pf": 4.002,
+      "sharpe": -0.195,
+      "trades": 0,
+      "pairs": {}
+    },
+    {
+      "seed": 1337,
+      "net": 517.5400000000002,
+      "pf": 99.0,
+      "sharpe": 1.04,
+      "trades": 0,
+      "pairs": {}
+    }
+  ],
+  "summary": {
+    "avg_net": -243.35999999999999,
+    "median_net": -316.5899999999998,
+    "positive_ratio": 0.4
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "study_name": "turbo_bot_pro_multi_1h",
+  "best_score": 77.34744450742267,
+  "best_params": {
+    "tp_mult": 2.75,
+    "sl_mult": 1.25,
+    "confidence_floor": 0.35,
+    "ml_min_conf": 0.6000000000000001,
+    "grid_adx": 23,
+    "cooldown_15m": 12,
+    "cooldown_1h": 14,
+    "be_r": 999.0,
+    "ensemble_w": 0.15000000000000002,
+    "block_hv_15m": true,
+    "disable_time_uw": false,
+    "simple_exits": false,
+    "slippage_bps": 0.0002
+  },
+  "best_metrics": {
+    "avg_pf": 1.0570866901484535,
+    "avg_sharpe": 0.23419999999999996,
+    "pairs_evaluated": 5,
+    "total_pnl": 1073.1099999999997,
+    "total_trades": 1285
+  },
+  "n_trials": 60,
+  "elapsed_h": 3.07
+}

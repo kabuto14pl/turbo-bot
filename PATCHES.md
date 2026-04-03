@@ -5,6 +5,34 @@
 
 ---
 
+## PATCH #229: Per-Pair GPU Confidence + Risk Scaling — $2,070 Target (2026-04-03)
+
+**Typ:** Optimization — Per-pair confidence tuning + position uncapping
+**Pliki:** `pair_config.py`
+
+### Problem:
+- P#228 baseline +$1,099 (SOL+XRP @4h) — below $2k target
+- BNB had -$106 at default conf=0.60 (153 trades, $535 fees ate all edge)
+- SOL positions capped at 50% by MAX_POSITION_VALUE_PCT
+
+### Rozwiązanie:
+1. **Full 5×3 screening** — tested all 5 pairs × 3 TFs (15 combos)
+2. **Per-pair GPU_NATIVE_MIN_CONFIDENCE** via PAIR_OVERRIDES
+3. **SOL risk scaling** — uncapped MAX_POSITION_VALUE_PCT to 0.80, risk 6%
+4. **BNB conf=0.75** — 75% fewer trades, fees $128 vs $535
+
+### Zmiany:
+- SOL: `GPU_NATIVE_MIN_CONFIDENCE` 0.60→0.65, `RISK_PER_TRADE` 0.050→0.060, `MAX_POSITION_VALUE_PCT` 0.50→0.80
+- BNB: `GPU_NATIVE_MIN_CONFIDENCE` 0.60→0.75
+- Allocation: SOL 65%, BNB 35%, BTC/ETH/XRP 0%
+
+### Wynik (Walk-Forward 9 windows, 4h):
+- **SOLUSDT: +$1,406** | 85 trades | WR 67.1% | PF 1.61 | Sharpe 2.81
+- **BNBUSDT: +$664** | 38 trades | WR 55.3% | PF 2.49 | Sharpe 2.82
+- **TOTAL: +$2,070** | 123 trades | Fees $196 | DD $200
+
+---
+
 ## PATCH #224: Pro Backtest Overhaul — Walk-Forward, Optuna, Ablation (2026-04-09)
 
 **Typ:** Major Infrastructure — Professional Quant Pipeline

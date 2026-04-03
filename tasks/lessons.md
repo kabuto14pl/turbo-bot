@@ -3,24 +3,70 @@
 > Automatycznie aktualizowane po każdej poprawce i odkryciu.
 
 ---
-## 2026-04-08: PATCH #222 — Exit Management + Entry Filtering
 
-### L222.1: SIMPLE_EXITS (SL+TP only) needs at least a breakeven move
-Disabling ALL 5-phase trailing (P#221) improved R:R from 0.63 to 1.76 but left 17% of trades as "wasted winners" (reached 1.0R profit then reversed to full loss). 46-58% of ALL losses had peak profit >= 0.5R. A single breakeven move at 0.8R preserves the SIMPLE_EXITS simplicity while saving the ~$3,400-5,700 lost to reversals. **Rule**: SL+TP exits always need at least a BE failsafe.
+## 2026-04-09: PATCH #224 — Pro Backtest Overhaul
 
-### L222.2: LONG/SHORT asymmetry reveals MLP directional bias
-LONG WR was 5-10% worse than SHORT across ALL 5 pairs and ALL 3 timeframes. This is systematic, not pair-specific. The MLP overfits upward noise (mean-reversion tendency) while shorts capture real momentum. **Rule**: always check direction-split WR; apply asymmetric confidence thresholds if bias > 5%.
+### L224.1: OOS validation that trains on test data is worse than no validation
+The previous walk-forward created a fresh engine per fold and re-trained ML from scratch on test data. This meant "out-of-sample" was actually in-sample — giving false confidence in parameters that overfit. **Rule**: walk-forward MUST partition data into strict train/test before any ML fitting. Only count trades in the test window.
 
-### L222.3: Time-based exits with 0% WR are pure P&L destroyers
-TIME_UNDERWATER (36h) had ZERO winning trades across ALL TFs (-$575 total). It closes positions at the point of maximum loss instead of letting SL or BE handle it. **Rule**: any exit type with WR < 10% across 3+ timeframes should be disabled immediately.
+### L224.2: Slippage must apply to ALL market-order exits, not just SL
+Slippage was only charged on SL exits. TRAIL, TIME_EMERGENCY, TIME_WEAK, TIME_UNDERWATER, RANGING_STALE, and END exits are also market orders but got 0 slippage — flattering results by 5-15%. **Rule**: any exit that executes at market (not limit) must incur slippage + jitter.
 
-### L222.4: Regime filtering works when you have data to prove it
-HIGH_VOLATILITY on 15m: 168 trades, 26% WR, -$586. But RANGING on 4h: 40% WR, +$385. Regime filters should be data-driven, not theoretical. **Rule**: measure WR and PnL per regime per TF before enabling/disabling.
+### L224.3: Ensemble weights that don't sum to 1.0 leak confidence
+STATIC_WEIGHTS summed to 0.94 — meaning the ensemble consistently underweighted its own output by 6%. This is silent bias that makes a/b testing unreliable. **Rule**: weight normalization must be enforced at config load time.
 
-### L222.5: Iterative parameter sweeps beat manual tuning
-Created param_sweep.py for automated grid search. With 6 BE levels x 5 conf levels x 2 HV x 2 TUW x 3 cooldowns = 360 combos per pair/TF. Single-pair 4h sweep takes ~15 min on GPU. **Rule**: always sweep > 50 combinations before declaring a param "optimal".
+### L224.4: Reproducibility requires explicit seeding at EVERY random source
+Without RANDOM_SEED, jitter, MLP init, and numpy operations produce different results on every run, making it impossible to compare parameter changes. **Rule**: set np.random.seed() + random.seed() + torch manual_seed from a single config constant.
+
+## 2026-04-06: PATCH #218 — GPU Native Engine Never Selected by Remote Orchestrator
+
+### L218.1: Hard-gated engine selection silently disabled the entire GPU pipeline
+`build_engine()` checked `quantum_backend == 'remote-gpu'` and forced `FullPipelineEngine`, completely bypassing `GpuNativeBacktestEngine`. The print message ("Remote quantum backend requested -> forcing FullPipelineEngine") was visible in logs but never raised alarms because no one checked which engine was actually running. **Rule**: engine selection must be logged with an assertion-level check — if `GPU_NATIVE_ENGINE=True` but `FullPipelineEngine` is used, that's a P0 config mismatch.
+
+### L218.2: "Remote GPU" and "GPU native" are different things — don't conflate them
+Remote GPU = HTTP service for quantum computations (QMC, QAOA, VQC). GPU native = local CUDA MLP for signal generation. The old code assumed `remote-gpu` quantum backend means "don't use local GPU for ML" — wrong. They're independent subsystems. **Rule**: quantum backend and ML engine are orthogonal choices; never use one to gate the other.
+
+### L218.3: The gap between $253 and $2k+ was a single `if` branch
+The classical engine (`FullPipelineEngine`) respects `DIRECTIONAL_ENABLED: False` on BTC/ETH/XRP → only funding arb. The GPU engine (`GpuNativeBacktestEngine`) has NO directional gate → MLP trades all 5 pairs. One wrong `if` in `build_engine()` caused 87% return loss. **Rule**: engine selection logic must be covered by an automated test asserting the expected engine class for each quantum_backend × GPU_NATIVE_ENGINE combination.
 
 ---
+
+## 2026-04-07: PATCH #220 — GPU Backtest -$9,207 Root Cause Analysis & Fix
+
+### L220.1: 1-candle-ahead labels on sub-hourly timeframes = noise prediction
+MLP predicted next-candle return on 15m data with 0.1% threshold. This is pure noise — resulting in 53% WR coin flip with massive fee drag. **Rule**: label horizon must scale with timeframe (min 4-8 candles on 15m) and threshold must exceed 2-3× the typical fee+slippage roundtrip.
+
+### L220.2: Overtrading is the #1 fee killer in backtests
+2000+ trades per pair on 15m = 15 trades/day for 6 months. Fees alone consumed 30.6% of capital ($3,058 on $10k). Even a 55% WR system loses with this churn. **Rule**: enforce mandatory cooldown after every trade close. Review gross vs net PnL — if fees > 10% of initial capital, overtrading is certain.
+
+### L220.3: Momentum early-exit gates destroy R:R for noise-level signals
+Momentum gate tightened SL to 35% of initial after 3 candles if `max_r < 0.30`. With noise signals that rarely move, almost EVERY trade hits this tightened SL → avg_win/avg_loss = 0.63 (config specified 2.67:1). **Rule**: momentum gates should only be active when signal quality justifies expectation of quick moves. For MLP signals with <60% WR, disable entirely.
+
+### L220.4: `read_file` tool cache can diverge from disk after `git reset --hard`
+After `git reset --hard origin/master`, `replace_string_in_file` reported SUCCESS and `read_file` showed the edits, but the actual file on disk didn't contain them. Terminal `grep` revealed the truth. **Rule**: always verify edits with terminal commands (`grep`, `cat`, `sed -n`) after any git reset/checkout operation in the same session. Never trust tool cache after destructive git operations.
+
+### L220.5: Fee gate asymmetry — maker estimate vs taker reality
+Fee gate used maker rate (0.02%) for exit cost estimate, but losing trades exit at taker rate (0.05%) + slippage (0.03%). Fee gate thought it was paying 0.04% roundtrip but reality was 0.07-0.10% on losers. **Rule**: fee gate must use worst-case (taker) rate for exit estimate to avoid systematically under-counting.
+
+---
+
+## 2026-04-01: PATCH #216 — Strategy Audit: Real SuperTrend, R:R, Grid Gate, Thresholds
+
+### L216.1: Fake indicator data is the silent killer of ensemble strategies
+`data-pipeline.js` set `supertrend: { value: ema50, direction: close > ema50 }` — EMA50 masquerading as SuperTrend. Three class-based strategies (55% of ensemble weight) consumed this as truth. No test or log ever flagged it because the shape was correct. **Rule**: every indicator must have an independent unit test comparing output to a known reference, not just a shape check.
+
+### L216.2: Unreachable candle gates make strategies invisible dead weight
+`MTF_MIN_CANDLES = 200` when the bot stores 100–200 candles meant Momentum HTF/LTF NEVER fired. The strategy loaded, the code ran, but the early return always triggered. **Rule**: log when a strategy is skipped due to insufficient data, and alert if skip rate > 95% over 24h.
+
+### L216.3: Regime-dependent strategies die when the regime classifier returns UNKNOWN
+Grid V2 required `regime === 'RANGING'`, but NeuralAI (Thompson Sampling) often returns `'UNKNOWN'`. SOL Grid — the only alpha-positive strategy from backtests — was permanently dead. **Rule**: regime gates must handle UNKNOWN explicitly; UNKNOWN should default to the strategy's favorable regime, not block.
+
+### L216.4: R:R below 2:1 with partial TP is a losing game
+SL 1.5x ATR + TP 2.5x ATR = R:R 1.67:1. Partial TP at 1.5x ATR dropped effective R:R to ~1.3:1, requiring >60% win rate. With noisy crypto signals, >55% WR is already ambitious. **Rule**: minimum effective R:R (after partial TP) must be >= 2.0:1.
+
+### L216.5: Low confidence floors create high-frequency small-loss trades
+Floor 0.20 let marginal signals through. These hit SL quickly or get closed with micro-profit after fees. Bot showed "many trades, low return" — classic symptom of signal quality floor being too low. **Rule**: confidence floor should be >= max(fee_impact, 0.35).
+
 ---
 
 ## 2026-03-15: PATCH #186 — GPU-Native Quantum Batching
@@ -38,6 +84,27 @@ Instrumentation that changes startup behavior by default creates deployment risk
 
 ### L188.4: Prefer vendor-maintained compose topology over hand-rolled image guesses
 If a self-hosted platform publishes its own Docker Compose and public image name, mirror that topology first. Guessing sub-images like `openlit-client` is brittle and can break immediately on private registry policy.
+
+### L188.5: Local smoke tests fail fast when runtime defaults hardcode deployment-only paths
+If a module defaults to an absolute production path like `/root/turbo-bot/...`, local observability and regression tests can fail before the instrumented process even starts. Default to repo-local paths and keep deployment-specific locations behind explicit env overrides.
+
+### L188.6: A healthy OpenLIT UI does not prove the OTLP collector is healthy
+The dashboard can be fully reachable while the embedded collector is dead. In this case, `4318` kept resetting connections because the mounted `otel-collector-config.yaml` used obsolete `clickhouse.metrics_tables.*` fields that the current collector rejected at startup. Always inspect the collector agent log and `effective.yaml`, not just container health.
+
+### L188.7: Raw bot HTTP flows need explicit spans if they bypass supported SDK wrappers
+`Openlit.init()` alone is not enough when the runtime mostly uses custom HTTP/provider code and lightweight console logs. If the code path does not hit an auto-instrumented provider/framework wrapper, no useful traces appear. Bridge existing domain events into manual spans close to the event source.
+
+### L188.8: Use `startActiveSpan` for parent-child trace trees, not individual disconnected spans
+Initial `emitAiTelemetrySpan()` created flat, disconnected spans. Switching NeuronAI.makeDecision and LLMRouter.call to `tracer.startActiveSpan()` via `withAiSpan()` gave proper ClickHouse trace trees: parent `neuron.makeDecision` → children `llm.router.call` + `neuron_decision`, all sharing one TraceId. Context propagation is automatic inside the callback.
+
+### L188.9: Python context-manager `ai_span()` mirrors Node `withAiSpan()` for cross-language consistency
+Same pattern: wrap compute in a span, auto-set StatusCode.OK/ERROR, record exceptions. Keeps Node and Python telemetry structurally identical in ClickHouse for unified dashboard queries.
+
+### L188.10: ClickHouse views over `SpanAttributes` map unlock dashboard queries without raw trace parsing
+Creating `CREATE VIEW IF NOT EXISTS` over `otel_traces` with `SpanAttributes['key']` projections gives clean SQL tables for each domain (decisions, cycles, LLM, ML, learning). Views are zero-cost on write and survive container restarts if ClickHouse data volume is preserved.
+
+### L188.11: Wrapping `executeTradingCycle()` body in `withAiSpan('trading.cycle')` automatically parents all child spans
+Because `withAiSpan` uses `startActiveSpan`, any `emitAiTelemetry()` or nested `withAiSpan()` inside the callback inherits the parent context. One line change gave full trace tree for the entire trading cycle.
 
 ### L186.1: Bigger remote kernels do not fix a chatty per-candle architecture
 Raising QMC/QAOA payload sizes increased individual GPU calls, but the GPU-native backtest still spent most of its time inside a Python candle loop making thousands of scheduled quantum HTTP calls. If the orchestration layer is chatty, larger kernels only create bursts, not sustained utilization. Batch the quantum plan locally and reuse it through the loop.
@@ -1024,6 +1091,29 @@ All 6 strategies (RSITurbo, SuperTrend, MACrossover, etc.) take only `logger` in
 ### Lekcja: Fee ratio jest kluczowy dla marginalnych par
 - ETH: fees = 145% of PnL ($88.93 fees na $61.19 profit)
 - BNB: fees = 138% of PnL ($78.97 fees na $57.37 profit)
+
+## 2026-04-03: PATCH #227 — Walk-Forward OOS Breakthrough
+
+### L227.1: Fees destroy real alpha on 1h — gross PnL was POSITIVE (+$192) but fees ($541) killed it
+P#226 optimizer found params that do pick direction (54.1% WR). But 1,401 trades × high notional per trade = $541 total fees. The system HAS a signal edge — it's an execution cost problem, not a signal quality problem. **Rule: Always decompose Net = Gross - Fees before declaring "no edge".**
+
+### L227.2: Timeframe switch 1h→4h halved fee drag
+Same params on 4h: 646 trades (vs 1,401), fees $278 (vs $541). Fewer trades = lower total fees, cleaner signals. 4h is the correct timeframe for this strategy.
+
+### L227.3: Pair selection is more important than param optimization
+- 5-pair 4h: -$173 (ETH/BNB drag)
+- 3-pair 4h: +$618 (drop ETH/BNB)
+- 2-pair 4h: +$1,114 (drop BTC too)
+Removing negative-alpha pairs and reallocating capital to positive-alpha pairs has 10× more impact than tuning SL/TP/cooldown. **Rule: Validate per-pair GROSS PnL before portfolio construction.**
+
+### L227.4: ETH has negative GROSS alpha on both 1h and 4h — drop it
+ETH: gross -$20 (1h), gross -$135 (4h). Not a fee problem — the MLP+ensemble signals don't work for ETH on these timeframes. ETH may need a completely different strategy (e.g., pure funding arb, or higher timeframe).
+
+### L227.5: SOL is the alpha engine — PF 1.29, Sharpe 1.51 on 4h WF-OOS
+SOL 4h: +$1,108 net, +$1,288 gross, 165 trades, WR 62.4%. Strongly positive across multiple OOS windows. Capital allocation should reflect this empirical dominance.
+
+### L227.6: Capital reallocation to winners is a multiplicative lever
+SOL at 30% capital → +$579. SOL at 65% capital → +$1,108 (1.9× more PnL for 2.2× capital). Near-linear scaling = real edge, not curve-fitting.
 - SOL: fees = 16% of PnL ($72.22 fees na $451.84 profit)
 - **Jeśli fee ratio > 50% of PnL, para jest marginal i niestabilna**
 
@@ -1502,89 +1592,3 @@ XGBoost models on crypto 1h/4h with 43 features achieve ~50% accuracy — no bet
 
 ### L198.5: Monte Carlo p=0.06 with 45 trades = borderline
 Need ~60+ trades for p<0.05 statistical significance. Win rate IS significant (p=0.0012) but PnL isn't yet. More trading days or more pairs needed. Funding ARB ($599/731 = 82%) is the real profit engine — directional is supplementary.
-
-## 2026-03-29: PATCH #210 — Post-Board5 Backtest Regression Fixes
-
-### L210.1: PHASE_2_BE_R 1.0→1.3 is catastrophic for grid trades with maxR 1.0-1.3
-Board5 Advisory recommended 1.3R to "avoid premature BE" but real data shows: 6/17 BNB 15m trades (35%) had maxR in the 1.0-1.3 dead zone. These trades DEPENDED on BE at 1.0R for protection. Raising it to 1.3R turned 4 winners into losers. **Rule: Never change BE threshold without checking maxR distribution of existing trades. The "dead zone" between old and new BE is a kill zone.**
-
-### L210.2: Global enable flags without per-pair guards are dangerous
-DIRECTIONAL_15M_ENABLED=True was meant for BNB 15m grid, but SOL didn't have DIRECTIONAL_ENABLED:False. Result: SOL 15m got unwanted MomentumHTF trades. **Rule: When enabling a global flag, check ALL pairs for missing per-pair guards. If 3/5 pairs have the guard and 2 don't, the 2 will get unintended behavior.**
-
-### L210.3: Confidence floor changes must be validated per-pair, not per-TF
-Lowering 1h confidence floor from 0.45→0.25 (P#203b) was intended to unblock directional pipeline for profitable pairs. Instead it unblocked 11 garbage BNB 1h signals (conf=0.15→0.25 range). **Rule: Confidence floors should be set per-pair-TF, not just per-TF. Different pairs have wildly different sentiment/confidence distributions.**
-
-### L210.4: Funding ARB is the real profit engine — protect it at all costs
-PRE vs POST: FundArb changed by only -$0.71 while TradePnL changed by -$89.59. Funding ARB generates $636/backtest (82% of total) and is immune to Board5 parameter changes. **Rule: Directional/grid trading is a risky supplement. Don't break funding-only pairs by exposing them to untested directional signals.**
-
-### L210.5: Always run A/B comparison with the MOST RECENT complete baseline
-The pre-Board5 baseline (20260328_192039) was essential for isolating regressions. Without it, the +$581 total would look acceptable. Only the -$90 delta revealed the damage. **Rule: Always keep the last known-good backtest for comparison. Tag it in git.**
-
-## 2026-03-30: P#211 — Trade Profitability Structural Overhaul
-
-### L211.1: Only 1/15 pair×TF slots has proven trading alpha — scale the winner, kill the losers
-Historical scan of 5 complete backtests: SOL 1h is the ONLY slot with consistent profitability (4/4 positive, avg PF=1.754). BNB 1h lost money in 4/4 runs (PF=0.504). **Rule: When only ONE slot generates alpha, redirect capital and risk to it aggressively. Don't diversify across losing slots.**
-
-### L211.2: 15m grid trading is structurally disadvantaged by fee economics
-15m candles produce avg moves of 0.235% — fees eat 29.8% of each move. On 1h, avg moves are 0.790% with only 8.9% fee drag (3.3× better economics). **Rule: Grid V2 on 15m timeframes requires exceptionally tight SL or exceptionally wide TP to overcome the fee drag. Default to 1h for grid strategies.**
-
-### L211.3: Fees consuming >50% of gross profit is a RED FLAG for strategy viability
-Across PRE-Board5 baseline: GROSS=$70.15, FEES=$35.60 (50.7%). When fees eat more than 1/3 of gross, the strategy has no real edge — it's trading noise. **Rule: Track fee/gross ratio per slot. If >40%, the slot is either marginal or losing. If >60%, disable it.**
-
-### L211.4: Capital allocation must follow proven alpha, not historical labels
-BNB was labeled "ROBUST" from a single walk-forward test (P#72, PF=2.484) and given 40% allocation. But across 5 backtests, BNB 1h was 0/4 positive. Labels get stale. **Rule: Re-evaluate pair allocation every 10 backtest runs using multi-run consistency, not single-test PF.**
-
-### L211.5: Funding ARB generates 92% of all profit — trading supplements it, not the other way around
-Of $671 total/backtest, $636 is funding (94.7%). Trading contributes +$34 at best. Accept this reality: the bot is primarily a funding arbitrage system with supplemental grid/directional trading. **Scale trading only where alpha is PROVEN (SOL 1h), park capital in funding everywhere else.**
-
-## 2026-03-30: P#212 — Wire Dead Strategies into Live Bot
-
-### L212.1: DEAD CODE — 3 complete strategies were NEVER wired into bot.js
-`grid-v2.js` (281 lines), `funding-rate-arb.js` (330 lines), `momentum-htf-ltf.js` (338 lines) existed as fully implemented strategy files but were never `require()`d or instantiated in bot.js. The live bot only ran 5 old ensemble strategies. **Rule: After writing a new strategy file, ALWAYS verify it's imported AND instantiated in the main orchestrator (bot.js). Add a startup log line that confirms the strategy is active.**
-
-### L212.2: Price data must match the symbol being evaluated — NEVER share cross-pair
-Grid V2 was evaluating BNB/SOL conditions using BTCUSDT price data (RSI, BB, ADX, ATR all from BTC). This is completely meaningless — BTC ranging doesn't mean BNB is ranging. **Rule: EVERY independent strategy evaluation MUST use per-pair candle data. Implement a `_getPairData(sym)` helper with caching (5-min OKX refresh) and log a WARNING if falling back to main-symbol data.**
-
-### L212.3: Indicator calculation should use canonical module functions, not inline reimplementation
-The original P#212 indicator block reimplemented ADX with a rough estimation instead of using `indicators.calculateRealADX()`. The indicators module already has `calculateRealADX`, `calculateBollingerBands`, `calculateSMA`, `calculateMACD`. **Rule: Always check the indicators module first. If a function exists there, use it.**
-
-### L212.4: Strategies BYPASSING ensemble need their own rate limits
-Grid V2 and Funding Rate fire independently of ensemble voting, QDV verification, and NeuronAI gates. Without the 10+ safety gates, they could fire too aggressively. **Mitigant: Grid V2 has built-in cooldown (8h BNB, 5h SOL), daily trade limits, and ADX gates. Momentum has 6h cooldown and max 3/day.** Monitor live trade frequency closely after deployment.
-
-## 2026-03-30: P#213 — Safety Gate Reduction + Multi-Pair Ensemble + Execution Audit
-
-### L213.1: Safety gates that block each other create confidence death spirals, not safety
-12 gates stacked: Override → Defense → Starvation Override → QDV Block → QDV Starvation. Each gate tried to fix the previous one's over-blocking. Net result: zero trades, infinite starvation cycles. **Rule: A safety gate should ADJUST confidence, never NULLIFY consensus. If you need a "starvation override" to undo a gate, the gate itself is broken.**
-
-### L213.2: The entire execution engine is in-memory paper trading — no real orders
-`execution-engine.js` → `pm.openPosition()` → JS Map update. Zero OKX API calls. `okx_execution_engine.js` EXISTS (371 lines, `POST /api/v5/trade/order`) but is NEVER imported. `paperTrading`/`enableLiveTrading` config flags are DEFINED but NEVER CHECKED. **The bot has been paper trading since inception regardless of config.** To go live: import + wire `okx_execution_engine.js` into execution engine, add `paperTrading` flag check.
-
-### L213.3: Advisory gates are superior to blocking gates — same protection, no starvation
-Replacing 3 blocking Skynet gates with confidence penalties (30-50%) and QDV block→20% penalty preserves the protective signal while allowing the fee gate ($profit > 1.5× fees) to be the real filter. Advisory adjustments stack naturally — if Skynet + QDV + Defense all penalize, confidence drops enough that the fee gate kills marginal trades. **Rule: Use multiplicative confidence penalties instead of hard blocks. Let the fee gate handle the final go/no-go.**
-
-### L213.4: Multi-pair ensemble requires symbol override — strategies hardcode config.symbol
-`strategies.runAll(pairCandles)` analyzes the pair's data correctly but outputs `{ symbol: 'BTCUSDT' }` because each strategy reads `this.config.symbol`. Must override `signal.symbol = actualPair` on all returned signals before voting and execution. **Rule: When reusing strategies across pairs, always patch the symbol in the output signals.**
-
-## 2026-03-31: P#214 — Wire OKX Execution Engine
-
-### L214.1: Dual-mode execution requires 3 independent flags to prevent accidental live trading
-A single `enableLiveTrading=true` is not enough — you also need `paperTrading=false` AND valid OKX credentials. Triple-flag design prevents one misconfigured env var from sending real orders. **Rule: For irreversible actions (real money orders), require N≥3 independent enablement conditions.**
-
-### L214.2: Exchange order MUST execute BEFORE portfolio update — never the reverse
-If `pm.openPosition()` runs first and then OKX rejects the order, the in-memory portfolio shows a position that doesn't exist on the exchange. Always: exchange API first → if success → update portfolio. If exchange fails → abort entirely. **Rule: External state changes first, internal state second.**
-
-## 2026-03-31: P#215 — Multi-Pair Skynet Prime
-
-### L215.1: LLM target_symbol already existed in the prompt schema but was never used
-The NeuronAI prompt requested `"target_symbol": "BTCUSDT"` in the JSON response schema, but bot.js never read `details.target_symbol`. The LLM could technically return any symbol, but the code always used `this.config.symbol`. **Rule: After adding a field to an LLM prompt schema, ALWAYS wire the response field into the calling code.**
-
-## 2026-03-31: P#217 — Final Comprehensive Backtest
-
-### L217.1: Backtest config drift is invisible — always audit parity after live-bot patches
-P#216 changed 7 parameters in the JS live bot, but the Python backtest config.py still had old values. Without explicit parity check, backtest results would diverge from live behavior. **Rule: Every live-bot parameter change MUST have a corresponding backtest config update in the same commit.**
-
-### L217.2: data_downloader.py SuperTrend was wrong but masked by fetch_historical.py
-The data_downloader.py had a simplified SuperTrend (mult=2, no Wilder, no band continuity) — but the CSV data was actually generated by fetch_historical.py with correct SuperTrend (mult=3). The bug was hidden because a different code path produced the data. **Rule: When multiple data pipelines exist, verify which one ACTUALLY generated the production data.**
-
-### L217.3: Strategy attribution in trade tables is essential for debugging
-Without strategy columns in the winning/losing trade output, it's impossible to know which strategy generated each trade. Adding "Strategy" and "Regime" columns immediately revealed that all SOL 1h trades were GridV2 (no ensemble directional traded). **Rule: Always include strategy attribution in trade-level reporting.**

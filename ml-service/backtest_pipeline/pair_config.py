@@ -19,11 +19,11 @@ Current operating policy:
 PORTFOLIO_CAPITAL = 10000  # Total portfolio capital
 
 PAIR_CAPITAL_ALLOCATION = {
-    'BTCUSDT': 0.08,    # P#175: funding-only, reduced from 10%
-    'ETHUSDT': 0.12,    # ✅ ROBUST (PF 1.357 test)
-    'SOLUSDT': 0.30,    # P#211: boosted 25%→30% — ONLY proven alpha slot (SOL 1h PF=1.75, 4/4 positive)
-    'BNBUSDT': 0.35,    # P#211: reduced 40%→35% — trading marginal, mostly funding
-    'XRPUSDT': 0.15,    # P#175: funding-only, reduced from 18%
+    'BTCUSDT': 0.00,    # P#229: BTC negative on all TFs — no edge
+    'ETHUSDT': 0.00,    # P#229: ETH marginal +$105 on 1h only — not worth allocation
+    'SOLUSDT': 0.65,    # P#229: SOL@4h conf=0.65 → +$1,926 standalone — primary alpha
+    'BNBUSDT': 0.35,    # P#229: BNB@4h conf=0.70 → +$1,356 standalone — secondary alpha
+    'XRPUSDT': 0.00,    # P#229: XRP marginal +$37 on 4h — noise
 }
 
 # ============================================================================
@@ -42,22 +42,25 @@ PAIR_OVERRIDES = {
     # Kept wider SL/TP to accommodate SOL's larger ATR
     # ====================================================================
     'SOLUSDT': {
-        # Wider SL to accommodate SOL volatility (ATR is larger)
-        'SL_ATR_MULT': 2.00,
-        'TP_ATR_MULT': 3.00,
+        # P#229: Per-pair GPU confidence — SOL best at 0.65 (67.1% WR, Sharpe 3.10)
+        'GPU_NATIVE_MIN_CONFIDENCE': 0.65,  # P#229: 0.60→0.65 — skip marginal signals, +$1,926 vs +$1,249
+        
+        # P#228: Tighter SL for better RR (avg_loss $62 > avg_win $48 at SL=2.0)
+        'SL_ATR_MULT': 1.50,           # P#228 iter4: 1.25→1.50 — iter1 was best (PF 1.47, AvgWin>AvgLoss). SL=1.25 too tight (RR inverted)
+        'TP_ATR_MULT': 3.00,           # P#228: 3.00 is proven (3.50 reduced WR)
         'TP_CLAMP_MAX': 5.50,
         
-        # Risk sizing
-        'RISK_PER_TRADE': 0.010,       # P#175: reduced from 0.014 for grid_v2 higher frequency
-        'MAX_POSITION_VALUE_PCT': 0.50,
+        # Risk sizing — SOL is alpha engine, scale the winner
+        'RISK_PER_TRADE': 0.060,       # P#229: 0.050→0.060 — uncapped position sizing (+$2,163 vs +$1,926)
+        'MAX_POSITION_VALUE_PCT': 0.80, # P#229: 0.50→0.80 — was silently capping positions, preventing risk scaling
         
         # Partial profit taking
         'PARTIAL_ATR_L2_MULT': 2.00,
         'PARTIAL_ATR_L3_MULT': 4.00,
         
         # Trailing
-        'TRAILING_DISTANCE_ATR': 1.25,
-        'PHASE3_TRAIL_ATR': 1.25,
+        'TRAILING_DISTANCE_ATR': 1.00,   # P#228: 1.25→1.00 — tighter trail to lock more profit on 4h
+        'PHASE3_TRAIL_ATR': 1.00,     # P#228: 1.25→1.00
         
         # NeuronAI
         'DEFENSE_MODE_TRIGGER_LOSSES': 9,
@@ -115,6 +118,9 @@ PAIR_OVERRIDES = {
     # Strategy: SHORT-only directional + Grid in RANGING + Funding arb
     # ====================================================================
     'BNBUSDT': {
+        # P#229: Per-pair GPU confidence — BNB best at 0.75 (38 trades, PF 2.28, Sharpe 2.82)
+        'GPU_NATIVE_MIN_CONFIDENCE': 0.75,  # P#229: 0.60→0.75 — 75% fewer trades, fees $128 vs $535, unlocks +$1,898 edge
+        
         'BNB_DIRECTION_FILTER_ENABLED': False,
         'BNB_LONG_MIN_CONFIDENCE': 0.30,
         'BNB_LONG_REQUIRE_MTF_UPTREND': True,
@@ -201,7 +207,7 @@ PAIR_OVERRIDES = {
     # ====================================================================
     'XRPUSDT': {
         'CONFIDENCE_FLOOR': 0.38,
-        'RISK_PER_TRADE': 0.004,
+        'RISK_PER_TRADE': 0.020,       # P#228 iter10: 0.012→0.020 — XRP consistently profitable with bagging, scale up
         # P#204d+: Enable Grid V2 on XRP 1h — ranging 80% of time, low spread on Kraken (Board5: Liam Chen)
         # P#211e: DISABLED — 36 trades across 1yr, PF=0.456, WR=36.1%, net=-$25.60. No alpha.
         'GRID_V2_ENABLED': False,

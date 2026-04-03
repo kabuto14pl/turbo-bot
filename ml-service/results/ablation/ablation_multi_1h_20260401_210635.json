@@ -1,0 +1,681 @@
+{
+  "baseline": {
+    "net_profit": -2114.33,
+    "trades": 2189,
+    "win_rate": 59.2,
+    "profit_factor": 0.0,
+    "sharpe": -1.583,
+    "max_drawdown": 88.57,
+    "per_pair": {
+      "BTCUSDT": {
+        "net_profit": -67.43,
+        "trades": 474,
+        "win_rate": 54.2,
+        "profit_factor": 0.709,
+        "max_drawdown": 10.36,
+        "total_return_pct": -8.43,
+        "capital": 800.0
+      },
+      "ETHUSDT": {
+        "net_profit": -0.14,
+        "trades": 480,
+        "win_rate": 62.7,
+        "profit_factor": 1.0,
+        "max_drawdown": 4.42,
+        "total_return_pct": -0.01,
+        "capital": 1200.0
+      },
+      "SOLUSDT": {
+        "net_profit": -717.61,
+        "trades": 401,
+        "win_rate": 64.3,
+        "profit_factor": 0.746,
+        "max_drawdown": 28.32,
+        "total_return_pct": -23.92,
+        "capital": 3000.0
+      },
+      "BNBUSDT": {
+        "net_profit": -1298.32,
+        "trades": 385,
+        "win_rate": 52.5,
+        "profit_factor": 0.567,
+        "max_drawdown": 40.5,
+        "total_return_pct": -37.09,
+        "capital": 3500.0
+      },
+      "XRPUSDT": {
+        "net_profit": -30.83,
+        "trades": 449,
+        "win_rate": 61.9,
+        "profit_factor": 0.943,
+        "max_drawdown": 4.97,
+        "total_return_pct": -2.06,
+        "capital": 1500.0
+      }
+    }
+  },
+  "ablations": [
+    {
+      "strategy": "AdvancedAdaptive",
+      "pnl": -2345.0,
+      "pf": 0.0,
+      "sharpe": -2.153,
+      "wr": 58.5,
+      "trades": 2252,
+      "max_drawdown": 103.68,
+      "delta_pnl": -230.67,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.57,
+      "delta_wr": -0.7,
+      "verdict": "\u2705 KEEP (strong contributor)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -90.68,
+          "trades": 491,
+          "win_rate": 54.0,
+          "profit_factor": 0.629,
+          "max_drawdown": 12.73,
+          "total_return_pct": -11.34,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -75.27,
+          "trades": 448,
+          "win_rate": 60.5,
+          "profit_factor": 0.849,
+          "max_drawdown": 9.52,
+          "total_return_pct": -6.27,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -696.64,
+          "trades": 405,
+          "win_rate": 64.9,
+          "profit_factor": 0.758,
+          "max_drawdown": 27.22,
+          "total_return_pct": -23.22,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -1314.63,
+          "trades": 435,
+          "win_rate": 55.2,
+          "profit_factor": 0.612,
+          "max_drawdown": 41.79,
+          "total_return_pct": -37.56,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -167.78,
+          "trades": 473,
+          "win_rate": 58.6,
+          "profit_factor": 0.726,
+          "max_drawdown": 12.42,
+          "total_return_pct": -11.19,
+          "capital": 1500.0
+        }
+      }
+    },
+    {
+      "strategy": "RSITurbo",
+      "pnl": -2426.77,
+      "pf": 0.0,
+      "sharpe": -2.305,
+      "wr": 57.0,
+      "trades": 2266,
+      "max_drawdown": 107.51,
+      "delta_pnl": -312.44,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.722,
+      "delta_wr": -2.2,
+      "verdict": "\u2705 KEEP (strong contributor)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -80.99,
+          "trades": 487,
+          "win_rate": 52.8,
+          "profit_factor": 0.651,
+          "max_drawdown": 12.08,
+          "total_return_pct": -10.12,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -123.25,
+          "trades": 481,
+          "win_rate": 58.8,
+          "profit_factor": 0.762,
+          "max_drawdown": 12.98,
+          "total_return_pct": -10.27,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -1043.49,
+          "trades": 352,
+          "win_rate": 58.8,
+          "profit_factor": 0.583,
+          "max_drawdown": 36.78,
+          "total_return_pct": -34.78,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -1047.52,
+          "trades": 472,
+          "win_rate": 57.0,
+          "profit_factor": 0.704,
+          "max_drawdown": 34.72,
+          "total_return_pct": -29.93,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -131.52,
+          "trades": 474,
+          "win_rate": 58.0,
+          "profit_factor": 0.788,
+          "max_drawdown": 10.95,
+          "total_return_pct": -8.77,
+          "capital": 1500.0
+        }
+      }
+    },
+    {
+      "strategy": "SuperTrend",
+      "pnl": -1916.97,
+      "pf": 0.0,
+      "sharpe": -2.085,
+      "wr": 57.4,
+      "trades": 2301,
+      "max_drawdown": 100.33,
+      "delta_pnl": 197.36,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.502,
+      "delta_wr": -1.8,
+      "verdict": "\u26a0\ufe0f NEUTRAL/WEAK (consider removing)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -107.62,
+          "trades": 493,
+          "win_rate": 49.9,
+          "profit_factor": 0.564,
+          "max_drawdown": 15.19,
+          "total_return_pct": -13.45,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -113.63,
+          "trades": 464,
+          "win_rate": 59.1,
+          "profit_factor": 0.777,
+          "max_drawdown": 14.15,
+          "total_return_pct": -9.47,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -752.47,
+          "trades": 432,
+          "win_rate": 63.7,
+          "profit_factor": 0.759,
+          "max_drawdown": 29.26,
+          "total_return_pct": -25.08,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -787.49,
+          "trades": 472,
+          "win_rate": 58.1,
+          "profit_factor": 0.771,
+          "max_drawdown": 29.03,
+          "total_return_pct": -22.5,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -155.76,
+          "trades": 440,
+          "win_rate": 57.3,
+          "profit_factor": 0.745,
+          "max_drawdown": 12.7,
+          "total_return_pct": -10.38,
+          "capital": 1500.0
+        }
+      }
+    },
+    {
+      "strategy": "MACrossover",
+      "pnl": -2028.74,
+      "pf": 0.0,
+      "sharpe": -1.961,
+      "wr": 57.3,
+      "trades": 2261,
+      "max_drawdown": 97.35,
+      "delta_pnl": 85.59,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.378,
+      "delta_wr": -1.9,
+      "verdict": "\u26a0\ufe0f NEUTRAL/WEAK (consider removing)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -78.99,
+          "trades": 493,
+          "win_rate": 54.0,
+          "profit_factor": 0.667,
+          "max_drawdown": 11.67,
+          "total_return_pct": -9.87,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -95.34,
+          "trades": 448,
+          "win_rate": 57.6,
+          "profit_factor": 0.804,
+          "max_drawdown": 13.29,
+          "total_return_pct": -7.95,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -460.03,
+          "trades": 456,
+          "win_rate": 63.4,
+          "profit_factor": 0.864,
+          "max_drawdown": 20.49,
+          "total_return_pct": -15.33,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -1255.22,
+          "trades": 399,
+          "win_rate": 52.6,
+          "profit_factor": 0.588,
+          "max_drawdown": 39.09,
+          "total_return_pct": -35.86,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -139.16,
+          "trades": 465,
+          "win_rate": 58.5,
+          "profit_factor": 0.777,
+          "max_drawdown": 12.81,
+          "total_return_pct": -9.28,
+          "capital": 1500.0
+        }
+      }
+    },
+    {
+      "strategy": "MomentumPro",
+      "pnl": -2033.39,
+      "pf": 0.0,
+      "sharpe": -1.825,
+      "wr": 58.6,
+      "trades": 2317,
+      "max_drawdown": 96.37,
+      "delta_pnl": 80.94,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.242,
+      "delta_wr": -0.6,
+      "verdict": "\u26a0\ufe0f NEUTRAL/WEAK (consider removing)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -88.86,
+          "trades": 505,
+          "win_rate": 55.6,
+          "profit_factor": 0.628,
+          "max_drawdown": 13.02,
+          "total_return_pct": -11.11,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -42.71,
+          "trades": 470,
+          "win_rate": 62.3,
+          "profit_factor": 0.915,
+          "max_drawdown": 7.3,
+          "total_return_pct": -3.56,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -925.54,
+          "trades": 382,
+          "win_rate": 60.2,
+          "profit_factor": 0.676,
+          "max_drawdown": 35.76,
+          "total_return_pct": -30.85,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -846.05,
+          "trades": 512,
+          "win_rate": 58.8,
+          "profit_factor": 0.78,
+          "max_drawdown": 28.54,
+          "total_return_pct": -24.17,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -130.23,
+          "trades": 448,
+          "win_rate": 56.5,
+          "profit_factor": 0.784,
+          "max_drawdown": 11.75,
+          "total_return_pct": -8.68,
+          "capital": 1500.0
+        }
+      }
+    },
+    {
+      "strategy": "BollingerMR",
+      "pnl": -1503.88,
+      "pf": 0.0,
+      "sharpe": -1.598,
+      "wr": 58.9,
+      "trades": 2354,
+      "max_drawdown": 85.93,
+      "delta_pnl": 610.45,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.015,
+      "delta_wr": -0.3,
+      "verdict": "\u26a0\ufe0f NEUTRAL/WEAK (consider removing)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -86.74,
+          "trades": 501,
+          "win_rate": 52.7,
+          "profit_factor": 0.657,
+          "max_drawdown": 12.69,
+          "total_return_pct": -10.84,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -88.26,
+          "trades": 460,
+          "win_rate": 58.0,
+          "profit_factor": 0.824,
+          "max_drawdown": 10.16,
+          "total_return_pct": -7.36,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -367.04,
+          "trades": 470,
+          "win_rate": 67.2,
+          "profit_factor": 0.892,
+          "max_drawdown": 23.36,
+          "total_return_pct": -12.23,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -827.14,
+          "trades": 461,
+          "win_rate": 58.4,
+          "profit_factor": 0.749,
+          "max_drawdown": 29.11,
+          "total_return_pct": -23.63,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -134.7,
+          "trades": 462,
+          "win_rate": 58.4,
+          "profit_factor": 0.776,
+          "max_drawdown": 10.61,
+          "total_return_pct": -8.98,
+          "capital": 1500.0
+        }
+      }
+    },
+    {
+      "strategy": "GPU_MLP",
+      "pnl": -1885.22,
+      "pf": 0.0,
+      "sharpe": -2.065,
+      "wr": 58.7,
+      "trades": 2309,
+      "max_drawdown": 92.16,
+      "delta_pnl": 229.11,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.482,
+      "delta_wr": -0.5,
+      "verdict": "\u26a0\ufe0f NEUTRAL/WEAK (consider removing)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -79.51,
+          "trades": 474,
+          "win_rate": 55.3,
+          "profit_factor": 0.658,
+          "max_drawdown": 11.89,
+          "total_return_pct": -9.94,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -138.25,
+          "trades": 487,
+          "win_rate": 57.9,
+          "profit_factor": 0.744,
+          "max_drawdown": 13.4,
+          "total_return_pct": -11.52,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -454.37,
+          "trades": 474,
+          "win_rate": 67.1,
+          "profit_factor": 0.852,
+          "max_drawdown": 19.08,
+          "total_return_pct": -15.15,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -1013.56,
+          "trades": 471,
+          "win_rate": 58.4,
+          "profit_factor": 0.71,
+          "max_drawdown": 33.33,
+          "total_return_pct": -28.96,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -199.53,
+          "trades": 403,
+          "win_rate": 54.1,
+          "profit_factor": 0.662,
+          "max_drawdown": 14.46,
+          "total_return_pct": -13.3,
+          "capital": 1500.0
+        }
+      }
+    },
+    {
+      "strategy": "Ensemble",
+      "pnl": -2027.86,
+      "pf": 0.0,
+      "sharpe": -2.144,
+      "wr": 58.1,
+      "trades": 2286,
+      "max_drawdown": 99.29,
+      "delta_pnl": 86.47,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.561,
+      "delta_wr": -1.1,
+      "verdict": "\u26a0\ufe0f NEUTRAL/WEAK (consider removing)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -103.59,
+          "trades": 509,
+          "win_rate": 54.2,
+          "profit_factor": 0.588,
+          "max_drawdown": 14.35,
+          "total_return_pct": -12.95,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -94.46,
+          "trades": 446,
+          "win_rate": 59.6,
+          "profit_factor": 0.809,
+          "max_drawdown": 8.95,
+          "total_return_pct": -7.87,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -936.12,
+          "trades": 433,
+          "win_rate": 62.4,
+          "profit_factor": 0.689,
+          "max_drawdown": 34.33,
+          "total_return_pct": -31.2,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -723.54,
+          "trades": 495,
+          "win_rate": 59.0,
+          "profit_factor": 0.799,
+          "max_drawdown": 27.87,
+          "total_return_pct": -20.67,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -170.15,
+          "trades": 403,
+          "win_rate": 55.6,
+          "profit_factor": 0.688,
+          "max_drawdown": 13.79,
+          "total_return_pct": -11.34,
+          "capital": 1500.0
+        }
+      }
+    },
+    {
+      "strategy": "BreakevenExit",
+      "pnl": -1750.15,
+      "pf": 0.0,
+      "sharpe": -2.091,
+      "wr": 58.1,
+      "trades": 2343,
+      "max_drawdown": 95.12,
+      "delta_pnl": 364.18,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.508,
+      "delta_wr": -1.1,
+      "verdict": "\u26a0\ufe0f NEUTRAL/WEAK (consider removing)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -91.29,
+          "trades": 505,
+          "win_rate": 54.7,
+          "profit_factor": 0.628,
+          "max_drawdown": 14.06,
+          "total_return_pct": -11.41,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -159.21,
+          "trades": 470,
+          "win_rate": 57.0,
+          "profit_factor": 0.703,
+          "max_drawdown": 15.0,
+          "total_return_pct": -13.27,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -864.68,
+          "trades": 392,
+          "win_rate": 61.7,
+          "profit_factor": 0.706,
+          "max_drawdown": 33.4,
+          "total_return_pct": -28.82,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -471.66,
+          "trades": 555,
+          "win_rate": 60.9,
+          "profit_factor": 0.889,
+          "max_drawdown": 20.08,
+          "total_return_pct": -13.48,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -163.31,
+          "trades": 421,
+          "win_rate": 56.3,
+          "profit_factor": 0.708,
+          "max_drawdown": 12.58,
+          "total_return_pct": -10.89,
+          "capital": 1500.0
+        }
+      }
+    },
+    {
+      "strategy": "HVBlock",
+      "pnl": -2064.85,
+      "pf": 0.0,
+      "sharpe": -2.04,
+      "wr": 57.2,
+      "trades": 2158,
+      "max_drawdown": 94.31,
+      "delta_pnl": 49.48,
+      "delta_pf": 0.0,
+      "delta_sharpe": -0.457,
+      "delta_wr": -2.0,
+      "verdict": "\u26a0\ufe0f NEUTRAL/WEAK (consider removing)",
+      "per_pair": {
+        "BTCUSDT": {
+          "net_profit": -61.35,
+          "trades": 521,
+          "win_rate": 54.7,
+          "profit_factor": 0.745,
+          "max_drawdown": 9.43,
+          "total_return_pct": -7.67,
+          "capital": 800.0
+        },
+        "ETHUSDT": {
+          "net_profit": -71.19,
+          "trades": 469,
+          "win_rate": 57.8,
+          "profit_factor": 0.858,
+          "max_drawdown": 9.75,
+          "total_return_pct": -5.93,
+          "capital": 1200.0
+        },
+        "SOLUSDT": {
+          "net_profit": -707.98,
+          "trades": 375,
+          "win_rate": 63.5,
+          "profit_factor": 0.717,
+          "max_drawdown": 27.83,
+          "total_return_pct": -23.6,
+          "capital": 3000.0
+        },
+        "BNBUSDT": {
+          "net_profit": -1063.09,
+          "trades": 357,
+          "win_rate": 52.7,
+          "profit_factor": 0.6,
+          "max_drawdown": 33.65,
+          "total_return_pct": -30.37,
+          "capital": 3500.0
+        },
+        "XRPUSDT": {
+          "net_profit": -161.24,
+          "trades": 436,
+          "win_rate": 57.6,
+          "profit_factor": 0.718,
+          "max_drawdown": 13.65,
+          "total_return_pct": -10.75,
+          "capital": 1500.0
+        }
+      }
+    }
+  ],
+  "meta": {
+    "timeframe": "1h",
+    "pairs": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT",
+      "BNBUSDT",
+      "XRPUSDT"
+    ],
+    "total_simulations": 55,
+    "elapsed_s": 864.6
+  }
+}

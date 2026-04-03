@@ -474,7 +474,7 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         print(f'  ✅ ExtSig plan: {buy_n} BUY / {sell_n} SELL ({elapsed:.0f} ms)')
         return {'actions': actions, 'confidences': confidences}
 
-    def _train_window_model(self, features, labels, valid, train_start: int, train_end: int, device):
+    def _train_window_model(self, features, labels, valid, train_start: int, train_end: int, device, seed=None):
         train_idx = torch.arange(train_start, train_end, device=device)
         train_idx = train_idx[valid[train_idx]]
         if train_idx.numel() < max(64, getattr(config, 'XGBOOST_MIN_TRAIN_SAMPLES', 150)):
@@ -499,6 +499,12 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
             X_train = X_train.repeat((repeat_count, 1))
             y_train = y_train.repeat(repeat_count)
             X_train = X_train + torch.randn_like(X_train) * 0.01
+
+        # P#228: Set torch seed per-window for reproducible MLP training
+        if seed is not None:
+            torch.manual_seed(seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed(seed)
 
         model = _GpuSignalMLP(X.shape[1], getattr(config, 'GPU_NATIVE_HIDDEN_DIMS', [512, 256, 128])).to(device)
         optimizer = torch.optim.AdamW(model.parameters(), lr=getattr(config, 'MLP_LEARNING_RATE', 1e-3), weight_decay=getattr(config, 'MLP_WEIGHT_DECAY', 1e-4))
@@ -560,12 +566,51 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
         }
         return model, stats
 
+    def _train_window_ensemble(self, features, labels, valid, train_start, train_end, device):
+        """P#228: Train N models with different seeds, return ensemble list.
+        Bagging reduces MLP variance — individual models may overfit differently,
+        but their averaged predictions cancel random errors."""
+        bag_count = max(1, int(getattr(config, 'GPU_NATIVE_BAG_COUNT', 1)))
+        bag_seeds = [42 + i * 1000 + train_start for i in range(bag_count)]
+
+        ensemble = []
+        best_val_acc = 0.0
+        total_epochs = 0
+        for seed in bag_seeds:
+            model, stats = self._train_window_model(features, labels, valid, train_start, train_end, device, seed=seed)
+            if model is not None:
+                ensemble.append((model, stats))
+                best_val_acc = max(best_val_acc, stats['val_accuracy'])
+                total_epochs += stats['epochs_used']
+
+        if not ensemble:
+            return None, None
+
+        # Return first model's stats as representative (with aggregated info)
+        agg_stats = dict(ensemble[0][1])
+        agg_stats['val_accuracy'] = best_val_acc
+        agg_stats['train_accuracy'] = max(s['train_accuracy'] for _, s in ensemble)
+        agg_stats['epochs_used'] = total_epochs // len(ensemble)
+        agg_stats['_bag_count'] = len(ensemble)
+        return ensemble, agg_stats
+
     def _infer_segment(self, model, stats, features, start_idx: int, end_idx: int):
         X_seg = features[start_idx:end_idx]
-        X_seg = (X_seg - stats['mean']) / stats['std']
-        X_seg = torch.nan_to_num(X_seg, nan=0.0, posinf=0.0, neginf=0.0)
-        with torch.no_grad():
-            probs = torch.softmax(model(X_seg), dim=1)
+        # P#228: Support ensemble (list of model/stats pairs) or single model
+        if isinstance(model, list):
+            # Bagged ensemble — average probabilities across models
+            probs_sum = torch.zeros((end_idx - start_idx, 2), device=features.device)
+            for m, s in model:
+                X_norm = (X_seg - s['mean']) / s['std']
+                X_norm = torch.nan_to_num(X_norm, nan=0.0, posinf=0.0, neginf=0.0)
+                with torch.no_grad():
+                    probs_sum += torch.softmax(m(X_norm), dim=1)
+            probs = probs_sum / len(model)
+        else:
+            X_seg = (X_seg - stats['mean']) / stats['std']
+            X_seg = torch.nan_to_num(X_seg, nan=0.0, posinf=0.0, neginf=0.0)
+            with torch.no_grad():
+                probs = torch.softmax(model(X_seg), dim=1)
         self.gpu_native_stats['inference_batches'] += 1
         return probs
 
@@ -632,9 +677,14 @@ class GpuNativeBacktestEngine(FullPipelineEngine):
               flush=True)
         _prev_model = None
         _prev_train_stats = None
+        _bag_count = max(1, int(getattr(config, 'GPU_NATIVE_BAG_COUNT', 1)))
+        _use_bagging = _bag_count > 1
         while cursor < len(df) - 1:
             train_start = max(50, cursor - warmup)
-            model, train_stats = self._train_window_model(features, labels, valid, train_start, cursor, device)
+            if _use_bagging:
+                model, train_stats = self._train_window_ensemble(features, labels, valid, train_start, cursor, device)
+            else:
+                model, train_stats = self._train_window_model(features, labels, valid, train_start, cursor, device)
             if model is None:
                 if _prev_model is not None:
                     # P#221: Reuse last good model when a retrain window has

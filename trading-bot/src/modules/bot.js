@@ -87,7 +87,7 @@ class AutonomousTradingBot {
 
         // P#214: Wire OKX execution engine for live/demo trading
         // Controlled by ENABLE_LIVE_TRADING=true + PAPER_TRADING=false + OKX credentials
-        if (this.config.okx && this.config.okx.apiKey) {
+        if (this.config.okx?.apiKey) {
             try {
                 const okxEngine = new OKXExecutionEngine(this.config.okx);
                 this.exec.setOKXEngine(okxEngine);

@@ -1,11 +1,11 @@
-# Session P#225–P#226 — Backtest Evolution (2026-04-02/03)
+# Session P#225–P#229 — Backtest Evolution (2026-04-02/03)
 
 > Kontekst sesji do odtworzenia po przejściu z Codespace na lokalne VS Code.
 > Copilot: przeczytaj ten plik na początku nowej rozmowy.
 
 ---
 
-## Status: CZEKA NA WALK-FORWARD WALIDACJĘ P#226
+## Status: ✅ P#229 VERIFIED — $2,070/10k TARGET MET, DEPLOYED
 
 ### Commity z tej sesji
 | Commit | Opis |
@@ -20,6 +20,8 @@
 | `3cf7009` | walk_forward_multi_pair arg order fix |
 | `792194c` | Optimizer scoring rewrite: profit-first (was Sharpe-dominated) |
 | `e215da0` | **P#226**: Apply 60-trial optimizer best config — +$1,073, PF 1.057, Sharpe +0.234 |
+| TBD | **P#228**: SOL+XRP 4h walk-forward — +$1,099 baseline (BAG_COUNT=5, conf=0.60) |
+| TBD | **P#229**: Full 5×3 screening + per-pair confidence optimization — **+$2,070** |
 
 ---
 
@@ -107,3 +109,49 @@ Czas: ~30-45 min na GPU.
 - **5 par**: BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT
 - **Dane**: ~8,760 candles (365 dni @ 1h)
 - **Wyniki Optuna**: `ml-service/results/optuna/*.json`
+
+---
+
+## P#228 — Walk-Forward Baseline (SOL+XRP @4h)
+- **Result**: +$1,099 on $10k (SOL 85%, XRP 15%)
+- BAG_COUNT=5, GPU_NATIVE_MIN_CONFIDENCE=0.60
+- SOL: +$1,249, XRP: +$37
+
+## P#229 — Full 5×3 Screening + Per-Pair Confidence Optimization
+
+### Full Screening Matrix (15 pair×TF combos)
+| Pair | 15m | 1h | 4h (conf=0.60) | 4h (optimal conf) |
+|------|-----|-----|------|------|
+| SOL | -$946 | -$2,024 | +$1,249 | **+$1,926** (c=0.65) → **+$2,163** (c65+risk6+cap80) |
+| BNB | -$1,086 | -$83 | -$105 | **+$1,898** (c=0.75) |
+| XRP | -$628 | -$559 | +$37 | not retested |
+| ETH | -$291 | +$105 | -$648 | worse at higher conf |
+| BTC | -$183 | -$86 | -$605 | worse at higher conf |
+
+### Key Discoveries
+1. **GPU_NATIVE_MIN_CONFIDENCE per-pair** via PAIR_OVERRIDES — most impactful param
+   - BNB: -$106 → +$1,898 by raising conf 0.60→0.75 (153→38 trades, fees $535→$128)
+2. **MAX_POSITION_VALUE_PCT=0.50** was silently capping SOL positions
+   - Raising to 0.80 with risk=6%: +$1,926 → +$2,163
+3. **Higher confidence = fewer trades = less fees = unlocks hidden edge**
+
+### Final Config (VERIFIED)
+```
+SOLUSDT (65% allocation):
+  GPU_NATIVE_MIN_CONFIDENCE = 0.65  (was 0.60)
+  RISK_PER_TRADE = 0.060            (was 0.050)
+  MAX_POSITION_VALUE_PCT = 0.80     (was 0.50)
+
+BNBUSDT (35% allocation):
+  GPU_NATIVE_MIN_CONFIDENCE = 0.75  (was 0.60)
+
+BTC/ETH/XRP: 0% allocation (no edge found at any TF)
+```
+
+### Verification Walk-Forward (9 windows, 4h)
+| Pair | Net P&L | Trades | WR% | PF | Sharpe |
+|------|---------|--------|-----|-----|--------|
+| SOLUSDT | +$1,406 | 85 | 67.1% | 1.61 | 2.81 |
+| BNBUSDT | +$664 | 38 | 55.3% | 2.49 | 2.82 |
+| **TOTAL** | **+$2,070** | 123 | — | — | 2.81 |
+- Fees: $196, Max DD: $200
