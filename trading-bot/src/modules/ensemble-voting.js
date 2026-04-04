@@ -220,7 +220,7 @@ class EnsembleVoting {
         }
 
         // Get symbol from any signal
-        let symbol = 'BTCUSDT';
+        let symbol = this.config?.symbol || process.env.INSTANCE_ID || 'SOLUSDT';
         for (const [, sig] of signals) {
             if (sig.symbol) { symbol = sig.symbol; break; }
         }

@@ -1,0 +1,113 @@
+[
+  {
+    "label": "P#229 baseline",
+    "alloc": {
+      "SOL": 0.65,
+      "BNB": 0.35,
+      "XRP": 0.0
+    },
+    "total": 2070.48,
+    "trades": 123,
+    "per_pair": {
+      "SOLUSDT": 1406.0700000000002,
+      "BNBUSDT": 664.41
+    },
+    "elapsed": 53.288323402404785
+  },
+  {
+    "label": "SOL55+BNB25+XRP20",
+    "alloc": {
+      "SOL": 0.55,
+      "BNB": 0.25,
+      "XRP": 0.2
+    },
+    "total": 1910.83,
+    "trades": 177,
+    "per_pair": {
+      "SOLUSDT": 1189.73,
+      "BNBUSDT": 474.62,
+      "XRPUSDT": 246.48000000000002
+    },
+    "elapsed": 80.59280037879944
+  },
+  {
+    "label": "SOL50+BNB30+XRP20",
+    "alloc": {
+      "SOL": 0.5,
+      "BNB": 0.3,
+      "XRP": 0.2
+    },
+    "total": 1897.5700000000002,
+    "trades": 177,
+    "per_pair": {
+      "SOLUSDT": 1081.5700000000002,
+      "BNBUSDT": 569.5200000000001,
+      "XRPUSDT": 246.48000000000002
+    },
+    "elapsed": 80.13918709754944
+  },
+  {
+    "label": "SOL55+BNB30+XRP15",
+    "alloc": {
+      "SOL": 0.55,
+      "BNB": 0.3,
+      "XRP": 0.15
+    },
+    "total": 1944.1200000000001,
+    "trades": 177,
+    "per_pair": {
+      "SOLUSDT": 1189.7199999999998,
+      "BNBUSDT": 569.5100000000001,
+      "XRPUSDT": 184.89000000000004
+    },
+    "elapsed": 79.03116989135742
+  },
+  {
+    "label": "SOL60+BNB25+XRP15",
+    "alloc": {
+      "SOL": 0.6,
+      "BNB": 0.25,
+      "XRP": 0.15
+    },
+    "total": 1957.5200000000004,
+    "trades": 177,
+    "per_pair": {
+      "SOLUSDT": 1298.0300000000004,
+      "BNBUSDT": 474.63,
+      "XRPUSDT": 184.86
+    },
+    "elapsed": 78.77152872085571
+  },
+  {
+    "label": "SOL50+BNB25+XRP25",
+    "alloc": {
+      "SOL": 0.5,
+      "BNB": 0.25,
+      "XRP": 0.25
+    },
+    "total": 1864.23,
+    "trades": 177,
+    "per_pair": {
+      "SOLUSDT": 1081.68,
+      "BNBUSDT": 474.47,
+      "XRPUSDT": 308.08
+    },
+    "elapsed": 79.66674637794495
+  },
+  {
+    "label": "SOL60+BNB20+XRP20",
+    "alloc": {
+      "SOL": 0.6,
+      "BNB": 0.2,
+      "XRP": 0.2
+    },
+    "total": 1924.0500000000004,
+    "trades": 177,
+    "per_pair": {
+      "SOLUSDT": 1297.9300000000003,
+      "BNBUSDT": 379.65,
+      "XRPUSDT": 246.46999999999997
+    },
+    "elapsed": 79.22772097587585
+  }
+]

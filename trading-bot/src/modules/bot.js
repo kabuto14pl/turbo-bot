@@ -302,13 +302,10 @@ class AutonomousTradingBot {
             }));
             console.log('[OK] Grid V2: BNB (15m-ranging) + SOL (1h-alpha) | BYPASS ensemble');
 
-            // Funding Rate Arbitrage — BTC, ETH, BNB, SOL, XRP
+            // Funding Rate Arbitrage — active pairs only (P#229: SOL 65% + BNB 35%)
             const fundingPairs = {
-                'BTCUSDT': { minRate: 0.00005, capitalPct: 0.50 },
-                'ETHUSDT': { minRate: 0.00005, capitalPct: 0.30 },
-                'BNBUSDT': { minRate: 0.00008, capitalPct: 0.20 },
-                'SOLUSDT': { minRate: 0.00005, capitalPct: 0.20 },
-                'XRPUSDT': { minRate: 0.00005, capitalPct: 0.50 },
+                'SOLUSDT': { minRate: 0.00005, capitalPct: 0.65 },
+                'BNBUSDT': { minRate: 0.00008, capitalPct: 0.35 },
             };
             for (const [sym, opts] of Object.entries(fundingPairs)) {
                 this.fundingStrategies.set(sym, new FundingRateArbitrage(sym, opts));
@@ -316,14 +313,14 @@ class AutonomousTradingBot {
             console.log('[OK] Funding Rate Arb: ' + this.fundingStrategies.size + ' pairs | INDEPENDENT');
 
             // Momentum HTF/LTF — BTC only (uses main data pipeline directly)
-            this.momentumStrategy = new MomentumHTFLTF('BTCUSDT', {
+            this.momentumStrategy = new MomentumHTFLTF(this.config.symbol, {
                 adxMin: 20,
                 slAtr: 2.0,
                 tpAtr: 5.0,
                 cooldownMs: 6 * 3600000,
                 maxTradesDay: 3,
             });
-            console.log('[OK] Momentum HTF/LTF: BTCUSDT | HTF trend + LTF pullback | Min RR 2.5');
+            console.log('[OK] Momentum HTF/LTF: ' + this.config.symbol + ' | HTF trend + LTF pullback | Min RR 2.5');
         } catch (e) { console.error('[ERR] P#212 strategy init:', e.message); }
 
         // PATCH #15: Adaptive Neural AI (TensorFlow.js)
@@ -775,16 +772,17 @@ class AutonomousTradingBot {
                     }
                 }
 
-                // --- Momentum HTF/LTF: BTC only (uses main history) ---
+                // --- Momentum HTF/LTF: uses main instance symbol (uses main history) ---
                 // P#216: Lowered from 200 to 50 candles — 200 was unreachable (bot fetches 100-200 15m candles)
                 if (this.momentumStrategy && history.length >= 50) {
                     try {
-                        const btcPrice = history[history.length - 1].close;
-                        const btcInd = _calcIndicators(history);
-                        const hasPos = this.pm.hasPosition('BTCUSDT');
+                        const momSym = this.config.symbol;
+                        const momPrice = history[history.length - 1].close;
+                        const momInd = _calcIndicators(history);
+                        const hasPos = this.pm.hasPosition(momSym);
                         const momSignal = this.momentumStrategy.evaluate({
-                            currentPrice: btcPrice,
-                            indicators: btcInd,
+                            currentPrice: momPrice,
+                            indicators: momInd,
                             regime,
                             hasPosition: hasPos,
                             history,
@@ -793,16 +791,16 @@ class AutonomousTradingBot {
                         if (momSignal && momSignal.action !== 'HOLD' && momSignal.action) {
                             const tradeSignal = {
                                 action: momSignal.action,
-                                symbol: 'BTCUSDT',
+                                symbol: momSym,
                                 confidence: momSignal.confidence,
-                                price: btcPrice,
+                                price: momPrice,
                                 strategy: 'MomentumHTFLTF',
                                 reasoning: momSignal.reason,
                                 timestamp: Date.now(),
                                 isGrid: false,
                             };
 
-                            console.log('[MOMENTUM] BTCUSDT ' + momSignal.action +
+                            console.log('[MOMENTUM] ' + momSym + ' ' + momSignal.action +
                                 ' | Conf: ' + (momSignal.confidence * 100).toFixed(1) + '%' +
                                 ' | SL: $' + momSignal.sl.toFixed(2) + ' TP: $' + momSignal.tp.toFixed(2) +
                                 ' | ' + momSignal.reason);
@@ -810,13 +808,13 @@ class AutonomousTradingBot {
                             await this.exec.executeTradeSignal(tradeSignal, this.dp);
 
                             if (this.megatron) {
-                                this.megatron.logActivity('TRADE', 'Momentum: BTCUSDT ' + momSignal.action,
+                                this.megatron.logActivity('TRADE', 'Momentum: ' + momSym + ' ' + momSignal.action,
                                     'Conf: ' + (momSignal.confidence * 100).toFixed(1) + '% | ' + momSignal.reason,
                                     { sl: momSignal.sl, tp: momSignal.tp }, 'high');
                             }
                         }
                     } catch (momErr) {
-                        console.warn('[MOMENTUM] BTCUSDT error:', momErr.message);
+                        console.warn('[MOMENTUM] ' + this.config.symbol + ' error:', momErr.message);
                     }
                 }
             }
@@ -1970,7 +1968,7 @@ class AutonomousTradingBot {
                     if (this.momentumStrategy) {
                         const ms = this.momentumStrategy.getStats();
                         if (ms.totalTrades > 0 || ms.htfTrend !== 'NEUTRAL') {
-                            console.log('[MOMENTUM] BTCUSDT: ' + ms.totalTrades + ' trades | WR: ' +
+                            console.log('[MOMENTUM] ' + this.config.symbol + ': ' + ms.totalTrades + ' trades | WR: ' +
                                 ms.winRate + '% | PnL: $' + ms.netPnL.toFixed(2) +
                                 ' | Trend: ' + ms.htfTrend + '(' + ms.htfTrendStrength + ')' +
                                 (ms.pullbackActive ? ' | PULLBACK ACTIVE' : ''));

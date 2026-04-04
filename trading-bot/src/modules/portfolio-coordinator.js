@@ -9,7 +9,7 @@ class SharedPortfolioCoordinator {
         this.enabled = config.portfolioOptimizationEnabled !== false
             && process.env.PORTFOLIO_COORDINATION_ENABLED !== 'false';
         this.instanceId = config.instanceId || process.env.INSTANCE_ID || 'primary';
-        this.symbol = config.symbol || process.env.TRADING_SYMBOL || 'BTCUSDT';
+        this.symbol = config.symbol || process.env.TRADING_SYMBOL || process.env.INSTANCE_ID || 'SOLUSDT';
         this.portfolioCapital = Math.max(
             1,
             Number(config.portfolioCapital || process.env.PORTFOLIO_CAPITAL || config.initialCapital || 0),

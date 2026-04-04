@@ -9,7 +9,7 @@ dotenv.config();
 
 function loadConfig() {
     return {
-        symbol: process.env.TRADING_SYMBOL || 'BTCUSDT',
+        symbol: process.env.TRADING_SYMBOL || process.env.INSTANCE_ID || 'SOLUSDT',
         symbols: process.env.TRADING_SYMBOLS
             ? process.env.TRADING_SYMBOLS.split(',').map(s => s.trim())
             : ['SOLUSDT', 'BNBUSDT'],

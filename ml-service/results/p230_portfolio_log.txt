@@ -1,0 +1,1 @@
+C:\Users\dudzi\AppData\Local\Programs\Python\Python312\python.exe: can't open file 'C:\\Users\\dudzi\\turbo-bot-local\\run_p230_verify.py': [Errno 2] No such file or directory

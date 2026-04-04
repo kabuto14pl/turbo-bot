@@ -1,12 +1,12 @@
 {
-  "saved_at": "2026-04-03T16:42:38.769129",
+  "saved_at": "2026-04-03T20:37:35.270363",
   "version": "200e",
   "defense_mode": false,
   "defense_mode_start": 8431,
   "consecutive_losses": 0,
   "loss_streak_max": 13,
-  "win_count": 1725,
-  "loss_count": 2015,
+  "win_count": 2084,
+  "loss_count": 2567,
   "recent_pnls": [
     6.936742705447445,
     -7.438163063347583,
@@ -62,7 +62,7 @@
   "risk_multiplier": 0.525,
   "confidence_threshold": 0.445,
   "aggression_level": 0.515,
-  "evolution_count": 748,
+  "evolution_count": 930,
   "total_decisions": 0,
   "override_count": 0,
   "hold_count": 0
