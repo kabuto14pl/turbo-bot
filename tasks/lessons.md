@@ -1592,3 +1592,20 @@ XGBoost models on crypto 1h/4h with 43 features achieve ~50% accuracy — no bet
 
 ### L198.5: Monte Carlo p=0.06 with 45 trades = borderline
 Need ~60+ trades for p<0.05 statistical significance. Win rate IS significant (p=0.0012) but PnL isn't yet. More trading days or more pairs needed. Funding ARB ($599/731 = 82%) is the real profit engine — directional is supplementary.
+
+## 2026-04-05: PATCH #232 — SOL Regime Retune + Per-Pair SL/TP
+
+### L232.1: Market regime shifts invalidate optimized params completely
+SOL volatility dropped 75%→55%, price range collapsed 112%→17% post-March 2026. Old conf=0.65 went from +$1,926 to -$1,518 on fresh data. **Rule: Re-sweep parameters whenever regime analysis shows >30% volatility shift or >50% price range change.**
+
+### L232.2: Confidence threshold is the highest-impact parameter for regime shifts
+20-config GPU sweep showed: conf=0.75 alone turned -$1,518 into +$303. SL/TP adjustments added refinement (+$246 better risk-adjusted), but conf threshold filtered most noise. **Rule: When strategy degrades, sweep confidence first before SL/TP.**
+
+### L232.3: walk_forward_backtest() applies pair overrides AFTER user overrides
+Override chain: `_apply_overrides(user)` → `apply_pair_overrides(symbol)` → `apply_timeframe_overrides(tf)`. Pair overrides overwrite sweep params for same keys. **Fix: Modify PAIR_OVERRIDES dict directly for sweeps, not via overrides parameter.**
+
+### L232.4: Node.js bot had hardcoded SL/TP — no env var support
+execution-engine.js had `1.5 * atrValue` and `4.0 * atrValue` hardcoded since P#216. No way to set per-pair values. **Fix: Added SL_ATR_MULT/TP_ATR_MULT env vars in config.js, read by execution-engine.js and QPM. Per-pair values set in ecosystem.config.js.**
+
+### L232.5: Python backtest and Node.js bot had parity gaps on SL/TP
+Python pair_config: SOL SL=1.50/TP=3.00, BNB uses base SL=1.25/TP=2.75. Node.js bot: hardcoded SL=1.5/TP=4.0 for ALL pairs. TP was 4.0 vs Python 3.0 for SOL. **Rule: After any Python config change, verify Node.js bot reads matching values. Check parity on every deploy.**
