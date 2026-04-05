@@ -31,6 +31,12 @@ const BASE_ENV = {
 // Port offset per pair to avoid EADDRINUSE conflicts
 const PAIR_PORTS = { 'SOLUSDT': 3001, 'BNBUSDT': 3002 };
 
+// P#232: Per-pair SL/TP ATR multipliers (matched to Python pair_config.py)
+const PAIR_SLTP = {
+  'SOLUSDT': { SL_ATR_MULT: '2.0', TP_ATR_MULT: '4.0' },   // P#232: was 1.5/4.0, sweep winner for April 2026 regime
+  'BNBUSDT': { SL_ATR_MULT: '1.5', TP_ATR_MULT: '4.0' },   // unchanged (current hardcoded values)
+};
+
 const botApps = PAIRS.map(pair => ({
   name: `turbo-${pair.replace('USDT', '').toLowerCase()}`,
   script: 'node',
@@ -46,6 +52,7 @@ const botApps = PAIRS.map(pair => ({
     TRADING_SYMBOL: pair,
     INSTANCE_ID: pair,
     HEALTH_CHECK_PORT: String(PAIR_PORTS[pair] || 3001),
+    ...(PAIR_SLTP[pair] || {}),
     OTEL_SERVICE_NAME: `turbo-bot-${pair.replace('USDT', '').toLowerCase()}`,
   },
   error_file: `/root/turbo-bot/logs/${pair}-error.log`,

@@ -31,6 +31,9 @@ function loadConfig() {
         tradingInterval: parseInt(process.env.TRADING_INTERVAL || '30000'),
         // P#204a: Fix fee rate parity — was 0.001 (0.10%), backtest uses 0.0005 taker (Board5)
         tradingFeeRate: parseFloat(process.env.TRADING_FEE_RATE || '0.0005'),
+        // P#232: Per-pair SL/TP ATR multipliers (env var per PM2 instance)
+        slAtrMultiplier: parseFloat(process.env.SL_ATR_MULT || '1.5'),
+        tpAtrMultiplier: parseFloat(process.env.TP_ATR_MULT || '4.0'),
         // P#198.5: VQC per-TF override — backtest proved VQC helps 4h but destroys 1h
         vqcEnabledTimeframes: (process.env.VQC_ENABLED_TF || '4h').split(',').map(s => s.trim()),
         // P#214: OKX API credentials for live/demo trading

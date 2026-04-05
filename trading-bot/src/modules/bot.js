@@ -403,7 +403,7 @@ class AutonomousTradingBot {
             const { QuantumPositionManager } = require('../core/ai/quantum_position_manager');
             const ind = require('./indicators');
             this.quantumPosMgr = new QuantumPositionManager({
-                sltp: { baseSLMultiplier: 1.5, baseTPMultiplier: 4.0, trailingATRMultiplier: 1.5 },
+                sltp: { baseSLMultiplier: this.config.slAtrMultiplier || 1.5, baseTPMultiplier: this.config.tpAtrMultiplier || 4.0, trailingATRMultiplier: 1.5 },
                 health: { healthyThreshold: 65, warningThreshold: 40, criticalThreshold: 25 },
                 multiPos: { maxPositions: 5, maxExposurePerPosition: 0.25, maxTotalExposure: 0.80 },
                 reEval: { reEvalInterval: 5, fullReEvalInterval: 15, riskReEvalInterval: 3 },

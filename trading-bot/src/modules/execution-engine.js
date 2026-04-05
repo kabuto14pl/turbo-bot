@@ -396,10 +396,11 @@ class ExecutionEngine {
             if (signal.action === 'BUY') {
                 let sl, tp;
                 if (atrValue && atrValue > 0) {
-                    // P#216: SL 1.5x ATR, TP 4.0x ATR — R:R 2.67:1 (was 2.5x = 1.67:1)
-                    // With partial TP L1 at 2.0x and L2 at 3.0x, effective R:R stays above 2.0
-                    sl = signal.price - 1.5 * atrValue;
-                    tp = signal.price + 4.0 * atrValue;
+                    // P#232: SL/TP from config (env var per pair). Defaults: SL 1.5x, TP 4.0x
+                    const slMult = this.config.slAtrMultiplier || 1.5;
+                    const tpMult = this.config.tpAtrMultiplier || 4.0;
+                    sl = signal.price - slMult * atrValue;
+                    tp = signal.price + tpMult * atrValue;
                 } else {
                     sl = signal.price * 0.985;
                     tp = signal.price * 1.040; // P#216: 4% (was 2.5%)
@@ -440,7 +441,7 @@ class ExecutionEngine {
                     atrAtEntry: atrValue || 0
                 });
                 console.log(`[BUY] ${quantity.toFixed(6)} @ $${signal.price.toFixed(2)}`);
-                console.log(`[RISK] SL: $${sl.toFixed(2)} (-${atrValue ? '1.5x ATR' : '1.5%'}) | TP: $${tp.toFixed(2)} (+${atrValue ? '2.5x ATR' : '2.5%'})`);
+                console.log(`[RISK] SL: $${sl.toFixed(2)} (-${atrValue ? (this.config.slAtrMultiplier || 1.5) + 'x ATR' : '1.5%'}) | TP: $${tp.toFixed(2)} (+${atrValue ? (this.config.tpAtrMultiplier || 4.0) + 'x ATR' : '4%'})`);
                 trade.pnl = -fees;
                 trade.entryPrice = signal.price;
 

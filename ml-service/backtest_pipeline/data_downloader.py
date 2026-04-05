@@ -170,8 +170,8 @@ def add_indicators(df):
     # Wilder smoothing for ATR
     st_atr = tr_all.ewm(alpha=1.0/st_period, min_periods=st_period, adjust=False).mean()
     mid = (high + low) / 2
-    upper_band = (mid + st_mult * st_atr).values
-    lower_band = (mid - st_mult * st_atr).values
+    upper_band = (mid + st_mult * st_atr).values.copy()
+    lower_band = (mid - st_mult * st_atr).values.copy()
     close_arr = close.values
     n = len(df)
     st_dir = np.zeros(n)
