@@ -1609,3 +1609,20 @@ execution-engine.js had `1.5 * atrValue` and `4.0 * atrValue` hardcoded since P#
 
 ### L232.5: Python backtest and Node.js bot had parity gaps on SL/TP
 Python pair_config: SOL SL=1.50/TP=3.00, BNB uses base SL=1.25/TP=2.75. Node.js bot: hardcoded SL=1.5/TP=4.0 for ALL pairs. TP was 4.0 vs Python 3.0 for SOL. **Rule: After any Python config change, verify Node.js bot reads matching values. Check parity on every deploy.**
+
+## 2026-04-05: PATCH #233 — BNB Parity Fix + Adaptive Regime Detection
+
+### L233.1: BNB parity gap cost ~$536/cycle — SL/TP mismatch was the #1 drag
+Node.js BNB ran SL=1.50/TP=4.00 while Python base uses SL=1.25/TP=2.75. 20-config GPU sweep confirmed: SL=1.25/TP=2.75 → +$513 (Sharpe 1.65), SL=1.50/TP=4.00 → -$23. Chandelier trailing exits dominate actual PnL — but the initial SL width still matters for stop-out rate. **Rule: ALWAYS run parity check after adding new pairs or changing base config.**
+
+### L233.2: Chandelier trailing makes TP value irrelevant above a threshold
+BNB sweep: SL=1.25/TP=2.75, SL=1.25/TP=3.50, and conf=0.75 (default) ALL produced identical PnL=$513. Trailing exit triggers before TP for most trades. Only SL width matters — it controls how many trades survive to reach the trailing phase. **Rule: When Chandelier trailing is active, focus SL sweep. TP is cosmetic above ~2.5× ATR.**
+
+### L233.3: PM2 restart does NOT refresh environment variables
+`pm2 restart all` keeps cached env vars. Must use `pm2 delete all && pm2 start ecosystem.config.js` or `--update-env` flag. Caught by post-deploy verification showing old SL=1.50/TP=4.00. **Rule: After changing ecosystem.config.js env vars, always `pm2 delete + start` (not just restart). Verify with `pm2 env <id>`.**
+
+### L233.4: ADX-based regime detection matches Python VQC_REGIME_* multipliers
+Implemented in execution-engine.js: ADX>25 → TRENDING (SL×1.10, TP×1.30), ATR/price>2% → HIGH_VOL (SL×1.15, TP×0.85), else RANGING (SL×0.85, TP×0.75). Multipliers mirror gpu_native_engine.py VQC_REGIME_SL_ADJUST/VQC_REGIME_TP_ADJUST. **Rule: Keep Node.js regime multipliers in sync with Python — any Python change must be mirrored.**
+
+### L233.5: GPU confidence filtering has correct double-layer design
+Python gpu_native_engine.py (L934-950) filters HOLD if confidence < threshold (server-side). Node.js has separate minMLConfidence=0.45 (lower, non-binding). Remote GPU service (gpu-quantum-service) is pure compute with no filtering — correct separation of concerns. **Rule: Confidence filtering belongs in the decision engine, not the compute service.**
