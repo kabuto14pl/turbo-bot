@@ -22,7 +22,7 @@ PAIR_CAPITAL_ALLOCATION = {
     'BTCUSDT': 0.00,    # P#229: BTC negative on all TFs — no edge
     'ETHUSDT': 0.00,    # P#229: ETH marginal +$105 on 1h only — not worth allocation
     'SOLUSDT': 0.65,    # P#232: SOL@4h conf=0.75 SL=2.0 TP=4.0 → +$246, Sharpe=2.19 (fresh April data)
-    'BNBUSDT': 0.35,    # P#229: BNB@4h conf=0.70 → +$513 standalone (stable)
+    'BNBUSDT': 0.35,    # P#233: BNB@4h conf=0.75 SL=1.25 TP=2.75 → +$513, Sharpe=1.65 (parity sweep)
     'XRPUSDT': 0.00,    # P#230: XRP@4h conf=0.65 has edge (+$1,232) but dilutes SOL/BNB
 }
 
@@ -122,6 +122,11 @@ PAIR_OVERRIDES = {
     'BNBUSDT': {
         # P#229: Per-pair GPU confidence — BNB best at 0.75 (38 trades, PF 2.28, Sharpe 2.82)
         'GPU_NATIVE_MIN_CONFIDENCE': 0.75,  # P#229: 0.60→0.75 — 75% fewer trades, fees $128 vs $535, unlocks +$1,898 edge
+        
+        # P#233: Explicit SL/TP — matches base config but documented for parity tracking
+        # Sweep: SL=1.25/TP=2.75 → +$513, Sharpe=1.65 vs old Node.js SL=1.50/TP=4.00 → -$23
+        'SL_ATR_MULT': 1.25,            # P#233: base=1.25 confirmed optimal (Chandelier trail dominates)
+        'TP_ATR_MULT': 2.75,            # P#233: base=2.75 — TP=3.50/4.00 identical due to trailing
         
         'BNB_DIRECTION_FILTER_ENABLED': False,
         'BNB_LONG_MIN_CONFIDENCE': 0.30,

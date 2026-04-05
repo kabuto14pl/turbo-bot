@@ -397,8 +397,35 @@ class ExecutionEngine {
                 let sl, tp;
                 if (atrValue && atrValue > 0) {
                     // P#232: SL/TP from config (env var per pair). Defaults: SL 1.5x, TP 4.0x
-                    const slMult = this.config.slAtrMultiplier || 1.5;
-                    const tpMult = this.config.tpAtrMultiplier || 4.0;
+                    let slMult = this.config.slAtrMultiplier || 1.5;
+                    let tpMult = this.config.tpAtrMultiplier || 4.0;
+
+                    // P#233: Adaptive regime-based SL/TP adjustment (mirrors Python VQC_REGIME_SL/TP_ADJUST)
+                    // Uses ADX from candles to classify regime and scale multipliers
+                    if (candles && candles.length >= 20) {
+                        const adx = ind.calculateRealADX(candles.map(c => ({
+                            high: c.high, low: c.low, close: c.close
+                        })), 14);
+                        const recentPrices = candles.slice(-20).map(c => c.close);
+                        const ema9 = ind.calculateEMA(recentPrices, 9);
+                        const ema21 = ind.calculateEMA(recentPrices, 21);
+                        const lastClose = recentPrices[recentPrices.length - 1];
+
+                        let regime = 'RANGING';
+                        if (adx > 25) {
+                            regime = (lastClose > ema21 && ema9 > ema21) ? 'TRENDING_UP' : 'TRENDING_DOWN';
+                        } else if (atrValue / lastClose > 0.02) {
+                            regime = 'HIGH_VOLATILITY';
+                        }
+
+                        // Regime multipliers matching Python config VQC_REGIME_SL/TP_ADJUST
+                        const REGIME_SL = { TRENDING_UP: 1.10, TRENDING_DOWN: 1.10, RANGING: 0.85, HIGH_VOLATILITY: 1.15 };
+                        const REGIME_TP = { TRENDING_UP: 1.30, TRENDING_DOWN: 1.30, RANGING: 0.75, HIGH_VOLATILITY: 0.85 };
+                        slMult *= (REGIME_SL[regime] || 1.0);
+                        tpMult *= (REGIME_TP[regime] || 1.0);
+                        console.log(`[REGIME] ${regime} (ADX=${adx.toFixed(1)}) → SL=${slMult.toFixed(2)}x TP=${tpMult.toFixed(2)}x`);
+                    }
+
                     sl = signal.price - slMult * atrValue;
                     tp = signal.price + tpMult * atrValue;
                 } else {
@@ -441,7 +468,7 @@ class ExecutionEngine {
                     atrAtEntry: atrValue || 0
                 });
                 console.log(`[BUY] ${quantity.toFixed(6)} @ $${signal.price.toFixed(2)}`);
-                console.log(`[RISK] SL: $${sl.toFixed(2)} (-${atrValue ? (this.config.slAtrMultiplier || 1.5) + 'x ATR' : '1.5%'}) | TP: $${tp.toFixed(2)} (+${atrValue ? (this.config.tpAtrMultiplier || 4.0) + 'x ATR' : '4%'})`);
+                console.log(`[RISK] SL: $${sl.toFixed(2)} | TP: $${tp.toFixed(2)}`);
                 trade.pnl = -fees;
                 trade.entryPrice = signal.price;
 

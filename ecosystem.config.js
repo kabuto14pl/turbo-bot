@@ -34,7 +34,7 @@ const PAIR_PORTS = { 'SOLUSDT': 3001, 'BNBUSDT': 3002 };
 // P#232: Per-pair SL/TP ATR multipliers (matched to Python pair_config.py)
 const PAIR_SLTP = {
   'SOLUSDT': { SL_ATR_MULT: '2.0', TP_ATR_MULT: '4.0' },   // P#232: was 1.5/4.0, sweep winner for April 2026 regime
-  'BNBUSDT': { SL_ATR_MULT: '1.5', TP_ATR_MULT: '4.0' },   // unchanged (current hardcoded values)
+  'BNBUSDT': { SL_ATR_MULT: '1.25', TP_ATR_MULT: '2.75' },  // P#233: was 1.5/4.0 — sweep winner, matches Python base (PnL +$513 vs -$23)
 };
 
 const botApps = PAIRS.map(pair => ({

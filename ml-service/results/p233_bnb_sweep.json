@@ -1,0 +1,288 @@
+{
+  "regime_analysis": {
+    "old": {
+      "volatility": 0.5092400495718666,
+      "adx": 38.15335415842842,
+      "trend_eff": 0.004647756401228133,
+      "atr_pct": 1.5511489938089766,
+      "rsi_mean": 52.16929589903063,
+      "choppiness": 50.07201152184349,
+      "price_range": 101.55480218600516
+    },
+    "new": {
+      "volatility": 0.34719895946621115,
+      "adx": 40.94386316908859,
+      "trend_eff": 0.16812514023784297,
+      "atr_pct": 1.221677734541925,
+      "rsi_mean": 41.149269233841906,
+      "choppiness": 53.333333333333336,
+      "price_range": 11.99488946041916
+    }
+  },
+  "sweep_results": [
+    {
+      "label": "conf=0.60",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.6
+      },
+      "pnl": -240.07999999999987,
+      "trades": 173,
+      "win_rate": 46.24277456647399,
+      "sharpe": -0.408,
+      "profit_factor": 0.9190933385455811,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "conf=0.65",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.65
+      },
+      "pnl": -85.94,
+      "trades": 127,
+      "win_rate": 47.24409448818898,
+      "sharpe": -0.175,
+      "profit_factor": 0.9622143764756572,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "conf=0.70",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.7
+      },
+      "pnl": 34.54000000000024,
+      "trades": 95,
+      "win_rate": 44.21052631578947,
+      "sharpe": 0.083,
+      "profit_factor": 1.0194945196356204,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "conf=0.75 (current)",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75
+      },
+      "pnl": 513.2299999999998,
+      "trades": 60,
+      "win_rate": 53.333333333333336,
+      "sharpe": 1.646,
+      "profit_factor": 1.5237521813227746,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "conf=0.80",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.8
+      },
+      "pnl": 138.73000000000002,
+      "trades": 47,
+      "win_rate": 55.319148936170215,
+      "sharpe": 1.201,
+      "profit_factor": 1.209818660294318,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "SL=1.25 TP=2.75 (python base)",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "SL_ATR_MULT": 1.25,
+        "TP_ATR_MULT": 2.75
+      },
+      "pnl": 513.21,
+      "trades": 60,
+      "win_rate": 53.333333333333336,
+      "sharpe": 1.646,
+      "profit_factor": 1.5237531509281848,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "SL=1.25 TP=3.50",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "SL_ATR_MULT": 1.25,
+        "TP_ATR_MULT": 3.5
+      },
+      "pnl": 513.23,
+      "trades": 60,
+      "win_rate": 53.333333333333336,
+      "sharpe": 1.646,
+      "profit_factor": 1.5237575262781917,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "SL=1.50 TP=3.00",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "SL_ATR_MULT": 1.5,
+        "TP_ATR_MULT": 3.0
+      },
+      "pnl": -22.789999999999914,
+      "trades": 58,
+      "win_rate": 53.44827586206896,
+      "sharpe": -0.163,
+      "profit_factor": 0.9743615704803691,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "SL=1.50 TP=4.00 (old hardcode)",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "SL_ATR_MULT": 1.5,
+        "TP_ATR_MULT": 4.0
+      },
+      "pnl": -22.759999999999977,
+      "trades": 58,
+      "win_rate": 53.44827586206896,
+      "sharpe": -0.163,
+      "profit_factor": 0.9743944558821874,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "SL=1.75 TP=3.50",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "SL_ATR_MULT": 1.75,
+        "TP_ATR_MULT": 3.5
+      },
+      "pnl": 336.60999999999996,
+      "trades": 59,
+      "win_rate": 54.23728813559322,
+      "sharpe": 1.815,
+      "profit_factor": 1.3890590506131606,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "SL=2.00 TP=4.00",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "SL_ATR_MULT": 2.0,
+        "TP_ATR_MULT": 4.0
+      },
+      "pnl": 128.6100000000001,
+      "trades": 55,
+      "win_rate": 49.09090909090909,
+      "sharpe": 0.773,
+      "profit_factor": 1.1482894994753774,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "SL=1.00 TP=2.50",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "SL_ATR_MULT": 1.0,
+        "TP_ATR_MULT": 2.5
+      },
+      "pnl": -43.83999999999993,
+      "trades": 64,
+      "win_rate": 50.0,
+      "sharpe": -0.286,
+      "profit_factor": 0.9560258789307385,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "SL=1.60 TP=3.00 (old pair_config comment)",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "SL_ATR_MULT": 1.6,
+        "TP_ATR_MULT": 3.0
+      },
+      "pnl": -12.23999999999996,
+      "trades": 58,
+      "win_rate": 51.724137931034484,
+      "sharpe": -0.087,
+      "profit_factor": 0.9858093537691007,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "conf=0.70 SL=1.50 TP=3.50",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.7,
+        "SL_ATR_MULT": 1.5,
+        "TP_ATR_MULT": 3.5
+      },
+      "pnl": -496.97,
+      "trades": 89,
+      "win_rate": 47.19101123595505,
+      "sharpe": -2.443,
+      "profit_factor": 0.6906639611096934,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "conf=0.80 SL=1.25 TP=2.75",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.8,
+        "SL_ATR_MULT": 1.25,
+        "TP_ATR_MULT": 2.75
+      },
+      "pnl": 138.74000000000004,
+      "trades": 47,
+      "win_rate": 55.319148936170215,
+      "sharpe": 1.202,
+      "profit_factor": 1.2098433057051245,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "conf=0.80 SL=1.50 TP=3.50",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.8,
+        "SL_ATR_MULT": 1.5,
+        "TP_ATR_MULT": 3.5
+      },
+      "pnl": 161.69000000000003,
+      "trades": 47,
+      "win_rate": 57.446808510638306,
+      "sharpe": 1.383,
+      "profit_factor": 1.2476527439538052,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "risk=0.010 SL=1.50 TP=4.00",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "RISK_PER_TRADE": 0.01,
+        "SL_ATR_MULT": 1.5,
+        "TP_ATR_MULT": 4.0
+      },
+      "pnl": -22.779999999999916,
+      "trades": 58,
+      "win_rate": 53.44827586206896,
+      "sharpe": -0.163,
+      "profit_factor": 0.9743745500359972,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "risk=0.020 SL=1.50 TP=4.00",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75,
+        "RISK_PER_TRADE": 0.02,
+        "SL_ATR_MULT": 1.5,
+        "TP_ATR_MULT": 4.0
+      },
+      "pnl": -22.769999999999968,
+      "trades": 58,
+      "win_rate": 53.44827586206896,
+      "sharpe": -0.163,
+      "profit_factor": 0.9743846465373711,
+      "max_dd_pct": 0
+    },
+    {
+      "label": "risk=0.014 (current)",
+      "overrides": {
+        "GPU_NATIVE_MIN_CONFIDENCE": 0.75
+      },
+      "pnl": 513.1700000000001,
+      "trades": 60,
+      "win_rate": 53.333333333333336,
+      "sharpe": 1.646,
+      "profit_factor": 1.5236695749783153,
+      "max_dd_pct": 0
+    }
+  ],
+  "ranked": [
+    "SL=1.25 TP=3.50",
+    "conf=0.75 (current)",
+    "SL=1.25 TP=2.75 (python base)",
+    "risk=0.014 (current)",
+    "SL=1.75 TP=3.50"
+  ],
+  "elapsed_sec": 637.2501499652863
+}
