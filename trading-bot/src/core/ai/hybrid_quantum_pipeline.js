@@ -2019,9 +2019,9 @@ class HybridQuantumClassicalPipeline {
         return {
             enhancedFeatures: enhanced,
             quantumMetadata: {
-                kernelEntropy: qfm.kernelEntropy,
-                correlationScore: qfm.correlationScore,
-                nQuantumFeatures: qfm.quantumFeatures.length,
+                kernelEntropy: 0,
+                correlationScore: 0,
+                nQuantumFeatures: 0,
             },
         };
     }
