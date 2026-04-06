@@ -1,0 +1,361 @@
+{
+  "pairs": {
+    "SOLUSDT": {
+      "aggregate": {
+        "net_profit": -648.51,
+        "trades": 46,
+        "win_rate": 43.47826086956522,
+        "profit_factor": 0.47981037635961116,
+        "sharpe": -4.572,
+        "max_drawdown": 704.84,
+        "avg_win": 29.908500000000004,
+        "avg_loss": -47.94923076923077,
+        "total_fees": 44.85
+      },
+      "windows": [
+        {
+          "net_profit": -80.47,
+          "trades": 2,
+          "win_rate": 0.0,
+          "profit_factor": 0.0,
+          "sharpe": -284.504,
+          "max_drawdown": 80.47,
+          "avg_win": 0,
+          "avg_loss": -40.235,
+          "total_fees": 1.38,
+          "window": 1,
+          "train_period": "2025-04-05 \u2192 2025-06-04",
+          "test_period": "2025-06-04 \u2192 2025-07-04"
+        },
+        {
+          "net_profit": 136.8,
+          "trades": 5,
+          "win_rate": 100.0,
+          "profit_factor": 99.0,
+          "sharpe": 23.65,
+          "max_drawdown": 0.0,
+          "avg_win": 27.360000000000003,
+          "avg_loss": 0,
+          "total_fees": 2.2,
+          "window": 2,
+          "train_period": "2025-05-05 \u2192 2025-07-04",
+          "test_period": "2025-07-04 \u2192 2025-08-03"
+        },
+        {
+          "net_profit": -246.36999999999998,
+          "trades": 7,
+          "win_rate": 0.0,
+          "profit_factor": 0.0,
+          "sharpe": -17.045,
+          "max_drawdown": 246.37,
+          "avg_win": 0,
+          "avg_loss": -35.19571428571428,
+          "total_fees": 7.54,
+          "window": 3,
+          "train_period": "2025-06-04 \u2192 2025-08-03",
+          "test_period": "2025-08-03 \u2192 2025-09-02"
+        },
+        {
+          "net_profit": 85.64999999999998,
+          "trades": 10,
+          "win_rate": 70.0,
+          "profit_factor": 1.5522955893732266,
+          "sharpe": 2.975,
+          "max_drawdown": 99.17,
+          "avg_win": 34.39,
+          "avg_loss": -51.693333333333335,
+          "total_fees": 7.68,
+          "window": 4,
+          "train_period": "2025-07-04 \u2192 2025-09-02",
+          "test_period": "2025-09-02 \u2192 2025-10-02"
+        },
+        {
+          "net_profit": -191.29999999999998,
+          "trades": 7,
+          "win_rate": 28.57142857142857,
+          "profit_factor": 0.13890889449045735,
+          "sharpe": -10.612,
+          "max_drawdown": 191.3,
+          "avg_win": 15.43,
+          "avg_loss": -44.431999999999995,
+          "total_fees": 7.03,
+          "window": 5,
+          "train_period": "2025-08-03 \u2192 2025-10-02",
+          "test_period": "2025-10-02 \u2192 2025-11-01"
+        },
+        {
+          "net_profit": 73.55000000000001,
+          "trades": 2,
+          "win_rate": 50.0,
+          "profit_factor": 3.9082641360221433,
+          "sharpe": 9.406,
+          "max_drawdown": 25.29,
+          "avg_win": 98.84,
+          "avg_loss": -25.29,
+          "total_fees": 1.29,
+          "window": 6,
+          "train_period": "2025-09-02 \u2192 2025-11-01",
+          "test_period": "2025-11-01 \u2192 2025-12-01"
+        },
+        {
+          "net_profit": 86.25,
+          "trades": 4,
+          "win_rate": 100.0,
+          "profit_factor": 99.0,
+          "sharpe": 24.658,
+          "max_drawdown": 0.0,
+          "avg_win": 21.5625,
+          "avg_loss": 0,
+          "total_fees": 4.31,
+          "window": 7,
+          "train_period": "2025-10-02 \u2192 2025-12-01",
+          "test_period": "2025-12-01 \u2192 2025-12-31"
+        },
+        {
+          "net_profit": -379.66999999999996,
+          "trades": 7,
+          "win_rate": 14.285714285714285,
+          "profit_factor": 0.012202102195858051,
+          "sharpe": -20.958,
+          "max_drawdown": 379.67,
+          "avg_win": 4.69,
+          "avg_loss": -64.05999999999999,
+          "total_fees": 11.1,
+          "window": 8,
+          "train_period": "2025-11-01 \u2192 2025-12-31",
+          "test_period": "2025-12-31 \u2192 2026-01-30"
+        },
+        {
+          "net_profit": 0,
+          "trades": 0,
+          "win_rate": 0,
+          "profit_factor": 0,
+          "sharpe": 0,
+          "max_drawdown": 0,
+          "avg_win": 0,
+          "avg_loss": 0,
+          "total_fees": 0,
+          "window": 9,
+          "train_period": "2025-12-01 \u2192 2026-01-30",
+          "test_period": "2026-01-30 \u2192 2026-03-01"
+        },
+        {
+          "net_profit": -132.95,
+          "trades": 2,
+          "win_rate": 0.0,
+          "profit_factor": 0.0,
+          "sharpe": -36.344,
+          "max_drawdown": 132.95,
+          "avg_win": 0,
+          "avg_loss": -66.475,
+          "total_fees": 2.32,
+          "window": 10,
+          "train_period": "2025-12-31 \u2192 2026-03-01",
+          "test_period": "2026-03-01 \u2192 2026-03-31"
+        }
+      ],
+      "n_windows": 10,
+      "n_trades": 46,
+      "profitable_windows": 4,
+      "total_windows": 10,
+      "elapsed_s": 44.0
+    },
+    "BNBUSDT": {
+      "aggregate": {
+        "net_profit": 512.3600000000002,
+        "trades": 53,
+        "win_rate": 54.71698113207547,
+        "profit_factor": 1.3802639196069408,
+        "sharpe": 1.156,
+        "max_drawdown": 459.76,
+        "avg_win": 64.12896551724138,
+        "avg_loss": -56.14083333333334,
+        "total_fees": 85.36
+      },
+      "windows": [
+        {
+          "net_profit": -36.3,
+          "trades": 5,
+          "win_rate": 40.0,
+          "profit_factor": 0.3079122974261201,
+          "sharpe": -7.354,
+          "max_drawdown": 52.45,
+          "avg_win": 8.075,
+          "avg_loss": -17.483333333333334,
+          "total_fees": 11.48,
+          "window": 1,
+          "train_period": "2025-04-05 \u2192 2025-06-04",
+          "test_period": "2025-06-04 \u2192 2025-07-04"
+        },
+        {
+          "net_profit": 0,
+          "trades": 0,
+          "win_rate": 0,
+          "profit_factor": 0,
+          "sharpe": 0,
+          "max_drawdown": 0,
+          "avg_win": 0,
+          "avg_loss": 0,
+          "total_fees": 0,
+          "window": 2,
+          "train_period": "2025-05-05 \u2192 2025-07-04",
+          "test_period": "2025-07-04 \u2192 2025-08-03"
+        },
+        {
+          "net_profit": 0,
+          "trades": 0,
+          "win_rate": 0,
+          "profit_factor": 0,
+          "sharpe": 0,
+          "max_drawdown": 0,
+          "avg_win": 0,
+          "avg_loss": 0,
+          "total_fees": 0,
+          "window": 3,
+          "train_period": "2025-06-04 \u2192 2025-08-03",
+          "test_period": "2025-08-03 \u2192 2025-09-02"
+        },
+        {
+          "net_profit": 322.7800000000001,
+          "trades": 15,
+          "win_rate": 80.0,
+          "profit_factor": 2.60244253586854,
+          "sharpe": 6.372,
+          "max_drawdown": 111.68,
+          "avg_win": 43.68416666666667,
+          "avg_loss": -67.14333333333333,
+          "total_fees": 17.1,
+          "window": 4,
+          "train_period": "2025-07-04 \u2192 2025-09-02",
+          "test_period": "2025-09-02 \u2192 2025-10-02"
+        },
+        {
+          "net_profit": 218.20000000000002,
+          "trades": 10,
+          "win_rate": 20.0,
+          "profit_factor": 1.2920978300156625,
+          "sharpe": 1.187,
+          "max_drawdown": 385.74,
+          "avg_win": 482.605,
+          "avg_loss": -93.37625,
+          "total_fees": 19.62,
+          "window": 5,
+          "train_period": "2025-08-03 \u2192 2025-10-02",
+          "test_period": "2025-10-02 \u2192 2025-11-01"
+        },
+        {
+          "net_profit": -12.89,
+          "trades": 3,
+          "win_rate": 66.66666666666666,
+          "profit_factor": 0.5969355847404628,
+          "sharpe": -3.452,
+          "max_drawdown": 31.98,
+          "avg_win": 9.545,
+          "avg_loss": -31.98,
+          "total_fees": 3.71,
+          "window": 6,
+          "train_period": "2025-09-02 \u2192 2025-11-01",
+          "test_period": "2025-11-01 \u2192 2025-12-01"
+        },
+        {
+          "net_profit": 53.480000000000004,
+          "trades": 5,
+          "win_rate": 80.0,
+          "profit_factor": 1.6420168067226892,
+          "sharpe": 3.53,
+          "max_drawdown": 83.3,
+          "avg_win": 34.195,
+          "avg_loss": -83.3,
+          "total_fees": 7.24,
+          "window": 7,
+          "train_period": "2025-10-02 \u2192 2025-12-01",
+          "test_period": "2025-12-01 \u2192 2025-12-31"
+        },
+        {
+          "net_profit": -52.33000000000001,
+          "trades": 10,
+          "win_rate": 30.0,
+          "profit_factor": 0.736691154271913,
+          "sharpe": -2.187,
+          "max_drawdown": 139.08,
+          "avg_win": 48.803333333333335,
+          "avg_loss": -28.391428571428573,
+          "total_fees": 18.9,
+          "window": 8,
+          "train_period": "2025-11-01 \u2192 2025-12-31",
+          "test_period": "2025-12-31 \u2192 2026-01-30"
+        },
+        {
+          "net_profit": 13.850000000000001,
+          "trades": 2,
+          "win_rate": 100.0,
+          "profit_factor": 99.0,
+          "sharpe": 25.07,
+          "max_drawdown": 0.0,
+          "avg_win": 6.925000000000001,
+          "avg_loss": 0,
+          "total_fees": 2.9,
+          "window": 9,
+          "train_period": "2025-12-01 \u2192 2026-01-30",
+          "test_period": "2026-01-30 \u2192 2026-03-01"
+        },
+        {
+          "net_profit": 5.57,
+          "trades": 3,
+          "win_rate": 66.66666666666666,
+          "profit_factor": 1.1715429627348322,
+          "sharpe": 1.034,
+          "max_drawdown": 32.47,
+          "avg_win": 19.02,
+          "avg_loss": -32.47,
+          "total_fees": 4.41,
+          "window": 10,
+          "train_period": "2025-12-31 \u2192 2026-03-01",
+          "test_period": "2026-03-01 \u2192 2026-03-31"
+        }
+      ],
+      "n_windows": 10,
+      "n_trades": 53,
+      "profitable_windows": 5,
+      "total_windows": 10,
+      "elapsed_s": 26.6
+    }
+  },
+  "portfolio": {
+    "sharpe": -1.708,
+    "profit_factor": 0.93,
+    "net_pnl": -136.15,
+    "total_oos_trades": 99,
+    "total_windows": 20
+  },
+  "checks": {
+    "min_oos_trades": {
+      "required": 100,
+      "actual": 99,
+      "pass": false
+    },
+    "min_windows": {
+      "required": 5,
+      "actual": 20,
+      "pass": true
+    },
+    "positive_sharpe": {
+      "required": "> 0.0",
+      "actual": -1.708,
+      "pass": false
+    },
+    "profitable": {
+      "required": "PF > 1.0",
+      "actual": 0.93,
+      "pass": false
+    }
+  },
+  "board_approved": false,
+  "meta": {
+    "timeframe": "4h",
+    "train_days": 60,
+    "test_days": 30,
+    "step_days": 30,
+    "elapsed_s": 70.6
+  }
+}

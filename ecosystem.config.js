@@ -42,6 +42,12 @@ const PAIR_SLTP = {
   'BNBUSDT': { SL_ATR_MULT: '1.25', TP_ATR_MULT: '2.75' },  // P#233: was 1.5/4.0 — sweep winner, matches Python base (PnL +$513 vs -$23)
 };
 
+// P#237: Quantum ablation — SOL=ON (control), BNB=OFF (treatment). Flip after 1 week.
+const PAIR_QUANTUM = {
+  'SOLUSDT': { ENABLE_QUANTUM_PIPELINE: 'true' },
+  'BNBUSDT': { ENABLE_QUANTUM_PIPELINE: 'false' },
+};
+
 const botApps = PAIRS.map(pair => ({
   name: `turbo-${pair.replace('USDT', '').toLowerCase()}`,
   script: 'node',
@@ -60,6 +66,7 @@ const botApps = PAIRS.map(pair => ({
     BOT_STATE_FILE: `/root/turbo-bot/data/bot_state_${pair}.json`,  // P#235: Per-pair state persistence
     HEALTH_CHECK_PORT: String(PAIR_PORTS[pair] || 3001),
     ...(PAIR_SLTP[pair] || {}),
+    ...(PAIR_QUANTUM[pair] || {}),  // P#237: Per-pair quantum ablation toggle
     OTEL_SERVICE_NAME: `turbo-bot-${pair.replace('USDT', '').toLowerCase()}`,
   },
   error_file: `/root/turbo-bot/logs/${pair}-error.log`,

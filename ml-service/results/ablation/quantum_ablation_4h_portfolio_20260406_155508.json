@@ -1,0 +1,259 @@
+{
+  "pairs": {
+    "SOLUSDT": {
+      "quantum_on": {
+        "sharpe": -4.572,
+        "pnl": -648.55,
+        "pf": 0.47979498203285426,
+        "wr": 43.47826086956522,
+        "trades": 46,
+        "max_dd": 704.88
+      },
+      "quantum_off": {
+        "sharpe": -9.926,
+        "pnl": -1044.5700000000002,
+        "pf": 0.19420980768785728,
+        "wr": 33.33333333333333,
+        "trades": 39,
+        "max_dd": 1044.57
+      },
+      "delta": {
+        "sharpe": 5.354,
+        "pnl": 396.02,
+        "pf": 0.286,
+        "wr": 10.1,
+        "dd": -339.69
+      },
+      "per_window": [
+        {
+          "window": 1,
+          "sharpe_on": -284.504,
+          "sharpe_off": -289.953,
+          "delta_sharpe": 5.449,
+          "pnl_on": -80.47,
+          "pnl_off": -80.55,
+          "delta_pnl": 0.08
+        },
+        {
+          "window": 2,
+          "sharpe_on": 23.65,
+          "sharpe_off": 55.94,
+          "delta_sharpe": -32.29,
+          "pnl_on": 136.8,
+          "pnl_off": 27.310000000000002,
+          "delta_pnl": 109.49
+        },
+        {
+          "window": 3,
+          "sharpe_on": -17.045,
+          "sharpe_off": -17.137,
+          "delta_sharpe": 0.092,
+          "pnl_on": -246.35999999999999,
+          "pnl_off": -239.69,
+          "delta_pnl": -6.67
+        },
+        {
+          "window": 4,
+          "sharpe_on": 2.975,
+          "sharpe_off": 1.736,
+          "delta_sharpe": 1.239,
+          "pnl_on": 85.63999999999999,
+          "pnl_off": 7.339999999999996,
+          "delta_pnl": 78.3
+        },
+        {
+          "window": 5,
+          "sharpe_on": -10.613,
+          "sharpe_off": -16.393,
+          "delta_sharpe": 5.78,
+          "pnl_on": -191.32,
+          "pnl_off": -235.94,
+          "delta_pnl": 44.62
+        },
+        {
+          "window": 6,
+          "sharpe_on": 9.406,
+          "sharpe_off": 8.321,
+          "delta_sharpe": 1.085,
+          "pnl_on": 73.55000000000001,
+          "pnl_off": 54.370000000000005,
+          "delta_pnl": 19.18
+        },
+        {
+          "window": 7,
+          "sharpe_on": 24.658,
+          "sharpe_off": 26.253,
+          "delta_sharpe": -1.595,
+          "pnl_on": 86.25,
+          "pnl_off": 89.44,
+          "delta_pnl": -3.19
+        },
+        {
+          "window": 8,
+          "sharpe_on": -20.959,
+          "sharpe_off": -24.456,
+          "delta_sharpe": 3.497,
+          "pnl_on": -379.69999999999993,
+          "pnl_off": -408.63,
+          "delta_pnl": 28.93
+        },
+        {
+          "window": 9,
+          "sharpe_on": 0,
+          "sharpe_off": -61.363,
+          "delta_sharpe": 61.363,
+          "pnl_on": 0,
+          "pnl_off": -125.05000000000001,
+          "delta_pnl": 125.05
+        },
+        {
+          "window": 10,
+          "sharpe_on": -36.348,
+          "sharpe_off": -36.267,
+          "delta_sharpe": -0.081,
+          "pnl_on": -132.94,
+          "pnl_off": -133.17000000000002,
+          "delta_pnl": 0.23
+        }
+      ],
+      "window_wins": {
+        "quantum_on": 7,
+        "quantum_off": 3,
+        "tie": 0
+      },
+      "verdict": "\u2705 KEEP QUANTUM \u2014 Sharpe delta +5.354 >= 0.2"
+    },
+    "BNBUSDT": {
+      "quantum_on": {
+        "sharpe": 1.156,
+        "pnl": 512.3600000000001,
+        "pf": 1.380269564184776,
+        "wr": 54.71698113207547,
+        "trades": 53,
+        "max_dd": 459.76
+      },
+      "quantum_off": {
+        "sharpe": 0.874,
+        "pnl": 319.4200000000001,
+        "pf": 1.2825025648282444,
+        "wr": 48.93617021276596,
+        "trades": 47,
+        "max_dd": 443.04
+      },
+      "delta": {
+        "sharpe": 0.282,
+        "pnl": 192.94,
+        "pf": 0.098,
+        "wr": 5.8,
+        "dd": 16.72
+      },
+      "per_window": [
+        {
+          "window": 1,
+          "sharpe_on": -7.354,
+          "sharpe_off": -7.212,
+          "delta_sharpe": -0.142,
+          "pnl_on": -36.3,
+          "pnl_off": -33.46,
+          "delta_pnl": -2.84
+        },
+        {
+          "window": 2,
+          "sharpe_on": 0,
+          "sharpe_off": 0,
+          "delta_sharpe": 0,
+          "pnl_on": 0,
+          "pnl_off": 0,
+          "delta_pnl": 0
+        },
+        {
+          "window": 3,
+          "sharpe_on": 0,
+          "sharpe_off": 0,
+          "delta_sharpe": 0,
+          "pnl_on": 0,
+          "pnl_off": 0,
+          "delta_pnl": 0
+        },
+        {
+          "window": 4,
+          "sharpe_on": 6.372,
+          "sharpe_off": 2.5,
+          "delta_sharpe": 3.872,
+          "pnl_on": 322.7800000000001,
+          "pnl_off": 40.480000000000004,
+          "delta_pnl": 282.3
+        },
+        {
+          "window": 5,
+          "sharpe_on": 1.187,
+          "sharpe_off": 2.314,
+          "delta_sharpe": -1.127,
+          "pnl_on": 218.21,
+          "pnl_off": 394.91999999999996,
+          "delta_pnl": -176.71
+        },
+        {
+          "window": 6,
+          "sharpe_on": -3.452,
+          "sharpe_off": -2.16,
+          "delta_sharpe": -1.292,
+          "pnl_on": -12.89,
+          "pnl_off": -9.49,
+          "delta_pnl": -3.4
+        },
+        {
+          "window": 7,
+          "sharpe_on": 3.53,
+          "sharpe_off": 2.4,
+          "delta_sharpe": 1.13,
+          "pnl_on": 53.480000000000004,
+          "pnl_off": 31.730000000000008,
+          "delta_pnl": 21.75
+        },
+        {
+          "window": 8,
+          "sharpe_on": -2.187,
+          "sharpe_off": -6.16,
+          "delta_sharpe": 3.973,
+          "pnl_on": -52.34,
+          "pnl_off": -128.04000000000002,
+          "delta_pnl": 75.7
+        },
+        {
+          "window": 9,
+          "sharpe_on": 25.07,
+          "sharpe_off": 25.071,
+          "delta_sharpe": -0.001,
+          "pnl_on": 13.850000000000001,
+          "pnl_off": 13.74,
+          "delta_pnl": 0.11
+        },
+        {
+          "window": 10,
+          "sharpe_on": 1.034,
+          "sharpe_off": 1.672,
+          "delta_sharpe": -0.638,
+          "pnl_on": 5.57,
+          "pnl_off": 9.54,
+          "delta_pnl": -3.97
+        }
+      ],
+      "window_wins": {
+        "quantum_on": 3,
+        "quantum_off": 5,
+        "tie": 2
+      },
+      "verdict": "\u2705 KEEP QUANTUM \u2014 Sharpe delta +0.282 >= 0.2"
+    }
+  },
+  "meta": {
+    "timeframe": "4h",
+    "train_days": 60,
+    "test_days": 30,
+    "step_days": 30,
+    "sharpe_threshold": 0.2,
+    "elapsed_s": 113.1
+  },
+  "portfolio_verdict": "\u2705 KEEP QUANTUM \u2014 Avg Sharpe delta +2.818"
+}
