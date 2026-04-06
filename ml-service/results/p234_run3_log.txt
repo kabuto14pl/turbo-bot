@@ -1,0 +1,1997 @@
+C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+======================================================================
+  PHASE 1: DOWNLOAD FRESH CANDLES
+======================================================================
+
+  ­čôą BNBUSDT @ 15m (refresh)...
+  ­čôą Downloading BNBUSDT 15m (365 days)...
+  Ôťů BNBUSDT 15m: 35040 candles saved to C:\Users\dudzi\turbo-bot-local\ml-service\backtest_pipeline\..\data\bnbusdt_15m.csv
+     Ôťů 35040 candles
+
+  ­čôą SOLUSDT @ 15m (refresh)...
+  ­čôą Downloading SOLUSDT 15m (365 days)...
+  Ôťů SOLUSDT 15m: 35040 candles saved to C:\Users\dudzi\turbo-bot-local\ml-service\backtest_pipeline\..\data\solusdt_15m.csv
+     Ôťů 35040 candles
+
+======================================================================
+  PHASE 1 COMPLETE ÔÇö Verifying data files
+======================================================================
+  Ôťů SOLUSDT    1h :  3599 candles | 2025-11-06 Ôćĺ 2026-04-05
+  Ôťů SOLUSDT    4h :  2190 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů BNBUSDT    1h :  3599 candles | 2025-11-06 Ôćĺ 2026-04-05
+  Ôťů BNBUSDT    4h :  2190 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů ETHUSDT    1h :  8760 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů ETHUSDT    4h :  2190 candles | 2025-04-06 Ôćĺ 2026-04-05
+  Ôťů XRPUSDT    1h :  8760 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů XRPUSDT    4h :  2190 candles | 2025-04-06 Ôćĺ 2026-04-05
+  Ôťů BTCUSDT    1h :  8760 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů BTCUSDT    4h :  2190 candles | 2025-04-06 Ôćĺ 2026-04-05
+
+======================================================================
+  PHASE 2: REGIME ANALYSIS (per-pair)
+======================================================================
+
+  [SOLUSDT]
+  Price:    $120.32 Ôćĺ $79.56 (-33.9%)
+  Vol:      0.7% (full) | 0.6% (30d)
+  ADX:      37.7 (full) | 39.3 (30d)
+  Trend:    0.011 eff | Range: 114.0%
+
+  [BNBUSDT]
+  Price:    $593.13 Ôćĺ $592.94 (-0.0%)
+  Vol:      0.5% (full) | 0.4% (30d)
+  ADX:      38.3 (full) | 42.3 (30d)
+  Trend:    0.000 eff | Range: 102.7%
+
+  [ETHUSDT]
+  Price:    $1809.81 Ôćĺ $2066.02 (+14.2%)
+  Vol:      0.7% (full) | 0.5% (30d)
+  ADX:      38.8 (full) | 39.4 (30d)
+  Trend:    0.004 eff | Range: 113.7%
+
+  [XRPUSDT]
+  Price:    $2.13 Ôćĺ $1.30 (-38.9%)
+  Vol:      0.7% (full) | 0.4% (30d)
+  ADX:      38.0 (full) | 40.6 (30d)
+  Trend:    0.016 eff | Range: 106.2%
+
+  [BTCUSDT]
+  Price:    $83344.14 Ôćĺ $67473.48 (-19.0%)
+  Vol:      0.4% (full) | 0.4% (30d)
+  ADX:      37.6 (full) | 38.8 (30d)
+  Trend:    0.013 eff | Range: 64.3%
+
+======================================================================
+  PHASE 3: WALK-FORWARD BACKTESTS
+======================================================================
+
+  >> Running: SOLUSDT @ 1h...
+
+==========================================================================================
+  ­čöČ WALK-FORWARD VALIDATION ÔÇö SOLUSDT @ 1h
+     1 windows | Train: 90d | Test: 30d | Step: 30d
+     Data: 3599 candles (149d) | Capital: $6,500
+==========================================================================================
+
+  Window 1/1: Train 2025-11-06Ôćĺ2026-02-04 | Test 2026-02-04Ôćĺ2026-03-06
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 32 BUY / 69 SELL (692 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=1.000/0.415 | ep=13 | 3.4s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.950/0.571 | ep=11 | 4.3s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.987/0.453 | ep=11 | 5.3s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.983/0.549 | ep=12 | 6.3s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.938/0.511 | ep=11 | 7.1s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.898/0.761 | ep=17 | 8.4s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.980/0.565 | ep=13 | 9.3s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.920/0.600 | ep=13 | 10.1s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.939/0.571 | ep=13 | 11.0s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.943/0.439 | ep=11 | 11.7s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.973/0.488 | ep=11 | 12.4s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.991/0.550 | ep=13 | 13.2s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.974/0.585 | ep=11 | 14.0s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.969/0.400 | ep=11 | 14.7s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.995/0.795 | ep=13 | 15.5s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.991/0.459 | ep=12 | 16.2s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.956/0.450 | ep=11 | 16.9s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.908/0.405 | ep=12 | 17.7s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.914/0.408 | ep=12 | 18.6s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.960/0.415 | ep=11 | 19.5s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.946/0.527 | ep=12 | 20.5s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.981/0.491 | ep=11 | 21.4s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.993/0.365 | ep=12 | 22.4s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.990/0.491 | ep=12 | 23.4s
+  Ôťů MLP training complete: 24 retrains in 23.4s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 22 MLP+ensemble trades, 4 confirms, 10 vetoes
+      AdvancedAdaptive: 4 BUY, 1 SELL, 27 HOLD
+      BollingerMR: 0 BUY, 2 SELL, 8 HOLD
+      MomentumPro: 7 BUY, 3 SELL, 22 HOLD
+  Ôťů Execution complete: 54 trades in 0.5s
+    ÔŁî OOS: $-86.65 | 13 trades | WR 53.8% | PF 0.79 | Sharpe -1.59 | DD $243
+
+==========================================================================================
+  ­čôŐ AGGREGATE OOS RESULTS ÔÇö SOLUSDT @ 1h (27s)
+==========================================================================================
+  ÔŁî Net: $-86.65 | 13 trades | WR 53.8% | PF 0.79
+     Sharpe: -1.593 | Max DD: $243 | Fees: $21
+     Avg Win: $46.45 | Avg Loss: $-68.64 | R:R: 0.68
+
+   Win                    Period    Net P&L  Trades    WR%     PF  Sharpe
+  ÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  ÔŁî  1   2026-02-04 Ôćĺ 2026-03-06 $   -86.65      13  53.8%  0.79  -1.59
+    OK +$0 | 0 trades | WR=0.0% | Sharpe=0.00 | PF=0.00 | (27s)
+
+  >> Running: SOLUSDT @ 4h...
+
+==========================================================================================
+  ­čöČ WALK-FORWARD VALIDATION ÔÇö SOLUSDT @ 4h
+     9 windows | Train: 90d | Test: 30d | Step: 30d
+     Data: 2190 candles (364d) | Capital: $6,500
+==========================================================================================
+
+  Window 1/9: Train 2025-04-05Ôćĺ2025-07-04 | Test 2025-07-04Ôćĺ2025-08-03
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 16 BUY / 4 SELL (76 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.895/0.556 | ep=13 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.924/0.529 | ep=12 | 1.9s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.891/0.520 | ep=12 | 2.8s
+  Ôťů MLP training complete: 3 retrains in 2.8s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 1 MLP+ensemble trades, 0 confirms, 0 vetoes
+  Ôťů Execution complete: 4 trades in 0.1s
+    Ôťů OOS: $+67.78 | 3 trades | WR 100.0% | PF 99.00 | Sharpe 52.99 | DD $0
+
+  Window 2/9: Train 2025-05-05Ôćĺ2025-08-03 | Test 2025-08-03Ôćĺ2025-09-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 30 BUY / 2 SELL (75 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.952/0.591 | ep=13 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.981/0.560 | ep=12 | 1.8s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.993/0.549 | ep=12 | 2.7s
+  Ôťů MLP training complete: 3 retrains in 2.7s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 5 MLP+ensemble trades, 1 confirms, 1 vetoes
+      AdvancedAdaptive: 1 BUY, 0 SELL, 5 HOLD
+      MACrossover: 0 BUY, 1 SELL, 3 HOLD
+      MomentumPro: 1 BUY, 0 SELL, 5 HOLD
+  Ôťů Execution complete: 11 trades in 0.2s
+    ÔŁî OOS: $-65.42 | 8 trades | WR 37.5% | PF 0.68 | Sharpe -2.30 | DD $140
+
+  Window 3/9: Train 2025-06-04Ôćĺ2025-09-02 | Test 2025-09-02Ôćĺ2025-10-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 35 BUY / 0 SELL (78 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.924/0.545 | ep=13 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.997/0.692 | ep=17 | 2.2s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.996/0.588 | ep=12 | 3.2s
+  Ôťů MLP training complete: 3 retrains in 3.2s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 8 MLP+ensemble trades, 4 confirms, 2 vetoes
+      BollingerMR: 0 BUY, 1 SELL, 0 HOLD
+      MACrossover: 1 BUY, 0 SELL, 8 HOLD
+      MomentumPro: 2 BUY, 3 SELL, 5 HOLD
+      RSITurbo: 2 BUY, 1 SELL, 7 HOLD
+  Ôťů Execution complete: 16 trades in 0.1s
+    Ôťů OOS: $+285.22 | 13 trades | WR 76.9% | PF 2.25 | Sharpe 5.67 | DD $146
+
+  Window 4/9: Train 2025-07-04Ôćĺ2025-10-02 | Test 2025-10-02Ôćĺ2025-11-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 8 BUY / 18 SELL (77 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.868/0.630 | ep=12 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.942/0.528 | ep=12 | 1.8s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.913/0.585 | ep=12 | 2.9s
+  Ôťů MLP training complete: 3 retrains in 2.9s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 1 MLP+ensemble trades, 1 confirms, 0 vetoes
+      AdvancedAdaptive: 1 BUY, 0 SELL, 0 HOLD
+      MomentumPro: 1 BUY, 0 SELL, 0 HOLD
+  Ôťů Execution complete: 6 trades in 0.1s
+    ÔŁî OOS: $-34.49 | 3 trades | WR 33.3% | PF 0.44 | Sharpe -6.50 | DD $37
+
+  Window 5/9: Train 2025-08-03Ôćĺ2025-11-01 | Test 2025-11-01Ôćĺ2025-12-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 0 BUY / 40 SELL (79 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.908/0.660 | ep=12 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.931/0.558 | ep=12 | 1.9s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.891/0.635 | ep=12 | 2.9s
+  Ôťů MLP training complete: 3 retrains in 2.9s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 0 MLP+ensemble trades, 0 confirms, 0 vetoes
+  Ôťů Execution complete: 4 trades in 0.2s
+    ÔŁî OOS: $-36.65 | 1 trades | WR 0.0% | PF 0.00 | Sharpe 0.00 | DD $37
+
+  Window 6/9: Train 2025-09-02Ôćĺ2025-12-01 | Test 2025-12-01Ôćĺ2025-12-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 0 BUY / 20 SELL (77 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.891/0.553 | ep=12 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.922/0.566 | ep=13 | 1.9s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.930/0.627 | ep=13 | 3.0s
+  Ôťů MLP training complete: 3 retrains in 3.0s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 0 MLP+ensemble trades, 0 confirms, 0 vetoes
+  Ôťů Execution complete: 4 trades in 0.1s
+    Ôťů OOS: $+97.52 | 4 trades | WR 75.0% | PF 19.26 | Sharpe 15.04 | DD $5
+
+  Window 7/9: Train 2025-10-02Ôćĺ2025-12-31 | Test 2025-12-31Ôćĺ2026-01-30
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 9 BUY / 9 SELL (78 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.948/0.622 | ep=15 | 1.1s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.954/0.560 | ep=12 | 2.0s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.993/0.600 | ep=16 | 3.1s
+  Ôťů MLP training complete: 3 retrains in 3.1s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 8 MLP+ensemble trades, 7 confirms, 9 vetoes
+      AdvancedAdaptive: 0 BUY, 5 SELL, 12 HOLD
+      MomentumPro: 0 BUY, 14 SELL, 3 HOLD
+      RSITurbo: 7 BUY, 0 SELL, 10 HOLD
+      SuperTrend: 0 BUY, 2 SELL, 15 HOLD
+  Ôťů Execution complete: 4 trades in 0.1s
+    ÔŁî OOS: $-13.85 | 1 trades | WR 0.0% | PF 0.00 | Sharpe 0.00 | DD $14
+
+  Window 8/9: Train 2025-11-01Ôćĺ2026-01-30 | Test 2026-01-30Ôćĺ2026-03-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 8 BUY / 28 SELL (154 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.991/0.651 | ep=17 | 1.1s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.899/0.391 | ep=11 | 1.9s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.868/0.362 | ep=11 | 2.8s
+  Ôťů MLP training complete: 3 retrains in 2.8s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 5 MLP+ensemble trades, 3 confirms, 4 vetoes
+      AdvancedAdaptive: 0 BUY, 1 SELL, 8 HOLD
+      MomentumPro: 0 BUY, 6 SELL, 3 HOLD
+      RSITurbo: 3 BUY, 0 SELL, 6 HOLD
+  Ôťů Execution complete: 1 trades in 0.1s
+    ÔŁî OOS: $+0.00 | 0 trades | WR 0.0% | PF 0.00 | Sharpe 0.00 | DD $0
+
+  Window 9/9: Train 2025-12-01Ôćĺ2026-03-01 | Test 2026-03-01Ôćĺ2026-03-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü SOLUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ SOLUSDT real funding: mean_8h=0.000010, positive=57.5%, est. APR=1.14%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'GridV2'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 7 BUY / 22 SELL (80 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.922/0.463 | ep=12 | 0.8s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.925/0.500 | ep=12 | 1.7s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.971/0.500 | ep=15 | 2.8s
+  Ôťů MLP training complete: 3 retrains in 2.8s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=4.0xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 0 MLP+ensemble trades, 0 confirms, 0 vetoes
+  Ôťů Execution complete: 1 trades in 0.1s
+    ÔŁî OOS: $-54.24 | 1 trades | WR 0.0% | PF 0.00 | Sharpe 0.00 | DD $54
+
+==========================================================================================
+  ­čôŐ AGGREGATE OOS RESULTS ÔÇö SOLUSDT @ 4h (28s)
+==========================================================================================
+  Ôťů Net: $+245.87 | 34 trades | WR 58.8% | PF 1.41
+     Sharpe: 2.187 | Max DD: $206 | Fees: $37
+     Avg Win: $42.54 | Avg Loss: $-43.20 | R:R: 0.98
+
+   Win                    Period    Net P&L  Trades    WR%     PF  Sharpe
+  ÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ôťů  1   2025-07-04 Ôćĺ 2025-08-03 $   +67.78       3 100.0% 99.00  52.99
+  ÔŁî  2   2025-08-03 Ôćĺ 2025-09-02 $   -65.42       8  37.5%  0.68  -2.30
+  Ôťů  3   2025-09-02 Ôćĺ 2025-10-02 $  +285.22      13  76.9%  2.25   5.67
+  ÔŁî  4   2025-10-02 Ôćĺ 2025-11-01 $   -34.49       3  33.3%  0.44  -6.50
+  ÔŁî  5   2025-11-01 Ôćĺ 2025-12-01 $   -36.65       1   0.0%  0.00   0.00
+  Ôťů  6   2025-12-01 Ôćĺ 2025-12-31 $   +97.52       4  75.0% 19.26  15.04
+  ÔŁî  7   2025-12-31 Ôćĺ 2026-01-30 $   -13.85       1   0.0%  0.00   0.00
+  ÔŁî  8   2026-01-30 Ôćĺ 2026-03-01 $    +0.00       0   0.0%  0.00   0.00
+  ÔŁî  9   2026-03-01 Ôćĺ 2026-03-31 $   -54.24       1   0.0%  0.00   0.00
+    OK +$0 | 0 trades | WR=0.0% | Sharpe=0.00 | PF=0.00 | (28s)
+
+  >> Running: BNBUSDT @ 1h...
+
+==========================================================================================
+  ­čöČ WALK-FORWARD VALIDATION ÔÇö BNBUSDT @ 1h
+     1 windows | Train: 90d | Test: 30d | Step: 30d
+     Data: 3599 candles (149d) | Capital: $3,500
+==========================================================================================
+
+  Window 1/1: Train 2025-11-06Ôćĺ2026-02-04 | Test 2026-02-04Ôćĺ2026-03-06
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 9 BUY / 52 SELL (724 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.996/0.750 | ep=17 | 1.2s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.977/0.521 | ep=11 | 2.0s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.914/0.467 | ep=12 | 2.8s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.980/0.614 | ep=14 | 3.7s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.971/0.667 | ep=12 | 4.5s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.981/0.737 | ep=14 | 5.3s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=1.000/0.486 | ep=11 | 6.0s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=1.000/0.600 | ep=11 | 6.6s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=1.000/0.387 | ep=11 | 7.2s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=1.000/0.567 | ep=13 | 7.9s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.988/0.483 | ep=11 | 8.4s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=1.000/0.759 | ep=14 | 9.1s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=1.000/0.621 | ep=12 | 9.7s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=1.000/0.467 | ep=11 | 10.2s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=1.000/0.733 | ep=14 | 10.9s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.963/0.310 | ep=12 | 11.5s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.919/0.485 | ep=12 | 12.2s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.939/0.526 | ep=12 | 12.9s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.910/0.674 | ep=11 | 13.7s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.963/0.583 | ep=11 | 14.5s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.979/0.627 | ep=12 | 15.5s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.963/0.583 | ep=11 | 16.3s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.959/0.298 | ep=11 | 17.1s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.958/0.596 | ep=12 | 18.0s
+  Ôťů MLP training complete: 24 retrains in 18.0s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 36 MLP+ensemble trades, 9 confirms, 7 vetoes
+      AdvancedAdaptive: 2 BUY, 2 SELL, 39 HOLD
+      BollingerMR: 1 BUY, 1 SELL, 10 HOLD
+      MomentumPro: 6 BUY, 4 SELL, 33 HOLD
+      RSITurbo: 1 BUY, 6 SELL, 36 HOLD
+      SuperTrend: 2 BUY, 0 SELL, 32 HOLD
+  Ôťů Execution complete: 60 trades in 0.3s
+    ÔŁî OOS: $-0.77 | 6 trades | WR 50.0% | PF 0.99 | Sharpe -0.09 | DD $52
+
+==========================================================================================
+  ­čôŐ AGGREGATE OOS RESULTS ÔÇö BNBUSDT @ 1h (19s)
+==========================================================================================
+  ÔŁî Net: $-0.77 | 6 trades | WR 50.0% | PF 0.99
+     Sharpe: -0.091 | Max DD: $52 | Fees: $5
+     Avg Win: $20.32 | Avg Loss: $-20.58 | R:R: 0.99
+
+   Win                    Period    Net P&L  Trades    WR%     PF  Sharpe
+  ÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  ÔŁî  1   2026-02-04 Ôćĺ 2026-03-06 $    -0.77       6  50.0%  0.99  -0.09
+    OK +$0 | 0 trades | WR=0.0% | Sharpe=0.00 | PF=0.00 | (19s)
+
+  >> Running: BNBUSDT @ 4h...
+
+==========================================================================================
+  ­čöČ WALK-FORWARD VALIDATION ÔÇö BNBUSDT @ 4h
+     9 windows | Train: 90d | Test: 30d | Step: 30d
+     Data: 2190 candles (364d) | Capital: $3,500
+==========================================================================================
+
+  Window 1/9: Train 2025-04-05Ôćĺ2025-07-04 | Test 2025-07-04Ôćĺ2025-08-03
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 10 BUY / 0 SELL (76 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.977/0.562 | ep=14 | 0.7s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.980/0.686 | ep=21 | 1.9s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.984/0.529 | ep=11 | 2.5s
+  Ôťů MLP training complete: 3 retrains in 2.5s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 21 MLP+ensemble trades, 1 confirms, 3 vetoes
+      MomentumPro: 3 BUY, 1 SELL, 20 HOLD
+      RSITurbo: 0 BUY, 3 SELL, 21 HOLD
+  Ôťů Execution complete: 15 trades in 0.1s
+    ÔŁî OOS: $-97.39 | 14 trades | WR 35.7% | PF 0.63 | Sharpe -2.92 | DD $162
+
+  Window 2/9: Train 2025-05-05Ôćĺ2025-08-03 | Test 2025-08-03Ôćĺ2025-09-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 23 BUY / 0 SELL (75 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=1.000/0.552 | ep=11 | 0.6s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.968/0.571 | ep=11 | 1.2s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=1.000/0.711 | ep=14 | 2.0s
+  Ôťů MLP training complete: 3 retrains in 2.0s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 11 MLP+ensemble trades, 0 confirms, 4 vetoes
+      AdvancedAdaptive: 0 BUY, 1 SELL, 14 HOLD
+      MomentumPro: 0 BUY, 3 SELL, 12 HOLD
+  Ôťů Execution complete: 14 trades in 0.1s
+    Ôťů OOS: $+64.88 | 5 trades | WR 80.0% | PF 2.85 | Sharpe 6.38 | DD $35
+
+  Window 3/9: Train 2025-06-04Ôćĺ2025-09-02 | Test 2025-09-02Ôćĺ2025-10-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 27 BUY / 0 SELL (77 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.945/0.545 | ep=13 | 0.7s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.991/0.538 | ep=13 | 1.5s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.974/0.707 | ep=18 | 2.6s
+  Ôťů MLP training complete: 3 retrains in 2.6s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 8 MLP+ensemble trades, 1 confirms, 2 vetoes
+      AdvancedAdaptive: 1 BUY, 0 SELL, 9 HOLD
+      MomentumPro: 0 BUY, 2 SELL, 8 HOLD
+  Ôťů Execution complete: 15 trades in 0.1s
+    Ôťů OOS: $+294.17 | 9 trades | WR 77.8% | PF 14.27 | Sharpe 15.78 | DD $22
+
+  Window 4/9: Train 2025-07-04Ôćĺ2025-10-02 | Test 2025-10-02Ôćĺ2025-11-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 24 BUY / 0 SELL (148 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.981/0.622 | ep=15 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.954/0.605 | ep=15 | 1.9s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.919/0.591 | ep=14 | 2.8s
+  Ôťů MLP training complete: 3 retrains in 2.8s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 19 MLP+ensemble trades, 7 confirms, 3 vetoes
+      AdvancedAdaptive: 4 BUY, 1 SELL, 17 HOLD
+      MomentumPro: 5 BUY, 2 SELL, 15 HOLD
+      RSITurbo: 0 BUY, 4 SELL, 18 HOLD
+  Ôťů Execution complete: 22 trades in 0.1s
+    Ôťů OOS: $+333.30 | 15 trades | WR 46.7% | PF 1.69 | Sharpe 2.30 | DD $220
+
+  Window 5/9: Train 2025-08-03Ôćĺ2025-11-01 | Test 2025-11-01Ôćĺ2025-12-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 6 BUY / 17 SELL (78 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.899/0.553 | ep=12 | 0.8s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.936/0.581 | ep=17 | 1.9s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.849/0.511 | ep=12 | 2.7s
+  Ôťů MLP training complete: 3 retrains in 2.7s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 1 MLP+ensemble trades, 0 confirms, 0 vetoes
+  Ôťů Execution complete: 4 trades in 0.1s
+    ÔŁî OOS: $-6.78 | 4 trades | WR 75.0% | PF 0.67 | Sharpe -2.44 | DD $20
+
+  Window 6/9: Train 2025-09-02Ôćĺ2025-12-01 | Test 2025-12-01Ôćĺ2025-12-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 0 BUY / 13 SELL (75 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.878/0.512 | ep=13 | 0.8s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.949/0.479 | ep=16 | 2.0s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.962/0.617 | ep=15 | 3.0s
+  Ôťů MLP training complete: 3 retrains in 3.0s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 0 MLP+ensemble trades, 0 confirms, 2 vetoes
+      MomentumPro: 0 BUY, 2 SELL, 0 HOLD
+  Ôťů Execution complete: 4 trades in 0.1s
+    Ôťů OOS: $+47.20 | 2 trades | WR 100.0% | PF 99.00 | Sharpe 61.72 | DD $0
+
+  Window 7/9: Train 2025-10-02Ôćĺ2025-12-31 | Test 2025-12-31Ôćĺ2026-01-30
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 2 BUY / 0 SELL (76 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.977/0.619 | ep=16 | 1.0s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.934/0.591 | ep=12 | 1.8s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.884/0.619 | ep=11 | 2.6s
+  Ôťů MLP training complete: 3 retrains in 2.6s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 2 MLP+ensemble trades, 0 confirms, 2 vetoes
+      MomentumPro: 0 BUY, 2 SELL, 2 HOLD
+  Ôťů Execution complete: 4 trades in 0.1s
+    ÔŁî OOS: $-57.85 | 3 trades | WR 0.0% | PF 0.00 | Sharpe -163.95 | DD $58
+
+  Window 8/9: Train 2025-11-01Ôćĺ2026-01-30 | Test 2026-01-30Ôćĺ2026-03-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 2 BUY / 42 SELL (81 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.946/0.639 | ep=11 | 0.6s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.923/0.500 | ep=12 | 1.4s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.848/0.439 | ep=13 | 2.2s
+  Ôťů MLP training complete: 3 retrains in 2.2s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 2 MLP+ensemble trades, 0 confirms, 0 vetoes
+  Ôťů Execution complete: 6 trades in 0.1s
+    Ôťů OOS: $+8.72 | 2 trades | WR 100.0% | PF 99.00 | Sharpe 25.08 | DD $0
+
+  Window 9/9: Train 2025-12-01Ôćĺ2026-03-01 | Test 2026-03-01Ôćĺ2026-03-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=49%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ÔÜá´ŞĆ BNBUSDT: No Kraken perpetual available ÔÇö using simulation
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 0 BUY / 34 SELL (78 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.891/0.500 | ep=12 | 0.7s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.830/0.500 | ep=13 | 1.5s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.954/0.614 | ep=20 | 2.8s
+  Ôťů MLP training complete: 3 retrains in 2.8s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.75, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 4 MLP+ensemble trades, 0 confirms, 1 vetoes
+      MomentumPro: 0 BUY, 1 SELL, 4 HOLD
+  Ôťů Execution complete: 8 trades in 0.1s
+    ÔŁî OOS: $-73.05 | 6 trades | WR 33.3% | PF 0.25 | Sharpe -9.94 | DD $97
+
+==========================================================================================
+  ­čôŐ AGGREGATE OOS RESULTS ÔÇö BNBUSDT @ 4h (25s)
+==========================================================================================
+  Ôťů Net: $+513.20 | 60 trades | WR 53.3% | PF 1.52
+     Sharpe: 1.646 | Max DD: $220 | Fees: $67
+     Avg Win: $46.66 | Avg Loss: $-35.00 | R:R: 1.33
+
+   Win                    Period    Net P&L  Trades    WR%     PF  Sharpe
+  ÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  ÔŁî  1   2025-07-04 Ôćĺ 2025-08-03 $   -97.39      14  35.7%  0.63  -2.92
+  Ôťů  2   2025-08-03 Ôćĺ 2025-09-02 $   +64.88       5  80.0%  2.85   6.38
+  Ôťů  3   2025-09-02 Ôćĺ 2025-10-02 $  +294.17       9  77.8% 14.27  15.78
+  Ôťů  4   2025-10-02 Ôćĺ 2025-11-01 $  +333.30      15  46.7%  1.69   2.30
+  ÔŁî  5   2025-11-01 Ôćĺ 2025-12-01 $    -6.78       4  75.0%  0.67  -2.44
+  Ôťů  6   2025-12-01 Ôćĺ 2025-12-31 $   +47.20       2 100.0% 99.00  61.72
+  ÔŁî  7   2025-12-31 Ôćĺ 2026-01-30 $   -57.85       3   0.0%  0.00 -163.95
+  Ôťů  8   2026-01-30 Ôćĺ 2026-03-01 $    +8.72       2 100.0% 99.00  25.08
+  ÔŁî  9   2026-03-01 Ôćĺ 2026-03-31 $   -73.05       6  33.3%  0.25  -9.94
+    OK +$0 | 0 trades | WR=0.0% | Sharpe=0.00 | PF=0.00 | (25s)
+
+  >> Running: ETHUSDT @ 1h...
+
+==========================================================================================
+  ­čöČ WALK-FORWARD VALIDATION ÔÇö ETHUSDT @ 1h
+     9 windows | Train: 90d | Test: 30d | Step: 30d
+     Data: 8760 candles (364d) | Capital: $0
+==========================================================================================
+
+  Window 1/9: Train 2025-04-05Ôćĺ2025-07-04 | Test 2025-07-04Ôćĺ2025-08-03
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 82 BUY / 17 SELL (647 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.996/0.558 | ep=14 | 1.0s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.945/0.630 | ep=18 | 2.2s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.986/0.524 | ep=13 | 3.0s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.927/0.667 | ep=15 | 4.0s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.924/0.653 | ep=11 | 4.9s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.950/0.480 | ep=11 | 5.7s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=1.000/0.830 | ep=17 | 7.1s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.968/0.607 | ep=11 | 8.0s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.997/0.593 | ep=12 | 9.1s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=1.000/0.647 | ep=11 | 10.0s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.991/0.560 | ep=12 | 10.9s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.933/0.553 | ep=11 | 11.7s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.898/0.533 | ep=13 | 12.7s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.962/0.617 | ep=15 | 13.8s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.953/0.479 | ep=11 | 14.6s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.976/0.638 | ep=15 | 15.7s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.996/0.523 | ep=12 | 16.5s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.979/0.659 | ep=13 | 17.4s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.969/0.634 | ep=13 | 18.2s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.974/0.605 | ep=12 | 18.9s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.902/0.463 | ep=12 | 19.7s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.878/0.545 | ep=13 | 20.6s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.890/0.533 | ep=13 | 21.5s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.996/0.542 | ep=11 | 22.4s
+  Ôťů MLP training complete: 24 retrains in 22.4s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 144 MLP+ensemble trades, 28 confirms, 16 vetoes
+      AdvancedAdaptive: 10 BUY, 12 SELL, 138 HOLD
+      BollingerMR: 0 BUY, 6 SELL, 38 HOLD
+      MomentumPro: 34 BUY, 14 SELL, 112 HOLD
+      RSITurbo: 1 BUY, 14 SELL, 145 HOLD
+      SuperTrend: 2 BUY, 0 SELL, 116 HOLD
+  Ôťů Execution complete: 117 trades in 0.4s
+    ÔŁî OOS: $-205.75 | 34 trades | WR 38.2% | PF 0.48 | Sharpe -5.45 | DD $228
+
+  Window 2/9: Train 2025-05-05Ôćĺ2025-08-03 | Test 2025-08-03Ôćĺ2025-09-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 81 BUY / 33 SELL (723 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.986/0.620 | ep=11 | 0.9s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.997/0.611 | ep=11 | 1.8s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=1.000/0.620 | ep=11 | 2.7s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.989/0.520 | ep=12 | 3.6s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.920/0.681 | ep=12 | 4.5s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.946/0.522 | ep=13 | 5.5s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.969/0.617 | ep=11 | 6.3s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.940/0.479 | ep=11 | 7.1s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.944/0.630 | ep=16 | 8.3s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.979/0.356 | ep=12 | 9.1s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.979/0.605 | ep=13 | 10.0s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.955/0.537 | ep=11 | 10.7s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.995/0.632 | ep=14 | 11.5s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.914/0.452 | ep=12 | 12.3s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.901/0.512 | ep=12 | 13.2s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=1.000/0.667 | ep=14 | 14.1s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.985/0.500 | ep=12 | 15.0s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.995/0.580 | ep=11 | 15.9s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.993/0.440 | ep=11 | 16.7s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.986/0.660 | ep=12 | 17.6s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.986/0.720 | ep=13 | 18.6s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.991/0.469 | ep=11 | 19.5s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.989/0.673 | ep=16 | 20.6s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.986/0.633 | ep=12 | 21.5s
+  Ôťů MLP training complete: 24 retrains in 21.5s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 100 MLP+ensemble trades, 26 confirms, 27 vetoes
+      AdvancedAdaptive: 4 BUY, 3 SELL, 120 HOLD
+      BollingerMR: 0 BUY, 7 SELL, 32 HOLD
+      MACrossover: 2 BUY, 2 SELL, 84 HOLD
+      MomentumPro: 24 BUY, 18 SELL, 85 HOLD
+      RSITurbo: 1 BUY, 7 SELL, 119 HOLD
+      SuperTrend: 0 BUY, 1 SELL, 93 HOLD
+  Ôťů Execution complete: 112 trades in 0.4s
+    Ôťů OOS: $+69.06 | 40 trades | WR 57.5% | PF 1.22 | Sharpe 1.37 | DD $189
+
+  Window 3/9: Train 2025-06-04Ôćĺ2025-09-02 | Test 2025-09-02Ôćĺ2025-10-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 85 BUY / 33 SELL (639 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=1.000/0.512 | ep=13 | 0.8s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.989/0.783 | ep=20 | 2.2s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=1.000/0.432 | ep=12 | 3.1s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.994/0.634 | ep=14 | 3.9s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.940/0.425 | ep=12 | 4.7s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.949/0.744 | ep=13 | 5.5s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.937/0.488 | ep=12 | 6.3s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.893/0.659 | ep=12 | 7.1s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.956/0.500 | ep=13 | 8.0s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.978/0.408 | ep=11 | 8.9s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=1.000/0.551 | ep=11 | 9.7s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.993/0.408 | ep=11 | 10.6s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.971/0.640 | ep=12 | 11.5s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=1.000/0.580 | ep=11 | 12.4s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.970/0.531 | ep=12 | 13.3s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.991/0.694 | ep=13 | 14.3s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.996/0.604 | ep=12 | 15.2s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.992/0.574 | ep=12 | 16.1s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.992/0.605 | ep=12 | 16.9s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.996/0.600 | ep=11 | 17.6s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=1.000/0.432 | ep=11 | 18.2s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.988/0.412 | ep=12 | 18.9s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.961/0.581 | ep=12 | 19.5s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.968/0.588 | ep=13 | 20.2s
+  Ôťů MLP training complete: 24 retrains in 20.2s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 117 MLP+ensemble trades, 27 confirms, 23 vetoes
+      AdvancedAdaptive: 7 BUY, 9 SELL, 124 HOLD
+      BollingerMR: 1 BUY, 4 SELL, 33 HOLD
+      MACrossover: 0 BUY, 3 SELL, 99 HOLD
+      MomentumPro: 18 BUY, 21 SELL, 101 HOLD
+      RSITurbo: 9 BUY, 6 SELL, 125 HOLD
+      SuperTrend: 0 BUY, 1 SELL, 102 HOLD
+  Ôťů Execution complete: 118 trades in 0.4s
+    ÔŁî OOS: $-37.21 | 32 trades | WR 43.8% | PF 0.84 | Sharpe -1.20 | DD $203
+
+  Window 4/9: Train 2025-07-04Ôćĺ2025-10-02 | Test 2025-10-02Ôćĺ2025-11-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 47 BUY / 43 SELL (716 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.965/0.561 | ep=14 | 0.9s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.961/0.522 | ep=11 | 1.7s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=1.000/0.440 | ep=11 | 2.6s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.996/0.694 | ep=14 | 3.6s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=1.000/0.551 | ep=12 | 4.5s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.989/0.735 | ep=12 | 5.4s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.989/0.740 | ep=12 | 6.4s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.968/0.551 | ep=11 | 7.2s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.989/0.633 | ep=14 | 8.3s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=1.000/0.574 | ep=11 | 9.1s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.989/0.574 | ep=13 | 10.1s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.992/0.690 | ep=14 | 11.0s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.996/0.500 | ep=12 | 11.7s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.971/0.378 | ep=12 | 12.4s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.952/0.324 | ep=11 | 13.1s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.961/0.469 | ep=12 | 13.7s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.975/0.471 | ep=13 | 14.4s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.968/0.606 | ep=13 | 15.1s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.819/0.514 | ep=12 | 15.8s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.858/0.615 | ep=14 | 16.6s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.858/0.524 | ep=12 | 17.4s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.927/0.622 | ep=13 | 18.3s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.977/0.511 | ep=11 | 19.2s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.981/0.604 | ep=13 | 20.2s
+  Ôťů MLP training complete: 24 retrains in 20.2s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 107 MLP+ensemble trades, 24 confirms, 20 vetoes
+      AdvancedAdaptive: 11 BUY, 4 SELL, 112 HOLD
+      BollingerMR: 0 BUY, 5 SELL, 24 HOLD
+      MACrossover: 1 BUY, 3 SELL, 94 HOLD
+      MomentumPro: 23 BUY, 13 SELL, 91 HOLD
+      RSITurbo: 1 BUY, 6 SELL, 120 HOLD
+      SuperTrend: 1 BUY, 1 SELL, 99 HOLD
+  Ôťů Execution complete: 114 trades in 0.4s
+    ÔŁî OOS: $-227.34 | 35 trades | WR 31.4% | PF 0.48 | Sharpe -4.82 | DD $227
+
+  Window 5/9: Train 2025-08-03Ôćĺ2025-11-01 | Test 2025-11-01Ôćĺ2025-12-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 26 BUY / 76 SELL (645 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.992/0.591 | ep=13 | 0.9s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.989/0.714 | ep=16 | 2.1s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=1.000/0.583 | ep=12 | 3.0s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.982/0.565 | ep=13 | 3.9s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.973/0.732 | ep=13 | 4.7s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.975/0.400 | ep=12 | 5.5s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=1.000/0.528 | ep=12 | 6.2s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.990/0.364 | ep=11 | 6.8s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.984/0.719 | ep=13 | 7.4s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.974/0.400 | ep=12 | 8.1s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.941/0.515 | ep=12 | 8.8s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.833/0.667 | ep=12 | 9.5s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.806/0.525 | ep=13 | 10.3s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.890/0.605 | ep=13 | 11.2s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.913/0.422 | ep=13 | 12.1s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.966/0.532 | ep=11 | 12.9s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.964/0.625 | ep=11 | 13.8s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.982/0.614 | ep=12 | 14.6s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.918/0.489 | ep=12 | 15.4s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.973/0.413 | ep=12 | 16.3s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.955/0.542 | ep=11 | 17.1s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.989/0.740 | ep=13 | 18.1s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.997/0.667 | ep=12 | 19.1s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=1.000/0.750 | ep=17 | 20.5s
+  Ôťů MLP training complete: 24 retrains in 20.5s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 113 MLP+ensemble trades, 28 confirms, 28 vetoes
+      AdvancedAdaptive: 7 BUY, 9 SELL, 125 HOLD
+      BollingerMR: 3 BUY, 12 SELL, 39 HOLD
+      MACrossover: 1 BUY, 1 SELL, 85 HOLD
+      MomentumPro: 16 BUY, 15 SELL, 110 HOLD
+      RSITurbo: 4 BUY, 6 SELL, 131 HOLD
+      SuperTrend: 1 BUY, 2 SELL, 96 HOLD
+  Ôťů Execution complete: 118 trades in 0.4s
+    Ôťů OOS: $+125.99 | 38 trades | WR 63.2% | PF 1.42 | Sharpe 2.42 | DD $192
+
+  Window 6/9: Train 2025-09-02Ôćĺ2025-12-01 | Test 2025-12-01Ôćĺ2025-12-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 38 BUY / 77 SELL (749 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=1.000/0.607 | ep=11 | 0.6s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.945/0.719 | ep=11 | 1.2s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.968/0.500 | ep=14 | 1.9s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.904/0.485 | ep=12 | 2.6s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.819/0.472 | ep=12 | 3.3s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.845/0.415 | ep=13 | 4.1s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.945/0.558 | ep=11 | 4.8s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.922/0.556 | ep=11 | 5.6s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.966/0.521 | ep=11 | 6.4s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.966/0.604 | ep=12 | 7.3s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.936/0.545 | ep=13 | 8.2s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.918/0.500 | ep=12 | 9.0s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.989/0.532 | ep=11 | 9.8s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.978/0.542 | ep=13 | 10.8s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.996/0.640 | ep=17 | 12.1s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.977/0.537 | ep=11 | 13.0s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=1.000/0.731 | ep=13 | 14.0s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.975/0.520 | ep=11 | 14.9s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.992/0.574 | ep=12 | 15.8s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.952/0.511 | ep=13 | 16.7s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.965/0.525 | ep=13 | 17.5s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.995/0.564 | ep=14 | 18.4s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.976/0.526 | ep=12 | 19.1s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.995/0.559 | ep=11 | 19.7s
+  Ôťů MLP training complete: 24 retrains in 19.7s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 89 MLP+ensemble trades, 18 confirms, 23 vetoes
+      AdvancedAdaptive: 9 BUY, 6 SELL, 97 HOLD
+      BollingerMR: 13 BUY, 3 SELL, 31 HOLD
+      MomentumPro: 13 BUY, 16 SELL, 83 HOLD
+      RSITurbo: 2 BUY, 5 SELL, 105 HOLD
+      SuperTrend: 2 BUY, 1 SELL, 69 HOLD
+  Ôťů Execution complete: 99 trades in 0.4s
+    Ôťů OOS: $+29.35 | 29 trades | WR 44.8% | PF 1.14 | Sharpe 0.83 | DD $72
+
+  Window 7/9: Train 2025-10-02Ôćĺ2025-12-31 | Test 2025-12-31Ôćĺ2026-01-30
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 46 BUY / 73 SELL (646 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.984/0.581 | ep=12 | 0.8s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.985/0.604 | ep=15 | 2.0s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.967/0.553 | ep=11 | 2.8s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.902/0.600 | ep=12 | 3.6s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.939/0.467 | ep=13 | 4.5s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.954/0.457 | ep=12 | 5.4s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.996/0.500 | ep=12 | 6.3s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.997/0.804 | ep=15 | 7.5s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.999/0.547 | ep=11 | 8.4s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=1.000/0.706 | ep=15 | 9.6s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.981/0.420 | ep=11 | 10.5s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.942/0.553 | ep=12 | 11.4s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.971/0.500 | ep=13 | 12.3s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.949/0.615 | ep=12 | 13.0s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.981/0.615 | ep=13 | 13.8s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.943/0.556 | ep=12 | 14.5s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.979/0.618 | ep=13 | 15.2s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.984/0.323 | ep=11 | 15.8s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.986/0.500 | ep=11 | 16.4s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=1.000/0.516 | ep=12 | 17.0s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.982/0.633 | ep=11 | 17.6s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=1.000/0.621 | ep=13 | 18.2s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.977/0.515 | ep=12 | 18.9s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.951/0.606 | ep=11 | 19.5s
+  Ôťů MLP training complete: 24 retrains in 19.5s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 103 MLP+ensemble trades, 23 confirms, 24 vetoes
+      AdvancedAdaptive: 5 BUY, 5 SELL, 117 HOLD
+      BollingerMR: 4 BUY, 6 SELL, 32 HOLD
+      MACrossover: 0 BUY, 1 SELL, 84 HOLD
+      MomentumPro: 15 BUY, 25 SELL, 87 HOLD
+      RSITurbo: 8 BUY, 4 SELL, 115 HOLD
+      SuperTrend: 3 BUY, 0 SELL, 89 HOLD
+  Ôťů Execution complete: 111 trades in 0.4s
+    ÔŁî OOS: $-118.76 | 36 trades | WR 55.6% | PF 0.57 | Sharpe -3.69 | DD $152
+
+  Window 8/9: Train 2025-11-01Ôćĺ2026-01-30 | Test 2026-01-30Ôćĺ2026-03-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 48 BUY / 91 SELL (667 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=1.000/0.792 | ep=14 | 1.0s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.976/0.585 | ep=11 | 2.0s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=1.000/0.667 | ep=13 | 3.0s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.982/0.490 | ep=11 | 3.9s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.992/0.553 | ep=12 | 4.8s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.950/0.442 | ep=12 | 5.6s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.990/0.538 | ep=13 | 6.4s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.976/0.526 | ep=12 | 7.1s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.985/0.639 | ep=14 | 7.9s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.995/0.606 | ep=12 | 8.6s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.954/0.581 | ep=12 | 9.2s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.997/0.533 | ep=11 | 9.8s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.988/0.552 | ep=11 | 10.4s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.994/0.567 | ep=13 | 11.1s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=1.000/0.586 | ep=13 | 11.7s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.956/0.485 | ep=13 | 12.4s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.945/0.576 | ep=11 | 13.0s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.985/0.784 | ep=15 | 13.9s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.894/0.610 | ep=12 | 14.7s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.927/0.571 | ep=11 | 15.5s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.993/0.500 | ep=11 | 16.4s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.960/0.547 | ep=12 | 17.4s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.979/0.490 | ep=13 | 18.4s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.932/0.347 | ep=11 | 19.2s
+  Ôťů MLP training complete: 24 retrains in 19.2s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 104 MLP+ensemble trades, 20 confirms, 20 vetoes
+      AdvancedAdaptive: 4 BUY, 11 SELL, 109 HOLD
+      BollingerMR: 1 BUY, 1 SELL, 36 HOLD
+      MACrossover: 0 BUY, 1 SELL, 85 HOLD
+      MomentumPro: 12 BUY, 22 SELL, 90 HOLD
+      RSITurbo: 7 BUY, 4 SELL, 113 HOLD
+      SuperTrend: 2 BUY, 1 SELL, 89 HOLD
+  Ôťů Execution complete: 114 trades in 0.3s
+    ÔŁî OOS: $-108.69 | 31 trades | WR 58.1% | PF 0.75 | Sharpe -1.88 | DD $126
+
+  Window 9/9: Train 2025-12-01Ôćĺ2026-03-01 | Test 2026-03-01Ôćĺ2026-03-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 32 BUY / 81 SELL (715 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.973/0.515 | ep=11 | 0.6s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.964/0.600 | ep=12 | 1.3s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.983/0.719 | ep=12 | 2.0s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.977/0.656 | ep=11 | 2.6s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.965/0.419 | ep=11 | 3.2s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.994/0.690 | ep=13 | 3.8s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.988/0.533 | ep=12 | 4.4s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.988/0.400 | ep=11 | 5.0s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.972/0.531 | ep=12 | 5.6s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.994/0.594 | ep=13 | 6.4s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.956/0.658 | ep=12 | 7.1s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.930/0.738 | ep=13 | 8.0s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.954/0.510 | ep=11 | 8.8s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.997/0.529 | ep=11 | 9.7s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.997/0.519 | ep=12 | 10.7s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.997/0.549 | ep=17 | 12.0s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.950/0.375 | ep=11 | 12.8s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.941/0.633 | ep=11 | 13.7s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.959/0.500 | ep=11 | 14.5s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.944/0.489 | ep=11 | 15.3s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=1.000/0.500 | ep=17 | 16.6s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.959/0.457 | ep=11 | 17.4s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.883/0.619 | ep=17 | 18.5s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.983/0.571 | ep=12 | 19.3s
+  Ôťů MLP training complete: 24 retrains in 19.3s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 102 MLP+ensemble trades, 15 confirms, 17 vetoes
+      AdvancedAdaptive: 8 BUY, 8 SELL, 103 HOLD
+      BollingerMR: 3 BUY, 4 SELL, 32 HOLD
+      MACrossover: 2 BUY, 1 SELL, 77 HOLD
+      MomentumPro: 10 BUY, 22 SELL, 87 HOLD
+      RSITurbo: 6 BUY, 1 SELL, 112 HOLD
+      SuperTrend: 1 BUY, 0 SELL, 86 HOLD
+  Ôťů Execution complete: 111 trades in 0.4s
+    Ôťů OOS: $+206.66 | 33 trades | WR 63.6% | PF 1.92 | Sharpe 4.38 | DD $69
+
+==========================================================================================
+  ­čôŐ AGGREGATE OOS RESULTS ÔÇö ETHUSDT @ 1h (193s)
+==========================================================================================
+  ÔŁî Net: $-266.69 | 308 trades | WR 51.0% | PF 0.91
+     Sharpe: -0.654 | Max DD: $513 | Fees: $242
+     Avg Win: $16.36 | Avg Loss: $-18.78 | R:R: 0.87
+
+   Win                    Period    Net P&L  Trades    WR%     PF  Sharpe
+  ÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  ÔŁî  1   2025-07-04 Ôćĺ 2025-08-03 $  -205.75      34  38.2%  0.48  -5.45
+  Ôťů  2   2025-08-03 Ôćĺ 2025-09-02 $   +69.06      40  57.5%  1.22   1.37
+  ÔŁî  3   2025-09-02 Ôćĺ 2025-10-02 $   -37.21      32  43.8%  0.84  -1.20
+  ÔŁî  4   2025-10-02 Ôćĺ 2025-11-01 $  -227.34      35  31.4%  0.48  -4.82
+  Ôťů  5   2025-11-01 Ôćĺ 2025-12-01 $  +125.99      38  63.2%  1.42   2.42
+  Ôťů  6   2025-12-01 Ôćĺ 2025-12-31 $   +29.35      29  44.8%  1.14   0.83
+  ÔŁî  7   2025-12-31 Ôćĺ 2026-01-30 $  -118.76      36  55.6%  0.57  -3.69
+  ÔŁî  8   2026-01-30 Ôćĺ 2026-03-01 $  -108.69      31  58.1%  0.75  -1.88
+  Ôťů  9   2026-03-01 Ôćĺ 2026-03-31 $  +206.66      33  63.6%  1.92   4.38
+    OK +$0 | 0 trades | WR=0.0% | Sharpe=0.00 | PF=0.00 | (193s)
+
+  >> Running: ETHUSDT @ 4h...
+
+==========================================================================================
+  ­čöČ WALK-FORWARD VALIDATION ÔÇö ETHUSDT @ 4h
+     9 windows | Train: 90d | Test: 30d | Step: 30d
+     Data: 2190 candles (364d) | Capital: $0
+==========================================================================================
+
+  Window 1/9: Train 2025-04-06Ôćĺ2025-07-04 | Test 2025-07-05Ôćĺ2025-08-03
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 37 BUY / 5 SELL (80 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.945/0.690 | ep=15 | 1.0s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.941/0.646 | ep=16 | 2.2s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.915/0.327 | ep=12 | 3.1s
+  Ôťů MLP training complete: 3 retrains in 3.1s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 40 MLP+ensemble trades, 7 confirms, 7 vetoes
+      AdvancedAdaptive: 1 BUY, 3 SELL, 43 HOLD
+      MACrossover: 2 BUY, 0 SELL, 36 HOLD
+      MomentumPro: 7 BUY, 4 SELL, 36 HOLD
+      RSITurbo: 1 BUY, 3 SELL, 43 HOLD
+  Ôťů Execution complete: 29 trades in 0.1s
+    ÔŁî OOS: $-474.65 | 20 trades | WR 20.0% | PF 0.13 | Sharpe -14.54 | DD $489
+
+  Window 2/9: Train 2025-05-06Ôćĺ2025-08-03 | Test 2025-08-04Ôćĺ2025-09-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 49 BUY / 0 SELL (79 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.906/0.381 | ep=11 | 0.7s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.888/0.458 | ep=12 | 1.6s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.952/0.647 | ep=17 | 2.9s
+  Ôťů MLP training complete: 3 retrains in 2.9s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 40 MLP+ensemble trades, 10 confirms, 18 vetoes
+      AdvancedAdaptive: 7 BUY, 4 SELL, 47 HOLD
+      BollingerMR: 1 BUY, 2 SELL, 18 HOLD
+      MACrossover: 1 BUY, 0 SELL, 36 HOLD
+      MomentumPro: 17 BUY, 4 SELL, 37 HOLD
+      RSITurbo: 0 BUY, 6 SELL, 52 HOLD
+      SuperTrend: 1 BUY, 0 SELL, 39 HOLD
+  Ôťů Execution complete: 34 trades in 0.1s
+    ÔŁî OOS: $-183.45 | 23 trades | WR 39.1% | PF 0.56 | Sharpe -3.81 | DD $202
+
+  Window 3/9: Train 2025-06-05Ôćĺ2025-09-02 | Test 2025-09-03Ôćĺ2025-10-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 26 BUY / 1 SELL (153 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.935/0.750 | ep=12 | 0.8s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.937/0.600 | ep=13 | 1.8s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.936/0.480 | ep=13 | 2.8s
+  Ôťů MLP training complete: 3 retrains in 2.8s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 38 MLP+ensemble trades, 10 confirms, 8 vetoes
+      AdvancedAdaptive: 3 BUY, 5 SELL, 38 HOLD
+      BollingerMR: 1 BUY, 0 SELL, 13 HOLD
+      MomentumPro: 3 BUY, 14 SELL, 29 HOLD
+      RSITurbo: 4 BUY, 0 SELL, 42 HOLD
+      SuperTrend: 1 BUY, 0 SELL, 33 HOLD
+  Ôťů Execution complete: 26 trades in 0.1s
+    ÔŁî OOS: $-52.44 | 10 trades | WR 30.0% | PF 0.62 | Sharpe -3.35 | DD $120
+
+  Window 4/9: Train 2025-07-05Ôćĺ2025-10-02 | Test 2025-10-03Ôćĺ2025-11-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 1 BUY / 9 SELL (77 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.942/0.511 | ep=13 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.972/0.511 | ep=11 | 1.8s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.800/0.565 | ep=13 | 2.7s
+  Ôťů MLP training complete: 3 retrains in 2.7s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 26 MLP+ensemble trades, 10 confirms, 14 vetoes
+      AdvancedAdaptive: 2 BUY, 11 SELL, 27 HOLD
+      MomentumPro: 4 BUY, 14 SELL, 22 HOLD
+      RSITurbo: 3 BUY, 0 SELL, 37 HOLD
+      SuperTrend: 1 BUY, 0 SELL, 28 HOLD
+  Ôťů Execution complete: 16 trades in 0.1s
+    ÔŁî OOS: $-60.07 | 8 trades | WR 25.0% | PF 0.51 | Sharpe -4.99 | DD $60
+
+  Window 5/9: Train 2025-08-04Ôćĺ2025-11-01 | Test 2025-11-02Ôćĺ2025-12-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 0 BUY / 31 SELL (89 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.885/0.575 | ep=14 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.858/0.636 | ep=16 | 1.9s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.823/0.622 | ep=14 | 2.9s
+  Ôťů MLP training complete: 3 retrains in 2.9s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 19 MLP+ensemble trades, 3 confirms, 10 vetoes
+      AdvancedAdaptive: 0 BUY, 3 SELL, 26 HOLD
+      BollingerMR: 2 BUY, 0 SELL, 9 HOLD
+      MomentumPro: 1 BUY, 10 SELL, 18 HOLD
+      RSITurbo: 0 BUY, 1 SELL, 28 HOLD
+  Ôťů Execution complete: 16 trades in 0.1s
+    Ôťů OOS: $+15.21 | 6 trades | WR 50.0% | PF 1.12 | Sharpe 0.89 | DD $90
+
+  Window 6/9: Train 2025-09-03Ôćĺ2025-12-01 | Test 2025-12-02Ôćĺ2025-12-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 0 BUY / 18 SELL (78 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.911/0.575 | ep=13 | 0.8s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.874/0.617 | ep=12 | 1.7s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.958/0.625 | ep=16 | 2.9s
+  Ôťů MLP training complete: 3 retrains in 2.9s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 12 MLP+ensemble trades, 1 confirms, 2 vetoes
+      BollingerMR: 1 BUY, 0 SELL, 7 HOLD
+      MomentumPro: 2 BUY, 1 SELL, 11 HOLD
+      RSITurbo: 0 BUY, 1 SELL, 13 HOLD
+      SuperTrend: 1 BUY, 0 SELL, 9 HOLD
+  Ôťů Execution complete: 11 trades in 0.1s
+    Ôťů OOS: $+9.28 | 10 trades | WR 40.0% | PF 1.08 | Sharpe 0.50 | DD $68
+
+  Window 7/9: Train 2025-10-03Ôćĺ2025-12-31 | Test 2026-01-01Ôćĺ2026-01-30
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 3 BUY / 1 SELL (79 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.988/0.643 | ep=14 | 0.9s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.896/0.630 | ep=16 | 2.0s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.946/0.585 | ep=12 | 2.8s
+  Ôťů MLP training complete: 3 retrains in 2.8s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 24 MLP+ensemble trades, 3 confirms, 5 vetoes
+      AdvancedAdaptive: 0 BUY, 1 SELL, 28 HOLD
+      BollingerMR: 1 BUY, 0 SELL, 8 HOLD
+      MomentumPro: 2 BUY, 6 SELL, 21 HOLD
+      RSITurbo: 2 BUY, 1 SELL, 26 HOLD
+      SuperTrend: 1 BUY, 0 SELL, 21 HOLD
+  Ôťů Execution complete: 17 trades in 0.1s
+    ÔŁî OOS: $-200.02 | 12 trades | WR 16.7% | PF 0.14 | Sharpe -13.72 | DD $200
+
+  Window 8/9: Train 2025-11-02Ôćĺ2026-01-30 | Test 2026-01-31Ôćĺ2026-03-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 3 BUY / 29 SELL (77 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.980/0.639 | ep=12 | 0.7s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.949/0.421 | ep=11 | 1.4s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.912/0.625 | ep=14 | 2.2s
+  Ôťů MLP training complete: 3 retrains in 2.2s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 12 MLP+ensemble trades, 7 confirms, 0 vetoes
+      BollingerMR: 0 BUY, 1 SELL, 3 HOLD
+      MomentumPro: 6 BUY, 1 SELL, 5 HOLD
+  Ôťů Execution complete: 9 trades in 0.1s
+    Ôťů OOS: $+3.88 | 4 trades | WR 50.0% | PF 1.11 | Sharpe 0.67 | DD $33
+
+  Window 9/9: Train 2025-12-02Ôćĺ2026-03-01 | Test 2026-03-02Ôćĺ2026-03-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.53)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü ETHUSDT: Loaded 1101 cached 8h funding rates
+  ­čôŐ ETHUSDT real funding: mean_8h=0.000031, positive=71.7%, est. APR=3.42%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (288 candles, lookback=200)
+  Ôťů ExtSig plan: 7 BUY / 24 SELL (82 ms)
+  ­čôŐ MLP training loop: 287 candles, retrain every 100, ~2 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/2 | candle 532/719 (34.8%) | acc=0.861/0.571 | ep=12 | 0.7s
+    retrain 2/2 | candle 632/719 (69.7%) | acc=0.931/0.500 | ep=12 | 1.5s
+    retrain 3/2 | candle 719/719 (100.0%) | acc=0.881/0.587 | ep=13 | 2.4s
+  Ôťů MLP training complete: 3 retrains in 2.4s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 287 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=2, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 7 MLP+ensemble trades, 1 confirms, 3 vetoes
+      MACrossover: 0 BUY, 1 SELL, 5 HOLD
+      MomentumPro: 1 BUY, 3 SELL, 6 HOLD
+      RSITurbo: 0 BUY, 1 SELL, 9 HOLD
+  Ôťů Execution complete: 7 trades in 0.2s
+    Ôťů OOS: $+55.48 | 8 trades | WR 62.5% | PF 1.69 | Sharpe 3.15 | DD $77
+
+==========================================================================================
+  ­čôŐ AGGREGATE OOS RESULTS ÔÇö ETHUSDT @ 4h (27s)
+==========================================================================================
+  ÔŁî Net: $-886.78 | 101 trades | WR 33.7% | PF 0.51
+     Sharpe: -4.516 | Max DD: $961 | Fees: $96
+     Avg Win: $27.02 | Avg Loss: $-26.95 | R:R: 1.00
+
+   Win                    Period    Net P&L  Trades    WR%     PF  Sharpe
+  ÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  ÔŁî  1   2025-07-05 Ôćĺ 2025-08-03 $  -474.65      20  20.0%  0.13 -14.54
+  ÔŁî  2   2025-08-04 Ôćĺ 2025-09-02 $  -183.45      23  39.1%  0.56  -3.81
+  ÔŁî  3   2025-09-03 Ôćĺ 2025-10-02 $   -52.44      10  30.0%  0.62  -3.35
+  ÔŁî  4   2025-10-03 Ôćĺ 2025-11-01 $   -60.07       8  25.0%  0.51  -4.99
+  Ôťů  5   2025-11-02 Ôćĺ 2025-12-01 $   +15.21       6  50.0%  1.12   0.89
+  Ôťů  6   2025-12-02 Ôćĺ 2025-12-31 $    +9.28      10  40.0%  1.08   0.50
+  ÔŁî  7   2026-01-01 Ôćĺ 2026-01-30 $  -200.02      12  16.7%  0.14 -13.72
+  Ôťů  8   2026-01-31 Ôćĺ 2026-03-01 $    +3.88       4  50.0%  1.11   0.67
+  Ôťů  9   2026-03-02 Ôćĺ 2026-03-31 $   +55.48       8  62.5%  1.69   3.15
+    OK +$0 | 0 trades | WR=0.0% | Sharpe=0.00 | PF=0.00 | (27s)
+
+  >> Running: XRPUSDT @ 1h...
+
+==========================================================================================
+  ­čöČ WALK-FORWARD VALIDATION ÔÇö XRPUSDT @ 1h
+     9 windows | Train: 90d | Test: 30d | Step: 30d
+     Data: 8760 candles (364d) | Capital: $0
+==========================================================================================
+
+  Window 1/9: Train 2025-04-05Ôćĺ2025-07-04 | Test 2025-07-04Ôćĺ2025-08-03
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôí Fetching Kraken funding rates for PF_XRPUSD...
+  Ôťů XRPUSDT: 1102 8h-settlement records (2025-04-03 Ôćĺ 2026-04-05), from 8816 hourly records
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 76 BUY / 38 SELL (637 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.964/0.523 | ep=12 | 0.8s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.958/0.511 | ep=16 | 2.0s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.996/0.605 | ep=15 | 3.0s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.971/0.419 | ep=13 | 3.9s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.973/0.521 | ep=15 | 4.9s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.949/0.449 | ep=11 | 5.8s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.973/0.531 | ep=11 | 6.6s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.986/0.577 | ep=12 | 7.6s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=1.000/0.686 | ep=12 | 8.6s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.982/0.673 | ep=11 | 9.4s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.996/0.617 | ep=11 | 10.2s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.992/0.511 | ep=15 | 11.3s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.980/0.614 | ep=12 | 12.1s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.922/0.545 | ep=12 | 12.9s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.953/0.535 | ep=13 | 13.8s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.983/0.690 | ep=13 | 14.6s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.979/0.634 | ep=11 | 15.4s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.987/0.585 | ep=12 | 16.1s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.864/0.220 | ep=11 | 16.8s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.906/0.614 | ep=12 | 17.7s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.929/0.583 | ep=12 | 18.5s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.989/0.627 | ep=11 | 19.4s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.980/0.630 | ep=13 | 20.5s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.974/0.491 | ep=11 | 21.4s
+  Ôťů MLP training complete: 24 retrains in 21.4s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 110 MLP+ensemble trades, 25 confirms, 8 vetoes
+      AdvancedAdaptive: 6 BUY, 3 SELL, 109 HOLD
+      BollingerMR: 2 BUY, 2 SELL, 33 HOLD
+      MACrossover: 3 BUY, 1 SELL, 77 HOLD
+      MomentumPro: 22 BUY, 14 SELL, 82 HOLD
+      RSITurbo: 2 BUY, 6 SELL, 110 HOLD
+      SuperTrend: 2 BUY, 0 SELL, 82 HOLD
+  Ôťů Execution complete: 116 trades in 0.4s
+    Ôťů OOS: $+7.13 | 35 trades | WR 57.1% | PF 1.02 | Sharpe 0.13 | DD $189
+
+  Window 2/9: Train 2025-05-05Ôćĺ2025-08-03 | Test 2025-08-03Ôćĺ2025-09-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 58 BUY / 49 SELL (717 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.970/0.543 | ep=11 | 0.8s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.974/0.686 | ep=15 | 2.0s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.978/0.551 | ep=11 | 2.8s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.988/0.617 | ep=12 | 3.7s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.988/0.696 | ep=15 | 4.8s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=1.000/0.578 | ep=12 | 5.6s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.977/0.372 | ep=13 | 6.5s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.891/0.581 | ep=12 | 7.3s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.979/0.667 | ep=13 | 8.1s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.959/0.488 | ep=12 | 8.9s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.966/0.641 | ep=12 | 9.7s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.845/0.310 | ep=11 | 10.4s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.915/0.705 | ep=18 | 11.7s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.971/0.490 | ep=11 | 12.5s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.868/0.462 | ep=11 | 13.4s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.987/0.636 | ep=13 | 14.6s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.994/0.545 | ep=13 | 15.7s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.997/0.407 | ep=12 | 16.7s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.962/0.538 | ep=11 | 17.6s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=1.000/0.529 | ep=12 | 18.5s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.993/0.580 | ep=11 | 19.4s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.995/0.840 | ep=13 | 20.4s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.988/0.604 | ep=12 | 21.3s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.959/0.583 | ep=12 | 22.1s
+  Ôťů MLP training complete: 24 retrains in 22.1s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 113 MLP+ensemble trades, 22 confirms, 26 vetoes
+      AdvancedAdaptive: 6 BUY, 6 SELL, 127 HOLD
+      BollingerMR: 5 BUY, 4 SELL, 34 HOLD
+      MACrossover: 1 BUY, 0 SELL, 95 HOLD
+      MomentumPro: 22 BUY, 18 SELL, 99 HOLD
+      RSITurbo: 5 BUY, 8 SELL, 126 HOLD
+      SuperTrend: 1 BUY, 2 SELL, 97 HOLD
+  Ôťů Execution complete: 111 trades in 0.4s
+    ÔŁî OOS: $-23.47 | 34 trades | WR 58.8% | PF 0.91 | Sharpe -0.69 | DD $118
+
+  Window 3/9: Train 2025-06-04Ôćĺ2025-09-02 | Test 2025-09-02Ôćĺ2025-10-02
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 67 BUY / 36 SELL (635 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.990/0.684 | ep=11 | 0.7s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.969/0.732 | ep=14 | 1.6s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.975/0.537 | ep=11 | 2.3s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.986/0.513 | ep=13 | 3.2s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.913/0.558 | ep=11 | 3.9s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.955/0.622 | ep=15 | 4.9s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.964/0.620 | ep=11 | 5.8s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.889/0.491 | ep=11 | 6.7s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.987/0.527 | ep=12 | 7.7s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=1.000/0.636 | ep=13 | 8.8s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.986/0.426 | ep=11 | 9.7s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.986/0.404 | ep=12 | 10.7s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=1.000/0.588 | ep=12 | 11.7s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.978/0.560 | ep=12 | 12.6s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.986/0.740 | ep=13 | 13.6s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.974/0.500 | ep=12 | 14.5s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.962/0.729 | ep=12 | 15.4s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.945/0.511 | ep=12 | 16.2s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.944/0.386 | ep=12 | 17.0s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=1.000/0.537 | ep=14 | 17.9s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.991/0.513 | ep=12 | 18.6s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.991/0.722 | ep=12 | 19.3s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.990/0.500 | ep=12 | 20.1s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.925/0.541 | ep=11 | 20.7s
+  Ôťů MLP training complete: 24 retrains in 20.7s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 100 MLP+ensemble trades, 15 confirms, 12 vetoes
+      AdvancedAdaptive: 6 BUY, 3 SELL, 103 HOLD
+      BollingerMR: 3 BUY, 1 SELL, 32 HOLD
+      MomentumPro: 18 BUY, 9 SELL, 85 HOLD
+      RSITurbo: 0 BUY, 4 SELL, 108 HOLD
+      SuperTrend: 3 BUY, 0 SELL, 81 HOLD
+  Ôťů Execution complete: 108 trades in 0.4s
+    ÔŁî OOS: $-58.24 | 34 trades | WR 50.0% | PF 0.72 | Sharpe -2.35 | DD $82
+
+  Window 4/9: Train 2025-07-04Ôćĺ2025-10-02 | Test 2025-10-02Ôćĺ2025-11-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 21 BUY / 56 SELL (726 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.959/0.569 | ep=11 | 0.9s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.957/0.500 | ep=11 | 1.8s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.997/0.473 | ep=11 | 2.8s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.990/0.566 | ep=14 | 3.9s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.986/0.404 | ep=11 | 4.8s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=1.000/0.620 | ep=12 | 5.8s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=1.000/0.600 | ep=12 | 6.7s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.996/0.776 | ep=15 | 7.8s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.962/0.542 | ep=12 | 8.7s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.977/0.723 | ep=12 | 9.6s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.926/0.444 | ep=11 | 10.4s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.947/0.477 | ep=12 | 11.1s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.951/0.634 | ep=13 | 12.0s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.977/0.487 | ep=12 | 12.7s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.995/0.639 | ep=12 | 13.4s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=1.000/0.541 | ep=12 | 14.1s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.995/0.459 | ep=11 | 14.8s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.974/0.514 | ep=12 | 15.5s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.946/0.410 | ep=13 | 16.3s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.838/0.614 | ep=13 | 17.1s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.942/0.596 | ep=12 | 18.1s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.950/0.500 | ep=11 | 18.9s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=1.000/0.453 | ep=11 | 19.8s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.962/0.596 | ep=12 | 20.8s
+  Ôťů MLP training complete: 24 retrains in 20.8s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 97 MLP+ensemble trades, 17 confirms, 18 vetoes
+      AdvancedAdaptive: 8 BUY, 7 SELL, 100 HOLD
+      BollingerMR: 5 BUY, 2 SELL, 37 HOLD
+      MomentumPro: 18 BUY, 14 SELL, 83 HOLD
+      RSITurbo: 3 BUY, 2 SELL, 110 HOLD
+      SuperTrend: 3 BUY, 1 SELL, 76 HOLD
+  Ôťů Execution complete: 106 trades in 0.4s
+    ÔŁî OOS: $-30.62 | 35 trades | WR 51.4% | PF 0.90 | Sharpe -0.73 | DD $150
+
+  Window 5/9: Train 2025-08-03Ôćĺ2025-11-01 | Test 2025-11-01Ôćĺ2025-12-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 27 BUY / 56 SELL (639 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.992/0.674 | ep=16 | 1.1s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.983/0.617 | ep=11 | 1.9s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.982/0.681 | ep=12 | 2.8s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.922/0.578 | ep=11 | 3.6s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.962/0.452 | ep=11 | 4.3s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=1.000/0.683 | ep=13 | 5.2s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.991/0.410 | ep=11 | 5.9s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=1.000/0.556 | ep=12 | 6.5s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.994/0.639 | ep=12 | 7.2s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=1.000/0.568 | ep=13 | 8.0s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.991/0.553 | ep=12 | 8.7s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.937/0.650 | ep=11 | 9.4s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.833/0.378 | ep=12 | 10.2s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.932/0.562 | ep=12 | 11.1s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.992/0.480 | ep=11 | 12.0s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.988/0.519 | ep=11 | 12.9s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.982/0.604 | ep=11 | 13.9s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.996/0.673 | ep=12 | 14.8s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.961/0.520 | ep=11 | 15.7s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.990/0.471 | ep=12 | 16.6s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.968/0.480 | ep=11 | 17.5s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.993/0.717 | ep=12 | 18.5s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.993/0.411 | ep=11 | 19.5s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.997/0.481 | ep=12 | 20.5s
+  Ôťů MLP training complete: 24 retrains in 20.5s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 92 MLP+ensemble trades, 21 confirms, 26 vetoes
+      AdvancedAdaptive: 4 BUY, 5 SELL, 109 HOLD
+      BollingerMR: 4 BUY, 3 SELL, 36 HOLD
+      MACrossover: 0 BUY, 1 SELL, 74 HOLD
+      MomentumPro: 26 BUY, 11 SELL, 81 HOLD
+      RSITurbo: 1 BUY, 7 SELL, 110 HOLD
+      SuperTrend: 2 BUY, 0 SELL, 80 HOLD
+  Ôťů Execution complete: 100 trades in 0.4s
+    ÔŁî OOS: $-71.50 | 31 trades | WR 51.6% | PF 0.82 | Sharpe -1.31 | DD $191
+
+  Window 6/9: Train 2025-09-02Ôćĺ2025-12-01 | Test 2025-12-01Ôćĺ2025-12-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 16 BUY / 60 SELL (716 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=1.000/0.531 | ep=11 | 0.6s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.995/0.639 | ep=16 | 1.5s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.941/0.568 | ep=13 | 2.3s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.995/0.486 | ep=12 | 3.0s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.983/0.641 | ep=14 | 3.9s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.823/0.457 | ep=12 | 4.7s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.965/0.542 | ep=11 | 5.5s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.990/0.529 | ep=11 | 6.4s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.986/0.547 | ep=12 | 7.4s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.967/0.685 | ep=11 | 8.4s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.965/0.551 | ep=12 | 9.3s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.965/0.540 | ep=12 | 10.2s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.984/0.588 | ep=15 | 11.3s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.972/0.471 | ep=12 | 12.3s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.988/0.585 | ep=12 | 13.3s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.977/0.429 | ep=11 | 14.2s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.984/0.370 | ep=11 | 15.1s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.986/0.580 | ep=11 | 16.0s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.961/0.469 | ep=11 | 16.9s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.947/0.574 | ep=12 | 17.8s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.996/0.805 | ep=18 | 18.9s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.953/0.537 | ep=12 | 19.6s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.991/0.634 | ep=12 | 20.4s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.967/0.432 | ep=12 | 21.2s
+  Ôťů MLP training complete: 24 retrains in 21.2s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 86 MLP+ensemble trades, 18 confirms, 22 vetoes
+      AdvancedAdaptive: 3 BUY, 6 SELL, 99 HOLD
+      BollingerMR: 5 BUY, 4 SELL, 42 HOLD
+      MACrossover: 0 BUY, 3 SELL, 54 HOLD
+      MomentumPro: 15 BUY, 18 SELL, 75 HOLD
+      RSITurbo: 1 BUY, 0 SELL, 107 HOLD
+      SuperTrend: 3 BUY, 1 SELL, 60 HOLD
+  Ôťů Execution complete: 107 trades in 0.5s
+    Ôťů OOS: $+20.01 | 26 trades | WR 57.7% | PF 1.10 | Sharpe 0.67 | DD $99
+
+  Window 7/9: Train 2025-10-02Ôćĺ2025-12-31 | Test 2025-12-31Ôćĺ2026-01-30
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 42 BUY / 47 SELL (675 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.966/0.583 | ep=12 | 0.9s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.949/0.462 | ep=11 | 1.8s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.973/0.679 | ep=13 | 2.9s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.990/0.480 | ep=12 | 3.8s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.989/0.560 | ep=11 | 4.7s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.968/0.529 | ep=11 | 5.5s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.993/0.423 | ep=11 | 6.4s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.993/0.648 | ep=12 | 7.4s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.978/0.536 | ep=11 | 8.3s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.982/0.250 | ep=12 | 9.3s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.976/0.580 | ep=11 | 10.2s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.996/0.673 | ep=18 | 11.5s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.952/0.533 | ep=14 | 12.5s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.961/0.585 | ep=13 | 13.3s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.933/0.512 | ep=13 | 14.1s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.969/0.600 | ep=13 | 14.9s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=1.000/0.514 | ep=12 | 15.7s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.959/0.486 | ep=12 | 16.3s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.870/0.600 | ep=13 | 17.1s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.855/0.590 | ep=13 | 17.9s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.967/0.610 | ep=15 | 18.8s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.983/0.476 | ep=11 | 19.6s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.933/0.533 | ep=12 | 20.4s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.914/0.585 | ep=13 | 21.3s
+  Ôťů MLP training complete: 24 retrains in 21.3s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 92 MLP+ensemble trades, 17 confirms, 39 vetoes
+      AdvancedAdaptive: 4 BUY, 7 SELL, 120 HOLD
+      BollingerMR: 4 BUY, 6 SELL, 28 HOLD
+      MomentumPro: 16 BUY, 28 SELL, 87 HOLD
+      RSITurbo: 10 BUY, 5 SELL, 116 HOLD
+      SuperTrend: 3 BUY, 2 SELL, 96 HOLD
+  Ôťů Execution complete: 101 trades in 0.4s
+    Ôťů OOS: $+47.37 | 38 trades | WR 57.9% | PF 1.17 | Sharpe 1.07 | DD $166
+
+  Window 8/9: Train 2025-11-01Ôćĺ2026-01-30 | Test 2026-01-30Ôćĺ2026-03-01
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 40 BUY / 70 SELL (717 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.993/0.520 | ep=12 | 1.0s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.983/0.455 | ep=12 | 2.0s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.982/0.569 | ep=11 | 2.9s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.963/0.460 | ep=12 | 3.9s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=1.000/0.667 | ep=16 | 5.1s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.961/0.591 | ep=12 | 5.9s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.969/0.625 | ep=12 | 6.7s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.943/0.452 | ep=13 | 7.5s
+    retrain 9/23 | candle 1400/2879 (37.8%) | acc=0.930/0.500 | ep=11 | 8.2s
+    retrain 10/23 | candle 1500/2879 (42.0%) | acc=0.996/0.622 | ep=12 | 8.9s
+    retrain 11/23 | candle 1600/2879 (46.2%) | acc=0.952/0.472 | ep=11 | 9.6s
+    retrain 12/23 | candle 1700/2879 (50.4%) | acc=0.878/0.463 | ep=12 | 10.4s
+    retrain 13/23 | candle 1800/2879 (54.6%) | acc=0.863/0.605 | ep=12 | 11.1s
+    retrain 14/23 | candle 1900/2879 (58.8%) | acc=0.990/0.537 | ep=15 | 12.1s
+    retrain 15/23 | candle 2000/2879 (63.1%) | acc=0.982/0.465 | ep=11 | 12.8s
+    retrain 16/23 | candle 2100/2879 (67.3%) | acc=0.926/0.614 | ep=13 | 13.7s
+    retrain 17/23 | candle 2200/2879 (71.5%) | acc=0.964/0.475 | ep=11 | 14.4s
+    retrain 18/23 | candle 2300/2879 (75.7%) | acc=0.932/0.578 | ep=13 | 15.3s
+    retrain 19/23 | candle 2400/2879 (79.9%) | acc=0.916/0.511 | ep=11 | 16.2s
+    retrain 20/23 | candle 2500/2879 (84.1%) | acc=0.964/0.588 | ep=14 | 17.2s
+    retrain 21/23 | candle 2600/2879 (88.3%) | acc=0.955/0.490 | ep=11 | 18.1s
+    retrain 22/23 | candle 2700/2879 (92.5%) | acc=0.925/0.593 | ep=12 | 19.1s
+    retrain 23/23 | candle 2800/2879 (96.7%) | acc=0.978/0.569 | ep=12 | 20.1s
+    retrain 24/23 | candle 2879/2879 (100.0%) | acc=0.950/0.480 | ep=11 | 21.0s
+  Ôťů MLP training complete: 24 retrains in 21.0s
+  ­čÄ» Classical ensemble ENABLED: weight=15%, strategies=6+ExternalSignals
+  ÔÜí Executing 2379 candles (GridV2 + MomentumHTF + GPU_MLP signals)... [cooldown=14, min_conf=0.60, momentum_gate=False, TP=2.75xATR BE=999.0R, long_add=0.0, block_hv=False]
+  ­čôŐ Ensemble: 93 MLP+ensemble trades, 16 confirms, 25 vetoes
+      AdvancedAdaptive: 6 BUY, 2 SELL, 110 HOLD
+      BollingerMR: 4 BUY, 10 SELL, 38 HOLD
+      MomentumPro: 16 BUY, 13 SELL, 89 HOLD
+      RSITurbo: 7 BUY, 4 SELL, 107 HOLD
+      SuperTrend: 1 BUY, 2 SELL, 70 HOLD
+  Ôťů Execution complete: 106 trades in 0.4s
+    ÔŁî OOS: $-97.34 | 28 trades | WR 46.4% | PF 0.74 | Sharpe -2.18 | DD $107
+
+  Window 9/9: Train 2025-12-01Ôćĺ2026-03-01 | Test 2026-03-01Ôćĺ2026-03-31
+  ­čÜž Using GPU-native experimental engine (local CUDA)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ NeuronAI state restored (defense=False, WR=45%, risk_mult=0.50)
+  Ôťů XGBoost GPU mode active (device=cuda, tree_method=hist)
+  Ôťů PyTorch MLP GPU engine active (device=cuda)
+  ­čôü XRPUSDT: Loaded 1102 cached 8h funding rates
+  ­čôŐ XRPUSDT real funding: mean_8h=0.000027, positive=61.4%, est. APR=2.99%
+  ÔÖ╗´ŞĆ Learner state restored (deactivated={'GPU_MLP', 'MomentumHTF'})
+  ­čÜž GPU-native experimental engine active (CUDA tensor pipeline)
+  ­čöî Pre-computing ExternalSignals plan (2380 candles, lookback=200)
+  Ôťů ExtSig plan: 29 BUY / 66 SELL (644 ms)
+  ­čôŐ MLP training loop: 2379 candles, retrain every 100, ~23 retrains, dims=[2048, 1024, 512, 256], epochs=96, repeat=32
+    retrain 1/23 | candle 600/2879 (4.2%) | acc=0.970/0.500 | ep=11 | 0.7s
+    retrain 2/23 | candle 700/2879 (8.4%) | acc=0.961/0.525 | ep=12 | 1.4s
+    retrain 3/23 | candle 800/2879 (12.6%) | acc=0.975/0.500 | ep=12 | 2.1s
+    retrain 4/23 | candle 900/2879 (16.8%) | acc=0.911/0.405 | ep=11 | 2.8s
+    retrain 5/23 | candle 1000/2879 (21.0%) | acc=0.908/0.268 | ep=12 | 3.6s
+    retrain 6/23 | candle 1100/2879 (25.2%) | acc=0.961/0.641 | ep=17 | 4.6s
+    retrain 7/23 | candle 1200/2879 (29.4%) | acc=0.960/0.548 | ep=12 | 5.3s
+    retrain 8/23 | candle 1300/2879 (33.6%) | acc=0.981/0.432 | ep=13 | 6.2s

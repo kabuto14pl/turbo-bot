@@ -356,7 +356,10 @@ class AutonomousTradingBot {
         }
 
         // PATCH #17 + #37 + #38: Hybrid Quantum-Classical Pipeline v3.2 (GPU-Accelerated + Remote Offload)
-        try {
+        // P#236: Toggle via ENABLE_QUANTUM_PIPELINE=false to disable for ablation testing
+        if (this.config.enableQuantumPipeline === false) {
+            console.log('[SKIP] Hybrid Quantum Pipeline: DISABLED via ENABLE_QUANTUM_PIPELINE=false');
+        } else try {
             const { HybridQuantumClassicalPipeline } = require('../core/ai/hybrid_quantum_pipeline');
             this.hybridPipeline = new HybridQuantumClassicalPipeline({
                 qmc: { nScenarios: 8000, nQuantumPaths: 1500, confidenceLevels: [0.95, 0.99], timeHorizons: [1, 5, 10] },
@@ -399,7 +402,10 @@ class AutonomousTradingBot {
         }
 
         // PATCH #18: Quantum Position Manager (Stage 4 — Continuous Monitoring)
-        try {
+        // P#236: QPM depends on quantum pipeline — skip if pipeline disabled
+        if (this.config.enableQuantumPipeline === false) {
+            console.log('[SKIP] Quantum Position Manager: DISABLED (quantum pipeline disabled)');
+        } else try {
             const { QuantumPositionManager } = require('../core/ai/quantum_position_manager');
             const ind = require('./indicators');
             this.quantumPosMgr = new QuantumPositionManager({
@@ -441,7 +447,10 @@ class AutonomousTradingBot {
         // PATCH #44: NeuronAI Manager — LLM Brain enhancement layer over Skynet
         // Wraps AdaptiveNeuralEngine with LLM cascade (Ollama → Grok → GPT-4o-mini)
         // for rich actions (SCALE_IN, PARTIAL_CLOSE, FLIP, ADJUST_SL/TP)
-        try {
+        // P#236: Toggle via ENABLE_NEURON_AI=false to disable for ablation testing
+        if (this.config.enableNeuronAI === false) {
+            console.log('[SKIP] NeuronAI Manager: DISABLED via ENABLE_NEURON_AI=false');
+        } else try {
             const { NeuronAIManager } = require('../core/ai/neuron_ai_manager');
             this.neuronManager = new NeuronAIManager();
             // PATCH #47: CRITICAL FIX — initialize() was NEVER called!

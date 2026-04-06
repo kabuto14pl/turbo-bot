@@ -94,9 +94,12 @@ class PortfolioManager {
             console.log('[MULTI-POS] New position ' + posKey + ' (' + side + ') | Total: ' + this.positions.size);
         }
         const val = position.entryPrice * position.quantity;
-        this.balance.usdtBalance -= val;
+        // P#236: Charge entry fee (was missing — only exit fee was charged, undercounting by ~50%)
+        const entryFee = val * this.config.tradingFeeRate;
+        this.balance.usdtBalance -= (val + entryFee);
         this.balance.btcBalance += position.quantity;
         this.balance.lockedInPositions += val;
+        this.portfolio.realizedPnL -= entryFee;
         return position;
     }
 
@@ -177,9 +180,12 @@ class PortfolioManager {
         p.value = p.entryPrice * newQty;
         p._pyramidLevel = (p._pyramidLevel || 0) + 1;
         if (atrAtEntry) p.atrAtEntry = atrAtEntry;
-        this.balance.usdtBalance -= addVal;
+        // P#236: Charge entry fee on pyramid adds
+        const pyramidFee = addVal * this.config.tradingFeeRate;
+        this.balance.usdtBalance -= (addVal + pyramidFee);
         this.balance.btcBalance += quantity;
         this.balance.lockedInPositions += addVal;
+        this.portfolio.realizedPnL -= pyramidFee;
         console.log('[PYRAMID] Added ' + quantity.toFixed(6) + ' to ' + symbol +
             ' @ $' + price.toFixed(2) + ' | New avg: $' + p.entryPrice.toFixed(2) +
             ' | Level: ' + p._pyramidLevel + ' | Total qty: ' + newQty.toFixed(6));

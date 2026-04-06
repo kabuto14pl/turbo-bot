@@ -1,0 +1,12 @@
+C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+Traceback (most recent call last):
+======================================================================
+  PHASE 1: DOWNLOAD FRESH CANDLES
+======================================================================
+  File "C:\Users\dudzi\turbo-bot-local\ml-service\run_p234_fresh_backtests.py", line 48, in <module>
+    print(f"\n  \U0001f4e5 {pair} @ {tf}...")
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1250.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4e5' in position 4: character maps to <undefined>

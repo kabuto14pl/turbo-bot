@@ -22,6 +22,11 @@ const BASE_ENV = {
   // PATCH #43: GPU-ONLY - Remote GPU via SSH tunnel
   GPU_REMOTE_URL: 'http://127.0.0.1:4001',
   GPU_TIMEOUT_MS: '3000',
+  // P#236: API authentication (set on VPS via: export BOT_API_KEY=<random-secret>)
+  BOT_API_KEY: process.env.BOT_API_KEY || '',
+  // P#236: Component toggles for ablation testing (set to 'false' to disable)
+  ENABLE_QUANTUM_PIPELINE: process.env.ENABLE_QUANTUM_PIPELINE || 'true',
+  ENABLE_NEURON_AI: process.env.ENABLE_NEURON_AI || 'true',
   // PATCH #188: OpenLIT AI Observability (set OPENLIT_ENABLED=true to activate on VPS)
   OPENLIT_ENABLED: process.env.OPENLIT_ENABLED || 'false',
   OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://127.0.0.1:4318',

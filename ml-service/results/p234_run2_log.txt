@@ -1,0 +1,194 @@
+C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+======================================================================
+  PHASE 1: DOWNLOAD FRESH CANDLES
+======================================================================
+
+  ­čôą BNBUSDT @ 15m (refresh)...
+  ­čôą Downloading BNBUSDT 15m (365 days)...
+  Ôťů BNBUSDT 15m: 35040 candles saved to C:\Users\dudzi\turbo-bot-local\ml-service\backtest_pipeline\..\data\bnbusdt_15m.csv
+     Ôťů 35040 candles
+
+  ­čôą SOLUSDT @ 15m (refresh)...
+  ­čôą Downloading SOLUSDT 15m (365 days)...
+  Ôťů SOLUSDT 15m: 35040 candles saved to C:\Users\dudzi\turbo-bot-local\ml-service\backtest_pipeline\..\data\solusdt_15m.csv
+     Ôťů 35040 candles
+
+======================================================================
+  PHASE 1 COMPLETE ÔÇö Verifying data files
+======================================================================
+  Ôťů SOLUSDT    1h :  3599 candles | 2025-11-06 Ôćĺ 2026-04-05
+  Ôťů SOLUSDT    4h :  2190 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů BNBUSDT    1h :  3599 candles | 2025-11-06 Ôćĺ 2026-04-05
+  Ôťů BNBUSDT    4h :  2190 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů ETHUSDT    1h :  8760 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů ETHUSDT    4h :  2190 candles | 2025-04-06 Ôćĺ 2026-04-05
+  Ôťů XRPUSDT    1h :  8760 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů XRPUSDT    4h :  2190 candles | 2025-04-06 Ôćĺ 2026-04-05
+  Ôťů BTCUSDT    1h :  8760 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů BTCUSDT    4h :  2190 candles | 2025-04-06 Ôćĺ 2026-04-05
+
+======================================================================
+  PHASE 2: REGIME ANALYSIS (per-pair)
+======================================================================
+
+  [SOLUSDT]
+  Price:    $120.32 Ôćĺ $79.56 (-33.9%)
+  Vol:      0.7% (full) | 0.6% (30d)
+  ADX:      37.7 (full) | 39.3 (30d)
+  Trend:    0.011 eff | Range: 114.0%
+
+  [BNBUSDT]
+  Price:    $593.13 Ôćĺ $592.94 (-0.0%)
+  Vol:      0.5% (full) | 0.4% (30d)
+  ADX:      38.3 (full) | 42.3 (30d)
+  Trend:    0.000 eff | Range: 102.7%
+
+  [ETHUSDT]
+  Price:    $1809.81 Ôćĺ $2066.02 (+14.2%)
+  Vol:      0.7% (full) | 0.5% (30d)
+  ADX:      38.8 (full) | 39.4 (30d)
+  Trend:    0.004 eff | Range: 113.7%
+
+  [XRPUSDT]
+  Price:    $2.13 Ôćĺ $1.30 (-38.9%)
+  Vol:      0.7% (full) | 0.4% (30d)
+  ADX:      38.0 (full) | 40.6 (30d)
+  Trend:    0.016 eff | Range: 106.2%
+
+  [BTCUSDT]
+  Price:    $83344.14 Ôćĺ $67473.48 (-19.0%)
+  Vol:      0.4% (full) | 0.4% (30d)
+  ADX:      37.6 (full) | 38.8 (30d)
+  Trend:    0.013 eff | Range: 64.3%
+
+======================================================================
+  PHASE 3: WALK-FORWARD BACKTESTS
+======================================================================
+
+  >> Running: SOLUSDT @ 1h...
+C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+======================================================================
+  PHASE 1: DOWNLOAD FRESH CANDLES
+======================================================================
+
+  ­čôą BNBUSDT @ 15m (refresh)...
+  ­čôą Downloading BNBUSDT 15m (365 days)...
+  Ôťů BNBUSDT 15m: 35040 candles saved to C:\Users\dudzi\turbo-bot-local\ml-service\backtest_pipeline\..\data\bnbusdt_15m.csv
+     Ôťů 35040 candles
+
+  ­čôą SOLUSDT @ 15m (refresh)...
+  ­čôą Downloading SOLUSDT 15m (365 days)...
+  Ôťů SOLUSDT 15m: 35040 candles saved to C:\Users\dudzi\turbo-bot-local\ml-service\backtest_pipeline\..\data\solusdt_15m.csv
+     Ôťů 35040 candles
+
+======================================================================
+  PHASE 1 COMPLETE ÔÇö Verifying data files
+======================================================================
+  Ôťů SOLUSDT    1h :  3599 candles | 2025-11-06 Ôćĺ 2026-04-05
+  Ôťů SOLUSDT    4h :  2190 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů BNBUSDT    1h :  3599 candles | 2025-11-06 Ôćĺ 2026-04-05
+  Ôťů BNBUSDT    4h :  2190 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů ETHUSDT    1h :  8760 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů ETHUSDT    4h :  2190 candles | 2025-04-06 Ôćĺ 2026-04-05
+  Ôťů XRPUSDT    1h :  8760 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů XRPUSDT    4h :  2190 candles | 2025-04-06 Ôćĺ 2026-04-05
+  Ôťů BTCUSDT    1h :  8760 candles | 2025-04-05 Ôćĺ 2026-04-05
+  Ôťů BTCUSDT    4h :  2190 candles | 2025-04-06 Ôćĺ 2026-04-05
+
+======================================================================
+  PHASE 2: REGIME ANALYSIS (per-pair)
+======================================================================
+
+  [SOLUSDT]
+  Price:    $120.32 Ôćĺ $79.56 (-33.9%)
+  Vol:      0.7% (full) | 0.6% (30d)
+  ADX:      37.7 (full) | 39.3 (30d)
+  Trend:    0.011 eff | Range: 114.0%
+
+  [BNBUSDT]
+  Price:    $593.13 Ôćĺ $592.94 (-0.0%)
+  Vol:      0.5% (full) | 0.4% (30d)
+  ADX:      38.3 (full) | 42.3 (30d)
+  Trend:    0.000 eff | Range: 102.7%
+
+  [ETHUSDT]
+  Price:    $1809.81 Ôćĺ $2066.02 (+14.2%)
+  Vol:      0.7% (full) | 0.5% (30d)
+  ADX:      38.8 (full) | 39.4 (30d)
+  Trend:    0.004 eff | Range: 113.7%
+
+  [XRPUSDT]
+  Price:    $2.13 Ôćĺ $1.30 (-38.9%)
+  Vol:      0.7% (full) | 0.4% (30d)
+  ADX:      38.0 (full) | 40.6 (30d)
+  Trend:    0.016 eff | Range: 106.2%
+
+  [BTCUSDT]
+  Price:    $83344.14 Ôćĺ $67473.48 (-19.0%)
+  Vol:      0.4% (full) | 0.4% (30d)
+  ADX:      37.6 (full) | 38.8 (30d)
+  Trend:    0.013 eff | Range: 64.3%
+
+======================================================================
+  PHASE 3: WALK-FORWARD BACKTESTS
+======================================================================
+
+  >> Running: SOLUSDT @ 1h...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 246, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 297, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\dudzi\turbo-bot-local\ml-service\run_p234_fresh_backtests.py", line 162, in <module>
+    p.start()
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 121, in start
+    self._popen = self._Popen(self)
+                  ^^^^^^^^^^^^^^^^^
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\context.py", line 224, in _Popen
+    return _default_context.get_context().Process._Popen(process_obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\context.py", line 337, in _Popen
+    return Popen(process_obj)
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\popen_spawn_win32.py", line 46, in __init__
+    prep_data = spawn.get_preparation_data(process_obj._name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 164, in get_preparation_data
+    _check_not_importing_main()
+  File "C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 140, in _check_not_importing_main
+    raise RuntimeError('''
+RuntimeError: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+    ERROR: no result returned (58s)
+
+  >> Running: SOLUSDT @ 4h...
+C:\Users\dudzi\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]

@@ -33,12 +33,35 @@ class Server {
         this.app = express();
         this.app.use(cors({ origin: '*', credentials: true, methods: ['GET','POST','PUT','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }));
         this.app.use(express.json());
-        this.app.use(express.static('.'));
+        // P#236: Serve only the public dashboard file, NOT the entire working directory
+        // Previous: express.static('.') — exposed .env, ecosystem.config.js, source code, API keys
+        this.app.use('/dashboard.html', express.static('enterprise-dashboard.html'));
+
+        // P#236: API key authentication for all /api/* and POST routes
+        // Set BOT_API_KEY env var to enable (required for live). Skip auth for health checks + dashboard.
+        const apiKey = process.env.BOT_API_KEY || '';
+        if (apiKey) {
+            this.app.use((req, res, next) => {
+                // Allow unauthenticated: health probes, root, metrics, dashboard, static
+                if (req.path === '/' || req.path.startsWith('/health') || req.path === '/metrics' || req.path === '/dashboard' || req.path === '/dashboard.html') {
+                    return next();
+                }
+                const provided = req.headers['x-api-key'] || req.query.apiKey;
+                if (provided !== apiKey) {
+                    return res.status(401).json({ error: 'Unauthorized — set X-API-Key header' });
+                }
+                next();
+            });
+            console.log('[SERVER] API key authentication ENABLED');
+        } else {
+            console.warn('[SERVER] WARNING: BOT_API_KEY not set — API endpoints are PUBLIC');
+        }
+
         this._setupRoutes();
         this.httpServer = http.createServer(this.app);
         this._setupWebSocket();
         const port = this.config.healthCheckPort;
-        this.httpServer.listen(port, '0.0.0.0', () => console.log('[SERVER] ??? Listening on port ' + port));
+        this.httpServer.listen(port, '0.0.0.0', () => console.log('[SERVER] Listening on port ' + port));
     }
 
     _setupRoutes() {
@@ -66,7 +89,9 @@ class Server {
             res.json({ trades, total: this.pm.getTrades().length, instance: this.config.instanceId });
         });
         app.get('/api/status', (req, res) => res.json({
-            config: this.config, health: this.mon.getHealthStatus(),
+            // P#236: Sanitize config — never leak API keys, secrets, or OKX credentials
+            config: { symbol: this.config.symbol, symbols: this.config.symbols, timeframe: this.config.timeframe, instanceId: this.config.instanceId, paperTrading: this.config.paperTrading, initialCapital: this.config.initialCapital },
+            health: this.mon.getHealthStatus(),
             trading: { isRunning: true, strategiesCount: this.strategies ? this.strategies.getStrategies().size : 0 },
             performance: this.pm.getPortfolio(), circuitBreaker: this.rm.getCircuitBreakerStatus(),
         }));

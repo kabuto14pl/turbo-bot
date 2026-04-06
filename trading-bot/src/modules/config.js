@@ -36,6 +36,9 @@ function loadConfig() {
         tpAtrMultiplier: parseFloat(process.env.TP_ATR_MULT || '4.0'),
         // P#198.5: VQC per-TF override — backtest proved VQC helps 4h but destroys 1h
         vqcEnabledTimeframes: (process.env.VQC_ENABLED_TF || '4h').split(',').map(s => s.trim()),
+        // P#236: Component toggles — disable quantum pipeline or NeuronAI for ablation testing
+        enableQuantumPipeline: process.env.ENABLE_QUANTUM_PIPELINE !== 'false',  // default ON
+        enableNeuronAI: process.env.ENABLE_NEURON_AI !== 'false',                // default ON
         // P#214: OKX API credentials for live/demo trading
         okx: {
             apiKey: process.env.OKX_API_KEY || '',

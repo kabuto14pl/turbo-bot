@@ -187,8 +187,9 @@ def _run_single_pass(pairs: list, timeframe: str, verbose: bool = False) -> dict
     sharpes = [_pair_sharpe(p['trades_list']) for p in per_pair.values() if p['trades'] > 0]
     sharpe = float(np.mean(sharpes)) if sharpes else 0
 
-    # Max drawdown (sum of per-pair)
-    max_dd = sum(p['max_drawdown'] for p in per_pair.values())
+    # P#236: Max drawdown — use max of per-pair DDs, not sum
+    # Previous: sum() which produced impossible values like 629% (summing 6 pairs × ~100%)
+    max_dd = max((p['max_drawdown'] for p in per_pair.values()), default=0)
 
     return {
         'net_profit': round(total_pnl, 2),
