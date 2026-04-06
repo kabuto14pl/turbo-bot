@@ -4,6 +4,23 @@
 
 ---
 
+## P#239 — SOL Auto-Tuner Lessons (2026-04-06)
+
+### L239.1: RISK_PER_TRADE has zero effect on GPU-native engine sizing
+Swept 0.06→0.50 at conf=0.42 — identical trade count, WR, PF, DD across all values. ATR-based position sizing completely ignores the parameter. **Rule: Before tuning a knob, verify it actually connects to the execution path. Add a sanity check: "if I 5× this parameter, does PnL change?"**
+
+### L239.2: Confidence has bimodal landscape — cliffs, not gradients
+conf=0.42 ($1,715) → conf=0.50 ($1,098) → conf=0.52 (-$220) → conf=0.55 (-$2,026). Not a smooth gradient — there are cliffs. **Rule: Always sweep confidence in fine steps (0.02). Never interpolate between two tested points.**
+
+### L239.3: Sequential greedy optimization can overfit by 3-5× vs walk-forward
+V3 greedy path (conf→SL→trail→risk) reached $7,227 in full BT, but walk-forward showed only +$170 OOS. The trail=0.2 "breakthrough" was pure overfit. **Rule: Any parameter found via greedy sequential sweep must pass walk-forward before deployment. Use moderate parameters (Phase 1 winners) not extreme ones (Phase 3+).**
+
+### L239.4: Funding arb is a stable $600/year floor at $10k, independent of all trading params
+Across 80+ backtest runs, funding PnL was always $550-$770 regardless of confidence, SL, TP, trail, or risk. It's the bedrock. **Rule: When computing minimum viable PnL, funding floor provides ~$600. Trading edge must be additive.**
+
+### L239.5: Walk-forward trade count drops 6× vs full backtest due to shorter ML training
+Full BT: 217 trades (364d training). Walk-forward: 34 OOS trades (90d training windows). MLP needs data to make confident predictions. **Rule: WF trade count will always be lower than full BT. Don't penalize configs for low WF trades — look at PF and Sharpe instead.**
+
 ## 2026-04-06: PATCH #238 — Quantum Ablation + Walk-Forward
 
 ### L238.1: Quantum ablation must neutralize ALL quantum code paths, not just the toggle

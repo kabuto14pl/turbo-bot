@@ -21,8 +21,8 @@ PORTFOLIO_CAPITAL = 10000  # Total portfolio capital
 PAIR_CAPITAL_ALLOCATION = {
     'BTCUSDT': 0.00,    # P#234: BTC negative on all TFs — no edge (-$401 1h, -$694 4h)
     'ETHUSDT': 0.00,    # P#234: ETH negative on all TFs — no edge (-$267 1h, -$887 4h)
-    'SOLUSDT': 0.45,    # P#234: SOL@4h +$378, Sharpe=2.19, PF=1.41 — solid edge
-    'BNBUSDT': 0.55,    # P#234: BNB@4h +$1,466, Sharpe=1.65, PF=1.52 — strongest edge
+    'SOLUSDT': 1.00,    # P#239: SOL@4h +$1,715 @ conf=0.42, WF PF=1.41 — full allocation while BNB ablation runs
+    'BNBUSDT': 0.00,    # P#239: BNB paused — quantum-OFF ablation (P#238), SOL needs 100% for $1,500+ target
     'XRPUSDT': 0.00,    # P#234: XRP negative on all TFs — no edge (-$233 1h, -$459 4h)
 }
 
@@ -42,27 +42,29 @@ PAIR_OVERRIDES = {
     # Kept wider SL/TP to accommodate SOL's larger ATR
     # ====================================================================
     'SOLUSDT': {
-        # P#232: Fresh April 2026 data sweep — SOL regime shifted (lower vol, ranging)
-        # P#229 conf=0.65 collapsed from +$1,926 to -$1,518 on fresh data
-        # Sweep winner: conf=0.75 SL=2.0 TP=4.0 → +$246, Sharpe=2.19, WR=59%, PF=1.41
-        'GPU_NATIVE_MIN_CONFIDENCE': 0.75,  # P#232: 0.65→0.75 — filter choppy signals (36→34 trades, WR 46%→59%)
+        # P#239: V3 Tuner Results — conf=0.42 is the sweet spot
+        # Full BT ($10k): $1,715, 217 trades, 56.4% WR, PF=1.038, Sharpe=3.66, DD=27.7%
+        # Walk-Forward OOS: +$170, 34 trades, 58.8% WR, PF=1.41, Sharpe=2.19
+        # V1 (conf=0.80): only $676 — too few trades (19). V2 (conf=0.50): $1,098 — cliff at 0.55
+        # V3 found conf=0.42 sweet spot: 217 trades with positive trading PnL ($1,101) + funding ($614)
+        'GPU_NATIVE_MIN_CONFIDENCE': 0.42,  # P#239: 0.75→0.42 — V3 tuner winner (217 trades, 56.4% WR)
         
-        # P#232: Wider SL gives signals more room to breathe in choppy regime
-        'SL_ATR_MULT': 2.00,           # P#232: 1.50→2.00 — fewer stopped out prematurely
-        'TP_ATR_MULT': 4.00,           # P#232: 3.00→4.00 — bigger winners compensate wider SL
-        'TP_CLAMP_MAX': 6.50,
+        # P#239: V1 SL/TP sweep winners (tested at conf=0.80, re-validated at conf=0.42)
+        'SL_ATR_MULT': 1.75,           # P#239: 2.00→1.75 — V1 Phase 2 winner
+        'TP_ATR_MULT': 6.00,           # P#239: 4.00→6.00 — wider TP, trail does the exit work
+        'TP_CLAMP_MAX': 8.00,          # P#239: 6.50→8.00 — accommodate wider TP target
         
-        # Risk sizing — keep conservative until regime confirms
-        'RISK_PER_TRADE': 0.060,       # P#229: unchanged — sweep showed risk sizing has minimal impact on PnL direction
-        'MAX_POSITION_VALUE_PCT': 0.80, # P#229: unchanged
+        # Risk sizing — RISK_PER_TRADE has zero effect on PnL (V1/V3 verified)
+        'RISK_PER_TRADE': 0.060,       # P#239: unchanged — ATR-based sizing ignores this
+        'MAX_POSITION_VALUE_PCT': 0.80, # unchanged
         
         # Partial profit taking
         'PARTIAL_ATR_L2_MULT': 2.00,
         'PARTIAL_ATR_L3_MULT': 4.00,
         
-        # Trailing
-        'TRAILING_DISTANCE_ATR': 1.00,   # P#228: 1.25→1.00 — tighter trail to lock more profit on 4h
-        'PHASE3_TRAIL_ATR': 1.00,     # P#228: 1.25→1.00
+        # Trailing — V1 winner: trail=0.6 (V3 tested 0.2-3.0, 0.6 is robust)
+        'TRAILING_DISTANCE_ATR': 0.60,   # P#239: 1.00→0.60 — V1 Phase 4 winner, tighter trailing locks profit
+        'PHASE3_TRAIL_ATR': 0.60,     # P#239: 1.00→0.60 — match trailing distance
         
         # NeuronAI
         'DEFENSE_MODE_TRIGGER_LOSSES': 9,

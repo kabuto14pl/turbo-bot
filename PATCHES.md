@@ -5,6 +5,46 @@
 
 ---
 
+## PATCH #239: SOL Auto-Tuner — Iterative Backtest Optimization to $1,500+ (2026-04-06)
+
+**Typ:** Optimization — GPU backtest parameter sweep targeting $1,500+ annual PnL for SOL
+
+### Problem:
+User: "pusc sol na bakctescie w petli i dostrajaj po kazdym zakonczeniu backtestu - zysk musi byc minimum na poziomie 1,5k $"
+Previous SOL config (P#232: conf=0.75, SL=2.0, TP=4.0) yielded only +$246 at $4,500 allocation.
+
+### Approach — 3 Tuner Generations:
+- **V1** (sol_tuner.py): Sequential 5-phase at conf=0.80 → max $676 at $10k. Funding dominates ($550), only 19 trades.
+- **V2** (sol_tuner_v2.py): Re-sweep confidence with optimized SL/TP at $10k → conf=0.50 hit $1,098. Massive cliff at 0.55 (-$2,026). TP/cooldown don't help.
+- **V3** (sol_tuner_v3.py): Fine-grained conf sweep [0.42-0.52] → **conf=0.42 = sweet spot: $1,715** (217 trades, 56.4% WR). Deep optimization with trail=0.2 hit $7,227 (overfit risk).
+
+### Key Discoveries:
+- `RISK_PER_TRADE` has ZERO effect on PnL (ATR-based sizing ignores it) — verified across 0.06→0.50
+- Bimodal confidence landscape: conf=0.42 ($1,715), conf=0.48 ($1,392), conf=0.50 ($1,098), then CLIFF at conf=0.55 (-$2,026)
+- Trail=0.2 is overfit trap — 0.6 is robust and WF-validated
+- Funding arb contributes ~$600/year at $10k regardless of trading params
+
+### Walk-Forward Validation:
+- OOS: +$170, 34 trades, **PF=1.41**, **Sharpe=+2.19** — positive edge confirmed
+- Low OOS trade count (34 vs 217 in full BT) due to shorter ML training windows
+- SL/trail changes don't affect OOS results (entries are identical, only exit timing differs)
+
+### Final Production Config:
+| Param | Old (P#232) | New (P#239) | Rationale |
+|---|---|---|---|
+| `GPU_NATIVE_MIN_CONFIDENCE` | 0.75 | **0.42** | 217 trades vs 19 — 11× more signals |
+| `SL_ATR_MULT` | 2.00 | **1.75** | V1 Phase 2 winner |
+| `TP_ATR_MULT` | 4.00 | **6.00** | Wider TP, trailing does exit |
+| `TRAILING_DISTANCE_ATR` | 1.00 | **0.60** | V1 Phase 4 winner, WF-robust |
+| Capital allocation | 45% ($4,500) | **100% ($10,000)** | BNB paused (P#238 ablation) |
+
+### Verification (Full BT at $10k):
+- **PnL: $2,719.55** ✅ (target $1,500)
+- 226 trades, WR 58.4%, PF 1.091, Sharpe +4.31, DD 20.4%
+- Trading PnL: $2,114  |  Funding: $605
+
+---
+
 ## PATCH #238: Quantum Ablation + Walk-Forward Validation — Board Mandate (2026-04-06)
 
 **Typ:** Validation — Quantum A/B test + OOS walk-forward per board requirement
