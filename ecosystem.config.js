@@ -12,7 +12,7 @@
  * Monitor:      pm2 monit
  */
 
-// P#229: Only active pairs — SOL 65% + BNB 35% (BTC/ETH/XRP have no edge)
+// P#234: Only active pairs — BNB 55% + SOL 45% (BTC/ETH/XRP have no edge)
 const PAIRS = ['SOLUSDT', 'BNBUSDT'];
 const BASE_ENV = {
   NODE_ENV: 'production',

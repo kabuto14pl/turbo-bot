@@ -1129,6 +1129,20 @@ SOL at 30% capital → +$579. SOL at 65% capital → +$1,108 (1.9× more PnL for
 
 ### Lekcja: Candle pattern confirmation = +10pp WR (konsekwentnie)
 - Pattern confirmation w V2 strategiach (+required bullish/bearish pattern match)
+
+## 2026-04-06: PATCH #234 — Fresh Per-Pair Backtests (All 5 Pairs)
+
+### L234.1: Only BNB@4h and SOL@4h show real walk-forward edge
+10 backtests (5 pairs × 2 TFs, $10k each, 9 windows). BNB@4h +$1,466 (PF=1.52), SOL@4h +$378 (PF=1.41). All other combos negative. ETH/XRP/BTC have NO EDGE on any TF. **Rule: Re-run full per-pair sweep quarterly with fresh candles to detect regime shifts.**
+
+### L234.2: Capital allocation gates silently block backtests
+PAIR_CAPITAL_ALLOCATION=0% → get_pair_capital()=$0 → engine gets $0 → 0 trades. No error, no warning. Wasted 3 runs before diagnosing. **Rule: Backtest scripts must override allocation to equal non-zero values for fair comparison. Assert capital > 0 before running walk_forward.**
+
+### L234.3: walk_forward return dict uses 'aggregate' not flat keys
+walk_forward_backtest() returns `{'aggregate': {'net_profit', 'trades', 'win_rate', ...}}` not `{'total_pnl', 'total_trades'}`. Scripts reading wrong keys get silent 0s. **Rule: Always verify return structure with a quick test before building extraction logic.**
+
+### L234.4: Windows Python pipe buffering hides all output
+`python script.py 2>&1 | Tee-Object` buffers everything on Windows cp1250. Fix: `$env:PYTHONUNBUFFERED='1'; python -u script.py`. Also set `$env:PYTHONIOENCODING='utf-8'` for emoji. **Rule: Always use `-u` flag and PYTHONUNBUFFERED=1 when piping Python output on Windows.**
 - WR wzrósł z 28% → 38-43% na KAŻDYM parametrze (5 różnych runs)
 - Redukcja tradów o 50% (616→300) = wyższa selektywność
 - **CandlePatternEngine.detect_all()** jako brama wejścia = MUST HAVE

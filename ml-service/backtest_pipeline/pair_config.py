@@ -19,11 +19,11 @@ Current operating policy:
 PORTFOLIO_CAPITAL = 10000  # Total portfolio capital
 
 PAIR_CAPITAL_ALLOCATION = {
-    'BTCUSDT': 0.00,    # P#229: BTC negative on all TFs — no edge
-    'ETHUSDT': 0.00,    # P#229: ETH marginal +$105 on 1h only — not worth allocation
-    'SOLUSDT': 0.65,    # P#232: SOL@4h conf=0.75 SL=2.0 TP=4.0 → +$246, Sharpe=2.19 (fresh April data)
-    'BNBUSDT': 0.35,    # P#233: BNB@4h conf=0.75 SL=1.25 TP=2.75 → +$513, Sharpe=1.65 (parity sweep)
-    'XRPUSDT': 0.00,    # P#230: XRP@4h conf=0.65 has edge (+$1,232) but dilutes SOL/BNB
+    'BTCUSDT': 0.00,    # P#234: BTC negative on all TFs — no edge (-$401 1h, -$694 4h)
+    'ETHUSDT': 0.00,    # P#234: ETH negative on all TFs — no edge (-$267 1h, -$887 4h)
+    'SOLUSDT': 0.45,    # P#234: SOL@4h +$378, Sharpe=2.19, PF=1.41 — solid edge
+    'BNBUSDT': 0.55,    # P#234: BNB@4h +$1,466, Sharpe=1.65, PF=1.52 — strongest edge
+    'XRPUSDT': 0.00,    # P#234: XRP negative on all TFs — no edge (-$233 1h, -$459 4h)
 }
 
 # ============================================================================

@@ -1957,6 +1957,40 @@ NeuronAI old " Skynet\ persona caused catastrophic overtrading:
 - Counter-trend trades: BLOCKED entirely (return null)
 - RANGING regime: BLOCKED (return null)
 - MTF must align with GRU direction (or null)
+
+---
+
+## P#234: Fresh Per-Pair Backtests — All 5 Pairs with Own Candle Data (2026-04-06)
+
+### Problem
+- ETH/XRP candles stale (March 19), BTC stale (March 1)
+- Need per-pair backtests using each pair's own candle data (not shared BTC candles)
+- ETH/XRP/BTC had 0% capital allocation blocking backtests
+
+### Fixes
+- Downloaded fresh candles for all 5 pairs × 3 TFs (15m, 1h, 4h) — all verified April 5
+- Fixed result key mapping bug (aggregate.net_profit vs total_pnl)
+- Fixed capital allocation override for fair comparison ($10k equal per pair)
+- Added threading timeout (600s) to prevent ETH 1h hang
+
+### Walk-Forward Results (9 windows, 90d train / 30d test, $10k/pair)
+| Rank | Pair × TF | PnL | Trades | WR% | Sharpe | PF |
+|------|-----------|-----|--------|-----|--------|----|
+| 1 | BNB@4h | +$1,466 | 60 | 53.3% | 1.65 | 1.52 |
+| 2 | SOL@4h | +$378 | 34 | 58.8% | 2.19 | 1.41 |
+| 3 | BNB@1h | -$2 | 6 | 50.0% | -0.09 | 0.99 |
+| 4 | SOL@1h | -$136 | 13 | 53.8% | -1.59 | 0.79 |
+| 5 | XRP@1h | -$233 | 291 | 53.3% | -0.63 | 0.91 |
+| 6 | ETH@1h | -$267 | 308 | 51.0% | -0.65 | 0.91 |
+| 7 | BTC@1h | -$401 | 250 | 48.8% | -2.21 | 0.72 |
+| 8 | XRP@4h | -$459 | 114 | 50.0% | -1.67 | 0.78 |
+| 9 | BTC@4h | -$694 | 145 | 40.0% | -3.92 | 0.55 |
+| 10 | ETH@4h | -$887 | 101 | 33.7% | -4.52 | 0.51 |
+
+### Allocation Update (pair_config.py)
+- SOL: 65% → 45% (still has edge but weaker PnL)
+- BNB: 35% → 55% (strongest edge, 3.9× SOL PnL)
+- ETH/XRP/BTC: remain 0% (all negative across all TFs)
 - Ensemble needs >40% agreement (was >15%)
 - Confidence floor: 45% (was 20%)
 
