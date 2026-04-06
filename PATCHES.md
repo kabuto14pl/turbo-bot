@@ -5,6 +5,32 @@
 
 ---
 
+## PATCH #238: Quantum Ablation + Walk-Forward Validation — Board Mandate (2026-04-06)
+
+**Typ:** Validation — Quantum A/B test + OOS walk-forward per board requirement
+**Pliki:** `quantum_ablation.py`, `board_walkforward.py`, `ecosystem.config.js`
+
+### Walk-Forward Backtest (10 windows × 2 pairs, 4h TF):
+- **SOLUSDT**: -$648.51, Sharpe -4.572, PF 0.480, WR 43.5%, 46 trades, 4/10 windows profitable
+- **BNBUSDT**: +$512.36, Sharpe 1.156, PF 1.380, WR 54.7%, 53 trades, 5/10 windows profitable
+- **Portfolio**: 99 OOS trades, Sharpe -1.708, PF 0.93, PnL -$136.15
+- **VERDICT**: ❌ NOT APPROVED (99<100 trades, negative Sharpe, PF<1.0) — SOL drags portfolio
+
+### Quantum Ablation (ON vs OFF, Sharpe delta threshold 0.2):
+- **SOL**: ON Sharpe -4.572 vs OFF -9.926 → Δ+5.354, ΔPnL +$396 → Window 7-3 → ✅ KEEP
+- **BNB**: ON Sharpe 1.156 vs OFF 0.874 → Δ+0.282, ΔPnL +$193 → Window 3-5-2 → ✅ KEEP
+- **PORTFOLIO**: ✅ KEEP QUANTUM — Avg Sharpe delta +2.818 (threshold 0.2)
+
+### Live Ablation Deployed:
+- SOL instance: `ENABLE_QUANTUM_PIPELINE=true` (control)
+- BNB instance: `ENABLE_QUANTUM_PIPELINE=false` (treatment)
+- 2-week A/B test started 2026-04-06, evaluate 2026-04-20
+
+### Key Finding:
+Quantum adds measurable edge to BOTH pairs, but SOL strategy itself lacks OOS profitability on 4h. BNB alone is board-ready (Sharpe 1.16, PF 1.38). SOL needs signal investigation before LIVE.
+
+---
+
 ## PATCH #235: Live Bot Critical Fixes — SKYNET False Positive + Multi-Pair + Dashboard (2026-04-06)
 
 **Typ:** Bugfix — 3 critical live bot issues

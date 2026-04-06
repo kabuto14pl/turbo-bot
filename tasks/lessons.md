@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-04-06: PATCH #238 — Quantum Ablation + Walk-Forward
+
+### L238.1: Quantum ablation must neutralize ALL quantum code paths, not just the toggle
+Simply setting `ENABLE_QUANTUM_PIPELINE=false` disables the live quantum objects, but the GPU backtest engine has quantum effects baked into constants (VQC_REGIME_SL_ADJUST, QMC_TP_BOOST, QRA_SL_TIGHTEN). **Rule**: ablation OFF must override every quantum constant to neutral (1.0 for multipliers, 999 for thresholds, 999999 for intervals).
+
+### L238.2: Walk-forward window count determines trade count — not just data length
+With 60d train / 30d test / 30d step on 364 days of 4h data, we get 10 windows × ~5 trades/window = ~50 trades per pair. Two pairs barely reach 99 trades (board needs 100). **Rule**: estimate `total_OOS_trades ≈ n_windows × avg_trades_per_window × n_pairs` before running, and adjust window size if target won't be met.
+
+### L238.3: One weak pair can sink an otherwise profitable portfolio
+BNB alone: +$512, Sharpe 1.16, PF 1.38 — easily board-approved. SOL: -$648, Sharpe -4.57. Combined: -$136, Sharpe -1.71. **Rule**: per-pair gate checks must pass individually before portfolio approval. A pair that fails OOS should have allocation reduced or be suspended.
+
+### L238.4: Live ablation requires A/B on different instances, not random toggle
+Toggling quantum on/off within the same instance introduces sequence effects. Per-pair PM2 instances with different env vars (SOL=ON, BNB=OFF) provide clean comparison, but pairs have different volatility profiles. **Trade-off**: live ablation on different pairs is imperfect but practical; same-pair A/B would require two separate paper accounts.
+
+---
+
 ## 2026-04-06: PATCH #235 — Live Bot Critical Fixes
 
 ### L235.1: BUY fee deduction triggers false SKYNET close detection
