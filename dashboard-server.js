@@ -41,21 +41,25 @@ function fetchBotJson(botUrl, pathname, timeout) {
 // P#235: Aggregate /health from all bot instances
 function aggregateHealth(results) {
   const instances = [];
-  let totalValue = 0, realizedPnL = 0, totalTrades = 0, totalWins = 0;
+  let totalValue = 0, realizedPnL = 0, totalTrades = 0, totalWins = 0, totalPositions = 0;
   for (const r of results) {
     if (!r) continue;
+    const m = r.metrics || {};
     instances.push({
       instance: r.instance || 'unknown',
-      portfolio: r.portfolio,
-      positions: r.positions,
-      ml: r.ml,
+      totalValue: m.totalValue || r.totalValue || 0,
+      realizedPnL: m.realizedPnL || r.realizedPnL || 0,
+      unrealizedPnL: m.unrealizedPnL || r.unrealizedPnL || 0,
+      trades: m.totalTrades || r.totalTrades || 0,
+      winRate: m.winRate || r.winRate || 0,
+      positions: m.currentPositions || 0,
+      mlPhase: m.mlLearningPhase || 'N/A',
     });
-    if (r.portfolio) {
-      totalValue += r.portfolio.totalValue || 0;
-      realizedPnL += r.portfolio.realizedPnL || 0;
-      totalTrades += r.portfolio.trades || 0;
-      totalWins += Math.round((r.portfolio.winRate || 0) / 100 * (r.portfolio.trades || 0));
-    }
+    totalValue += m.totalValue || r.totalValue || 0;
+    realizedPnL += m.realizedPnL || r.realizedPnL || 0;
+    totalTrades += m.totalTrades || r.totalTrades || 0;
+    totalWins += m.successfulTrades || 0;
+    totalPositions += m.currentPositions || 0;
   }
   const primary = results.find(function(r) { return r; }) || {};
   return Object.assign({}, primary, {
@@ -67,6 +71,7 @@ function aggregateHealth(results) {
       realizedPnL: realizedPnL,
       trades: totalTrades,
       winRate: totalTrades > 0 ? (totalWins / totalTrades * 100) : 0,
+      currentPositions: totalPositions,
     },
   });
 }
