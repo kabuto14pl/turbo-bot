@@ -19,7 +19,10 @@ class StatePersistence {
     save(pm, rm, ml) {
         try {
             const state = { timestamp: Date.now(), ...pm.exportState(), ...rm.exportState(), ...(ml ? ml.exportState() : {}) };
-            fs.writeFileSync(this.filePath, JSON.stringify(state, null, 2));
+            // P#237: Atomic write — write to temp file then rename to prevent corruption on crash
+            const tmpPath = this.filePath + '.tmp';
+            fs.writeFileSync(tmpPath, JSON.stringify(state, null, 2));
+            fs.renameSync(tmpPath, this.filePath);
         } catch (e) { console.warn('[STATE SAVE] Error:', e.message); }
     }
 

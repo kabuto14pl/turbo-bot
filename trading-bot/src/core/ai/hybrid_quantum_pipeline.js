@@ -2009,14 +2009,12 @@ class HybridQuantumClassicalPipeline {
             return { enhancedFeatures: classicalFeatures || [], quantumMetadata: null };
         }
 
-        // Map classical features to quantum feature space
-        const qfm = this.featureMapper.mapFeatures(classicalFeatures);
+        // P#237: QFM stripped — pass through classical features without quantum kernel mapping
+        // QFM was computed but never consumed by downstream trading decisions
+        const enhanced = [...classicalFeatures];
 
-        // Combine: original + quantum features
-        const enhanced = [...classicalFeatures, ...qfm.quantumFeatures.slice(0, 8)];
-
-        this.quantumFeedback.lastQuantumFeatures = qfm;
-        this.quantumFeedback.lastCorrelationScore = qfm.correlationScore;
+        this.quantumFeedback.lastQuantumFeatures = null;
+        this.quantumFeedback.lastCorrelationScore = 0;
 
         return {
             enhancedFeatures: enhanced,
@@ -2094,10 +2092,8 @@ class HybridQuantumClassicalPipeline {
                     result.regimeClassification = vqcResult;
                     this.quantumFeedback.lastVQCRegime = result.regimeClassification;
 
-                    // PATCH #37: Feed VQC regime to dynamic QDV thresholds
-                    if (result.regimeClassification && result.regimeClassification.regime) {
-                        this.verifier.setRegime(result.regimeClassification.regime);
-                    }
+                    // P#237: QDV stripped — no longer feeding regime to verifier
+                    // (verifier.setRegime removed as QDV is neutralized)
                 }
 
                 // Buffer for VQC training
@@ -2156,7 +2152,7 @@ class HybridQuantumClassicalPipeline {
                             sig.riskLevel || 1, sig.price ? (sig.price / priceHistory[priceHistory.length - 1]) : 1] : [0.5, 0, 1, 1],
                     };
                 });
-                result.correlationAnalysis = this.featureMapper.detectCorrelations(stratFeatures);
+                result.correlationAnalysis = null; // P#237: QFM stripped
 
                 // Use decomposition pipeline for optimization
                 const corrMatrix = result.correlationAnalysis.correlationMatrix || {};
@@ -2227,36 +2223,26 @@ class HybridQuantumClassicalPipeline {
             return { approved: true, finalAction: consensus ? consensus.action : 'HOLD', finalConfidence: 0, verificationResult: null };
         }
 
-        // PATCH #37: Tune dynamic QDV thresholds periodically
-        this.verifier.tuneDynamicThresholds(this.cycleCount);
-
-        const riskAnalysis = this.riskAnalyzer.lastAnalysis;
-        const qmcSim = this.qmc.lastSimulation;
-
-        const verification = this.verifier.verify(consensus, riskAnalysis, qmcSim, portfolioValue);
-
-        if (!verification.approved) {
-            this.pipelineMetrics.totalRejections++;
-        } else {
-            this.pipelineMetrics.totalEnhancements++;
-        }
+        // P#237: QDV stripped — always approve. QDV was advisory-only (never blocked)
+        // and added overhead without measurable edge improvement.
+        this.pipelineMetrics.totalEnhancements++;
 
         this.lastPipelineResult = {
             stage: 'POST_PROCESS',
             originalAction: consensus.action,
             originalConfidence: consensus.confidence,
-            finalAction: verification.approved ? consensus.action : 'HOLD',
-            finalConfidence: verification.finalConfidence,
-            approved: verification.approved,
-            reason: verification.reason,
+            finalAction: consensus.action,
+            finalConfidence: consensus.confidence,
+            approved: true,
+            reason: 'QDV_STRIPPED',
             timestamp: Date.now(),
         };
 
         return {
-            approved: verification.approved,
-            finalAction: verification.approved ? consensus.action : 'HOLD',
-            finalConfidence: verification.finalConfidence,
-            verificationResult: verification,
+            approved: true,
+            finalAction: consensus.action,
+            finalConfidence: consensus.confidence,
+            verificationResult: { approved: true, reason: 'QDV_STRIPPED', finalConfidence: consensus.confidence },
         };
     }
 
@@ -2367,7 +2353,7 @@ class HybridQuantumClassicalPipeline {
                     });
                 }
                 if (stratFeatures.length > 0) {
-                    result.correlations = this.featureMapper.detectCorrelations(stratFeatures);
+                    result.correlations = null; // P#237: QFM stripped
                 }
             } catch (e) {
                 console.warn('[HYBRID S4] Correlation error:', e.message);

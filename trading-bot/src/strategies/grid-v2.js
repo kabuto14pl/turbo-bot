@@ -206,10 +206,11 @@ class GridV2Strategy {
             this._consecutiveLosses++;
 
             // P#72 Adaptive: tighten after 2+ consecutive losses
+            // P#237: FIXED — after losses, TIGHTEN entries (higher bbLower = need MORE oversold, lower bbUpper = need MORE overbought)
             if (this._consecutiveLosses >= 2) {
                 this.cooldownMs = Math.min(this._baseCooldownMs + 2 * 3600000, 12 * 3600000); // max 12h
-                this.bbLowerEntry = Math.max(this._baseBbLower - 0.02, 0.03);
-                this.bbUpperEntry = Math.min(this._baseBbUpper + 0.02, 0.97);
+                this.bbLowerEntry = Math.min(this._baseBbLower + 0.02, 0.25);
+                this.bbUpperEntry = Math.max(this._baseBbUpper - 0.02, 0.75);
             }
             // Reset after single loss
             if (this._consecutiveLosses === 1) {

@@ -636,6 +636,26 @@ class AutonomousTradingBot {
                 const ind = require('./indicators');
                 const regime = (this.neuralAI && this.neuralAI.currentRegime) || 'UNKNOWN';
 
+                // P#237: Per-pair regime detection from pair's own indicators
+                // Replaces global BTC-derived regime for independent strategies
+                const _detectPairRegime = (pairInd) => {
+                    const adx = pairInd.adx || 15;
+                    const rsi = pairInd.rsi || 50;
+                    const bbWidth = (pairInd.bb_upper && pairInd.bb_lower && pairInd.bb_upper > 0)
+                        ? (pairInd.bb_upper - pairInd.bb_lower) / ((pairInd.bb_upper + pairInd.bb_lower) / 2) : 0.02;
+                    const macdH = pairInd.macd_histogram || 0;
+
+                    // HIGH_VOLATILITY: wide BB + high ADX
+                    if (bbWidth > 0.04 && adx > 25) return 'HIGH_VOLATILITY';
+                    // TRENDING_UP: ADX > 20, RSI > 50, MACD positive
+                    if (adx > 20 && rsi > 55 && macdH > 0) return 'TRENDING_UP';
+                    // TRENDING_DOWN: ADX > 20, RSI < 45, MACD negative
+                    if (adx > 20 && rsi < 45 && macdH < 0) return 'TRENDING_DOWN';
+                    // RANGING: low ADX
+                    if (adx < 20) return 'RANGING';
+                    return 'UNKNOWN';
+                };
+
                 // Helper: calculate full indicators from candle array
                 const _calcIndicators = (candles) => {
                     const closes = candles.map(c => c.close);
@@ -709,11 +729,12 @@ class AutonomousTradingBot {
                         if (!pairCandles || pairCandles.length < 30) continue;
 
                         const pairInd = _calcIndicators(pairCandles);
+                        const pairRegime = _detectPairRegime(pairInd); // P#237: per-pair regime
                         const hasPos = this.pm.hasPosition(sym);
                         const gridSignal = grid.evaluate({
                             currentPrice: pairPrice,
                             indicators: pairInd,
-                            regime,
+                            regime: pairRegime,
                             hasPosition: hasPos,
                         });
 
@@ -751,7 +772,9 @@ class AutonomousTradingBot {
                 // --- Funding Rate Arb: Evaluate for each configured pair ---
                 for (const [sym, funding] of this.fundingStrategies) {
                     try {
-                        const { price: fundPrice } = await _getPairData(sym);
+                        const { candles: fundCandles, price: fundPrice } = await _getPairData(sym);
+                        const fundInd = (fundCandles && fundCandles.length >= 30) ? _calcIndicators(fundCandles) : null;
+                        const fundRegime = fundInd ? _detectPairRegime(fundInd) : regime; // P#237: per-pair regime
                         const pairCapital = this.config.initialCapital * ({
                             'SOLUSDT': 0.65, 'BNBUSDT': 0.35,
                         }[sym] || 0.0);
@@ -759,8 +782,8 @@ class AutonomousTradingBot {
                         const fundResult = funding.processCycle({
                             currentPrice: fundPrice,
                             pairCapital,
-                            indicators: null,
-                            regime,
+                            indicators: fundInd,
+                            regime: fundRegime,
                             candleCount: this._cycleCount,
                         });
 
@@ -788,11 +811,12 @@ class AutonomousTradingBot {
                         const momSym = this.config.symbol;
                         const momPrice = history[history.length - 1].close;
                         const momInd = _calcIndicators(history);
+                        const momRegime = _detectPairRegime(momInd); // P#237: per-pair regime
                         const hasPos = this.pm.hasPosition(momSym);
                         const momSignal = this.momentumStrategy.evaluate({
                             currentPrice: momPrice,
                             indicators: momInd,
-                            regime,
+                            regime: momRegime,
                             hasPosition: hasPos,
                             history,
                         });

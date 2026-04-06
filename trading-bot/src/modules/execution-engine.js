@@ -232,24 +232,61 @@ class ExecutionEngine {
                         console.log('[SHORT TRAILING SL] ' + phase + ' ' + atrMult.toFixed(1) + 'x ATR | SL: $' + pos.stopLoss.toFixed(2) + ' -> $' + newSL.toFixed(2) + ' | Low: $' + (pos._lowestPrice || price).toFixed(2));
                         this.pm.updateStopLoss(sym, newSL);
                     }
+
+                    // ============================================
+                    // P#237: SHORT 3-LEVEL PARTIAL TAKE-PROFIT
+                    // Mirror of LONG partial TP but direction-aware.
+                    // Profit = entryPrice - price (SHORT: price drops = profit)
+                    // ============================================
+
+                    // SHORT PARTIAL TP LEVEL 1: 25% at 2.0x ATR
+                    if (atrMult >= 2.0 && !pos._partialTp1Done && pos.quantity > 0) {
+                        const closeQty = pos.quantity * 0.25;
+                        if (closeQty > 0.000001) {
+                            const trade = this.pm.closePosition(sym, price, closeQty, 'SHORT_PARTIAL_TP_L1', 'PARTIAL_TP');
+                            if (trade) {
+                                pos._partialTp1Done = true;
+                                // Move SL to breakeven - buffer after first TP
+                                const beSL = pos.entryPrice - pos.entryPrice * 0.003;
+                                if (beSL < pos.stopLoss) this.pm.updateStopLoss(sym, beSL);
+                                console.log(`[SHORT PARTIAL TP L1] 25% @ ${atrMult.toFixed(1)}x ATR: ${closeQty.toFixed(6)} | PnL: $${trade.pnl.toFixed(2)}`);
+                            }
+                        }
+                    }
+
+                    // SHORT PARTIAL TP LEVEL 2: 25% at 3.0x ATR
+                    if (atrMult >= 3.0 && !pos._partialTp2Done && pos.quantity > 0) {
+                        const closeQty = pos.quantity * 0.333;
+                        if (closeQty > 0.000001) {
+                            const trade = this.pm.closePosition(sym, price, closeQty, 'SHORT_PARTIAL_TP_L2', 'PARTIAL_TP');
+                            if (trade) {
+                                pos._partialTp2Done = true;
+                                // Lock 1x ATR profit on remainder (SL moves DOWN for SHORT)
+                                const lockSL = pos.entryPrice - 1.0 * atr;
+                                if (lockSL < pos.stopLoss) this.pm.updateStopLoss(sym, lockSL);
+                                console.log(`[SHORT PARTIAL TP L2] 25% @ ${atrMult.toFixed(1)}x ATR: ${closeQty.toFixed(6)} | PnL: $${trade.pnl.toFixed(2)}`);
+                            }
+                        }
+                    }
                 }
 
                 // ============================================
                 // TIME-BASED EXIT with severity levels
+                // P#237: Relaxed thresholds (72/60/36h vs 72/48/24h)
                 // ============================================
                 const hours = (Date.now() - (pos.entryTime || Date.now())) / 3600000;
                 let timeExit = false;
                 if (hours >= 72) {
                     console.log(`[TIME EXIT] ${sym} ${hours.toFixed(1)}h EMERGENCY`);
                     timeExit = true;
-                } else if (hours >= 48) {
+                } else if (hours >= 60) {
                     const minProfit = atr > 0 ? atr * 0.5 : pos.entryPrice * 0.005;
                     if (profit < minProfit) {
                         console.log(`[TIME EXIT] ${sym} ${hours.toFixed(1)}h weak profit`);
                         timeExit = true;
                     }
-                } else if (hours >= 24 && profit < 0) {
-                    // After 24h underwater by more than 0.5x ATR — cut early
+                } else if (hours >= 36 && profit < 0) {
+                    // After 36h underwater by more than 0.5x ATR — cut early
                     if (atr > 0 && profit < -0.5 * atr) {
                         console.log(`[TIME EXIT] ${sym} ${hours.toFixed(1)}h underwater >0.5x ATR`);
                         timeExit = true;
