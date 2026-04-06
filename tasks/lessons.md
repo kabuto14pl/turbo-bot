@@ -15,6 +15,9 @@ When BUY executes, `-fees` ($0.05) is added to `realizedPnL` in execution-engine
 ### L235.3: Dashboard must aggregate all bot instances, not hardcode single port
 With per-pair PM2 instances on different ports, a hardcoded `BOT_API` = single port means the dashboard only shows one pair's data. **Rule**: dashboard must discover/aggregate all bot APIs, especially for /health, /api/status, and /api/trades.
 
+### L235.4: Per-pair state files are mandatory for multi-instance deployments
+Both SOL and BNB instances defaulted to `data/bot_state.json`, causing whichever bot saved last to overwrite the other's portfolio state. On restart, both bots loaded the same (wrong) state. **Rule**: always set `BOT_STATE_FILE` per instance via env var.
+
 ---
 
 ## 2026-04-09: PATCH #224 — Pro Backtest Overhaul

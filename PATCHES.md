@@ -19,6 +19,7 @@
 1. **bot.js `_detectAndLearnFromCloses()`**: Skip detection when `currentPosCount > this._lastPositionCount` (BUY opened, not closed). Early return with state update.
 2. **ecosystem.config.js**: Add `TRADING_SYMBOLS: pair` per instance → each bot only manages its own symbol, disabling multi-pair Grid V2 cross-trading.
 3. **dashboard-server.js**: Multi-instance aggregation — `BOT_APIS` env supports comma-separated URLs, default `localhost:3001,3002`. GET requests aggregate from all bots (health/status combined, trades merged). POST forwarded to primary.
+4. **ecosystem.config.js**: Add `BOT_STATE_FILE` per pair — both instances were sharing `data/bot_state.json`, causing one bot to overwrite the other's portfolio state on restart.
 
 ### Also confirmed (no fix needed):
 - BTC phantom trades ($7.6M PnL) were from Apr 4 pre-restart config. Cleared on Apr 5 restart. Current portfolio state is clean.

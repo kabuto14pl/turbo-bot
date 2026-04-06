@@ -52,6 +52,7 @@ const botApps = PAIRS.map(pair => ({
     TRADING_SYMBOL: pair,
     TRADING_SYMBOLS: pair,  // P#235: Single symbol per instance — prevents multi-pair cross-trading
     INSTANCE_ID: pair,
+    BOT_STATE_FILE: `/root/turbo-bot/data/bot_state_${pair}.json`,  // P#235: Per-pair state persistence
     HEALTH_CHECK_PORT: String(PAIR_PORTS[pair] || 3001),
     ...(PAIR_SLTP[pair] || {}),
     OTEL_SERVICE_NAME: `turbo-bot-${pair.replace('USDT', '').toLowerCase()}`,
