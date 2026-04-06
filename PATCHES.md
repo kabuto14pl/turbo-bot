@@ -2511,3 +2511,44 @@ None were `require()`d. None were instantiated. The live bot only ran 5 old ense
 ### Backtest Results (15m, all 5 pairs):
 - BNB GridV2: 17 trades, PF 0.912, WR 64.7%, -$3.93 (funding +$9.50 covers)
 - Portfolio: +$23.95 (+0.24%)
+
+---
+
+## P#237: Board Meeting Recommendations — 8 Critical Fixes (2026-04-06)
+
+**Origin:** "Personalna Rada Nadzorcza" — 10-expert board analyzed every component's profit contribution. Unanimous votes on strip/optimize decisions.
+
+### P#237a: Grid V2 adaptive BB tightening direction fix (grid-v2.js)
+- **Bug:** After 2+ losses, `bbLowerEntry` was DECREASED (easier entries) instead of INCREASED (harder)
+- **Fix:** Reversed direction in `recordTradeResult()`: entries now get HARDER after loss streaks
+
+### P#237b: SHORT partial TP (execution-engine.js)
+- **Bug:** Partial TP only for LONG (`if (!isShort)` guard)
+- **Fix:** Added SHORT PARTIAL TP L1 (25% at 2.0x ATR, SL→breakeven) and L2 (25% at 3.0x ATR, lock 1.0x ATR)
+
+### P#237c: Per-pair regime detection (bot.js)
+- **Bug:** BUG-6 — All pairs used single BTC-derived regime from neuralAI
+- **Fix:** `_detectPairRegime(pairInd)` using pair's own ADX, RSI, BB width, MACD
+
+### P#237d: Atomic state writes (state-persistence.js)
+- **Fix:** Write-tmp-rename pattern for crash-safe persistence
+
+### P#237e: Time exit relaxation (execution-engine.js)
+- 48h weak → 60h, 24h underwater → 36h (72h emergency unchanged)
+
+### P#237f: QDV + QFM neutralization (hybrid_quantum_pipeline.js)
+- QFM: preProcess passes through classical features unchanged
+- QDV: postProcess always approves, returns original confidence
+- QFM correlations: returns null in Stage 2 and Stage 4
+- Hotfix: Removed stale `qfm.*` refs in metadata return
+
+### P#237g: Momentum SL/TP tightening (momentum-htf-ltf.js)
+- MTF_SL_ATR 2.0 → 1.2, MTF_TP_ATR 5.0 → 3.0
+
+### P#237h: NeuronAI disabled on VPS
+- `ENABLE_NEURON_AI=false` in `/root/.bot_env` (net-negative: cost > edge)
+
+### Deployment:
+- Commits: 1c71620 + 04f8e94 (hotfix)
+- Tests: 21/21 critical pass, 112/118 full (6 pre-existing)
+- VPS: Clean startup confirmed, no warnings

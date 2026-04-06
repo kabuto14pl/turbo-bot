@@ -1656,3 +1656,26 @@ Implemented in execution-engine.js: ADX>25 → TRENDING (SL×1.10, TP×1.30), AT
 
 ### L233.5: GPU confidence filtering has correct double-layer design
 Python gpu_native_engine.py (L934-950) filters HOLD if confidence < threshold (server-side). Node.js has separate minMLConfidence=0.45 (lower, non-binding). Remote GPU service (gpu-quantum-service) is pure compute with no filtering — correct separation of concerns. **Rule: Confidence filtering belongs in the decision engine, not the compute service.**
+
+## 2026-04-06: PATCH #237 — Board Meeting: Strip Dead Weight, Fix Core Bugs
+
+### L237.1: 82% of edge comes from ~1,530 lines; 18% from ~5,600 lines of AI/quantum
+Board audit revealed: Indicators (25%), Risk Manager (20%), Fee Gate (15%), Ensemble+Thompson (12%), Chandelier (10%) = 82% edge in simple, deterministic code. Quantum pipeline, NeuronAI, SKYNET = 18% from 5,600 lines. **Rule: Complexity ≠ value. Audit edge attribution before adding more AI layers.**
+
+### L237.2: NeuronAI is net-negative — $20-50/month cost, ~$5/month edge
+Board unanimous: strip. API costs exceed the marginal edge from Claude/GPT calls for trade validation. **Rule: Always compute ROI of external API dependencies. If cost > edge, disable.**
+
+### L237.3: QDV (Quantum Decision Verifier) was blocking valid signals without adding edge
+QDV sometimes rejected trades that would have been profitable. Neutralizing to always-approve improved signal throughput. **Rule: Any "safety" gate that reduces profitability without reducing drawdown is net-negative — kill it.**
+
+### L237.4: QFM (Quantum Feature Mapping) was computed but never consumed
+Features were quantum-mapped in preProcess but downstream code used classical features. Dead computation costing ~200ms/cycle. **Rule: Trace data flow end-to-end before assuming a computation has consumers.**
+
+### L237.5: Grid V2 BB tightening was inverted — entries got EASIER after losses
+Math error: `base - 0.02` when it should be `base + 0.02`. Subtle sign bug caused over-trading after loss streaks. **Rule: After any adaptive parameter change, verify direction with a unit test: "after N losses, is entry harder or easier?"**
+
+### L237.6: SHORT positions never got partial TP — half the market crippled
+Code was inside `if (!isShort)` block. Every SHORT held to full TP or SL, missing intermediate profit capture. **Rule: Always grep for `isShort` after adding any LONG-side feature to verify SHORT parity.**
+
+### L237.7: When neutralizing code, ALSO remove metadata references to dead variables
+QFM was neutralized but `quantumMetadata` return still referenced `qfm.kernelEntropy` — caused runtime error. Caught in post-deploy log check. **Rule: After stripping a component, search for ALL references to its output variables, not just its function calls.**
