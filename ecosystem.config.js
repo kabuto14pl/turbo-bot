@@ -50,6 +50,7 @@ const botApps = PAIRS.map(pair => ({
   env: {
     ...BASE_ENV,
     TRADING_SYMBOL: pair,
+    TRADING_SYMBOLS: pair,  // P#235: Single symbol per instance — prevents multi-pair cross-trading
     INSTANCE_ID: pair,
     HEALTH_CHECK_PORT: String(PAIR_PORTS[pair] || 3001),
     ...(PAIR_SLTP[pair] || {}),

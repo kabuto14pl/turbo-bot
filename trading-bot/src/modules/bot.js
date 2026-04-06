@@ -2234,6 +2234,13 @@ class AutonomousTradingBot {
             const currentPosCount = this.pm.positionCount;
             const portfolio = this.pm.getPortfolio();
             const currentRealizedPnL = portfolio.realizedPnL || 0;
+            // P#235: Skip when position count INCREASED (BUY opened) —
+            // BUY adds -fees to realizedPnL, causing false "close detected"
+            if (currentPosCount > this._lastPositionCount) {
+                this._lastPositionCount = currentPosCount;
+                this._lastRealizedPnL = currentRealizedPnL;
+                return;
+            }
             if (currentPosCount < this._lastPositionCount || Math.abs(currentRealizedPnL - this._lastRealizedPnL) > 0.01) {
                 const pnlDelta = currentRealizedPnL - this._lastRealizedPnL;
                 if (Math.abs(pnlDelta) > 0.01) {

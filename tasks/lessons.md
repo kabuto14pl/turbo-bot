@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-04-06: PATCH #235 — Live Bot Critical Fixes
+
+### L235.1: BUY fee deduction triggers false SKYNET close detection
+When BUY executes, `-fees` ($0.05) is added to `realizedPnL` in execution-engine.js. `_detectAndLearnFromCloses()` checks `|pnlDelta| > 0.01` and fires on every BUY, feeding fake -$0.05 losses to ML learning. **Rule**: close detection must check position count direction — skip when position count INCREASED (BUY opened), only learn when count decreased or stayed same.
+
+### L235.2: Missing TRADING_SYMBOLS env var enables unwanted multi-pair cross-trading
+`config.symbols` defaults to `['SOLUSDT', 'BNBUSDT']` when `TRADING_SYMBOLS` is not set. The multi-pair Grid V2 section iterates `config.symbols.filter(s !== config.symbol)` — meaning SOL instance runs BNB strategies and vice versa. **Rule**: every instance env must explicitly set `TRADING_SYMBOLS` to its own symbol to prevent cross-pair leakage.
+
+### L235.3: Dashboard must aggregate all bot instances, not hardcode single port
+With per-pair PM2 instances on different ports, a hardcoded `BOT_API` = single port means the dashboard only shows one pair's data. **Rule**: dashboard must discover/aggregate all bot APIs, especially for /health, /api/status, and /api/trades.
+
+---
+
 ## 2026-04-09: PATCH #224 — Pro Backtest Overhaul
 
 ### L224.1: OOS validation that trains on test data is worse than no validation

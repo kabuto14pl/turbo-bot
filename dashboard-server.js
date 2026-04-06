@@ -4,7 +4,9 @@ const path = require('path');
 const url = require('url');
 
 const PORT = process.env.DASHBOARD_PORT || 8080;
-const BOT_API = 'http://localhost:3001';
+// P#235: Multi-instance bot APIs — aggregate both SOL and BNB
+const BOT_APIS = (process.env.BOT_APIS || 'http://localhost:3001,http://localhost:3002').split(',').map(s => s.trim());
+const BOT_API = BOT_APIS[0]; // Primary bot for single-instance fallback
 
 // Per-path cache to prevent /api/trades returning /api/status data
 const apiCache = new Map();
@@ -18,6 +20,98 @@ function getCached(pathname) {
 
 function setCache(pathname, data) {
   apiCache.set(pathname, { data, time: Date.now() });
+}
+
+// P#235: Fetch JSON from a single bot with timeout
+function fetchBotJson(botUrl, pathname, timeout) {
+  return new Promise(function(resolve) {
+    const fullUrl = botUrl + pathname;
+    const req = http.get(fullUrl, { timeout: timeout || 5000 }, function(res) {
+      let data = '';
+      res.on('data', function(chunk) { data += chunk; });
+      res.on('end', function() {
+        try { resolve(JSON.parse(data)); } catch(e) { resolve(null); }
+      });
+    });
+    req.on('error', function() { resolve(null); });
+    req.on('timeout', function() { req.destroy(); resolve(null); });
+  });
+}
+
+// P#235: Aggregate /health from all bot instances
+function aggregateHealth(results) {
+  const instances = [];
+  let totalValue = 0, realizedPnL = 0, totalTrades = 0, totalWins = 0;
+  for (const r of results) {
+    if (!r) continue;
+    instances.push({
+      instance: r.instance || 'unknown',
+      portfolio: r.portfolio,
+      positions: r.positions,
+      ml: r.ml,
+    });
+    if (r.portfolio) {
+      totalValue += r.portfolio.totalValue || 0;
+      realizedPnL += r.portfolio.realizedPnL || 0;
+      totalTrades += r.portfolio.trades || 0;
+      totalWins += Math.round((r.portfolio.winRate || 0) / 100 * (r.portfolio.trades || 0));
+    }
+  }
+  const primary = results.find(function(r) { return r; }) || {};
+  return Object.assign({}, primary, {
+    aggregated: true,
+    instanceCount: instances.length,
+    instances: instances,
+    portfolio: {
+      totalValue: totalValue,
+      realizedPnL: realizedPnL,
+      trades: totalTrades,
+      winRate: totalTrades > 0 ? (totalWins / totalTrades * 100) : 0,
+    },
+  });
+}
+
+// P#235: Aggregate /api/trades from all bot instances
+function aggregateTrades(results) {
+  const allTrades = [];
+  for (const r of results) {
+    if (!r) continue;
+    const trades = Array.isArray(r) ? r : (r.trades || r.data || []);
+    for (const t of trades) {
+      allTrades.push(t);
+    }
+  }
+  allTrades.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+  return allTrades;
+}
+
+// P#235: Multi-bot aggregated GET proxy
+function proxyGetAggregated(res, pathname) {
+  const cached = getCached('_agg_' + pathname);
+  if (cached) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify(cached));
+  }
+
+  Promise.all(BOT_APIS.map(function(api) { return fetchBotJson(api, pathname, 5000); }))
+    .then(function(results) {
+      let merged;
+      if (pathname === '/health' || pathname === '/api/status') {
+        merged = aggregateHealth(results);
+      } else if (pathname === '/api/trades') {
+        merged = aggregateTrades(results);
+      } else {
+        // For other endpoints, return first successful response
+        merged = results.find(function(r) { return r; }) || { error: 'All bots offline' };
+      }
+      setCache('_agg_' + pathname, merged);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(merged));
+    })
+    .catch(function(err) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Aggregation failed', message: err.message }));
+    });
 }
 
 function serveHTML(res, filename) {
@@ -168,8 +262,12 @@ const server = http.createServer(async (req, res) => {
     }));
   }
   else if (pathname === '/health' || pathname.startsWith('/api/')) {
-    // Proxy /health AND all /api/* to bot — supports GET, POST, PUT, DELETE
-    proxyToBot(req, res, pathname);
+    // P#235: GET requests use multi-bot aggregation; POST/PUT/PATCH forward to primary
+    if (req.method === 'GET') {
+      proxyGetAggregated(res, pathname);
+    } else {
+      proxyToBot(req, res, pathname);
+    }
   }
   else {
     res.writeHead(404, { 'Content-Type': 'application/json' });

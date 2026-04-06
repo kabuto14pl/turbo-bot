@@ -5,6 +5,26 @@
 
 ---
 
+## PATCH #235: Live Bot Critical Fixes — SKYNET False Positive + Multi-Pair + Dashboard (2026-04-06)
+
+**Typ:** Bugfix — 3 critical live bot issues
+**Pliki:** `bot.js`, `ecosystem.config.js`, `dashboard-server.js`
+
+### Problem:
+1. **SKYNET false positive**: Every BUY triggers `[SKYNET] Trade close detected: PnL=$-0.05` because BUY adds -fees to `realizedPnL`, and `_detectAndLearnFromCloses()` fires on `|pnlDelta| > 0.01`. Pollutes ML learning with fake losses.
+2. **Multi-pair cross-trading**: `TRADING_SYMBOLS` env not set → `config.symbols` defaults to `['SOLUSDT', 'BNBUSDT']` → multi-pair Grid V2 runs BNB strategies on SOL instance and vice versa.
+3. **Dashboard single-instance**: `BOT_API = 'http://localhost:3001'` hardcoded → shows only SOL bot, BNB (port 3002) invisible.
+
+### Rozwiązanie:
+1. **bot.js `_detectAndLearnFromCloses()`**: Skip detection when `currentPosCount > this._lastPositionCount` (BUY opened, not closed). Early return with state update.
+2. **ecosystem.config.js**: Add `TRADING_SYMBOLS: pair` per instance → each bot only manages its own symbol, disabling multi-pair Grid V2 cross-trading.
+3. **dashboard-server.js**: Multi-instance aggregation — `BOT_APIS` env supports comma-separated URLs, default `localhost:3001,3002`. GET requests aggregate from all bots (health/status combined, trades merged). POST forwarded to primary.
+
+### Also confirmed (no fix needed):
+- BTC phantom trades ($7.6M PnL) were from Apr 4 pre-restart config. Cleared on Apr 5 restart. Current portfolio state is clean.
+
+---
+
 ## PATCH #229: Per-Pair GPU Confidence + Risk Scaling — $2,070 Target (2026-04-03)
 
 **Typ:** Optimization — Per-pair confidence tuning + position uncapping
